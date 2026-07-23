@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #0b0e1a;
+  color: #eef0f8;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: #ffffff !important; color: #111827 !important; }
+  .print-section {
+    background: #ffffff !important;
+    border: 1px solid #d1d5db !important;
+    color: #111827 !important;
+    break-inside: avoid;
+  }
+  .print-header { color: #111827 !important; }
+  table { color: #111827 !important; }
+  th, td { border-color: #d1d5db !important; color: #111827 !important; }
+}

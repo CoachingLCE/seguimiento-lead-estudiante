@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/limpiar-pruebas",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/generar-estudiantes",
+      "schedule": "0 7 * * *"
+    }
+  ]
+}
