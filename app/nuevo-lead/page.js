@@ -6,7 +6,7 @@ import { useSession } from '../../lib/useSession';
 import { CURSOS, ORIGENES, CURSO_SIN_DEFINIR, CURSO_OTROS } from '../../lib/constants';
 
 export default function NuevoLeadPage() {
-  const { usuario, logout } = useSession();
+  const { usuario, cargando: cargandoSesion, logout } = useSession();
   const router = useRouter();
   const [form, setForm] = useState({
     nombre: '', apellido: '', whatsapp: '', curso: CURSO_SIN_DEFINIR, origen: ORIGENES[0]
@@ -16,6 +16,9 @@ export default function NuevoLeadPage() {
   const [guardando, setGuardando] = useState(false);
   const [ok, setOk] = useState(false);
 
+  if (cargandoSesion) {
+    return null;
+  }
   if (!usuario) {
     if (typeof window !== 'undefined') router.push('/');
     return null;

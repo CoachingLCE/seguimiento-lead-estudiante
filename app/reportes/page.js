@@ -19,7 +19,7 @@ function mesesDisponibles() {
 }
 
 export default function ReportesPage() {
-  const { usuario, logout } = useSession();
+  const { usuario, cargando: cargandoSesion, logout } = useSession();
   const router = useRouter();
   const meses = mesesDisponibles();
   const [mes, setMes] = useState(meses[0].valor);
@@ -46,6 +46,9 @@ export default function ReportesPage() {
     XLSX.writeFile(libro, `reporte-${mes}.xlsx`);
   }
 
+  if (cargandoSesion) {
+    return null;
+  }
   if (!usuario) {
     if (typeof window !== 'undefined') router.push('/');
     return null;

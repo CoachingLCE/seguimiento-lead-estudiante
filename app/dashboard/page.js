@@ -7,7 +7,7 @@ import ModalVenta from '../../components/ModalVenta';
 import { useSession } from '../../lib/useSession';
 
 export default function DashboardPage() {
-  const { usuario, logout } = useSession();
+  const { usuario, cargando: cargandoSesion, logout } = useSession();
   const router = useRouter();
   const [leads, setLeads] = useState([]);
   const [seguimiento, setSeguimiento] = useState([]);
@@ -73,6 +73,9 @@ export default function DashboardPage() {
     XLSX.writeFile(libro, `dashboard-leads-${new Date().toISOString().slice(0, 10)}.xlsx`);
   }
 
+  if (cargandoSesion) {
+    return null;
+  }
   if (!usuario) {
     if (typeof window !== 'undefined') router.push('/');
     return null;
