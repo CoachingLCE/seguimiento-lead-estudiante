@@ -81,6 +81,24 @@ export default function AccesosPage() {
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
       <div className="max-w-5xl mx-auto px-6 pb-16">
+        <div className="bg-surface border border-border rounded-2xl p-5 mb-4">
+          <p className="text-sm font-bold mb-3">🔐 Permisos por rol — quién ve qué</p>
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-textMuted text-left border-b border-border">
+                <th className="py-1.5 pr-3">Rol</th><th className="pr-3">Accede a</th>
+              </tr>
+            </thead>
+            <tbody className="text-textSec">
+              <tr className="border-b border-border"><td className="py-1.5 pr-3 font-semibold text-text">Admin</td><td className="pr-3">Todo el sistema, sin excepción</td></tr>
+              <tr className="border-b border-border"><td className="py-1.5 pr-3 font-semibold text-text">Coordinador</td><td className="pr-3">Nuevo lead, Dashboard, Seguimiento (reasigna), Reportes, Resumen diario — no ve Estudiantes</td></tr>
+              <tr className="border-b border-border"><td className="py-1.5 pr-3 font-semibold text-text">Inscripciones</td><td className="pr-3">Nuevo lead, Dashboard, Seguimiento (marca ventas) — no ve Reportes</td></tr>
+              <tr className="border-b border-border"><td className="py-1.5 pr-3 font-semibold text-text">Estudiantes</td><td className="pr-3">Solo pantalla Estudiantes (altas y bienvenidas) — nada del circuito comercial</td></tr>
+              <tr><td className="py-1.5 pr-3 font-semibold text-text">CoordinadorEstudiantes</td><td className="pr-3">Estudiantes + Resumen de Estudiantes — nada del circuito comercial</td></tr>
+            </tbody>
+          </table>
+        </div>
+
         <div className="bg-surface border border-border rounded-2xl p-6">
           <h3 className="text-base font-semibold mb-1">Gestión de accesos</h3>
           <p className="text-textMuted text-xs mb-4">Solo Diego Lerner puede ver esta pantalla</p>

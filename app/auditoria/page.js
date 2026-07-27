@@ -14,6 +14,7 @@ export default function AuditoriaPage() {
   const [filtroUsuario, setFiltroUsuario] = useState('');
   const [desde, setDesde] = useState('');
   const [hasta, setHasta] = useState('');
+  const [busqueda, setBusqueda] = useState('');
 
   const puedeVer = tienePermisoAuditoria(usuario);
 
@@ -52,6 +53,10 @@ export default function AuditoriaPage() {
   if (!usuario || !puedeVer) return null;
 
   const usuariosUnicos = [...new Set(registros.map((r) => r.UsuarioNombre))].sort();
+  const registrosFiltrados = registros.filter((r) =>
+    !busqueda.trim() ||
+    `${r.Accion} ${r.Detalle}`.toLowerCase().includes(busqueda.trim().toLowerCase())
+  );
 
   return (
     <div>
@@ -76,6 +81,12 @@ export default function AuditoriaPage() {
             <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)}
               className="bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
           </div>
+          <div>
+            <label className="text-xs text-textSec block mb-1">Buscar</label>
+            <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="🔍 Acción o detalle…"
+              className="bg-bg border border-border rounded-lg px-3 py-2 text-sm w-48" />
+          </div>
           <button onClick={exportarExcel} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm">
             ⬇ Exportar a Excel
           </button>
@@ -92,7 +103,7 @@ export default function AuditoriaPage() {
         <div className="bg-surface border border-border rounded-2xl p-5 print-section">
           {cargando ? (
             <p className="text-textSec text-sm">Cargando…</p>
-          ) : registros.length === 0 ? (
+          ) : registrosFiltrados.length === 0 ? (
             <p className="text-textMuted text-sm">Sin registros para este filtro.</p>
           ) : (
             <table className="w-full text-sm">
@@ -102,7 +113,7 @@ export default function AuditoriaPage() {
                 </tr>
               </thead>
               <tbody>
-                {registros.map((r, i) => (
+                {registrosFiltrados.map((r, i) => (
                   <tr key={i} className="border-b border-border">
                     <td className="py-2">{new Date(r.Fecha).toLocaleString('es-AR')}</td>
                     <td>{r.UsuarioNombre}</td>
