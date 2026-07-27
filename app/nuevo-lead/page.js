@@ -76,7 +76,7 @@ export default function NuevoLeadPage() {
                 className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
               {form.nombre.trim().toLowerCase() === 'prueba' && (
                 <p className="text-infoText text-xs mt-1.5">
-                  💡 Podés poner "Prueba" en el nombre para ver cómo funciona cada pantalla. Este lead se borra solo a las 24hs — es solo una prueba.
+                  💡 Podés poner "Prueba" en el nombre para ver cómo funciona cada pantalla. Este lead se borra solo a las 48hs — es solo una prueba.
                 </p>
               )}
             </div>
