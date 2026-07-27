@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import Nav, { puedeVerOperativo } from '../../components/Nav';
+import FichaDrawer from '../../components/FichaDrawer';
 import { useSession } from '../../lib/useSession';
 import { RESULTADOS_CONTACTO } from '../../lib/constants';
 
@@ -17,6 +18,7 @@ export default function SeguimientoPage() {
   const [leads, setLeads] = useState([]);
   const [seguimiento, setSeguimiento] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [fichaLeadId, setFichaLeadId] = useState(null);
 
   const puedeReasignar = usuario?.roles?.includes('Admin') || usuario?.roles?.includes('Coordinador');
 
@@ -132,9 +134,16 @@ export default function SeguimientoPage() {
               ) : (
                 <ul className="text-sm space-y-1">
                   {lote0.map((l) => (
-                    <li key={l.ID} className="text-textSec">
-                      {l.Nombre} {l.Apellido}
-                      {!l.Curso && <span className="text-warningText text-xs ml-2">(sin curso definido)</span>}
+                    <li key={l.ID} className="text-textSec flex items-center gap-2">
+                      <span>
+                        {l.Nombre} {l.Apellido}
+                        {!l.Curso && <span className="text-warningText text-xs ml-2">(sin curso definido)</span>}
+                      </span>
+                      {l.WhatsApp && (
+                        <a href={`https://wa.me/${l.WhatsApp.replace(/[^\d]/g, '')}`} target="_blank" rel="noopener noreferrer"
+                          className="text-xs" title="WhatsApp">💬</a>
+                      )}
+                      <button onClick={() => setFichaLeadId(l.ID)} className="text-accentTeal text-xs font-semibold">Ver ficha</button>
                     </li>
                   ))}
                 </ul>
@@ -151,7 +160,7 @@ export default function SeguimientoPage() {
                 lote1.map((s) => (
                   <FilaLote
                     key={`${s.LeadID}-1`} fila={s} lead={buscarLead(s.LeadID)}
-                    onContactar={registrarContacto} onReasignar={reasignar}
+                    onContactar={registrarContacto} onReasignar={reasignar} onVerFicha={setFichaLeadId}
                     puedeReasignar={puedeReasignar} conObservaciones
                   />
                 ))
@@ -170,7 +179,7 @@ export default function SeguimientoPage() {
                 lote2.map((s) => (
                   <FilaLote
                     key={`${s.LeadID}-2`} fila={s} lead={buscarLead(s.LeadID)}
-                    onContactar={registrarContacto} onReasignar={reasignar}
+                    onContactar={registrarContacto} onReasignar={reasignar} onVerFicha={setFichaLeadId}
                     puedeReasignar={puedeReasignar}
                   />
                 ))
@@ -189,7 +198,7 @@ export default function SeguimientoPage() {
                 lote3.map((s) => (
                   <FilaLote
                     key={`${s.LeadID}-3`} fila={s} lead={buscarLead(s.LeadID)}
-                    onContactar={registrarContacto} onReasignar={reasignar}
+                    onContactar={registrarContacto} onReasignar={reasignar} onVerFicha={setFichaLeadId}
                     puedeReasignar={puedeReasignar} sinAsignarPorDefecto
                   />
                 ))
@@ -198,11 +207,12 @@ export default function SeguimientoPage() {
           </>
         )}
       </div>
+      <FichaDrawer leadId={fichaLeadId} usuario={usuario} onClose={() => setFichaLeadId(null)} />
     </div>
   );
 }
 
-function FilaLote({ fila, lead, onContactar, onReasignar, puedeReasignar, conObservaciones, sinAsignarPorDefecto }) {
+function FilaLote({ fila, lead, onContactar, onReasignar, onVerFicha, puedeReasignar, conObservaciones, sinAsignarPorDefecto }) {
   const [resultado, setResultado] = useState('');
   const [observaciones, setObservaciones] = useState('');
   const [proximaAccion, setProximaAccion] = useState('');
@@ -213,7 +223,16 @@ function FilaLote({ fila, lead, onContactar, onReasignar, puedeReasignar, conObs
 
   return (
     <div className="border-t border-border first:border-t-0 py-3">
-      <p className="text-sm font-medium">{lead.Nombre} {lead.Apellido} — {lead.Curso || 'sin curso'}</p>
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium">{lead.Nombre} {lead.Apellido} — {lead.Curso || 'sin curso'}</p>
+        <div className="flex items-center gap-2">
+          {lead.WhatsApp && (
+            <a href={`https://wa.me/${lead.WhatsApp.replace(/[^\d]/g, '')}`} target="_blank" rel="noopener noreferrer"
+              className="w-6 h-6 flex items-center justify-center rounded-md border border-border text-xs" title="WhatsApp">💬</a>
+          )}
+          <button onClick={() => onVerFicha(lead.ID)} className="text-accentTeal text-xs font-semibold">Ver ficha</button>
+        </div>
+      </div>
 
       <div className="flex items-center gap-2 text-xs text-textMuted mt-1 mb-2">
         {sinAsignar ? (

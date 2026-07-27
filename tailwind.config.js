@@ -19,7 +19,9 @@ module.exports = {
         warningBg: '#332108',
         warningText: '#fbbf24',
         infoBg: '#0f1f33',
-        infoText: '#60a5fa'
+        infoText: '#60a5fa',
+        dangerBg: '#331414',
+        dangerText: '#f87171'
       }
     }
   },

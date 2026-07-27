@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import Nav from '../../components/Nav';
+import FichaDrawer from '../../components/FichaDrawer';
 import { tienePermisoReportes } from '../../lib/permisos';
 import { useSession } from '../../lib/useSession';
 
@@ -25,6 +26,7 @@ export default function ReportesPage() {
   const [mes, setMes] = useState(meses[0].valor);
   const [datos, setDatos] = useState(null);
   const [cargando, setCargando] = useState(true);
+  const [fichaLeadId, setFichaLeadId] = useState(null);
 
   useEffect(() => {
     if (!usuario) return;
@@ -87,7 +89,7 @@ export default function ReportesPage() {
                 <thead>
                   <tr className="text-textSec text-left border-b border-border">
                     <th className="py-2">Lead</th><th>Origen</th><th>Fecha compra</th>
-                    <th>Medio de pago</th><th>Modalidad</th><th>Monto</th><th>Cargado por</th>
+                    <th>Medio de pago</th><th>Modalidad</th><th>Monto</th><th>Cargado por</th><th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -100,6 +102,9 @@ export default function ReportesPage() {
                       <td>{c.modalidad}</td>
                       <td>${Number(c.montoTotal).toLocaleString('es-AR')}</td>
                       <td>{c.cargadoPor}</td>
+                      <td>
+                        <button onClick={() => setFichaLeadId(c.id)} className="text-accentTeal text-xs font-semibold">Ver ficha</button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -112,6 +117,7 @@ export default function ReportesPage() {
           </>
         )}
       </div>
+      <FichaDrawer leadId={fichaLeadId} usuario={usuario} onClose={() => setFichaLeadId(null)} />
     </div>
   );
 }

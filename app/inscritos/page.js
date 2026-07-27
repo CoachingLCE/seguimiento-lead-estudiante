@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import Nav from '../../components/Nav';
+import FichaDrawer from '../../components/FichaDrawer';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoEstudiantes } from '../../lib/permisos';
 
@@ -14,6 +15,7 @@ export default function InscritosPage() {
   const [pidiendoEmailPara, setPidiendoEmailPara] = useState(null);
   const [emailTemporal, setEmailTemporal] = useState('');
   const [enviandoBienvenidaId, setEnviandoBienvenidaId] = useState(null);
+  const [fichaLeadId, setFichaLeadId] = useState(null);
 
   const puedeVer = tienePermisoEstudiantes(usuario);
 
@@ -109,7 +111,7 @@ export default function InscritosPage() {
               <thead>
                 <tr className="text-textSec text-left border-b border-border">
                   <th className="py-2">Estudiante</th><th>Curso</th><th>Edición</th>
-                  <th>Fecha inscripción</th><th>Alta plataforma</th><th>Bienvenida</th>
+                  <th>Fecha inscripción</th><th>Alta plataforma</th><th>Bienvenida</th><th></th>
                 </tr>
               </thead>
               <tbody>
@@ -161,6 +163,9 @@ export default function InscritosPage() {
                         </button>
                       )}
                     </td>
+                    <td>
+                      <button onClick={() => setFichaLeadId(i.LeadId)} className="text-accentTeal text-xs font-semibold">Ver ficha</button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -168,6 +173,7 @@ export default function InscritosPage() {
           )}
         </div>
       </div>
+      <FichaDrawer leadId={fichaLeadId} usuario={usuario} onClose={() => setFichaLeadId(null)} />
     </div>
   );
 }

@@ -4,15 +4,26 @@ import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import Nav, { puedeVerOperativo } from '../../components/Nav';
 import ModalVenta from '../../components/ModalVenta';
+import FichaDrawer from '../../components/FichaDrawer';
 import { useSession } from '../../lib/useSession';
+import { tienePermisoEstudiantes } from '../../lib/permisos';
+
+const HORAS_ALTA_DEMORADA = 24;
 
 export default function DashboardPage() {
   const { usuario, cargando: cargandoSesion, logout } = useSession();
   const router = useRouter();
   const [leads, setLeads] = useState([]);
   const [seguimiento, setSeguimiento] = useState([]);
+  const [inscritos, setInscritos] = useState([]);
   const [leadVenta, setLeadVenta] = useState(null);
+  const [fichaLeadId, setFichaLeadId] = useState(null);
   const [cargando, setCargando] = useState(true);
+  const [pidiendoEmailPara, setPidiendoEmailPara] = useState(null);
+  const [emailTemporal, setEmailTemporal] = useState('');
+  const [procesandoId, setProcesandoId] = useState(null);
+
+  const verEstudiantes = tienePermisoEstudiantes(usuario);
 
   useEffect(() => {
     if (!usuario) return;
@@ -21,12 +32,17 @@ export default function DashboardPage() {
 
   async function cargarDatos() {
     setCargando(true);
-    const [rLeads, rSeg] = await Promise.all([
+    const pedidos = [
       fetch(`/api/leads?solicitanteEmail=${encodeURIComponent(usuario.email)}`).then((r) => r.json()),
       fetch(`/api/seguimiento?solicitanteEmail=${encodeURIComponent(usuario.email)}`).then((r) => r.json())
-    ]);
+    ];
+    if (verEstudiantes) {
+      pedidos.push(fetch(`/api/inscritos?solicitanteEmail=${encodeURIComponent(usuario.email)}`).then((r) => r.json()));
+    }
+    const [rLeads, rSeg, rIns] = await Promise.all(pedidos);
     setLeads(rLeads.leads || []);
     setSeguimiento(rSeg.seguimiento || []);
+    setInscritos(rIns?.inscritos || []);
     setCargando(false);
   }
 
@@ -49,6 +65,62 @@ export default function DashboardPage() {
     if (s.Contactado === 'TRUE') return false;
     return new Date(s.FechaVence) <= new Date();
   });
+
+  const ahoraMs = Date.now();
+  const altasDemoradas = inscritos.filter((i) =>
+    i.AltaPlataforma !== 'TRUE' &&
+    ahoraMs - new Date(i.FechaInscripcion).getTime() > HORAS_ALTA_DEMORADA * 60 * 60 * 1000
+  );
+  const bienvenidasPendientes = inscritos.filter((i) => i.BienvenidaEnviada !== 'TRUE');
+
+  function horasDesde(fecha) {
+    return Math.floor((ahoraMs - new Date(fecha).getTime()) / (60 * 60 * 1000));
+  }
+
+  async function toggleAltaInline(inscrito) {
+    setProcesandoId(inscrito.ID);
+    await fetch('/api/inscritos', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        accion: 'alta', id: inscrito.ID, nuevoValor: true,
+        solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
+      })
+    });
+    setProcesandoId(null);
+    cargarDatos();
+  }
+
+  async function enviarBienvenidaInline(inscrito, email) {
+    setProcesandoId(inscrito.ID);
+    const res = await fetch('/api/inscritos', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        accion: 'bienvenida', id: inscrito.ID, email,
+        solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
+      })
+    });
+    setProcesandoId(null);
+    setPidiendoEmailPara(null);
+    setEmailTemporal('');
+    if (res.ok) cargarDatos();
+  }
+
+  function clickEnviarBienvenidaInline(inscrito) {
+    if (inscrito.EmailEstudiante) {
+      enviarBienvenidaInline(inscrito, inscrito.EmailEstudiante);
+    } else {
+      setPidiendoEmailPara(inscrito.ID);
+    }
+  }
+
+  function linkWhatsapp(numero) {
+    const limpio = (numero || '').replace(/[^\d]/g, '');
+    return `https://wa.me/${limpio}`;
+  }
+
+  const totalPendientes = pendientesHoy.length + altasDemoradas.length + bienvenidasPendientes.length;
 
   async function confirmarVenta(datos) {
     await fetch('/api/ventas', {
@@ -93,36 +165,88 @@ export default function DashboardPage() {
           <p className="text-textSec text-sm">Cargando…</p>
         ) : (
           <>
-            <div className="flex justify-end mb-3 no-print">
+            <div className="flex justify-between items-center mb-3 no-print">
+              <p className="text-sm font-bold flex items-center gap-2">
+                📌 Necesita tu atención ahora
+                {totalPendientes > 0 && (
+                  <span className="text-textMuted text-xs font-normal">· {totalPendientes} acciones pendientes</span>
+                )}
+              </p>
               <button onClick={exportarExcel} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm">
                 ⬇ Exportar a Excel
               </button>
             </div>
-            <div className="grid grid-cols-3 gap-4 mb-6">
-              <Stat label="Leads hoy" value={leadsHoy} />
-              <Stat label="Leads este mes" value={leadsMes} />
-              <Stat label="Comprados" value={comprados} />
-            </div>
 
-            {pendientesHoy.length > 0 && (
-              <div className="bg-warningBg rounded-xl p-4 mb-5">
-                <p className="text-warningText text-sm font-semibold mb-3">
-                  ⚠ Pendientes de contactar ({pendientesHoy.length})
-                </p>
+            {totalPendientes === 0 ? (
+              <div className="bg-successBg rounded-xl p-4 mb-5 text-successText text-sm">
+                ✓ No hay nada urgente pendiente ahora mismo.
+              </div>
+            ) : (
+              <div className="bg-surface border border-dangerText/30 rounded-2xl p-4 mb-5 overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-textSec text-left border-b border-white/10">
-                      <th className="py-1">Lead</th><th>Lote</th><th>Asignado a</th>
+                    <tr className="text-textSec text-left border-b border-border">
+                      <th className="py-1.5 pr-2">Prioridad</th><th className="pr-2">Quién</th>
+                      <th className="pr-2">Motivo</th><th className="pr-2">Detalle</th><th>Acción</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {pendientesHoy.map((s, i) => {
+                    {altasDemoradas.map((i) => (
+                      <tr key={`alta-${i.ID}`} className="border-b border-border">
+                        <td className="py-1.5 pr-2"><Pill tono="danger">🔴 Urgente</Pill></td>
+                        <td className="pr-2">{i.NombreEstudiante}</td>
+                        <td className="pr-2">Alta demorada</td>
+                        <td className="pr-2">{i.Curso || '—'} · <Pill tono="danger">{horasDesde(i.FechaInscripcion)}hs</Pill></td>
+                        <td className="flex items-center gap-2">
+                          <button disabled={procesandoId === i.ID} onClick={() => toggleAltaInline(i)}
+                            className="text-xs px-3 py-1 rounded-md bg-surface2 border border-border disabled:opacity-60">
+                            {procesandoId === i.ID ? '...' : '✓ Marcar alta'}
+                          </button>
+                          <button onClick={() => setFichaLeadId(i.LeadId)} className="text-accentTeal text-xs font-semibold">Ver ficha</button>
+                        </td>
+                      </tr>
+                    ))}
+                    {bienvenidasPendientes.map((i) => (
+                      <tr key={`bien-${i.ID}`} className="border-b border-border">
+                        <td className="py-1.5 pr-2"><Pill tono="warning">🟡 Hoy</Pill></td>
+                        <td className="pr-2">{i.NombreEstudiante}</td>
+                        <td className="pr-2">Bienvenida sin enviar</td>
+                        <td className="pr-2">{i.EmailEstudiante || 'Falta email del estudiante'}</td>
+                        <td className="flex items-center gap-2">
+                          {pidiendoEmailPara === i.ID ? (
+                            <div className="flex items-center gap-1.5">
+                              <input type="email" autoFocus placeholder="email@mail.com" value={emailTemporal}
+                                onChange={(e) => setEmailTemporal(e.target.value)}
+                                className="bg-bg border border-border rounded px-2 py-1 text-xs w-32" />
+                              <button onClick={() => emailTemporal && enviarBienvenidaInline(i, emailTemporal)}
+                                className="text-xs px-2 py-1 rounded bg-accentPurple text-white">Enviar</button>
+                            </div>
+                          ) : (
+                            <button disabled={procesandoId === i.ID} onClick={() => clickEnviarBienvenidaInline(i)}
+                              className="text-xs px-3 py-1 rounded-md bg-surface2 border border-border font-semibold disabled:opacity-60">
+                              {procesandoId === i.ID ? '...' : '✉ Enviar'}
+                            </button>
+                          )}
+                          <button onClick={() => setFichaLeadId(i.LeadId)} className="text-accentTeal text-xs font-semibold">Ver ficha</button>
+                        </td>
+                      </tr>
+                    ))}
+                    {pendientesHoy.map((s, i2) => {
                       const l = leads.find((x) => x.ID === s.LeadID);
                       return (
-                        <tr key={i} className="border-b border-white/10">
-                          <td className="py-1">{l ? `${l.Nombre} ${l.Apellido}` : s.LeadID}</td>
-                          <td>Lote {s.Lote}</td>
-                          <td>{s.AsignadoANombre}</td>
+                        <tr key={`seg-${i2}`} className="border-b border-border">
+                          <td className="py-1.5 pr-2"><Pill tono="warning">🟡 Hoy</Pill></td>
+                          <td className="pr-2">{l ? `${l.Nombre} ${l.Apellido}` : s.LeadID}</td>
+                          <td className="pr-2">Lead sin contactar</td>
+                          <td className="pr-2">Lote {s.Lote} · asignado a {s.AsignadoANombre || 'sin asignar'}</td>
+                          <td className="flex items-center gap-2">
+                            {l?.WhatsApp && (
+                              <a href={linkWhatsapp(l.WhatsApp)} target="_blank" rel="noopener noreferrer"
+                                className="w-6 h-6 flex items-center justify-center rounded-md border border-border" title="WhatsApp">💬</a>
+                            )}
+                            <button onClick={() => setFichaLeadId(s.LeadID)} className="text-accentTeal text-xs font-semibold">Ver ficha</button>
+                            <a href="/seguimiento" className="text-textSec text-xs">Ir a Seguimiento</a>
+                          </td>
                         </tr>
                       );
                     })}
@@ -130,6 +254,14 @@ export default function DashboardPage() {
                 </table>
               </div>
             )}
+
+            <div className={`grid gap-3 mb-5 ${verEstudiantes ? 'grid-cols-5' : 'grid-cols-3'}`}>
+              <Stat label="Leads hoy" value={leadsHoy} />
+              <Stat label="Leads este mes" value={leadsMes} />
+              <Stat label="Comprados" value={comprados} />
+              {verEstudiantes && <Stat label="Altas demoradas" value={altasDemoradas.length} tono={altasDemoradas.length ? 'danger' : null} />}
+              {verEstudiantes && <Stat label="Bienvenidas pend." value={bienvenidasPendientes.length} tono={bienvenidasPendientes.length ? 'warning' : null} />}
+            </div>
 
             <div className="bg-surface border border-border rounded-2xl p-5 mb-4">
               <p className="text-sm font-semibold mb-3">Leads por curso</p>
@@ -165,12 +297,15 @@ export default function DashboardPage() {
                         </span>
                       </td>
                       <td>
-                        {l.Estado !== 'Comprado' && (
-                          <button onClick={() => setLeadVenta(l)}
-                            className="text-xs px-3 py-1 rounded-md bg-surface2 border border-border">
-                            Marcar venta
-                          </button>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {l.Estado !== 'Comprado' && (
+                            <button onClick={() => setLeadVenta(l)}
+                              className="text-xs px-3 py-1 rounded-md bg-surface2 border border-border">
+                              Marcar venta
+                            </button>
+                          )}
+                          <button onClick={() => setFichaLeadId(l.ID)} className="text-accentTeal text-xs font-semibold">Ver ficha</button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -181,15 +316,27 @@ export default function DashboardPage() {
         )}
       </div>
       <ModalVenta lead={leadVenta} onClose={() => setLeadVenta(null)} onConfirm={confirmarVenta} />
+      <FichaDrawer leadId={fichaLeadId} usuario={usuario} onClose={() => setFichaLeadId(null)} />
     </div>
   );
 }
 
-function Stat({ label, value }) {
+function Stat({ label, value, tono }) {
+  const borde = tono === 'danger' ? 'border-dangerText/40' : tono === 'warning' ? 'border-warningText/40' : 'border-border';
   return (
-    <div className="bg-surface border border-border rounded-xl p-4">
-      <p className="text-textSec text-xs mb-1.5">{label}</p>
-      <p className="text-2xl font-bold">{value}</p>
+    <div className={`bg-surface border ${borde} rounded-xl p-3.5 relative`}>
+      {tono && (
+        <span className={`absolute top-3 right-3 w-2 h-2 rounded-full ${tono === 'danger' ? 'bg-dangerText' : 'bg-warningText'}`} />
+      )}
+      <p className="text-textSec text-[11px] mb-1">{label}</p>
+      <p className="text-xl font-bold">{value}</p>
     </div>
   );
+}
+
+function Pill({ children, tono }) {
+  const clases = tono === 'danger' ? 'bg-dangerBg text-dangerText'
+    : tono === 'warning' ? 'bg-warningBg text-warningText'
+    : 'bg-infoBg text-infoText';
+  return <span className={`text-[10.5px] px-2.5 py-0.5 rounded-full font-semibold whitespace-nowrap ${clases}`}>{children}</span>;
 }

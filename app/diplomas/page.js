@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import Nav from '../../components/Nav';
+import FichaDrawer from '../../components/FichaDrawer';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoDiplomas } from '../../lib/permisos';
 
@@ -11,6 +12,7 @@ export default function DiplomasPage() {
   const router = useRouter();
   const [inscritos, setInscritos] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [fichaLeadId, setFichaLeadId] = useState(null);
 
   const puedeVer = tienePermisoDiplomas(usuario);
 
@@ -75,7 +77,7 @@ export default function DiplomasPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-textSec text-left border-b border-border">
-                  <th className="py-2">Estudiante</th><th>Curso</th><th>Edición</th><th>Abonó la totalidad</th>
+                  <th className="py-2">Estudiante</th><th>Curso</th><th>Edición</th><th>Abonó la totalidad</th><th></th>
                 </tr>
               </thead>
               <tbody>
@@ -89,6 +91,9 @@ export default function DiplomasPage() {
                         {i.AbonoTotalidad === 'TRUE' ? '✅' : '⬜'}
                       </button>
                     </td>
+                    <td>
+                      <button onClick={() => setFichaLeadId(i.LeadId)} className="text-accentTeal text-xs font-semibold">Ver ficha</button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -96,6 +101,7 @@ export default function DiplomasPage() {
           )}
         </div>
       </div>
+      <FichaDrawer leadId={fichaLeadId} usuario={usuario} onClose={() => setFichaLeadId(null)} />
     </div>
   );
 }

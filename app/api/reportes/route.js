@@ -26,6 +26,7 @@ export async function GET(request) {
     montoTotal,
     conversion,
     compras: compras.map((c) => ({
+      id: c.ID,
       lead: `${c.Nombre} ${c.Apellido}`,
       origen: c.Origen,
       fechaVenta: c.FechaVenta,
