@@ -30,6 +30,8 @@ export default function ReportesPage() {
   const [filtroCurso, setFiltroCurso] = useState('');
   const [filtroEdicion, setFiltroEdicion] = useState('');
   const [filtroDocente, setFiltroDocente] = useState('');
+  const [ordenPor, setOrdenPor] = useState('fechaVenta');
+  const [ordenDir, setOrdenDir] = useState('desc');
 
   useEffect(() => {
     if (!usuario) return;
@@ -45,7 +47,7 @@ export default function ReportesPage() {
 
   function exportarExcel() {
     if (!datos) return;
-    const hoja = XLSX.utils.json_to_sheet(comprasFiltradas);
+    const hoja = XLSX.utils.json_to_sheet(comprasOrdenadas);
     const libro = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(libro, hoja, 'Compras');
     XLSX.writeFile(libro, `reporte-${mes}.xlsx`);
@@ -62,6 +64,30 @@ export default function ReportesPage() {
         .filter((c) => !filtroEdicion || c.edicion === filtroEdicion)
         .filter((c) => !filtroDocente || (c.docentes || '').split(',').map((d) => d.trim()).includes(filtroDocente))
     : [];
+
+  const comprasOrdenadas = [...comprasFiltradas].sort((a, b) => {
+    let va = a[ordenPor] || '';
+    let vb = b[ordenPor] || '';
+    if (ordenPor === 'fechaVenta') { va = new Date(va).getTime(); vb = new Date(vb).getTime(); }
+    if (ordenPor === 'montoTotal') { va = Number(va); vb = Number(vb); }
+    if (va < vb) return ordenDir === 'asc' ? -1 : 1;
+    if (va > vb) return ordenDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  function ordenarPor(campo) {
+    if (ordenPor === campo) {
+      setOrdenDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setOrdenPor(campo);
+      setOrdenDir('asc');
+    }
+  }
+
+  function flecha(campo) {
+    if (ordenPor !== campo) return '';
+    return ordenDir === 'asc' ? ' ▲' : ' ▼';
+  }
 
   if (cargandoSesion) {
     return null;
@@ -129,12 +155,16 @@ export default function ReportesPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-textSec text-left border-b border-border">
-                    <th className="py-2">Lead</th><th>Curso</th><th>Edición</th><th>Docente(s)</th><th>Origen</th><th>Fecha compra</th>
-                    <th>Medio de pago</th><th>Modalidad</th><th>Monto</th><th>Cargado por</th><th></th>
+                    <th className="py-2 cursor-pointer select-none" onClick={() => ordenarPor('lead')}>Lead{flecha('lead')}</th>
+                    <th>Curso</th><th>Edición</th><th>Docente(s)</th><th>Origen</th>
+                    <th className="cursor-pointer select-none" onClick={() => ordenarPor('fechaVenta')}>Fecha compra{flecha('fechaVenta')}</th>
+                    <th>Medio de pago</th><th>Modalidad</th>
+                    <th className="cursor-pointer select-none" onClick={() => ordenarPor('montoTotal')}>Monto{flecha('montoTotal')}</th>
+                    <th>Cargado por</th><th></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {comprasFiltradas.map((c, i) => (
+                  {comprasOrdenadas.map((c, i) => (
                     <tr key={i} className="border-b border-border">
                       <td className="py-2">{c.lead}</td>
                       <td>{c.curso}</td>

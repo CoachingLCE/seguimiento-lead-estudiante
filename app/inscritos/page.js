@@ -22,6 +22,8 @@ export default function InscritosPage() {
   const [filtroCurso, setFiltroCurso] = useState('');
   const [filtroEdicion, setFiltroEdicion] = useState('');
   const [filtroDocente, setFiltroDocente] = useState('');
+  const [ordenPor, setOrdenPor] = useState('FechaInscripcion');
+  const [ordenDir, setOrdenDir] = useState('desc');
 
   const puedeVer = tienePermisoEstudiantes(usuario);
 
@@ -93,6 +95,29 @@ export default function InscritosPage() {
     .filter((i) => !filtroEdicion || i.Edicion === filtroEdicion)
     .filter((i) => !filtroDocente || (i.Docentes || '').split(',').map((d) => d.trim()).includes(filtroDocente));
 
+  const inscritosOrdenados = [...inscritosFiltrados].sort((a, b) => {
+    let va = a[ordenPor] || '';
+    let vb = b[ordenPor] || '';
+    if (ordenPor === 'FechaInscripcion') { va = new Date(va).getTime(); vb = new Date(vb).getTime(); }
+    if (va < vb) return ordenDir === 'asc' ? -1 : 1;
+    if (va > vb) return ordenDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  function ordenarPor(campo) {
+    if (ordenPor === campo) {
+      setOrdenDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setOrdenPor(campo);
+      setOrdenDir('asc');
+    }
+  }
+
+  function flecha(campo) {
+    if (ordenPor !== campo) return '';
+    return ordenDir === 'asc' ? ' ▲' : ' ▼';
+  }
+
   function exportarExcel() {
     const hoja = XLSX.utils.json_to_sheet(
       inscritosFiltrados.map((i) => ({
@@ -150,13 +175,16 @@ export default function InscritosPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-textSec text-left border-b border-border">
-                  <th className="py-2">Estudiante</th><th>Curso</th><th>Edición</th><th>Docente(s)</th>
-                  <th>Fecha inscripción</th><th>Alta plataforma</th><th>Bienvenida</th><th></th>
+                  <th className="py-2 cursor-pointer select-none" onClick={() => ordenarPor('NombreEstudiante')}>Estudiante{flecha('NombreEstudiante')}</th>
+                  <th className="cursor-pointer select-none" onClick={() => ordenarPor('Curso')}>Curso{flecha('Curso')}</th>
+                  <th className="cursor-pointer select-none" onClick={() => ordenarPor('Edicion')}>Edición{flecha('Edicion')}</th>
+                  <th>Docente(s)</th>
+                  <th className="cursor-pointer select-none" onClick={() => ordenarPor('FechaInscripcion')}>Fecha inscripción{flecha('FechaInscripcion')}</th>
+                  <th>Alta plataforma</th><th>Bienvenida</th><th></th>
                 </tr>
               </thead>
               <tbody>
-                {inscritosFiltrados
-                  .slice().reverse().map((i) => (
+                {inscritosOrdenados.map((i) => (
                   <tr key={i.ID} className="border-b border-border align-top">
                     <td className="py-2">{i.NombreEstudiante}</td>
                     <td>{i.Curso || '—'}</td>
