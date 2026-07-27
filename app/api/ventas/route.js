@@ -39,7 +39,8 @@ export async function POST(request) {
     montoTotal,
     body.edicion || '',
     body.emailEstudiante || '',
-    lead.NotasInternas
+    lead.NotasInternas,
+    lead.InstagramUsuario
   ]);
 
   await registrarAccion(

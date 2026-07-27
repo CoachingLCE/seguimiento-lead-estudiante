@@ -25,7 +25,7 @@ export async function POST(request) {
 
   // Columnas Leads: ID, Nombre, Apellido, WhatsApp, Curso, CursosAdicionales, Origen, FechaIngreso,
   // CargadoPorEmail, CargadoPorNombre, Estado, FechaVenta, MedioPago, Modalidad, CantCuotas, ValorCuota,
-  // MontoTotal, Edicion, EmailEstudiante, NotasInternas
+  // MontoTotal, Edicion, EmailEstudiante, NotasInternas, InstagramUsuario
   await appendRow('Leads', [
     leadId,
     body.nombre,
@@ -38,7 +38,8 @@ export async function POST(request) {
     body.cargadoPorEmail,
     body.cargadoPorNombre,
     'Lead',
-    '', '', '', '', '', '', '', '', ''
+    '', '', '', '', '', '', '', '', '',
+    body.instagram || ''
   ]);
 
   // Seguimiento: se crean de una las 3 etapas con tiempo (Lote 1, 2, 3). Lote 0 no se guarda como fila:
@@ -84,7 +85,8 @@ export async function PATCH(request) {
     lead.Origen, lead.FechaIngreso, lead.CargadoPorEmail, lead.CargadoPorNombre,
     lead.Estado, lead.FechaVenta, lead.MedioPago, lead.Modalidad, lead.CantCuotas, lead.ValorCuota,
     lead.MontoTotal, lead.Edicion, lead.EmailEstudiante,
-    body.notasInternas !== undefined ? body.notasInternas : lead.NotasInternas
+    body.notasInternas !== undefined ? body.notasInternas : lead.NotasInternas,
+    lead.InstagramUsuario
   ]);
 
   if (body.curso !== undefined || body.cursosAdicionales !== undefined) {
