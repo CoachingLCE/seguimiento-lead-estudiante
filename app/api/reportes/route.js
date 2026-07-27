@@ -30,6 +30,7 @@ export async function GET(request) {
       lead: `${c.Nombre} ${c.Apellido}`,
       curso: c.Curso || 'sin curso',
       edicion: c.Edicion || '',
+      docentes: c.Docentes || '',
       origen: c.Origen,
       fechaVenta: c.FechaVenta,
       medioPago: c.MedioPago,

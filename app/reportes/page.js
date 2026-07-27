@@ -29,6 +29,7 @@ export default function ReportesPage() {
   const [fichaLeadId, setFichaLeadId] = useState(null);
   const [filtroCurso, setFiltroCurso] = useState('');
   const [filtroEdicion, setFiltroEdicion] = useState('');
+  const [filtroDocente, setFiltroDocente] = useState('');
 
   useEffect(() => {
     if (!usuario) return;
@@ -52,10 +53,14 @@ export default function ReportesPage() {
 
   const cursosUnicos = datos ? [...new Set(datos.compras.map((c) => c.curso).filter(Boolean))].sort() : [];
   const edicionesUnicas = datos ? [...new Set(datos.compras.map((c) => c.edicion).filter(Boolean))].sort() : [];
+  const docentesUnicos = datos
+    ? [...new Set(datos.compras.flatMap((c) => (c.docentes || '').split(',').map((d) => d.trim()).filter(Boolean)))].sort()
+    : [];
   const comprasFiltradas = datos
     ? datos.compras
         .filter((c) => !filtroCurso || c.curso === filtroCurso)
         .filter((c) => !filtroEdicion || c.edicion === filtroEdicion)
+        .filter((c) => !filtroDocente || (c.docentes || '').split(',').map((d) => d.trim()).includes(filtroDocente))
     : [];
 
   if (cargandoSesion) {
@@ -98,6 +103,14 @@ export default function ReportesPage() {
               {edicionesUnicas.map((e) => <option key={e} value={e}>{e}</option>)}
             </select>
           </div>
+          <div>
+            <label className="text-xs text-textSec block mb-1">Docente</label>
+            <select value={filtroDocente} onChange={(e) => setFiltroDocente(e.target.value)}
+              className="bg-bg border border-border rounded-lg px-3 py-2 text-sm">
+              <option value="">Todos</option>
+              {docentesUnicos.map((d) => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </div>
         </div>
 
         {cargando || !datos ? (
@@ -116,7 +129,7 @@ export default function ReportesPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-textSec text-left border-b border-border">
-                    <th className="py-2">Lead</th><th>Curso</th><th>Edición</th><th>Origen</th><th>Fecha compra</th>
+                    <th className="py-2">Lead</th><th>Curso</th><th>Edición</th><th>Docente(s)</th><th>Origen</th><th>Fecha compra</th>
                     <th>Medio de pago</th><th>Modalidad</th><th>Monto</th><th>Cargado por</th><th></th>
                   </tr>
                 </thead>
@@ -126,6 +139,7 @@ export default function ReportesPage() {
                       <td className="py-2">{c.lead}</td>
                       <td>{c.curso}</td>
                       <td>{c.edicion || '—'}</td>
+                      <td>{c.docentes || '—'}</td>
                       <td>{c.origen}</td>
                       <td>{new Date(c.fechaVenta).toLocaleDateString('es-AR')}</td>
                       <td>{c.medioPago}</td>

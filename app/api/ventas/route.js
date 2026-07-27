@@ -40,7 +40,8 @@ export async function POST(request) {
     body.edicion || '',
     body.emailEstudiante || '',
     lead.NotasInternas,
-    lead.InstagramUsuario
+    lead.InstagramUsuario,
+    body.docentes || ''
   ]);
 
   await registrarAccion(

@@ -33,7 +33,8 @@ export async function PATCH(request) {
     fila.ID, fila.LeadId, fila.NombreEstudiante, fila.EmailEstudiante, fila.Curso, fila.Edicion,
     fila.FechaInscripcion, fila.AltaPlataforma, fila.AltaPorEmail, fila.AltaPorNombre, fila.FechaAlta,
     fila.BienvenidaEnviada, fila.BienvenidaPorEmail, fila.BienvenidaPorNombre, fila.FechaBienvenida,
-    body.nuevoValor ? 'TRUE' : 'FALSE'
+    body.nuevoValor ? 'TRUE' : 'FALSE',
+    fila.Docentes
   ], 'A');
 
   await registrarAccion(

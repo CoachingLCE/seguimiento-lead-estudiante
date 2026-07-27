@@ -105,6 +105,7 @@ export default function FichaDrawer({ leadId, usuario, onClose }) {
                 <p className="font-bold mb-1.5">Estado como estudiante</p>
                 <p className="text-textSec">Alta en plataforma: {datos.inscrito.AltaPlataforma === 'TRUE' ? '✅ Hecha' : '⬜ Pendiente'}</p>
                 <p className="text-textSec">Bienvenida: {datos.inscrito.BienvenidaEnviada === 'TRUE' ? '✓ Enviada' : '⬜ Pendiente'}</p>
+                {datos.inscrito.Docentes && <p className="text-textSec">Docente(s): {datos.inscrito.Docentes}</p>}
                 <p className="text-textSec">Diploma habilitado: {datos.inscrito.AbonoTotalidad === 'TRUE' ? '✅ Sí' : '⬜ No, falta abonar la totalidad'}</p>
               </div>
             )}

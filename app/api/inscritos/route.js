@@ -38,7 +38,8 @@ export async function PATCH(request) {
       nuevoValor ? body.solicitanteNombre : '',
       nuevoValor ? ahora : '',
       fila.BienvenidaEnviada, fila.BienvenidaPorEmail, fila.BienvenidaPorNombre, fila.FechaBienvenida,
-      fila.AbonoTotalidad
+      fila.AbonoTotalidad,
+      fila.Docentes
     ]);
     await registrarAccion(
       body.solicitanteEmail, body.solicitanteNombre,
@@ -62,7 +63,8 @@ export async function PATCH(request) {
     await updateRow('Inscritos', fila._rowIndex, [
       fila.ID, fila.LeadId, fila.NombreEstudiante, email, fila.Curso, fila.Edicion,
       fila.FechaInscripcion, fila.AltaPlataforma, fila.AltaPorEmail, fila.AltaPorNombre, fila.FechaAlta,
-      'TRUE', body.solicitanteEmail, body.solicitanteNombre, ahora, fila.AbonoTotalidad
+      'TRUE', body.solicitanteEmail, body.solicitanteNombre, ahora, fila.AbonoTotalidad,
+      fila.Docentes
     ]);
     await registrarAccion(
       body.solicitanteEmail, body.solicitanteNombre,

@@ -21,6 +21,7 @@ export default function InscritosPage() {
   const [busqueda, setBusqueda] = useState('');
   const [filtroCurso, setFiltroCurso] = useState('');
   const [filtroEdicion, setFiltroEdicion] = useState('');
+  const [filtroDocente, setFiltroDocente] = useState('');
 
   const puedeVer = tienePermisoEstudiantes(usuario);
 
@@ -82,16 +83,20 @@ export default function InscritosPage() {
 
   const cursosUnicos = [...new Set(inscritos.map((i) => i.Curso).filter(Boolean))].sort();
   const edicionesUnicas = [...new Set(inscritos.map((i) => i.Edicion).filter(Boolean))].sort();
+  const docentesUnicos = [...new Set(
+    inscritos.flatMap((i) => (i.Docentes || '').split(',').map((d) => d.trim()).filter(Boolean))
+  )].sort();
 
   const inscritosFiltrados = inscritos
     .filter((i) => !busqueda.trim() || (i.NombreEstudiante || '').toLowerCase().includes(busqueda.trim().toLowerCase()))
     .filter((i) => !filtroCurso || i.Curso === filtroCurso)
-    .filter((i) => !filtroEdicion || i.Edicion === filtroEdicion);
+    .filter((i) => !filtroEdicion || i.Edicion === filtroEdicion)
+    .filter((i) => !filtroDocente || (i.Docentes || '').split(',').map((d) => d.trim()).includes(filtroDocente));
 
   function exportarExcel() {
     const hoja = XLSX.utils.json_to_sheet(
       inscritosFiltrados.map((i) => ({
-        Estudiante: i.NombreEstudiante, Curso: i.Curso, Edicion: i.Edicion,
+        Estudiante: i.NombreEstudiante, Curso: i.Curso, Edicion: i.Edicion, Docentes: i.Docentes,
         FechaInscripcion: new Date(i.FechaInscripcion).toLocaleDateString('es-AR'),
         AltaPlataforma: i.AltaPlataforma === 'TRUE' ? 'Sí' : 'No', AltaPor: i.AltaPorNombre,
         BienvenidaEnviada: i.BienvenidaEnviada === 'TRUE' ? 'Sí' : 'No', BienvenidaPor: i.BienvenidaPorNombre
@@ -121,6 +126,11 @@ export default function InscritosPage() {
               <option value="">Todas las ediciones</option>
               {edicionesUnicas.map((e) => <option key={e} value={e}>{e}</option>)}
             </select>
+            <select value={filtroDocente} onChange={(e) => setFiltroDocente(e.target.value)}
+              className="bg-bg border border-border rounded-lg px-3 py-2 text-sm">
+              <option value="">Todos los docentes</option>
+              {docentesUnicos.map((d) => <option key={d} value={d}>{d}</option>)}
+            </select>
             <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
               placeholder="🔍 Buscar…" className="bg-bg border border-border rounded-lg px-3 py-2 text-sm w-40" />
             <button onClick={exportarExcel} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm">
@@ -140,7 +150,7 @@ export default function InscritosPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-textSec text-left border-b border-border">
-                  <th className="py-2">Estudiante</th><th>Curso</th><th>Edición</th>
+                  <th className="py-2">Estudiante</th><th>Curso</th><th>Edición</th><th>Docente(s)</th>
                   <th>Fecha inscripción</th><th>Alta plataforma</th><th>Bienvenida</th><th></th>
                 </tr>
               </thead>
@@ -151,6 +161,7 @@ export default function InscritosPage() {
                     <td className="py-2">{i.NombreEstudiante}</td>
                     <td>{i.Curso || '—'}</td>
                     <td>{i.Edicion || '—'}</td>
+                    <td>{i.Docentes || '—'}</td>
                     <td>{new Date(i.FechaInscripcion).toLocaleDateString('es-AR')}</td>
                     <td>
                       <button onClick={() => toggleAlta(i)} className="text-base leading-none block">
