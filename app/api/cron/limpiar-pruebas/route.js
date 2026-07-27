@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { readSheet, deleteRows } from '../../../../lib/sheets';
 
-const VEINTICUATRO_HORAS_MS = 24 * 60 * 60 * 1000;
+const CUARENTAIOCHO_HORAS_MS = 48 * 60 * 60 * 1000;
 
 function esDePrueba(valor) {
   return (valor || '').trim().toLowerCase() === 'prueba';
@@ -20,7 +20,7 @@ export async function GET(request) {
 
   const leads = await readSheet('Leads');
   const leadsPrueba = leads.filter(
-    (l) => esDePrueba(l.Nombre) && ahora - new Date(l.FechaIngreso).getTime() > VEINTICUATRO_HORAS_MS
+    (l) => esDePrueba(l.Nombre) && ahora - new Date(l.FechaIngreso).getTime() > CUARENTAIOCHO_HORAS_MS
   );
   const idsLeadsPrueba = leadsPrueba.map((l) => l.ID);
 
@@ -31,7 +31,7 @@ export async function GET(request) {
   const inscritosPrueba = inscritos.filter(
     (i) =>
       esDePrueba(i.NombreEstudiante) &&
-      ahora - new Date(i.FechaInscripcion).getTime() > VEINTICUATRO_HORAS_MS
+      ahora - new Date(i.FechaInscripcion).getTime() > CUARENTAIOCHO_HORAS_MS
   );
 
   await deleteRows('Leads', leadsPrueba.map((l) => l._rowIndex));
