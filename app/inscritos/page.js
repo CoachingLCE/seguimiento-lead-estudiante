@@ -4,18 +4,21 @@ import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import Nav from '../../components/Nav';
 import FichaDrawer from '../../components/FichaDrawer';
+import { useToast } from '../../components/Toast';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoEstudiantes } from '../../lib/permisos';
 
 export default function InscritosPage() {
   const { usuario, logout } = useSession();
   const router = useRouter();
+  const { toast, mostrarToast } = useToast();
   const [inscritos, setInscritos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [pidiendoEmailPara, setPidiendoEmailPara] = useState(null);
   const [emailTemporal, setEmailTemporal] = useState('');
   const [enviandoBienvenidaId, setEnviandoBienvenidaId] = useState(null);
   const [fichaLeadId, setFichaLeadId] = useState(null);
+  const [busqueda, setBusqueda] = useState('');
 
   const puedeVer = tienePermisoEstudiantes(usuario);
 
@@ -45,6 +48,7 @@ export default function InscritosPage() {
         solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
       })
     });
+    mostrarToast(nuevoValor ? 'Alta registrada' : 'Alta desmarcada');
     cargarInscritos();
   }
 
@@ -61,7 +65,7 @@ export default function InscritosPage() {
     setEnviandoBienvenidaId(null);
     setPidiendoEmailPara(null);
     setEmailTemporal('');
-    if (res.ok) cargarInscritos();
+    if (res.ok) { mostrarToast('Bienvenida enviada'); cargarInscritos(); }
   }
 
   function clickEnviarBienvenida(inscrito) {
@@ -92,13 +96,17 @@ export default function InscritosPage() {
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
       <div className="max-w-5xl mx-auto px-6 pb-16">
-        <div className="flex items-center justify-between mb-3 no-print">
+        <div className="flex items-center justify-between mb-3 no-print gap-3">
           <p className="text-textMuted text-xs">
             El estudiante aparece acá solo, 24hs después de confirmarse la venta — no hace falta cargarlo a mano.
           </p>
-          <button onClick={exportarExcel} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm">
-            ⬇ Exportar a Excel
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="🔍 Buscar…" className="bg-bg border border-border rounded-lg px-3 py-2 text-sm w-44" />
+            <button onClick={exportarExcel} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm">
+              ⬇ Exportar a Excel
+            </button>
+          </div>
         </div>
         <div className="bg-surface border border-border rounded-2xl p-5">
           <p className="text-sm font-semibold mb-3">Inscritos cargados</p>
@@ -115,7 +123,9 @@ export default function InscritosPage() {
                 </tr>
               </thead>
               <tbody>
-                {inscritos.slice().reverse().map((i) => (
+                {inscritos
+                  .filter((i) => !busqueda.trim() || (i.NombreEstudiante || '').toLowerCase().includes(busqueda.trim().toLowerCase()))
+                  .slice().reverse().map((i) => (
                   <tr key={i.ID} className="border-b border-border align-top">
                     <td className="py-2">{i.NombreEstudiante}</td>
                     <td>{i.Curso || '—'}</td>
@@ -174,6 +184,7 @@ export default function InscritosPage() {
         </div>
       </div>
       <FichaDrawer leadId={fichaLeadId} usuario={usuario} onClose={() => setFichaLeadId(null)} />
+      {toast}
     </div>
   );
 }

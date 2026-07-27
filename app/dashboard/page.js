@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx';
 import Nav, { puedeVerOperativo } from '../../components/Nav';
 import ModalVenta from '../../components/ModalVenta';
 import FichaDrawer from '../../components/FichaDrawer';
+import { useToast } from '../../components/Toast';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoEstudiantes } from '../../lib/permisos';
 
@@ -13,6 +14,7 @@ const HORAS_ALTA_DEMORADA = 24;
 export default function DashboardPage() {
   const { usuario, cargando: cargandoSesion, logout } = useSession();
   const router = useRouter();
+  const { toast, mostrarToast } = useToast();
   const [leads, setLeads] = useState([]);
   const [seguimiento, setSeguimiento] = useState([]);
   const [inscritos, setInscritos] = useState([]);
@@ -88,6 +90,7 @@ export default function DashboardPage() {
       })
     });
     setProcesandoId(null);
+    mostrarToast('Alta registrada');
     cargarDatos();
   }
 
@@ -104,7 +107,7 @@ export default function DashboardPage() {
     setProcesandoId(null);
     setPidiendoEmailPara(null);
     setEmailTemporal('');
-    if (res.ok) cargarDatos();
+    if (res.ok) { mostrarToast('Bienvenida enviada'); cargarDatos(); }
   }
 
   function clickEnviarBienvenidaInline(inscrito) {
@@ -317,6 +320,7 @@ export default function DashboardPage() {
       </div>
       <ModalVenta lead={leadVenta} onClose={() => setLeadVenta(null)} onConfirm={confirmarVenta} />
       <FichaDrawer leadId={fichaLeadId} usuario={usuario} onClose={() => setFichaLeadId(null)} />
+      {toast}
     </div>
   );
 }

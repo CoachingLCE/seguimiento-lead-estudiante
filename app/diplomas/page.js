@@ -4,15 +4,18 @@ import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import Nav from '../../components/Nav';
 import FichaDrawer from '../../components/FichaDrawer';
+import { useToast } from '../../components/Toast';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoDiplomas } from '../../lib/permisos';
 
 export default function DiplomasPage() {
   const { usuario, logout } = useSession();
   const router = useRouter();
+  const { toast, mostrarToast } = useToast();
   const [inscritos, setInscritos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [fichaLeadId, setFichaLeadId] = useState(null);
+  const [busqueda, setBusqueda] = useState('');
 
   const puedeVer = tienePermisoDiplomas(usuario);
 
@@ -42,6 +45,7 @@ export default function DiplomasPage() {
         solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
       })
     });
+    mostrarToast(nuevoValor ? 'Diploma habilitado' : 'Diploma deshabilitado');
   }
 
   if (!usuario || !puedeVer) return null;
@@ -62,13 +66,17 @@ export default function DiplomasPage() {
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
       <div className="max-w-5xl mx-auto px-6 pb-16">
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-3 gap-3">
           <p className="text-textMuted text-xs">
             Marcá acá qué estudiantes ya abonaron la totalidad de la cursada (habilita el diploma).
           </p>
-          <button onClick={exportarExcel} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm">
-            ⬇ Exportar a Excel
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="🔍 Buscar…" className="bg-bg border border-border rounded-lg px-3 py-2 text-sm w-44" />
+            <button onClick={exportarExcel} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm">
+              ⬇ Exportar a Excel
+            </button>
+          </div>
         </div>
         <div className="bg-surface border border-border rounded-2xl p-5">
           {cargando ? (
@@ -81,7 +89,9 @@ export default function DiplomasPage() {
                 </tr>
               </thead>
               <tbody>
-                {inscritos.map((i) => (
+                {inscritos
+                  .filter((i) => !busqueda.trim() || (i.NombreEstudiante || '').toLowerCase().includes(busqueda.trim().toLowerCase()))
+                  .map((i) => (
                   <tr key={i.ID} className="border-b border-border">
                     <td className="py-2">{i.NombreEstudiante}</td>
                     <td>{i.Curso || '—'}</td>
@@ -102,6 +112,7 @@ export default function DiplomasPage() {
         </div>
       </div>
       <FichaDrawer leadId={fichaLeadId} usuario={usuario} onClose={() => setFichaLeadId(null)} />
+      {toast}
     </div>
   );
 }

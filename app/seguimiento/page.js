@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import Nav, { puedeVerOperativo } from '../../components/Nav';
 import FichaDrawer from '../../components/FichaDrawer';
+import { useToast } from '../../components/Toast';
 import { useSession } from '../../lib/useSession';
 import { RESULTADOS_CONTACTO } from '../../lib/constants';
 
@@ -15,10 +16,12 @@ const EMAILS_ASIGNABLES = [
 export default function SeguimientoPage() {
   const { usuario, cargando: cargandoSesion, logout } = useSession();
   const router = useRouter();
+  const { toast, mostrarToast } = useToast();
   const [leads, setLeads] = useState([]);
   const [seguimiento, setSeguimiento] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [fichaLeadId, setFichaLeadId] = useState(null);
+  const [busqueda, setBusqueda] = useState('');
 
   const puedeReasignar = usuario?.roles?.includes('Admin') || usuario?.roles?.includes('Coordinador');
 
@@ -47,6 +50,7 @@ export default function SeguimientoPage() {
         solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
       })
     });
+    mostrarToast('Seguimiento guardado');
     cargarDatos();
   }
 
@@ -59,6 +63,7 @@ export default function SeguimientoPage() {
         solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
       })
     });
+    mostrarToast(`Reasignado a ${nuevoNombre}`);
     cargarDatos();
   }
 
@@ -80,6 +85,7 @@ export default function SeguimientoPage() {
   // LOTE 0: todos los leads recién ingresados (últimos 30 días), como lista simple de nombres
   const lote0 = leads
     .filter((l) => (ahora - new Date(l.FechaIngreso)) < 30 * 24 * 60 * 60 * 1000)
+    .filter((l) => !busqueda.trim() || `${l.Nombre} ${l.Apellido}`.toLowerCase().includes(busqueda.trim().toLowerCase()))
     .sort((a, b) => new Date(b.FechaIngreso) - new Date(a.FechaIngreso));
 
   // LOTE 1: filas de seguimiento lote=1 cuya fecha de vencimiento (48hs) ya pasó
@@ -120,7 +126,10 @@ export default function SeguimientoPage() {
           <p className="text-textSec text-sm">Cargando…</p>
         ) : (
           <>
-            <div className="flex justify-end mb-3 no-print">
+            <div className="flex justify-between items-center mb-3 no-print gap-3">
+              <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
+                placeholder="🔍 Buscar por nombre…"
+                className="bg-bg border border-border rounded-lg px-3 py-2 text-sm w-56" />
               <button onClick={exportarExcel} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm">
                 ⬇ Exportar a Excel
               </button>
@@ -208,6 +217,7 @@ export default function SeguimientoPage() {
         )}
       </div>
       <FichaDrawer leadId={fichaLeadId} usuario={usuario} onClose={() => setFichaLeadId(null)} />
+      {toast}
     </div>
   );
 }
