@@ -28,6 +28,8 @@ export async function GET(request) {
     compras: compras.map((c) => ({
       id: c.ID,
       lead: `${c.Nombre} ${c.Apellido}`,
+      curso: c.Curso || 'sin curso',
+      edicion: c.Edicion || '',
       origen: c.Origen,
       fechaVenta: c.FechaVenta,
       medioPago: c.MedioPago,

@@ -6,7 +6,7 @@ import Nav, { puedeVerOperativo } from '../../components/Nav';
 import FichaDrawer from '../../components/FichaDrawer';
 import { useToast } from '../../components/Toast';
 import { useSession } from '../../lib/useSession';
-import { RESULTADOS_CONTACTO } from '../../lib/constants';
+import { RESULTADOS_CONTACTO, CURSOS } from '../../lib/constants';
 
 const EMAILS_ASIGNABLES = [
   { email: 'jesabel.reigada@institutoilce.com', nombre: 'Jesabel Reigada' },
@@ -22,6 +22,7 @@ export default function SeguimientoPage() {
   const [cargando, setCargando] = useState(true);
   const [fichaLeadId, setFichaLeadId] = useState(null);
   const [busqueda, setBusqueda] = useState('');
+  const [filtroCurso, setFiltroCurso] = useState('');
 
   const puedeReasignar = usuario?.roles?.includes('Admin') || usuario?.roles?.includes('Coordinador');
 
@@ -86,16 +87,22 @@ export default function SeguimientoPage() {
   const lote0 = leads
     .filter((l) => (ahora - new Date(l.FechaIngreso)) < 30 * 24 * 60 * 60 * 1000)
     .filter((l) => !busqueda.trim() || `${l.Nombre} ${l.Apellido}`.toLowerCase().includes(busqueda.trim().toLowerCase()))
+    .filter((l) => !filtroCurso || l.Curso === filtroCurso)
     .sort((a, b) => new Date(b.FechaIngreso) - new Date(a.FechaIngreso));
 
+  const coincideFiltro = (s) => {
+    const l = buscarLead(s.LeadID);
+    return !filtroCurso || (l && l.Curso === filtroCurso);
+  };
+
   // LOTE 1: filas de seguimiento lote=1 cuya fecha de vencimiento (48hs) ya pasó
-  const lote1 = seguimiento.filter((s) => s.Lote === '1' && new Date(s.FechaVence) <= ahora);
+  const lote1 = seguimiento.filter((s) => s.Lote === '1' && new Date(s.FechaVence) <= ahora && coincideFiltro(s));
 
   // LOTE 2: se generan dinámicamente solo cuando corresponde (ver API) — mostrar los que ya vencieron
-  const lote2 = seguimiento.filter((s) => s.Lote === '2' && new Date(s.FechaVence) <= ahora);
+  const lote2 = seguimiento.filter((s) => s.Lote === '2' && new Date(s.FechaVence) <= ahora && coincideFiltro(s));
 
   // LOTE 3: al mes, sin asignación hasta que un Coordinador/Admin lo asigne
-  const lote3 = seguimiento.filter((s) => s.Lote === '3' && new Date(s.FechaVence) <= ahora);
+  const lote3 = seguimiento.filter((s) => s.Lote === '3' && new Date(s.FechaVence) <= ahora && coincideFiltro(s));
 
   function exportarExcel() {
     const hoja = XLSX.utils.json_to_sheet(
@@ -126,10 +133,17 @@ export default function SeguimientoPage() {
           <p className="text-textSec text-sm">Cargando…</p>
         ) : (
           <>
-            <div className="flex justify-between items-center mb-3 no-print gap-3">
-              <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
-                placeholder="🔍 Buscar por nombre…"
-                className="bg-bg border border-border rounded-lg px-3 py-2 text-sm w-56" />
+            <div className="flex justify-between items-center mb-3 no-print gap-3 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
+                <select value={filtroCurso} onChange={(e) => setFiltroCurso(e.target.value)}
+                  className="bg-bg border border-border rounded-lg px-3 py-2 text-sm">
+                  <option value="">Todas las formaciones</option>
+                  {CURSOS.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
+                  placeholder="🔍 Buscar por nombre…"
+                  className="bg-bg border border-border rounded-lg px-3 py-2 text-sm w-52" />
+              </div>
               <button onClick={exportarExcel} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm">
                 ⬇ Exportar a Excel
               </button>

@@ -19,6 +19,8 @@ export default function InscritosPage() {
   const [enviandoBienvenidaId, setEnviandoBienvenidaId] = useState(null);
   const [fichaLeadId, setFichaLeadId] = useState(null);
   const [busqueda, setBusqueda] = useState('');
+  const [filtroCurso, setFiltroCurso] = useState('');
+  const [filtroEdicion, setFiltroEdicion] = useState('');
 
   const puedeVer = tienePermisoEstudiantes(usuario);
 
@@ -78,9 +80,17 @@ export default function InscritosPage() {
 
   if (!usuario || !puedeVer) return null;
 
+  const cursosUnicos = [...new Set(inscritos.map((i) => i.Curso).filter(Boolean))].sort();
+  const edicionesUnicas = [...new Set(inscritos.map((i) => i.Edicion).filter(Boolean))].sort();
+
+  const inscritosFiltrados = inscritos
+    .filter((i) => !busqueda.trim() || (i.NombreEstudiante || '').toLowerCase().includes(busqueda.trim().toLowerCase()))
+    .filter((i) => !filtroCurso || i.Curso === filtroCurso)
+    .filter((i) => !filtroEdicion || i.Edicion === filtroEdicion);
+
   function exportarExcel() {
     const hoja = XLSX.utils.json_to_sheet(
-      inscritos.map((i) => ({
+      inscritosFiltrados.map((i) => ({
         Estudiante: i.NombreEstudiante, Curso: i.Curso, Edicion: i.Edicion,
         FechaInscripcion: new Date(i.FechaInscripcion).toLocaleDateString('es-AR'),
         AltaPlataforma: i.AltaPlataforma === 'TRUE' ? 'Sí' : 'No', AltaPor: i.AltaPorNombre,
@@ -96,13 +106,23 @@ export default function InscritosPage() {
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
       <div className="max-w-5xl mx-auto px-6 pb-16">
-        <div className="flex items-center justify-between mb-3 no-print gap-3">
+        <div className="flex items-center justify-between mb-3 no-print gap-3 flex-wrap">
           <p className="text-textMuted text-xs">
             El estudiante aparece acá solo, 24hs después de confirmarse la venta — no hace falta cargarlo a mano.
           </p>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            <select value={filtroCurso} onChange={(e) => setFiltroCurso(e.target.value)}
+              className="bg-bg border border-border rounded-lg px-3 py-2 text-sm">
+              <option value="">Todas las formaciones</option>
+              {cursosUnicos.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <select value={filtroEdicion} onChange={(e) => setFiltroEdicion(e.target.value)}
+              className="bg-bg border border-border rounded-lg px-3 py-2 text-sm">
+              <option value="">Todas las ediciones</option>
+              {edicionesUnicas.map((e) => <option key={e} value={e}>{e}</option>)}
+            </select>
             <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="🔍 Buscar…" className="bg-bg border border-border rounded-lg px-3 py-2 text-sm w-44" />
+              placeholder="🔍 Buscar…" className="bg-bg border border-border rounded-lg px-3 py-2 text-sm w-40" />
             <button onClick={exportarExcel} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm">
               ⬇ Exportar a Excel
             </button>
@@ -114,6 +134,8 @@ export default function InscritosPage() {
             <p className="text-textSec text-sm">Cargando…</p>
           ) : inscritos.length === 0 ? (
             <p className="text-textMuted text-sm">Todavía no hay estudiantes generados.</p>
+          ) : inscritosFiltrados.length === 0 ? (
+            <p className="text-textMuted text-sm">Ningún estudiante coincide con los filtros.</p>
           ) : (
             <table className="w-full text-sm">
               <thead>
@@ -123,8 +145,7 @@ export default function InscritosPage() {
                 </tr>
               </thead>
               <tbody>
-                {inscritos
-                  .filter((i) => !busqueda.trim() || (i.NombreEstudiante || '').toLowerCase().includes(busqueda.trim().toLowerCase()))
+                {inscritosFiltrados
                   .slice().reverse().map((i) => (
                   <tr key={i.ID} className="border-b border-border align-top">
                     <td className="py-2">{i.NombreEstudiante}</td>

@@ -27,6 +27,8 @@ export default function ReportesPage() {
   const [datos, setDatos] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [fichaLeadId, setFichaLeadId] = useState(null);
+  const [filtroCurso, setFiltroCurso] = useState('');
+  const [filtroEdicion, setFiltroEdicion] = useState('');
 
   useEffect(() => {
     if (!usuario) return;
@@ -42,11 +44,19 @@ export default function ReportesPage() {
 
   function exportarExcel() {
     if (!datos) return;
-    const hoja = XLSX.utils.json_to_sheet(datos.compras);
+    const hoja = XLSX.utils.json_to_sheet(comprasFiltradas);
     const libro = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(libro, hoja, 'Compras');
     XLSX.writeFile(libro, `reporte-${mes}.xlsx`);
   }
+
+  const cursosUnicos = datos ? [...new Set(datos.compras.map((c) => c.curso).filter(Boolean))].sort() : [];
+  const edicionesUnicas = datos ? [...new Set(datos.compras.map((c) => c.edicion).filter(Boolean))].sort() : [];
+  const comprasFiltradas = datos
+    ? datos.compras
+        .filter((c) => !filtroCurso || c.curso === filtroCurso)
+        .filter((c) => !filtroEdicion || c.edicion === filtroEdicion)
+    : [];
 
   if (cargandoSesion) {
     return null;
@@ -64,12 +74,30 @@ export default function ReportesPage() {
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
       <div className="max-w-5xl mx-auto px-6 pb-16">
-        <div className="max-w-xs mb-4">
-          <label className="text-xs text-textSec block mb-1">Mes</label>
-          <select value={mes} onChange={(e) => setMes(e.target.value)}
-            className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm">
-            {meses.map((m) => <option key={m.valor} value={m.valor}>{m.label}</option>)}
-          </select>
+        <div className="flex items-end gap-3 mb-4 flex-wrap">
+          <div className="max-w-xs">
+            <label className="text-xs text-textSec block mb-1">Mes</label>
+            <select value={mes} onChange={(e) => setMes(e.target.value)}
+              className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm">
+              {meses.map((m) => <option key={m.valor} value={m.valor}>{m.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-textSec block mb-1">Formación</label>
+            <select value={filtroCurso} onChange={(e) => setFiltroCurso(e.target.value)}
+              className="bg-bg border border-border rounded-lg px-3 py-2 text-sm">
+              <option value="">Todas</option>
+              {cursosUnicos.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-textSec block mb-1">Edición</label>
+            <select value={filtroEdicion} onChange={(e) => setFiltroEdicion(e.target.value)}
+              className="bg-bg border border-border rounded-lg px-3 py-2 text-sm">
+              <option value="">Todas</option>
+              {edicionesUnicas.map((e) => <option key={e} value={e}>{e}</option>)}
+            </select>
+          </div>
         </div>
 
         {cargando || !datos ? (
@@ -88,14 +116,16 @@ export default function ReportesPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-textSec text-left border-b border-border">
-                    <th className="py-2">Lead</th><th>Origen</th><th>Fecha compra</th>
+                    <th className="py-2">Lead</th><th>Curso</th><th>Edición</th><th>Origen</th><th>Fecha compra</th>
                     <th>Medio de pago</th><th>Modalidad</th><th>Monto</th><th>Cargado por</th><th></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {datos.compras.map((c, i) => (
+                  {comprasFiltradas.map((c, i) => (
                     <tr key={i} className="border-b border-border">
                       <td className="py-2">{c.lead}</td>
+                      <td>{c.curso}</td>
+                      <td>{c.edicion || '—'}</td>
                       <td>{c.origen}</td>
                       <td>{new Date(c.fechaVenta).toLocaleDateString('es-AR')}</td>
                       <td>{c.medioPago}</td>
