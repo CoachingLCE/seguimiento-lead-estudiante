@@ -76,17 +76,21 @@ export default function Nav({ usuario, onLogout }) {
         </div>
       </div>
 
-      <nav className="flex gap-2 flex-wrap mb-6">
-        {tienePermisoOperativo(usuario) && itemNav('/nuevo-lead', 'Nuevo lead', pathname)}
-        {tienePermisoOperativo(usuario) && itemNav('/dashboard', 'Dashboard', pathname)}
-        {tienePermisoOperativo(usuario) && itemNav('/seguimiento', 'Seguimiento', pathname)}
-        {tienePermisoReportes(usuario) && itemNav('/reportes', 'Reportes', pathname)}
-        {tienePermisoEstudiantes(usuario) && itemNav('/inscritos', 'Estudiantes', pathname)}
-        {tienePermisoResumenEstudiantes(usuario) && itemNav('/resumen-estudiantes', 'Resumen Estudiantes', pathname)}
-        {tienePermisoResumenDiario(usuario) && itemNav('/resumen-diario', 'Resumen diario', pathname)}
-        {tienePermisoDiplomas(usuario) && itemNav('/diplomas', 'Diplomas', pathname)}
-        {tienePermisoAuditoria(usuario) && itemNav('/auditoria', 'Historial de acciones', pathname)}
-        {tienePermisoAccesos(usuario) && itemNav('/accesos', 'Accesos', pathname)}
+      <nav className="mb-3">
+        <div className="flex gap-2 flex-wrap mb-2">
+          {tienePermisoOperativo(usuario) && itemNav('/dashboard', 'Dashboard', pathname)}
+          {tienePermisoOperativo(usuario) && itemNav('/seguimiento', 'Seguimiento', pathname)}
+          {tienePermisoReportes(usuario) && itemNav('/reportes', 'Reportes', pathname)}
+          {tienePermisoEstudiantes(usuario) && itemNav('/inscritos', 'Estudiantes', pathname)}
+          {tienePermisoResumenEstudiantes(usuario) && itemNav('/resumen-estudiantes', 'Resumen Estudiantes', pathname)}
+          {tienePermisoResumenDiario(usuario) && itemNav('/resumen-diario', 'Resumen diario', pathname)}
+          {tienePermisoDiplomas(usuario) && itemNav('/diplomas', 'Diplomas', pathname)}
+          {tienePermisoAuditoria(usuario) && itemNav('/auditoria', 'Historial de acciones', pathname)}
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          {tienePermisoOperativo(usuario) && itemNav('/nuevo-lead', 'Nuevo lead', pathname)}
+          {tienePermisoAccesos(usuario) && itemNav('/accesos', 'Accesos', pathname)}
+        </div>
       </nav>
     </div>
   );
