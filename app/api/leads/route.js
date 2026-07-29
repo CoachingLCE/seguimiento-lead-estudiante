@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { readSheet, appendRow, updateRow } from '../../../lib/sheets';
 import { findUsuario, tienePermisoOperativo } from '../../../lib/auth';
 import { registrarAccion } from '../../../lib/auditoria';
-import { HORAS_LOTE_1, DIAS_LOTE_3 } from '../../../lib/constants';
+import { HORAS_LOTE_1, DIAS_LOTE_3, DIAS_LOTE_4, DIAS_LOTE_5 } from '../../../lib/constants';
 
 // GET /api/leads?solicitanteEmail=... -> todos los leads (para dashboard/seguimiento/reportes)
 export async function GET(request) {
@@ -49,14 +49,22 @@ export async function POST(request) {
   // FechaContacto, Observaciones, ProximaAccion
   const vence1 = new Date(ahora.getTime() + HORAS_LOTE_1 * 60 * 60 * 1000).toISOString();
   const vence3 = new Date(ahora.getTime() + DIAS_LOTE_3 * 24 * 60 * 60 * 1000).toISOString();
+  const vence4 = new Date(ahora.getTime() + DIAS_LOTE_4 * 24 * 60 * 60 * 1000).toISOString();
+  const vence5 = new Date(ahora.getTime() + DIAS_LOTE_5 * 24 * 60 * 60 * 1000).toISOString();
 
   await appendRow('Seguimiento', [
     leadId, '1', vence1, body.cargadoPorEmail, body.cargadoPorNombre, 'FALSE', '', '', '', ''
   ]);
   // Lote 2 no se crea todavía: se genera dinámicamente cuando el Lote 1 se marca contactado sin conversión
-  // (ver PATCH en /api/seguimiento). Lote 3 sí se pre-crea, "Sin asignación" (AsignadoA vacío).
+  // (ver PATCH en /api/seguimiento). Lotes 3, 4 y 5 sí se pre-crean, "Sin asignación" (AsignadoA vacío).
   await appendRow('Seguimiento', [
     leadId, '3', vence3, '', '', 'FALSE', '', '', '', ''
+  ]);
+  await appendRow('Seguimiento', [
+    leadId, '4', vence4, '', '', 'FALSE', '', '', '', ''
+  ]);
+  await appendRow('Seguimiento', [
+    leadId, '5', vence5, '', '', 'FALSE', '', '', '', ''
   ]);
 
   await registrarAccion(

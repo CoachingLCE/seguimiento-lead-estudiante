@@ -83,26 +83,34 @@ export default function SeguimientoPage() {
   const ahora = new Date();
   const buscarLead = (leadId) => leads.find((l) => l.ID === leadId);
 
-  // LOTE 0: todos los leads recién ingresados (últimos 30 días), como lista simple de nombres
+  // LOTE 0: todos los leads recién ingresados (últimos 30 días) que todavía no compraron
   const lote0 = leads
+    .filter((l) => l.Estado !== 'Comprado')
     .filter((l) => (ahora - new Date(l.FechaIngreso)) < 30 * 24 * 60 * 60 * 1000)
     .filter((l) => !busqueda.trim() || `${l.Nombre} ${l.Apellido}`.toLowerCase().includes(busqueda.trim().toLowerCase()))
     .filter((l) => !filtroCurso || l.Curso === filtroCurso)
     .sort((a, b) => new Date(b.FechaIngreso) - new Date(a.FechaIngreso));
 
-  const coincideFiltro = (s) => {
+  // Un registro de seguimiento solo se muestra si: coincide el filtro de formación Y el lead
+  // todavía no fue marcado como venta, Y no se registró "No le interesa" en ningún lote previo
+  // (eso lo saca del camino de seguimiento para siempre, como indica el propio texto de la pantalla).
+  const leadsSinInteres = new Set(
+    seguimiento.filter((s) => s.Resultado === 'No le interesa').map((s) => s.LeadID)
+  );
+  const filaValida = (s) => {
     const l = buscarLead(s.LeadID);
-    return !filtroCurso || (l && l.Curso === filtroCurso);
+    if (!l || l.Estado === 'Comprado') return false;
+    if (leadsSinInteres.has(s.LeadID)) return false;
+    return !filtroCurso || l.Curso === filtroCurso;
   };
 
-  // LOTE 1: filas de seguimiento lote=1 cuya fecha de vencimiento (48hs) ya pasó
-  const lote1 = seguimiento.filter((s) => s.Lote === '1' && new Date(s.FechaVence) <= ahora && coincideFiltro(s));
+  const vencido = (s) => new Date(s.FechaVence) <= ahora;
 
-  // LOTE 2: se generan dinámicamente solo cuando corresponde (ver API) — mostrar los que ya vencieron
-  const lote2 = seguimiento.filter((s) => s.Lote === '2' && new Date(s.FechaVence) <= ahora && coincideFiltro(s));
-
-  // LOTE 3: al mes, sin asignación hasta que un Coordinador/Admin lo asigne
-  const lote3 = seguimiento.filter((s) => s.Lote === '3' && new Date(s.FechaVence) <= ahora && coincideFiltro(s));
+  const lote1 = seguimiento.filter((s) => s.Lote === '1' && vencido(s) && filaValida(s));
+  const lote2 = seguimiento.filter((s) => s.Lote === '2' && vencido(s) && filaValida(s));
+  const lote3 = seguimiento.filter((s) => s.Lote === '3' && vencido(s) && filaValida(s));
+  const lote4 = seguimiento.filter((s) => s.Lote === '4' && vencido(s) && filaValida(s));
+  const lote5 = seguimiento.filter((s) => s.Lote === '5' && vencido(s) && filaValida(s));
 
   function exportarExcel() {
     const hoja = XLSX.utils.json_to_sheet(
@@ -151,7 +159,13 @@ export default function SeguimientoPage() {
             {/* LOTE 0 */}
             <div className="bg-surface border border-border rounded-2xl p-5 mb-4">
               <p className="text-sm font-semibold mb-1">LOTE 0</p>
-              <p className="text-textMuted text-xs mb-3">Leads recién ingresados (últimos 30 días)</p>
+              <p className="text-textMuted text-xs mb-1">Leads recién ingresados (últimos 30 días)</p>
+              <p className="text-textMuted text-[11px] mb-3">
+                Si todavía no lo contactaste, en 48hs va a aparecer solo en el <b>Lote 1</b>. Si registrás
+                "No contestó" o "Va a pensarlo", sigue escalando de lote en lote (1 → 2 → 3 → 4 → 5) hasta
+                resolverse. Si registrás <b>"No le interesa"</b>, se saca del camino de seguimiento y no vuelve
+                a aparecer. Apenas se marca la venta, el lead desaparece de todos los lotes automáticamente.
+              </p>
               {lote0.length === 0 ? (
                 <p className="text-textMuted text-sm">Sin leads recientes.</p>
               ) : (
@@ -176,7 +190,10 @@ export default function SeguimientoPage() {
             {/* LOTE 1 */}
             <div className="bg-surface border border-border rounded-2xl p-5 mb-4">
               <p className="text-sm font-semibold mb-1">LOTE 1 – Contactar a las 48 horas</p>
-              <p className="text-textMuted text-xs mb-3">{lote1.length} lead(s) por contactar</p>
+              <p className="text-textMuted text-xs mb-1">{lote1.length} lead(s) por contactar</p>
+              <p className="text-textMuted text-[11px] mb-3">
+                Si registrás "No contestó" o "Va a pensarlo" pasa solo al Lote 2 (10 días). Si marcás la venta, desaparece de acá.
+              </p>
               {lote1.length === 0 ? (
                 <p className="text-textMuted text-sm">Nada pendiente en este lote.</p>
               ) : (
@@ -193,8 +210,11 @@ export default function SeguimientoPage() {
             {/* LOTE 2 */}
             <div className="bg-surface border border-border rounded-2xl p-5 mb-4">
               <p className="text-sm font-semibold mb-1">LOTE 2 – Contactar a los 10 días</p>
-              <p className="text-textMuted text-xs mb-3">
+              <p className="text-textMuted text-xs mb-1">
                 {lote2.length} lead(s) que no respondieron en el Lote 1
+              </p>
+              <p className="text-textMuted text-[11px] mb-3">
+                Si sigue sin resolverse, pasa al Lote 3 (al mes). Si marcás la venta, desaparece de acá.
               </p>
               {lote2.length === 0 ? (
                 <p className="text-textMuted text-sm">Nada pendiente en este lote.</p>
@@ -210,10 +230,13 @@ export default function SeguimientoPage() {
             </div>
 
             {/* LOTE 3 */}
-            <div className="bg-surface border border-border rounded-2xl p-5">
+            <div className="bg-surface border border-border rounded-2xl p-5 mb-4">
               <p className="text-sm font-semibold mb-1">LOTE 3 – Contactar al mes</p>
-              <p className="text-textMuted text-xs mb-3">
+              <p className="text-textMuted text-xs mb-1">
                 {lote3.length} lead(s) sin resolver al mes de ingresados
+              </p>
+              <p className="text-textMuted text-[11px] mb-3">
+                Requiere que un Coordinador/Admin lo asigne. Si sigue sin resolverse, pasa al Lote 4 (2 meses).
               </p>
               {lote3.length === 0 ? (
                 <p className="text-textMuted text-sm">Nada pendiente en este lote.</p>
@@ -221,6 +244,50 @@ export default function SeguimientoPage() {
                 lote3.map((s) => (
                   <FilaLote
                     key={`${s.LeadID}-3`} fila={s} lead={buscarLead(s.LeadID)}
+                    onContactar={registrarContacto} onReasignar={reasignar} onVerFicha={setFichaLeadId}
+                    puedeReasignar={puedeReasignar} sinAsignarPorDefecto
+                  />
+                ))
+              )}
+            </div>
+
+            {/* LOTE 4 */}
+            <div className="bg-surface border border-border rounded-2xl p-5 mb-4">
+              <p className="text-sm font-semibold mb-1">LOTE 4 – Contactar a los 2 meses</p>
+              <p className="text-textMuted text-xs mb-1">
+                {lote4.length} lead(s) sin resolver a los 2 meses de ingresados
+              </p>
+              <p className="text-textMuted text-[11px] mb-3">
+                Requiere asignación. Si sigue sin resolverse, pasa al Lote 5 (3 meses).
+              </p>
+              {lote4.length === 0 ? (
+                <p className="text-textMuted text-sm">Nada pendiente en este lote.</p>
+              ) : (
+                lote4.map((s) => (
+                  <FilaLote
+                    key={`${s.LeadID}-4`} fila={s} lead={buscarLead(s.LeadID)}
+                    onContactar={registrarContacto} onReasignar={reasignar} onVerFicha={setFichaLeadId}
+                    puedeReasignar={puedeReasignar} sinAsignarPorDefecto
+                  />
+                ))
+              )}
+            </div>
+
+            {/* LOTE 5 */}
+            <div className="bg-surface border border-border rounded-2xl p-5">
+              <p className="text-sm font-semibold mb-1">LOTE 5 – Contactar a los 3 meses</p>
+              <p className="text-textMuted text-xs mb-1">
+                {lote5.length} lead(s) sin resolver a los 3 meses de ingresados
+              </p>
+              <p className="text-textMuted text-[11px] mb-3">
+                Último lote de seguimiento automático. Si marcás la venta, desaparece de acá como cualquier otro lote.
+              </p>
+              {lote5.length === 0 ? (
+                <p className="text-textMuted text-sm">Nada pendiente en este lote.</p>
+              ) : (
+                lote5.map((s) => (
+                  <FilaLote
+                    key={`${s.LeadID}-5`} fila={s} lead={buscarLead(s.LeadID)}
                     onContactar={registrarContacto} onReasignar={reasignar} onVerFicha={setFichaLeadId}
                     puedeReasignar={puedeReasignar} sinAsignarPorDefecto
                   />

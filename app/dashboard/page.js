@@ -63,9 +63,16 @@ export default function DashboardPage() {
     }));
   }, [leads]);
 
+  const leadsSinInteres = new Set(
+    seguimiento.filter((s) => s.Resultado === 'No le interesa').map((s) => s.LeadID)
+  );
   const pendientesHoy = seguimiento.filter((s) => {
     if (s.Contactado === 'TRUE') return false;
-    return new Date(s.FechaVence) <= new Date();
+    if (new Date(s.FechaVence) > new Date()) return false;
+    const l = leads.find((x) => x.ID === s.LeadID);
+    if (!l || l.Estado === 'Comprado') return false;
+    if (leadsSinInteres.has(s.LeadID)) return false;
+    return true;
   });
 
   const ahoraMs = Date.now();
