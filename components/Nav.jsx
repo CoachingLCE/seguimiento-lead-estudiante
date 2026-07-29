@@ -22,7 +22,7 @@ function itemNav(href, label, pathname) {
     <Link
       key={href}
       href={href}
-      className={`px-4 py-2 rounded-lg text-sm font-medium border ${
+      className={`h-9 flex items-center px-4 rounded-lg text-sm font-medium border whitespace-nowrap ${
         pathname === href
           ? 'bg-gradient-to-r from-accentPurple to-accentMagenta text-white border-transparent'
           : 'bg-surface2 border-border text-textSec hover:text-text hover:border-accentTeal'
@@ -54,16 +54,6 @@ export default function Nav({ usuario, onLogout }) {
         </div>
 
         <div className="flex items-center gap-4">
-          {tienePermisoBuscador(usuario) && (
-            <form onSubmit={buscar}>
-              <input
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                placeholder="🔍 Buscar alumno…"
-                className="bg-surface2 border border-border rounded-lg px-3 py-1.5 text-sm w-48"
-              />
-            </form>
-          )}
           {usuario && (
             <div className="text-right text-sm">
               <p className="font-semibold">{usuario.nombre}</p>
@@ -77,7 +67,7 @@ export default function Nav({ usuario, onLogout }) {
       </div>
 
       <nav className="mb-3">
-        <div className="flex gap-2 flex-wrap mb-2">
+        <div className="flex gap-2 flex-wrap mb-[11px]">
           {tienePermisoOperativo(usuario) && itemNav('/dashboard', 'Dashboard', pathname)}
           {tienePermisoOperativo(usuario) && itemNav('/seguimiento', 'Seguimiento', pathname)}
           {tienePermisoReportes(usuario) && itemNav('/reportes', 'Reportes', pathname)}
@@ -87,9 +77,19 @@ export default function Nav({ usuario, onLogout }) {
           {tienePermisoDiplomas(usuario) && itemNav('/diplomas', 'Diplomas', pathname)}
           {tienePermisoAuditoria(usuario) && itemNav('/auditoria', 'Historial de acciones', pathname)}
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           {tienePermisoOperativo(usuario) && itemNav('/nuevo-lead', 'Nuevo lead', pathname)}
           {tienePermisoAccesos(usuario) && itemNav('/accesos', 'Accesos', pathname)}
+          {tienePermisoBuscador(usuario) && (
+            <form onSubmit={buscar} className="ml-auto">
+              <input
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                placeholder="🔍 Buscar alumno…"
+                className="h-9 bg-surface2 border border-border rounded-lg px-3 text-sm w-48"
+              />
+            </form>
+          )}
         </div>
       </nav>
     </div>
