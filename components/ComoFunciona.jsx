@@ -1,12 +1,83 @@
 'use client';
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { useSession } from '../lib/useSession';
 import { APP_VERSION, APP_UPDATED_AT } from '../lib/version';
 
+// Ayuda específica por pantalla — solo se muestra el bloque de la ruta actual.
+const AYUDA_POR_RUTA = {
+  '/nuevo-lead': {
+    titulo: 'Nuevo lead',
+    contenido: (
+      <>
+        <p>El curso es opcional — se puede dejar "sin definir" y completarlo después desde Seguimiento. También se puede marcar interés en varios cursos a la vez.</p>
+        <p className="mt-2">Podés cargar varios contactos de una tanda con "+ Agregar otro contacto" — todos comparten el mismo curso y origen.</p>
+      </>
+    )
+  },
+  '/seguimiento': {
+    titulo: 'Seguimiento — Lotes 0 a 5',
+    contenido: (
+      <ul className="list-disc list-inside space-y-0.5">
+        <li><b>Lote 0</b>: lista simple de todos los leads recién ingresados.</li>
+        <li><b>Lote 1</b>: se habilita a las 48hs.</li>
+        <li><b>Lote 2</b>: solo si el Lote 1 no tuvo respuesta definitiva; vence a los 10 días de ese contacto.</li>
+        <li><b>Lotes 3, 4 y 5</b>: al mes, 2 meses y 3 meses, "Sin asignación" hasta que un Coordinador/Admin lo asigne.</li>
+        <li>Si marcás <b>"No le interesa"</b> o confirmás la venta, el lead desaparece de todos los lotes siguientes.</li>
+      </ul>
+    )
+  },
+  '/dashboard': {
+    titulo: 'Dashboard',
+    contenido: (
+      <p>El panel "Necesita tu atención ahora" junta todo lo urgente (leads sin contactar, altas demoradas, bienvenidas pendientes) para resolverlo ahí mismo, sin tener que ir a cada pantalla por separado.</p>
+    )
+  },
+  '/inscritos': {
+    titulo: 'Estudiantes',
+    contenido: (
+      <p>Ya no se carga a mano: el estudiante aparece solo, 24hs después de la venta. La tarea acá es tildar "Alta en plataforma" y "Enviar bienvenida" — ambas quedan registradas con quién y cuándo se hicieron. Usá los filtros de Formación/Edición/Docente para encontrar rápido lo que buscás.</p>
+    )
+  },
+  '/resumen-estudiantes': {
+    titulo: 'Resumen de Estudiantes',
+    contenido: <p>Altas y bienvenidas pendientes/de hoy, y actividad por usuario (Lourdes, Victoria, Sofía).</p>
+  },
+  '/resumen-diario': {
+    titulo: 'Resumen diario',
+    contenido: <p>Junta leads, contactos e inscritos de un día puntual, con botón de impresión para archivar o compartir.</p>
+  },
+  '/diplomas': {
+    titulo: 'Diplomas',
+    contenido: <p>Marcá acá qué estudiantes ya abonaron la totalidad de la cursada — eso es lo que habilita el diploma.</p>
+  },
+  '/reportes': {
+    titulo: 'Reportes',
+    contenido: <p>Filtrá por mes, Formación, Edición o Docente. Desde "Ver ficha" en cualquier fila accedés al historial completo de ese lead sin perder el filtro aplicado.</p>
+  },
+  '/buscador': {
+    titulo: 'Buscador global',
+    contenido: <p>Buscá por nombre, apellido, WhatsApp o email y abrí la ficha completa del alumno (venta, seguimiento, alta, bienvenida, historial). No incluye datos de campus/pagos externos — esa integración todavía no existe.</p>
+  },
+  '/auditoria': {
+    titulo: 'Historial de acciones',
+    contenido: <p>Registro permanente (nunca se borra) de cada acción importante: crear lead, vender, contactar, reasignar, alta, bienvenida, restablecer contraseña. Filtrá por usuario, fecha o palabra, exportá a Excel o imprimí.</p>
+  },
+  '/accesos': {
+    titulo: 'Accesos',
+    contenido: <p>La tabla de arriba te muestra qué ve cada rol. Desde acá das de alta usuarios nuevos y restablecés contraseñas — el nuevo usuario recibe su contraseña por mail.</p>
+  }
+};
+
 export default function ComoFunciona() {
   const [abierto, setAbierto] = useState(false);
+  const [verRoles, setVerRoles] = useState(false);
+  const pathname = usePathname();
   const { usuario } = useSession();
   const esAdmin = usuario?.roles?.includes('Admin');
+
+  const ayuda = AYUDA_POR_RUTA[pathname];
+  if (!ayuda) return null; // pantalla sin ayuda específica cargada todavía
 
   return (
     <div className="max-w-5xl mx-auto px-6 pb-10 no-print">
@@ -15,93 +86,34 @@ export default function ComoFunciona() {
           onClick={() => setAbierto(!abierto)}
           className="w-full flex items-center justify-between px-5 py-3 text-sm font-semibold text-textSec hover:text-text"
         >
-          <span>📖 Cómo funciona esta app</span>
+          <span>❓ Ayuda: {ayuda.titulo}</span>
           <span className="text-textMuted">{abierto ? '▲ cerrar' : '▼ ver'}</span>
         </button>
 
         {abierto && (
-          <div className="px-5 pb-5 text-sm text-textSec space-y-4 border-t border-border pt-4">
-            <div>
-              <p className="text-text font-semibold mb-1">Roles</p>
-              <ul className="list-disc list-inside space-y-0.5">
+          <div className="px-5 pb-5 text-sm text-textSec border-t border-border pt-4">
+            {ayuda.contenido}
+
+            <button onClick={() => setVerRoles(!verRoles)}
+              className="text-accentTeal text-xs font-semibold mt-3">
+              {verRoles ? '▲ Ocultar roles y permisos' : '▼ Ver quién puede ver qué (roles y permisos)'}
+            </button>
+            {verRoles && (
+              <ul className="list-disc list-inside space-y-0.5 mt-2 text-xs">
                 <li><b>Admin</b> (Diego): ve todo, maneja accesos, auditoría y diplomas.</li>
                 <li><b>Coordinador</b> (Macarena, Jennifer): Nuevo lead, Dashboard, Seguimiento, Reportes, Estudiantes, Resumen diario.</li>
                 <li><b>Inscripciones</b> (Jesabel, Alexander, Jennifer): Nuevo lead, Dashboard, Seguimiento. No ve Reportes.</li>
                 <li><b>Estudiantes</b> (Lourdes, Victoria): solo la pantalla Estudiantes.</li>
                 <li><b>CoordinadorEstudiantes</b> (Sofía): Estudiantes + Resumen de Estudiantes.</li>
               </ul>
-            </div>
-
-            <div>
-              <p className="text-text font-semibold mb-1">Nuevo lead</p>
-              <p>El curso es opcional — se puede dejar "sin definir" y completarlo después. También se puede marcar interés en varios cursos a la vez.</p>
-            </div>
-
-            <div>
-              <p className="text-text font-semibold mb-1">Seguimiento — Lotes 0 a 3</p>
-              <ul className="list-disc list-inside space-y-0.5">
-                <li><b>Lote 0</b>: lista simple de todos los leads recién ingresados.</li>
-                <li><b>Lote 1</b>: se habilita a las 48hs. Se registra resultado, observaciones y próxima acción.</li>
-                <li><b>Lote 2</b>: aparece solo si el Lote 1 no tuvo una respuesta definitiva; vence a los 10 días de ese contacto.</li>
-                <li><b>Lote 3</b>: al mes, aparece "Sin asignación" hasta que un Coordinador/Admin lo asigna.</li>
-              </ul>
-            </div>
-
-            <div>
-              <p className="text-text font-semibold mb-1">Marcar como venta</p>
-              <p>Además de medio de pago y modalidad, ahora pide el email del estudiante y la edición — esos datos viajan al estudiante que se genera solo 24hs después.</p>
-            </div>
-
-            <div>
-              <p className="text-text font-semibold mb-1">Estudiantes</p>
-              <p>Ya no se carga a mano: el estudiante aparece solo, 24hs después de la venta. La tarea acá es solo tildar "Alta en plataforma" y "Enviar bienvenida" — ambas quedan con quién y cuándo se hicieron.</p>
-            </div>
-
-            <div>
-              <p className="text-text font-semibold mb-1">Resumen de Estudiantes</p>
-              <p>Solo Sofía y Admin. Altas y bienvenidas pendientes/de hoy, y actividad por usuario (Lourdes, Victoria, Sofía).</p>
-            </div>
-
-            <div>
-              <p className="text-text font-semibold mb-1">Resumen diario</p>
-              <p>Solo Coordinador y Admin. Junta leads, contactos e inscritos de un día, con botón de impresión.</p>
-            </div>
-
-            <div>
-              <p className="text-text font-semibold mb-1">Diplomas</p>
-              <p>Solo Admin. Marca qué estudiantes ya abonaron la totalidad de la cursada.</p>
-            </div>
-
-            <div>
-              <p className="text-text font-semibold mb-1">Buscador global 🔍</p>
-              <p>Arriba a la derecha. Busca por nombre, apellido, WhatsApp o email y abre la ficha completa del alumno (venta, seguimiento, alta, bienvenida, historial). No incluye datos de campus/pagos externos — esa integración todavía no existe.</p>
-            </div>
-
-            <div>
-              <p className="text-text font-semibold mb-1">Historial de acciones (Auditoría)</p>
-              <p>Solo Admin. Registro permanente (no se borra nunca) de cada acción importante: crear lead, vender, contactar, reasignar, alta, bienvenida, restablecer contraseña. Filtra por usuario y fecha, exporta a Excel, se puede imprimir.</p>
-            </div>
-
-            <div>
-              <p className="text-text font-semibold mb-1">Login</p>
-              <p>Con email y contraseña. Los usuarios nuevos reciben su contraseña por mail (por defecto "Hola123"). Diego puede ver la contraseña actual de cualquiera en "Accesos" y restablecerla si hace falta.</p>
-            </div>
+            )}
 
             {esAdmin && (
-              <div className="border-t border-border pt-4 mt-2">
-                <p className="text-text font-semibold mb-2">🔧 Información técnica (solo Admin)</p>
-                <p className="text-xs text-textMuted mb-1">Versión</p>
-                <p className="mb-3">
+              <div className="border-t border-border pt-3 mt-3">
+                <p className="text-text font-semibold mb-1 text-xs">🔧 Info técnica (solo Admin)</p>
+                <p className="text-xs text-textMuted">
                   v{APP_VERSION} · Actualizado {new Date(APP_UPDATED_AT + 'T00:00:00').toLocaleDateString('es-AR')}
                 </p>
-                <p className="text-xs text-textMuted mb-1">Notas de deploy</p>
-                <ul className="list-disc list-inside space-y-0.5">
-                  <li>Código en GitHub, deploy en Vercel, embebido en Wix.</li>
-                  <li>Base de datos: Google Sheets (tabs Usuarios, Leads, Seguimiento, Inscritos, Auditoria).</li>
-                  <li>2 crons diarios: limpiar-pruebas y generar-estudiantes.</li>
-                  <li>⚠️ Pendiente: nombre nuevo de la app, link real de <code>PLATAFORMA_URL</code>, integración con campus/pagos para la ficha del buscador.</li>
-                  <li>Detalle completo en el README del repo.</li>
-                </ul>
               </div>
             )}
           </div>
