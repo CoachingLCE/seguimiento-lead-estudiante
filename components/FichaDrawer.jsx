@@ -72,6 +72,15 @@ export default function FichaDrawer({ leadId, usuario, onClose }) {
               </span>
             </div>
 
+            {lead.Estado === 'Comprado' && (
+              <div className="bg-surface border border-border rounded-xl p-3 mb-4 text-xs">
+                <p className="font-bold mb-1.5">Detalle de la venta</p>
+                <p className="text-textSec">{lead.MedioPago} · {lead.Modalidad} · ${Number(lead.MontoTotal || 0).toLocaleString('es-AR')}</p>
+                {lead.DetalleCuotas && <p className="text-textMuted">Cuotas: ${lead.DetalleCuotas}</p>}
+                {lead.VendidoPorNombre && <p className="text-textSec">Cerrada por: {lead.VendidoPorNombre}</p>}
+              </div>
+            )}
+
             <p className="text-xs font-bold mb-3">Historial académico completo</p>
             {eventos.length === 0 ? (
               <p className="text-textMuted text-xs mb-4">Todavía no hay eventos registrados para este lead.</p>

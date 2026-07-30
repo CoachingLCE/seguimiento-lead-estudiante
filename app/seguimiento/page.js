@@ -4,9 +4,10 @@ import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import Nav, { puedeVerOperativo } from '../../components/Nav';
 import FichaDrawer from '../../components/FichaDrawer';
+import ModalVenta from '../../components/ModalVenta';
 import { useToast } from '../../components/Toast';
 import { useSession } from '../../lib/useSession';
-import { RESULTADOS_CONTACTO, CURSOS } from '../../lib/constants';
+import { RESULTADOS_CONTACTO, CURSOS, RESULTADOS_FINALES } from '../../lib/constants';
 
 const EMAILS_ASIGNABLES = [
   { email: 'jesabel.reigada@institutoilce.com', nombre: 'Jesabel Reigada' },
@@ -21,6 +22,7 @@ export default function SeguimientoPage() {
   const [seguimiento, setSeguimiento] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [fichaLeadId, setFichaLeadId] = useState(null);
+  const [leadVenta, setLeadVenta] = useState(null);
   const [busqueda, setBusqueda] = useState('');
   const [filtroCurso, setFiltroCurso] = useState('');
 
@@ -68,6 +70,17 @@ export default function SeguimientoPage() {
     cargarDatos();
   }
 
+  async function confirmarVenta(datos) {
+    await fetch('/api/ventas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...datos, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
+    });
+    setLeadVenta(null);
+    mostrarToast('Venta registrada');
+    cargarDatos();
+  }
+
   if (cargandoSesion) {
     return null;
   }
@@ -92,15 +105,15 @@ export default function SeguimientoPage() {
     .sort((a, b) => new Date(b.FechaIngreso) - new Date(a.FechaIngreso));
 
   // Un registro de seguimiento solo se muestra si: coincide el filtro de formación Y el lead
-  // todavía no fue marcado como venta, Y no se registró "No le interesa" en ningún lote previo
-  // (eso lo saca del camino de seguimiento para siempre, como indica el propio texto de la pantalla).
-  const leadsSinInteres = new Set(
-    seguimiento.filter((s) => s.Resultado === 'No le interesa').map((s) => s.LeadID)
+  // todavía no fue marcado como venta, Y no dio ya una respuesta definitiva/de avance en ningún lote previo
+  // (eso lo saca del camino de seguimiento para siempre — no tiene sentido seguir "molestando").
+  const leadsResueltos = new Set(
+    seguimiento.filter((s) => RESULTADOS_FINALES.includes(s.Resultado)).map((s) => s.LeadID)
   );
   const filaValida = (s) => {
     const l = buscarLead(s.LeadID);
     if (!l || l.Estado === 'Comprado') return false;
-    if (leadsSinInteres.has(s.LeadID)) return false;
+    if (leadsResueltos.has(s.LeadID)) return false;
     return !filtroCurso || l.Curso === filtroCurso;
   };
 
@@ -180,6 +193,7 @@ export default function SeguimientoPage() {
                         <a href={`https://wa.me/${l.WhatsApp.replace(/[^\d]/g, '')}`} target="_blank" rel="noopener noreferrer"
                           className="text-xs" title="WhatsApp">💬</a>
                       )}
+                      <button onClick={() => setLeadVenta(l)} className="text-xs px-2 py-0.5 rounded bg-accentPurple text-white">Marcar venta</button>
                       <button onClick={() => setFichaLeadId(l.ID)} className="text-accentTeal text-xs font-semibold">Ver ficha</button>
                     </li>
                   ))}
@@ -200,7 +214,7 @@ export default function SeguimientoPage() {
                 lote1.map((s) => (
                   <FilaLote
                     key={`${s.LeadID}-1`} fila={s} lead={buscarLead(s.LeadID)}
-                    onContactar={registrarContacto} onReasignar={reasignar} onVerFicha={setFichaLeadId}
+                    onContactar={registrarContacto} onReasignar={reasignar} onVerFicha={setFichaLeadId} onMarcarVenta={setLeadVenta}
                     puedeReasignar={puedeReasignar} conObservaciones
                   />
                 ))
@@ -222,7 +236,7 @@ export default function SeguimientoPage() {
                 lote2.map((s) => (
                   <FilaLote
                     key={`${s.LeadID}-2`} fila={s} lead={buscarLead(s.LeadID)}
-                    onContactar={registrarContacto} onReasignar={reasignar} onVerFicha={setFichaLeadId}
+                    onContactar={registrarContacto} onReasignar={reasignar} onVerFicha={setFichaLeadId} onMarcarVenta={setLeadVenta}
                     puedeReasignar={puedeReasignar}
                   />
                 ))
@@ -244,7 +258,7 @@ export default function SeguimientoPage() {
                 lote3.map((s) => (
                   <FilaLote
                     key={`${s.LeadID}-3`} fila={s} lead={buscarLead(s.LeadID)}
-                    onContactar={registrarContacto} onReasignar={reasignar} onVerFicha={setFichaLeadId}
+                    onContactar={registrarContacto} onReasignar={reasignar} onVerFicha={setFichaLeadId} onMarcarVenta={setLeadVenta}
                     puedeReasignar={puedeReasignar} sinAsignarPorDefecto
                   />
                 ))
@@ -266,7 +280,7 @@ export default function SeguimientoPage() {
                 lote4.map((s) => (
                   <FilaLote
                     key={`${s.LeadID}-4`} fila={s} lead={buscarLead(s.LeadID)}
-                    onContactar={registrarContacto} onReasignar={reasignar} onVerFicha={setFichaLeadId}
+                    onContactar={registrarContacto} onReasignar={reasignar} onVerFicha={setFichaLeadId} onMarcarVenta={setLeadVenta}
                     puedeReasignar={puedeReasignar} sinAsignarPorDefecto
                   />
                 ))
@@ -288,7 +302,7 @@ export default function SeguimientoPage() {
                 lote5.map((s) => (
                   <FilaLote
                     key={`${s.LeadID}-5`} fila={s} lead={buscarLead(s.LeadID)}
-                    onContactar={registrarContacto} onReasignar={reasignar} onVerFicha={setFichaLeadId}
+                    onContactar={registrarContacto} onReasignar={reasignar} onVerFicha={setFichaLeadId} onMarcarVenta={setLeadVenta}
                     puedeReasignar={puedeReasignar} sinAsignarPorDefecto
                   />
                 ))
@@ -298,12 +312,13 @@ export default function SeguimientoPage() {
         )}
       </div>
       <FichaDrawer leadId={fichaLeadId} usuario={usuario} onClose={() => setFichaLeadId(null)} />
+      <ModalVenta lead={leadVenta} onClose={() => setLeadVenta(null)} onConfirm={confirmarVenta} usuarioActual={usuario} />
       {toast}
     </div>
   );
 }
 
-function FilaLote({ fila, lead, onContactar, onReasignar, onVerFicha, puedeReasignar, conObservaciones, sinAsignarPorDefecto }) {
+function FilaLote({ fila, lead, onContactar, onReasignar, onVerFicha, onMarcarVenta, puedeReasignar, conObservaciones, sinAsignarPorDefecto }) {
   const [resultado, setResultado] = useState('');
   const [observaciones, setObservaciones] = useState('');
   const [proximaAccion, setProximaAccion] = useState('');
@@ -311,6 +326,13 @@ function FilaLote({ fila, lead, onContactar, onReasignar, onVerFicha, puedeReasi
   if (!lead) return null;
   const contactado = fila.Contactado === 'TRUE';
   const sinAsignar = sinAsignarPorDefecto && !fila.AsignadoAEmail;
+
+  function guardar() {
+    onContactar(fila.LeadID, fila.Lote, resultado, observaciones, proximaAccion);
+    // Si el resultado es "Pago recibido", abrimos directo el modal de venta —
+    // no tiene sentido hacer un segundo click para lo que ya sabemos que va a pasar.
+    if (resultado === 'Pago recibido') onMarcarVenta(lead);
+  }
 
   return (
     <div className="border-t border-border first:border-t-0 py-3">
@@ -321,6 +343,9 @@ function FilaLote({ fila, lead, onContactar, onReasignar, onVerFicha, puedeReasi
             <a href={`https://wa.me/${lead.WhatsApp.replace(/[^\d]/g, '')}`} target="_blank" rel="noopener noreferrer"
               className="w-6 h-6 flex items-center justify-center rounded-md border border-border text-xs" title="WhatsApp">💬</a>
           )}
+          <button onClick={() => onMarcarVenta(lead)} className="text-xs px-3 py-1 rounded bg-accentPurple text-white">
+            Marcar venta
+          </button>
           <button onClick={() => onVerFicha(lead.ID)} className="text-accentTeal text-xs font-semibold">Ver ficha</button>
         </div>
       </div>
@@ -369,7 +394,7 @@ function FilaLote({ fila, lead, onContactar, onReasignar, onVerFicha, puedeReasi
           )}
           <button
             disabled={!resultado}
-            onClick={() => onContactar(fila.LeadID, fila.Lote, resultado, observaciones, proximaAccion)}
+            onClick={guardar}
             className="text-xs px-3 py-1 rounded bg-accentPurple text-white disabled:opacity-50"
           >
             Guardar

@@ -2,10 +2,7 @@ import { NextResponse } from 'next/server';
 import { readSheet, appendRow, updateRow } from '../../../lib/sheets';
 import { findUsuario, tienePermisoOperativo } from '../../../lib/auth';
 import { registrarAccion } from '../../../lib/auditoria';
-import { DIAS_LOTE_2 } from '../../../lib/constants';
-
-// Resultados que NO requieren escalar al siguiente lote (el lead ya dio una respuesta definitiva)
-const RESULTADOS_FINALES = ['Interesado', 'No le interesa'];
+import { DIAS_LOTE_2, RESULTADOS_FINALES } from '../../../lib/constants';
 
 // GET /api/seguimiento?solicitanteEmail=... -> todas las filas de seguimiento (se cruza con Leads en el front)
 export async function GET(request) {

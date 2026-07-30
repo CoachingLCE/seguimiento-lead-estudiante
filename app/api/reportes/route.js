@@ -36,7 +36,8 @@ export async function GET(request) {
       medioPago: c.MedioPago,
       modalidad: c.Modalidad,
       montoTotal: c.MontoTotal,
-      cargadoPor: c.CargadoPorNombre
+      cargadoPor: c.CargadoPorNombre,
+      vendidoPor: c.VendidoPorNombre || ''
     }))
   });
 }

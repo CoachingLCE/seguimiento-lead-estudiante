@@ -3,8 +3,8 @@ import { readSheet, updateRow } from '../../../lib/sheets';
 import { registrarAccion } from '../../../lib/auditoria';
 
 // POST /api/ventas -> marca un lead como vendido
-// body: { leadId, medioPago, modalidad: 'totalidad'|'cuotas', cantCuotas, valorCuota, montoTotal,
-//         emailEstudiante, edicion, solicitanteEmail, solicitanteNombre }
+// body: { leadId, medioPago, modalidad: 'totalidad'|'cuotas', cantCuotas, valorCuota, detalleCuotas,
+//         montoTotal, emailEstudiante, edicion, docentes, vendidoPor, solicitanteEmail, solicitanteNombre }
 export async function POST(request) {
   const body = await request.json();
   const leads = await readSheet('Leads');
@@ -13,10 +13,18 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Lead no encontrado' }, { status: 404 });
   }
 
-  const montoTotal =
-    body.modalidad === 'cuotas'
+  const esCuotasVariables = Boolean(body.detalleCuotas);
+  const montoTotal = esCuotasVariables
+    ? Number(body.montoTotal)
+    : body.modalidad === 'cuotas'
       ? Number(body.cantCuotas) * Number(body.valorCuota)
       : Number(body.montoTotal);
+
+  const modalidadTexto = esCuotasVariables
+    ? `${body.cantCuotas} cuotas variables ($${body.detalleCuotas})`
+    : body.modalidad === 'cuotas'
+      ? `${body.cantCuotas} cuotas de $${body.valorCuota}`
+      : 'Totalidad';
 
   // Mismo orden de columnas que en app/api/leads/route.js
   await updateRow('Leads', lead._rowIndex, [
@@ -33,21 +41,23 @@ export async function POST(request) {
     'Comprado',
     new Date().toISOString(),
     body.medioPago,
-    body.modalidad === 'cuotas' ? `${body.cantCuotas} cuotas de $${body.valorCuota}` : 'Totalidad',
+    modalidadTexto,
     body.modalidad === 'cuotas' ? body.cantCuotas : '',
-    body.modalidad === 'cuotas' ? body.valorCuota : '',
+    esCuotasVariables ? '' : (body.modalidad === 'cuotas' ? body.valorCuota : ''),
     montoTotal,
     body.edicion || '',
     body.emailEstudiante || '',
     lead.NotasInternas,
     lead.InstagramUsuario,
-    body.docentes || ''
+    body.docentes || '',
+    body.detalleCuotas || '',
+    body.vendidoPor || ''
   ]);
 
   await registrarAccion(
     body.solicitanteEmail, body.solicitanteNombre,
     'Registró una venta',
-    `${lead.Nombre} ${lead.Apellido} — ${lead.Curso || 'sin curso'} — $${montoTotal}`,
+    `${lead.Nombre} ${lead.Apellido} — ${lead.Curso || 'sin curso'} — $${montoTotal}${body.vendidoPor ? ` — cerrada por ${body.vendidoPor}` : ''}`,
     lead.ID
   );
 

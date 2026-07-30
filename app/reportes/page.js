@@ -160,7 +160,7 @@ export default function ReportesPage() {
                     <th className="cursor-pointer select-none" onClick={() => ordenarPor('fechaVenta')}>Fecha compra{flecha('fechaVenta')}</th>
                     <th>Medio de pago</th><th>Modalidad</th>
                     <th className="cursor-pointer select-none" onClick={() => ordenarPor('montoTotal')}>Monto{flecha('montoTotal')}</th>
-                    <th>Cargado por</th><th></th>
+                    <th>Cargado por</th><th>Vendido por</th><th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -176,6 +176,7 @@ export default function ReportesPage() {
                       <td>{c.modalidad}</td>
                       <td>${Number(c.montoTotal).toLocaleString('es-AR')}</td>
                       <td>{c.cargadoPor}</td>
+                      <td>{c.vendidoPor || "—"}</td>
                       <td>
                         <button onClick={() => setFichaLeadId(c.id)} className="text-accentTeal text-xs font-semibold">Ver ficha</button>
                       </td>

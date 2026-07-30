@@ -8,6 +8,7 @@ import FichaDrawer from '../../components/FichaDrawer';
 import { useToast } from '../../components/Toast';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoEstudiantes } from '../../lib/permisos';
+import { RESULTADOS_FINALES } from '../../lib/constants';
 
 const HORAS_ALTA_DEMORADA = 24;
 
@@ -63,15 +64,15 @@ export default function DashboardPage() {
     }));
   }, [leads]);
 
-  const leadsSinInteres = new Set(
-    seguimiento.filter((s) => s.Resultado === 'No le interesa').map((s) => s.LeadID)
+  const leadsResueltos = new Set(
+    seguimiento.filter((s) => RESULTADOS_FINALES.includes(s.Resultado)).map((s) => s.LeadID)
   );
   const pendientesHoy = seguimiento.filter((s) => {
     if (s.Contactado === 'TRUE') return false;
     if (new Date(s.FechaVence) > new Date()) return false;
     const l = leads.find((x) => x.ID === s.LeadID);
     if (!l || l.Estado === 'Comprado') return false;
-    if (leadsSinInteres.has(s.LeadID)) return false;
+    if (leadsResueltos.has(s.LeadID)) return false;
     return true;
   });
 
@@ -325,7 +326,7 @@ export default function DashboardPage() {
           </>
         )}
       </div>
-      <ModalVenta lead={leadVenta} onClose={() => setLeadVenta(null)} onConfirm={confirmarVenta} />
+      <ModalVenta lead={leadVenta} onClose={() => setLeadVenta(null)} onConfirm={confirmarVenta} usuarioActual={usuario} />
       <FichaDrawer leadId={fichaLeadId} usuario={usuario} onClose={() => setFichaLeadId(null)} />
       {toast}
     </div>

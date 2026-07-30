@@ -6,7 +6,7 @@ import { useSession } from '../../lib/useSession';
 import { CURSOS, ORIGENES, CURSO_SIN_DEFINIR, CURSO_OTROS } from '../../lib/constants';
 
 function contactoVacio() {
-  return { nombre: '', apellido: '', whatsapp: '', instagram: '' };
+  return { nombre: '', whatsapp: '', instagram: '' };
 }
 
 export default function NuevoLeadPage() {
@@ -70,7 +70,7 @@ export default function NuevoLeadPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             nombre: contacto.nombre,
-            apellido: contacto.apellido,
+            apellido: '',
             whatsapp: contacto.whatsapp,
             instagram: contacto.instagram,
             curso: cursoFinal,
@@ -152,9 +152,9 @@ export default function NuevoLeadPage() {
                   )}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
+                  <div className="col-span-2">
                     <label className="text-xs text-textSec block mb-1">Nombre</label>
-                    <input required value={contacto.nombre} placeholder="Juan"
+                    <input required value={contacto.nombre} placeholder="Ej: Juan Pérez, o como lo tengas identificado"
                       onChange={(e) => actualizarContacto(index, 'nombre', e.target.value)}
                       className="w-full bg-surface2 border border-border rounded-lg px-3 py-2 text-sm" />
                     {contacto.nombre.trim().toLowerCase() === 'prueba' && (
@@ -162,12 +162,6 @@ export default function NuevoLeadPage() {
                         💡 Podés poner "Prueba" en el nombre para ver cómo funciona cada pantalla. Este lead se borra solo a las 48hs — es solo una prueba.
                       </p>
                     )}
-                  </div>
-                  <div>
-                    <label className="text-xs text-textSec block mb-1">Apellido</label>
-                    <input required value={contacto.apellido} placeholder="Pérez"
-                      onChange={(e) => actualizarContacto(index, 'apellido', e.target.value)}
-                      className="w-full bg-surface2 border border-border rounded-lg px-3 py-2 text-sm" />
                   </div>
                   <div>
                     <label className="text-xs text-textSec block mb-1">WhatsApp</label>
