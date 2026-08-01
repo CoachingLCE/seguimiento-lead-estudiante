@@ -3,7 +3,8 @@ import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Nav from '../../components/Nav';
 import { useSession } from '../../lib/useSession';
-import { tienePermisoBuscador } from '../../lib/permisos';
+import { tienePermisoBuscador, tienePermisoEditarLead } from '../../lib/permisos';
+import { ORIGENES, ORIGEN_OTRO, CURSOS, CURSO_OTROS, CURSO_SIN_DEFINIR, PAISES, PRIORIDADES } from '../../lib/constants';
 
 function BuscadorContent() {
   const { usuario, logout } = useSession();
@@ -11,6 +12,7 @@ function BuscadorContent() {
   const searchParams = useSearchParams();
   const qInicial = searchParams.get('q') || '';
   const leadId = searchParams.get('leadId');
+  const autoEditar = searchParams.get('editar') === '1';
 
   const [q, setQ] = useState(qInicial);
   const [resultados, setResultados] = useState([]);
@@ -100,7 +102,9 @@ function BuscadorContent() {
           </div>
         )}
 
-        {leadId && ficha && !cargando && <Ficha ficha={ficha} usuario={usuario} onNotasGuardadas={cargarFicha} />}
+        {leadId && ficha && !cargando && (
+          <Ficha ficha={ficha} usuario={usuario} onNotasGuardadas={cargarFicha} autoEditar={autoEditar} />
+        )}
       </div>
     </div>
   );

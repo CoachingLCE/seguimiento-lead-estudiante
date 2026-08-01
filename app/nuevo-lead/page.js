@@ -5,10 +5,10 @@ import Nav from '../../components/Nav';
 import FichaDrawer from '../../components/FichaDrawer';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoCrearLeads } from '../../lib/permisos';
-import { CURSOS, ORIGENES, ORIGEN_OTRO, PAISES, CURSO_SIN_DEFINIR, CURSO_OTROS } from '../../lib/constants';
+import { CURSOS, ORIGENES, ORIGEN_OTRO, PAISES, CURSO_SIN_DEFINIR, CURSO_OTROS, detectarPaisPorWhatsapp } from '../../lib/constants';
 
 function contactoVacio() {
-  return { nombre: '', whatsapp: '', email: '', instagram: '', pais: 'Argentina' };
+  return { nombre: '', whatsapp: '', email: '', instagram: '', pais: 'Argentina', paisAuto: true };
 }
 
 function tieneMedioDeContacto(contacto) {
@@ -64,7 +64,18 @@ export default function NuevoLeadPage() {
   }
 
   function actualizarContacto(index, campo, valor) {
-    setContactos((prev) => prev.map((c, i) => (i === index ? { ...c, [campo]: valor } : c)));
+    setContactos((prev) => prev.map((c, i) => {
+      if (i !== index) return c;
+      const actualizado = { ...c, [campo]: valor };
+      if (campo === 'pais') {
+        // El usuario tocó el país a mano: dejamos de autocompletarlo para no pisarle la corrección.
+        actualizado.paisAuto = false;
+      } else if (campo === 'whatsapp' && c.paisAuto) {
+        const detectado = detectarPaisPorWhatsapp(valor);
+        if (detectado) actualizado.pais = detectado;
+      }
+      return actualizado;
+    }));
     if (['nombre', 'whatsapp', 'email'].includes(campo)) {
       setIgnorarDuplicado((prev) => ({ ...prev, [index]: false }));
       clearTimeout(timersDuplicados.current[index]);
@@ -271,7 +282,12 @@ export default function NuevoLeadPage() {
                         className="w-full bg-surface2 border border-border rounded-lg px-3 py-2 text-sm" />
                     </div>
                     <div>
-                      <label className="text-xs text-textSec block mb-1">País (opcional)</label>
+                      <label className="text-xs text-textSec block mb-1">
+                        País (opcional)
+                        {contacto.paisAuto && contacto.whatsapp && (
+                          <span className="text-infoText font-normal ml-1.5">· 🌎 detectado automáticamente</span>
+                        )}
+                      </label>
                       <input list="lista-paises" value={contacto.pais}
                         onChange={(e) => actualizarContacto(index, 'pais', e.target.value)}
                         className="w-full bg-surface2 border border-border rounded-lg px-3 py-2 text-sm" />
