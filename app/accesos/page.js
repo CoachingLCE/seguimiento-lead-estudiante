@@ -20,6 +20,11 @@ export default function AccesosPage() {
   const [editandoRoles, setEditandoRoles] = useState(null); // email del usuario en edición de roles
   const [rolesEnEdicion, setRolesEnEdicion] = useState([]);
   const [confirmarEliminar, setConfirmarEliminar] = useState(null); // usuario a confirmar
+  const [creadorLimpieza, setCreadorLimpieza] = useState('');
+  const [previewLimpieza, setPreviewLimpieza] = useState(null);
+  const [confirmarLimpieza, setConfirmarLimpieza] = useState(false);
+  const [resultadoLimpieza, setResultadoLimpieza] = useState(null);
+  const [cargandoLimpieza, setCargandoLimpieza] = useState(false);
 
   const esAdmin = usuario?.roles?.includes('Admin');
 
@@ -120,6 +125,28 @@ export default function AccesosPage() {
     else setMensaje(`✓ Usuario ${confirmarEliminar.Email} eliminado`);
     setConfirmarEliminar(null);
     cargarUsuarios();
+  }
+
+  async function verPreviewLimpieza() {
+    setCargandoLimpieza(true);
+    setResultadoLimpieza(null);
+    const params = new URLSearchParams({ creadorEmail: creadorLimpieza, solicitanteEmail: usuario.email });
+    const r = await fetch(`/api/leads/limpiar?${params}`).then((res) => res.json());
+    setPreviewLimpieza(r);
+    setCargandoLimpieza(false);
+  }
+
+  async function ejecutarLimpieza() {
+    setCargandoLimpieza(true);
+    const r = await fetch('/api/leads/limpiar', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ creadorEmail: creadorLimpieza, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
+    }).then((res) => res.json());
+    setResultadoLimpieza(r);
+    setPreviewLimpieza(null);
+    setConfirmarLimpieza(false);
+    setCargandoLimpieza(false);
   }
 
   if (!usuario || !esAdmin) return null;
@@ -225,6 +252,44 @@ export default function AccesosPage() {
           )}
 
           <hr className="border-border my-4" />
+          <p className="text-sm font-semibold mb-1">🧹 Limpiar leads de un creador</p>
+          <p className="text-textMuted text-xs mb-3">
+            Borra los leads cargados por un email puntual (útil para sacar pruebas). Nunca toca los que ya tengan una venta confirmada.
+          </p>
+          <div className="flex items-center gap-2 mb-3">
+            <input value={creadorLimpieza} onChange={(e) => { setCreadorLimpieza(e.target.value); setPreviewLimpieza(null); setResultadoLimpieza(null); }}
+              placeholder="email@delcreador.com"
+              className="flex-1 bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
+            <button onClick={verPreviewLimpieza} disabled={!creadorLimpieza.trim() || cargandoLimpieza}
+              className="text-sm px-4 py-2 rounded-lg bg-surface2 border border-border disabled:opacity-50">
+              {cargandoLimpieza ? 'Buscando…' : 'Ver cuántos hay'}
+            </button>
+          </div>
+
+          {previewLimpieza && !previewLimpieza.error && (
+            <div className="bg-bg border border-border rounded-lg p-3 mb-3 text-sm">
+              <p>Total cargados por este email: <b>{previewLimpieza.totalCreados}</b></p>
+              <p className="text-warningText">Se eliminarían: <b>{previewLimpieza.aBorrar}</b></p>
+              {previewLimpieza.protegidosPorVenta > 0 && (
+                <p className="text-successText">Protegidos (ya tienen venta confirmada, no se tocan): <b>{previewLimpieza.protegidosPorVenta}</b></p>
+              )}
+              {previewLimpieza.aBorrar > 0 && (
+                <button onClick={() => setConfirmarLimpieza(true)}
+                  className="mt-2 text-sm px-4 py-2 rounded-lg bg-dangerText text-white font-semibold">
+                  🗑 Eliminar {previewLimpieza.aBorrar} lead(s)
+                </button>
+              )}
+            </div>
+          )}
+
+          {resultadoLimpieza && (
+            <div className="bg-successBg border border-successText/30 rounded-lg p-3 mb-3 text-sm text-successText">
+              ✓ Se eliminaron {resultadoLimpieza.eliminados} lead(s) y {resultadoLimpieza.seguimientoEliminado} fila(s) de seguimiento asociadas.
+              {resultadoLimpieza.protegidos > 0 && ` (${resultadoLimpieza.protegidos} quedaron protegidos por tener venta confirmada.)`}
+            </div>
+          )}
+
+          <hr className="border-border my-4" />
           <p className="text-sm font-semibold mb-3">Agregar nuevo usuario</p>
           <form onSubmit={agregarUsuario} className="grid grid-cols-2 gap-4 mb-3">
             <div>
@@ -272,6 +337,26 @@ export default function AccesosPage() {
           </form>
         </div>
       </div>
+
+      {confirmarLimpieza && previewLimpieza && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-surface2 border border-border rounded-2xl p-6 w-96">
+            <p className="text-sm font-bold mb-2">¿Estás seguro de que querés eliminar estos leads?</p>
+            <p className="text-textSec text-sm mb-5">
+              Se van a eliminar <b>{previewLimpieza.aBorrar}</b> lead(s) cargado(s) por {creadorLimpieza}, junto con su seguimiento asociado.
+              Esta acción no se puede deshacer.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmarLimpieza(false)}
+                className="flex-1 bg-surface border border-border rounded-lg py-2 text-sm">Cancelar</button>
+              <button onClick={ejecutarLimpieza} disabled={cargandoLimpieza}
+                className="flex-1 bg-dangerText text-white rounded-lg py-2 text-sm font-semibold disabled:opacity-60">
+                {cargandoLimpieza ? 'Eliminando…' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {confirmarEliminar && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
