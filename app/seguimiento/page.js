@@ -132,6 +132,8 @@ export default function SeguimientoPage() {
   const [ordenPor, setOrdenPor] = useState('antiguos');
   const [seleccionados, setSeleccionados] = useState(new Set());
   const [modalReasignar, setModalReasignar] = useState(null); // { leadId, lote } o { masivo: true }
+  const [confirmarEliminarLeads, setConfirmarEliminarLeads] = useState(false);
+  const esAdmin = usuario?.roles?.includes('Admin');
   const busquedaRef = useRef(null);
 
   const puedeReasignar = usuario?.roles?.includes('Admin') || usuario?.roles?.includes('Coordinador');
@@ -232,6 +234,25 @@ export default function SeguimientoPage() {
         solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
       })
     });
+  }
+
+  async function eliminarSeleccionados() {
+    const leadIds = [...new Set([...seleccionados].map((clave) => clave.split('__')[0]))];
+    const r = await fetch('/api/leads', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ leadIds, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
+    }).then((res) => res.json());
+    if (r.error) {
+      mostrarToast(`⚠️ ${r.error}`);
+    } else {
+      mostrarToast(
+        `✓ ${r.eliminados} lead(s) eliminado(s)${r.protegidos > 0 ? ` (${r.protegidos} protegido(s) por venta)` : ''}`
+      );
+    }
+    setSeleccionados(new Set());
+    setConfirmarEliminarLeads(false);
+    cargarDatos();
   }
 
   function exportarSeleccionados() {
@@ -472,8 +493,32 @@ export default function SeguimientoPage() {
             </select>
             <button onClick={exportarSeleccionados}
               className="text-xs px-3 py-1.5 rounded-md bg-surface border border-border">⬇ Exportar seleccionados</button>
+            {esAdmin && (
+              <button onClick={() => setConfirmarEliminarLeads(true)}
+                className="text-xs px-3 py-1.5 rounded-md border border-dangerText/40 text-dangerText hover:bg-dangerBg">
+                🗑 Eliminar seleccionados
+              </button>
+            )}
             <button onClick={() => setSeleccionados(new Set())}
               className="text-xs px-3 py-1.5 rounded-md bg-dangerBg text-dangerText">Cancelar</button>
+          </div>
+        </div>
+      )}
+
+      {confirmarEliminarLeads && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-surface2 border border-border rounded-2xl p-6 w-96">
+            <p className="text-sm font-bold mb-2">¿Estás seguro de que querés eliminar estos leads?</p>
+            <p className="text-textSec text-sm mb-5">
+              Se van a eliminar <b>{seleccionados.size}</b> lead(s) junto con su seguimiento asociado.
+              Los que ya tengan una venta confirmada quedan protegidos automáticamente. Esta acción no se puede deshacer.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmarEliminarLeads(false)}
+                className="flex-1 bg-surface border border-border rounded-lg py-2 text-sm">Cancelar</button>
+              <button onClick={eliminarSeleccionados}
+                className="flex-1 bg-dangerText text-white rounded-lg py-2 text-sm font-semibold">Eliminar</button>
+            </div>
           </div>
         </div>
       )}

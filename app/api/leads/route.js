@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { readSheet, appendRow, updateRow } from '../../../lib/sheets';
+import { readSheet, appendRow, updateRow, deleteRows } from '../../../lib/sheets';
 import { findUsuario, tienePermisoOperativo, tienePermisoCrearLeads, tienePermisoEditarLead } from '../../../lib/auth';
 import { registrarAccion } from '../../../lib/auditoria';
 import { HORAS_LOTE_1, DIAS_LOTE_3, DIAS_LOTE_4, DIAS_LOTE_5 } from '../../../lib/constants';
@@ -164,4 +164,42 @@ export async function PATCH(request) {
   );
 
   return NextResponse.json({ ok: true });
+}
+
+// DELETE /api/leads -> elimina uno o varios leads elegidos puntualmente (y su Seguimiento asociado).
+// Solo Admin. Nunca borra un lead que ya tenga una venta confirmada (Estado === 'Comprado').
+// body: { leadIds: ['L-...', 'L-...'], solicitanteEmail, solicitanteNombre }
+export async function DELETE(request) {
+  const body = await request.json();
+  const solicitante = await findUsuario(body.solicitanteEmail);
+  if (!solicitante || !solicitante.roles.includes('Admin')) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+  }
+
+  const idsPedidos = new Set(body.leadIds || []);
+  if (idsPedidos.size === 0) {
+    return NextResponse.json({ error: 'No se especificaron leads' }, { status: 400 });
+  }
+
+  const [leads, seguimiento] = await Promise.all([readSheet('Leads'), readSheet('Seguimiento')]);
+  const encontrados = leads.filter((l) => idsPedidos.has(l.ID));
+  const aBorrar = encontrados.filter((l) => l.Estado !== 'Comprado');
+  const protegidos = encontrados.filter((l) => l.Estado === 'Comprado');
+  const idsABorrar = new Set(aBorrar.map((l) => l.ID));
+  const filasSeguimientoABorrar = seguimiento.filter((s) => idsABorrar.has(s.LeadID));
+
+  await deleteRows('Leads', aBorrar.map((l) => l._rowIndex));
+  await deleteRows('Seguimiento', filasSeguimientoABorrar.map((s) => s._rowIndex));
+
+  await registrarAccion(
+    body.solicitanteEmail, body.solicitanteNombre,
+    'Eliminó lead(s) puntual(es)',
+    `${aBorrar.map((l) => `${l.Nombre} ${l.Apellido}`).join(', ')}${protegidos.length > 0 ? ` — ${protegidos.length} protegido(s) por venta` : ''}`
+  );
+
+  return NextResponse.json({
+    eliminados: aBorrar.length,
+    seguimientoEliminado: filasSeguimientoABorrar.length,
+    protegidos: protegidos.length
+  });
 }
