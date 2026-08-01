@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { findUsuario } from '../../../lib/auth';
-import { readSheet, appendRow, updateRow } from '../../../lib/sheets';
+import { readSheet, appendRow, updateRow, deleteRows } from '../../../lib/sheets';
 import { encryptPassword, decryptPassword } from '../../../lib/passwords';
 import { enviarMailContraseña } from '../../../lib/mailer';
 import { registrarAccion } from '../../../lib/auditoria';
@@ -22,6 +22,7 @@ export async function GET(request) {
         Email: u.Email,
         Nombre: u.Nombre,
         Roles: u.Roles,
+        Activo: u.Activo !== 'FALSE',
         passwordActual: u.PasswordHash ? decryptPassword(u.PasswordHash) : null
       }))
     });
@@ -50,7 +51,7 @@ export async function POST(request) {
 
   const password = (body.password || '').trim() || PASSWORD_GENERICA;
   const passwordEncriptada = encryptPassword(password);
-  await appendRow('Usuarios', [body.nuevoEmail, body.nombre, (body.roles || []).join(','), passwordEncriptada]);
+  await appendRow('Usuarios', [body.nuevoEmail, body.nombre, (body.roles || []).join(','), passwordEncriptada, 'TRUE']);
 
   let emailEnviado = true;
   try {
@@ -67,8 +68,9 @@ export async function POST(request) {
   return NextResponse.json({ ok: true, emailEnviado });
 }
 
-// PATCH /api/usuarios -> resetea la contraseña de un usuario existente (a la que se pase, o a PASSWORD_GENERICA) y reenvía el mail.
-// Solo Admin. body: { solicitanteEmail, targetEmail, nuevaPassword? }
+// PATCH /api/usuarios -> editar un usuario existente. Solo Admin. Se puede mandar cualquier
+// combinación de estos campos, todos opcionales salvo targetEmail:
+// body: { solicitanteEmail, targetEmail, nuevaPassword?, nuevosRoles?, activo? }
 export async function PATCH(request) {
   const body = await request.json();
   const solicitante = await findUsuario(body.solicitanteEmail);
@@ -84,21 +86,80 @@ export async function PATCH(request) {
     return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
   }
 
-  const nuevaPassword = (body.nuevaPassword || '').trim() || PASSWORD_GENERICA;
-  const passwordEncriptada = encryptPassword(nuevaPassword);
-  await updateRow('Usuarios', target._rowIndex, [target.Email, target.Nombre, target.Roles, passwordEncriptada]);
-
-  let emailEnviado = true;
-  try {
-    await enviarMailContraseña(target.Email, target.Nombre, nuevaPassword);
-  } catch (err) {
-    emailEnviado = false;
+  // Protección: no permitir sacarle el rol Admin o desactivar al último administrador activo.
+  const tocaQuitarAdmin =
+    (body.nuevosRoles !== undefined && !body.nuevosRoles.includes('Admin') && (target.Roles || '').includes('Admin')) ||
+    (body.activo === false && (target.Roles || '').includes('Admin'));
+  if (tocaQuitarAdmin) {
+    const admins = usuarios.filter((u) => (u.Roles || '').includes('Admin') && u.Activo !== 'FALSE');
+    if (admins.length <= 1) {
+      return NextResponse.json({ error: 'No se puede desactivar/sacarle el rol al último administrador del sistema.' }, { status: 400 });
+    }
   }
+
+  let passwordFinal = target.PasswordHash;
+  let emailEnviado = null;
+  if (body.nuevaPassword !== undefined) {
+    const nuevaPassword = (body.nuevaPassword || '').trim() || PASSWORD_GENERICA;
+    passwordFinal = encryptPassword(nuevaPassword);
+    try {
+      await enviarMailContraseña(target.Email, target.Nombre, nuevaPassword);
+      emailEnviado = true;
+    } catch (err) {
+      emailEnviado = false;
+    }
+  }
+
+  const rolesFinal = body.nuevosRoles !== undefined ? body.nuevosRoles.join(',') : target.Roles;
+  const activoFinal = body.activo !== undefined ? (body.activo ? 'TRUE' : 'FALSE') : (target.Activo !== 'FALSE' ? 'TRUE' : 'FALSE');
+
+  await updateRow('Usuarios', target._rowIndex, [target.Email, target.Nombre, rolesFinal, passwordFinal, activoFinal]);
+
+  const cambios = [];
+  if (body.nuevaPassword !== undefined) cambios.push('Restableció contraseña');
+  if (body.nuevosRoles !== undefined) cambios.push(`Cambió roles a: ${rolesFinal}`);
+  if (body.activo !== undefined) cambios.push(body.activo ? 'Reactivó el usuario' : 'Desactivó el usuario');
 
   await registrarAccion(
     body.solicitanteEmail, solicitante.nombre,
-    'Restableció contraseña', `Usuario afectado: ${target.Nombre} (${target.Email})`
+    cambios.join(' · ') || 'Editó un usuario',
+    `Usuario afectado: ${target.Nombre} (${target.Email})`
   );
 
   return NextResponse.json({ ok: true, emailEnviado });
+}
+
+// DELETE /api/usuarios -> elimina un usuario definitivamente. Solo Admin.
+// No se puede eliminar al último administrador del sistema.
+// body: { solicitanteEmail, targetEmail }
+export async function DELETE(request) {
+  const body = await request.json();
+  const solicitante = await findUsuario(body.solicitanteEmail);
+  if (!solicitante || !solicitante.roles.includes('Admin')) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+  }
+
+  const usuarios = await readSheet('Usuarios');
+  const target = usuarios.find(
+    (u) => (u.Email || '').toLowerCase() === (body.targetEmail || '').toLowerCase()
+  );
+  if (!target) {
+    return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
+  }
+
+  if ((target.Roles || '').includes('Admin')) {
+    const admins = usuarios.filter((u) => (u.Roles || '').includes('Admin'));
+    if (admins.length <= 1) {
+      return NextResponse.json({ error: 'No se puede eliminar al último administrador del sistema.' }, { status: 400 });
+    }
+  }
+
+  await deleteRows('Usuarios', [target._rowIndex]);
+
+  await registrarAccion(
+    body.solicitanteEmail, solicitante.nombre,
+    'Eliminó un usuario', `Usuario eliminado: ${target.Nombre} (${target.Email})`
+  );
+
+  return NextResponse.json({ ok: true });
 }

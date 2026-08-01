@@ -17,6 +17,9 @@ export default function AccesosPage() {
   const [mensaje, setMensaje] = useState('');
   const [enviandoA, setEnviandoA] = useState('');
   const [mostrarPassword, setMostrarPassword] = useState({});
+  const [editandoRoles, setEditandoRoles] = useState(null); // email del usuario en edición de roles
+  const [rolesEnEdicion, setRolesEnEdicion] = useState([]);
+  const [confirmarEliminar, setConfirmarEliminar] = useState(null); // usuario a confirmar
 
   const esAdmin = usuario?.roles?.includes('Admin');
 
@@ -75,6 +78,50 @@ export default function AccesosPage() {
     setMostrarPassword((prev) => ({ ...prev, [email]: !prev[email] }));
   }
 
+  function empezarEdicionRoles(u) {
+    setEditandoRoles(u.Email);
+    setRolesEnEdicion((u.Roles || '').split(',').map((r) => r.trim()).filter(Boolean));
+  }
+
+  async function guardarRoles(email) {
+    setMensaje('');
+    const r = await fetch('/api/usuarios', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ solicitanteEmail: usuario.email, targetEmail: email, nuevosRoles: rolesEnEdicion })
+    }).then((res) => res.json());
+    if (r.error) setMensaje(`⚠️ ${r.error}`);
+    else setMensaje(`✓ Roles actualizados para ${email}`);
+    setEditandoRoles(null);
+    cargarUsuarios();
+  }
+
+  async function toggleActivo(u) {
+    setMensaje('');
+    const r = await fetch('/api/usuarios', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ solicitanteEmail: usuario.email, targetEmail: u.Email, activo: !u.Activo })
+    }).then((res) => res.json());
+    if (r.error) setMensaje(`⚠️ ${r.error}`);
+    else setMensaje(u.Activo ? `Usuario ${u.Email} desactivado` : `✓ Usuario ${u.Email} reactivado`);
+    cargarUsuarios();
+  }
+
+  async function confirmarYEliminar() {
+    if (!confirmarEliminar) return;
+    setMensaje('');
+    const r = await fetch('/api/usuarios', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ solicitanteEmail: usuario.email, targetEmail: confirmarEliminar.Email })
+    }).then((res) => res.json());
+    if (r.error) setMensaje(`⚠️ ${r.error}`);
+    else setMensaje(`✓ Usuario ${confirmarEliminar.Email} eliminado`);
+    setConfirmarEliminar(null);
+    cargarUsuarios();
+  }
+
   if (!usuario || !esAdmin) return null;
 
   return (
@@ -110,14 +157,34 @@ export default function AccesosPage() {
           ) : (
             <div className="mb-5">
               {usuarios.map((u, i) => (
-                <div key={i} className="flex items-center gap-3 py-2.5 border-b border-border text-sm">
+                <div key={i} className={`flex items-center gap-3 py-2.5 border-b border-border text-sm ${!u.Activo ? 'opacity-50' : ''}`}>
                   <div className="flex-1">
                     <p className="font-semibold">{u.Nombre}</p>
                     <p className="text-textMuted text-xs">{u.Email}</p>
                   </div>
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-infoBg text-infoText">
-                    {u.Roles}
-                  </span>
+
+                  {editandoRoles === u.Email ? (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {ROLES.map((rol) => (
+                        <label key={rol} className="flex items-center gap-1 text-xs">
+                          <input type="checkbox" checked={rolesEnEdicion.includes(rol)}
+                            onChange={(e) => setRolesEnEdicion((prev) =>
+                              e.target.checked ? [...prev, rol] : prev.filter((r) => r !== rol)
+                            )} />
+                          {rol}
+                        </label>
+                      ))}
+                      <button onClick={() => guardarRoles(u.Email)}
+                        className="text-xs px-2.5 py-1 rounded bg-accentPurple text-white">Guardar</button>
+                      <button onClick={() => setEditandoRoles(null)}
+                        className="text-xs px-2.5 py-1 rounded bg-surface2 border border-border">Cancelar</button>
+                    </div>
+                  ) : (
+                    <button onClick={() => empezarEdicionRoles(u)}
+                      className="text-xs px-2.5 py-1 rounded-full bg-infoBg text-infoText hover:opacity-80" title="Click para editar roles">
+                      {u.Roles} ✏️
+                    </button>
+                  )}
 
                   {u.passwordActual ? (
                     <button
@@ -139,6 +206,18 @@ export default function AccesosPage() {
                     className="text-xs px-3 py-1 rounded-md bg-surface2 border border-border disabled:opacity-60"
                   >
                     {enviandoA === u.Email ? 'Enviando…' : 'Restablecer contraseña'}
+                  </button>
+
+                  <button onClick={() => toggleActivo(u)}
+                    className={`text-xs px-2.5 py-1 rounded-md border ${
+                      u.Activo ? 'border-border bg-surface2 text-textSec' : 'border-successText/40 bg-successBg text-successText'
+                    }`}>
+                    {u.Activo ? 'Desactivar' : 'Reactivar'}
+                  </button>
+
+                  <button onClick={() => setConfirmarEliminar(u)}
+                    className="text-xs px-2.5 py-1 rounded-md border border-dangerText/30 text-dangerText hover:bg-dangerBg">
+                    🗑 Eliminar
                   </button>
                 </div>
               ))}
@@ -193,6 +272,23 @@ export default function AccesosPage() {
           </form>
         </div>
       </div>
+
+      {confirmarEliminar && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-surface2 border border-border rounded-2xl p-6 w-96">
+            <p className="text-sm font-bold mb-2">¿Estás seguro de que querés eliminar este usuario?</p>
+            <p className="text-textSec text-sm mb-5">
+              {confirmarEliminar.Nombre} ({confirmarEliminar.Email}) — esta acción no se puede deshacer.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmarEliminar(null)}
+                className="flex-1 bg-surface border border-border rounded-lg py-2 text-sm">Cancelar</button>
+              <button onClick={confirmarYEliminar}
+                className="flex-1 bg-dangerText text-white rounded-lg py-2 text-sm font-semibold">Eliminar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

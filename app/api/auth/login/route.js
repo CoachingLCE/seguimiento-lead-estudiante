@@ -11,6 +11,10 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Email no autorizado' }, { status: 403 });
   }
 
+  if (!usuario.activo) {
+    return NextResponse.json({ error: 'Tu usuario está desactivado. Pedile a Diego que lo reactive.' }, { status: 403 });
+  }
+
   if (!usuario.passwordHash) {
     return NextResponse.json(
       { error: 'Tu usuario todavía no tiene contraseña asignada. Pedile a Diego que te la reenvíe desde Accesos.' },
