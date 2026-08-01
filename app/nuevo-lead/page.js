@@ -6,7 +6,7 @@ import FichaDrawer from '../../components/FichaDrawer';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoCrearLeads } from '../../lib/permisos';
 import {
-  CURSOS, ORIGENES, ORIGEN_OTRO, PAISES, CURSO_SIN_DEFINIR, CURSO_OTROS,
+  CURSOS, ORIGENES, ORIGEN_OTRO, ORIGEN_SIN_DEFINIR, PAISES, CURSO_SIN_DEFINIR, CURSO_OTROS,
   detectarPaisPorWhatsapp
 } from '../../lib/constants';
 
@@ -105,7 +105,7 @@ export default function NuevoLeadPage() {
   // Datos compartidos por toda la tanda (curso y origen aplican a todos los contactos)
   const [curso, setCurso] = useState(CURSO_SIN_DEFINIR);
   const [cursoPersonalizado, setCursoPersonalizado] = useState('');
-  const [origen, setOrigen] = useState(ORIGENES[0]);
+  const [origen, setOrigen] = useState(ORIGEN_SIN_DEFINIR);
   const [origenPersonalizado, setOrigenPersonalizado] = useState('');
   const [cursosAdicionales, setCursosAdicionales] = useState([]);
 
@@ -210,7 +210,10 @@ export default function NuevoLeadPage() {
       curso === CURSO_SIN_DEFINIR ? '' :
       curso === CURSO_OTROS ? cursoPersonalizado.trim() :
       curso;
-    const origenFinal = origen === ORIGEN_OTRO ? origenPersonalizado.trim() : origen;
+    const origenFinal =
+      origen === ORIGEN_SIN_DEFINIR ? '' :
+      origen === ORIGEN_OTRO ? origenPersonalizado.trim() :
+      origen;
 
     try {
       // Se guardan todos los contactos de la tanda, uno por uno, compartiendo curso/origen.
@@ -287,9 +290,15 @@ export default function NuevoLeadPage() {
               <div>
                 <label className="text-[13px] font-medium text-textSec block mb-1">Cómo llegaron (para toda la tanda)</label>
                 <select value={origen} onChange={(e) => setOrigen(e.target.value)} className={inputClsBg}>
+                  <option value={ORIGEN_SIN_DEFINIR}>{ORIGEN_SIN_DEFINIR}</option>
                   {ORIGENES.map((o) => <option key={o}>{o}</option>)}
                   <option value={ORIGEN_OTRO}>{ORIGEN_OTRO}</option>
                 </select>
+                {origen === ORIGEN_SIN_DEFINIR && (
+                  <p className="text-textMuted text-[12px] mt-1 flex items-center gap-1">
+                    <span>ℹ️</span> Podrás modificar esta información más adelante.
+                  </p>
+                )}
                 {origen === ORIGEN_OTRO && (
                   <input required value={origenPersonalizado} onChange={(e) => setOrigenPersonalizado(e.target.value)}
                     placeholder="Escribí el origen" className={`${inputClsBg} mt-2`} />
