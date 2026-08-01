@@ -253,7 +253,7 @@ export default function NuevoLeadPage() {
                       )}
                     </div>
                     <div>
-                      <label className="text-xs text-textSec block mb-1">WhatsApp</label>
+                      <label className="text-xs text-textSec block mb-1">WhatsApp (opcional)</label>
                       <input value={contacto.whatsapp} placeholder="+54 9 11 1234-5678"
                         onChange={(e) => actualizarContacto(index, 'whatsapp', e.target.value)}
                         className="w-full bg-surface2 border border-border rounded-lg px-3 py-2 text-sm" />
