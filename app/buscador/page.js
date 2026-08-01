@@ -110,11 +110,52 @@ function BuscadorContent() {
   );
 }
 
-function Ficha({ ficha, usuario, onNotasGuardadas }) {
+function Ficha({ ficha, usuario, onNotasGuardadas, autoEditar }) {
   const { lead, seguimiento, inscrito, historial } = ficha;
   const [notas, setNotas] = useState(lead.NotasInternas || '');
   const [guardandoNotas, setGuardandoNotas] = useState(false);
   const [notasOk, setNotasOk] = useState(false);
+
+  const [editando, setEditando] = useState(autoEditar);
+  const [datos, setDatos] = useState({
+    nombre: lead.Nombre || '', whatsapp: lead.WhatsApp || '', email: lead.EmailEstudiante || '',
+    instagram: lead.InstagramUsuario || '', pais: lead.Pais || '', curso: lead.Curso || CURSO_SIN_DEFINIR,
+    cursoPersonalizado: '', origen: lead.Origen || ORIGEN_OTRO
+  });
+  const [guardandoEdicion, setGuardandoEdicion] = useState(false);
+
+  const asignadoActual = seguimiento.find((s) => s.Lote === '1')?.AsignadoAEmail;
+  const puedeEditar = tienePermisoEditarLead(usuario, lead, asignadoActual);
+
+  function actualizarDato(campo, valor) {
+    setDatos((prev) => ({ ...prev, [campo]: valor }));
+  }
+
+  async function guardarEdicion() {
+    setGuardandoEdicion(true);
+    const cursoFinal = datos.curso === CURSO_SIN_DEFINIR ? '' : datos.curso === CURSO_OTROS ? datos.cursoPersonalizado.trim() : datos.curso;
+    await fetch('/api/leads', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        leadId: lead.ID, nombre: datos.nombre, whatsapp: datos.whatsapp, email: datos.email,
+        instagram: datos.instagram, pais: datos.pais, curso: cursoFinal, origen: datos.origen,
+        solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
+      })
+    });
+    setGuardandoEdicion(false);
+    setEditando(false);
+    if (onNotasGuardadas) onNotasGuardadas();
+  }
+
+  function cancelarEdicion() {
+    setDatos({
+      nombre: lead.Nombre || '', whatsapp: lead.WhatsApp || '', email: lead.EmailEstudiante || '',
+      instagram: lead.InstagramUsuario || '', pais: lead.Pais || '', curso: lead.Curso || CURSO_SIN_DEFINIR,
+      cursoPersonalizado: '', origen: lead.Origen || ORIGEN_OTRO
+    });
+    setEditando(false);
+  }
 
   async function guardarNotas() {
     setGuardandoNotas(true);
@@ -135,10 +176,81 @@ function Ficha({ ficha, usuario, onNotasGuardadas }) {
   return (
     <div className="space-y-4">
       <div className="bg-surface border border-border rounded-2xl p-5">
-        <p className="text-lg font-bold">{lead.Nombre} {lead.Apellido}</p>
-        <p className="text-textSec text-sm mb-3">
-          {lead.WhatsApp} {lead.EmailEstudiante && `· ${lead.EmailEstudiante}`}
-        </p>
+        <div className="flex items-start justify-between">
+          <div>
+            {!editando ? (
+              <p className="text-lg font-bold">{lead.Nombre} {lead.Apellido}</p>
+            ) : (
+              <input value={datos.nombre} onChange={(e) => actualizarDato('nombre', e.target.value)}
+                placeholder="Nombre" className="text-lg font-bold bg-bg border border-border rounded-lg px-2 py-1 mb-1" />
+            )}
+          </div>
+          {puedeEditar && !editando && (
+            <button onClick={() => setEditando(true)} className="text-accentTeal text-xs font-semibold shrink-0">✏️ Editar</button>
+          )}
+        </div>
+
+        {!editando ? (
+          <p className="text-textSec text-sm mb-3">
+            {lead.WhatsApp} {lead.EmailEstudiante && `· ${lead.EmailEstudiante}`} {lead.InstagramUsuario && `· ${lead.InstagramUsuario}`} {lead.Pais && `· 🌎 ${lead.Pais}`}
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 my-3">
+            <div>
+              <label className="text-xs text-textSec block mb-1">WhatsApp</label>
+              <input value={datos.whatsapp} onChange={(e) => actualizarDato('whatsapp', e.target.value)}
+                className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label className="text-xs text-textSec block mb-1">Email</label>
+              <input value={datos.email} onChange={(e) => actualizarDato('email', e.target.value)}
+                className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label className="text-xs text-textSec block mb-1">Instagram/Facebook</label>
+              <input value={datos.instagram} onChange={(e) => actualizarDato('instagram', e.target.value)}
+                className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label className="text-xs text-textSec block mb-1">País</label>
+              <input list="lista-paises-ficha" value={datos.pais} onChange={(e) => actualizarDato('pais', e.target.value)}
+                className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
+              <datalist id="lista-paises-ficha">{PAISES.map((p) => <option key={p} value={p} />)}</datalist>
+            </div>
+            <div>
+              <label className="text-xs text-textSec block mb-1">Curso</label>
+              <select value={datos.curso} onChange={(e) => actualizarDato('curso', e.target.value)}
+                className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm">
+                <option value={CURSO_SIN_DEFINIR}>{CURSO_SIN_DEFINIR}</option>
+                {CURSOS.map((c) => <option key={c}>{c}</option>)}
+                <option value={CURSO_OTROS}>{CURSO_OTROS}</option>
+              </select>
+              {datos.curso === CURSO_OTROS && (
+                <input value={datos.cursoPersonalizado} onChange={(e) => actualizarDato('cursoPersonalizado', e.target.value)}
+                  placeholder="Nombre del curso" className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm mt-2" />
+              )}
+            </div>
+            <div>
+              <label className="text-xs text-textSec block mb-1">Cómo llegó</label>
+              <select value={datos.origen} onChange={(e) => actualizarDato('origen', e.target.value)}
+                className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm">
+                {ORIGENES.map((o) => <option key={o}>{o}</option>)}
+                <option value={ORIGEN_OTRO}>{ORIGEN_OTRO}</option>
+              </select>
+            </div>
+          </div>
+        )}
+
+        {editando && (
+          <div className="flex items-center gap-3 mb-3">
+            <button onClick={guardarEdicion} disabled={guardandoEdicion}
+              className="bg-gradient-to-r from-accentPurple to-accentMagenta text-white rounded-lg px-4 py-1.5 text-sm font-semibold disabled:opacity-60">
+              {guardandoEdicion ? 'Guardando…' : 'Guardar cambios'}
+            </button>
+            <button onClick={cancelarEdicion} className="text-textMuted text-sm">Cancelar</button>
+          </div>
+        )}
+
         <p className="text-textMuted text-xs">
           Ingresó {new Date(lead.FechaIngreso).toLocaleDateString('es-AR')} · Origen: {lead.Origen} ·
           Cargado por {lead.CargadoPorNombre}
