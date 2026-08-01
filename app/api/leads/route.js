@@ -65,7 +65,7 @@ export async function POST(request) {
     body.instagram || '',
     '', '', '',
     body.pais || '',
-    ''
+    body.prioridad || ''
   ]);
 
   // Seguimiento: se crean de una las 3 etapas con tiempo (Lote 1, 2, 3). Lote 0 no se guarda como fila:
