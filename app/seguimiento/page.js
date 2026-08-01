@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import Nav, { puedeVerOperativo } from '../../components/Nav';
@@ -7,7 +7,7 @@ import FichaDrawer from '../../components/FichaDrawer';
 import ModalVenta from '../../components/ModalVenta';
 import { useToast } from '../../components/Toast';
 import { useSession } from '../../lib/useSession';
-import { RESULTADOS_CONTACTO, CURSOS, RESULTADOS_FINALES } from '../../lib/constants';
+import { RESULTADOS_CONTACTO, RESULTADOS_FINALES, RESULTADOS_PROGRESO } from '../../lib/constants';
 
 const EMAILS_ASIGNABLES = [
   { email: 'jesabel.reigada@institutoilce.com', nombre: 'Jesabel Reigada' },
@@ -23,6 +23,17 @@ const FILTROS_RAPIDOS = [
   'Coaching de Equipos'
 ];
 
+// Resultados principales como botones grandes; el resto queda en "Otro resultado".
+const RESULTADOS_PRINCIPALES = [
+  { valor: 'Pago recibido', emoji: '🟢' },
+  { valor: 'Va a pensarlo', emoji: '🟡' },
+  { valor: 'No le interesa', emoji: '🔴' },
+  { valor: 'No contestó', emoji: '⚪' }
+];
+const RESULTADOS_SECUNDARIOS = RESULTADOS_CONTACTO.filter(
+  (r) => !RESULTADOS_PRINCIPALES.some((p) => p.valor === r)
+);
+
 function tiempoDesde(fecha) {
   const dias = Math.floor((new Date() - new Date(fecha)) / (24 * 60 * 60 * 1000));
   if (dias <= 0) return 'Hoy';
@@ -30,30 +41,77 @@ function tiempoDesde(fecha) {
   return `Hace ${dias} días`;
 }
 
-// Agrupa un array de filas de seguimiento por el curso del lead asociado, ordena cada grupo
-// (más antiguos primero, luego por nombre) y devuelve un array de grupos ordenado alfabéticamente
-// ("Sin curso" siempre al final).
-function agruparPorCurso(filas, buscarLead) {
+// Tiempo hasta/desde el vencimiento del lote: "Vence hoy", "Faltan 8 horas", "Hace 2 días que venció"
+function estadoVencimiento(fechaVence) {
+  const diffMs = new Date(fechaVence) - new Date();
+  const horas = diffMs / (1000 * 60 * 60);
+  if (horas > 0) {
+    if (horas < 24) return { texto: `⏰ Vence hoy — faltan ${Math.ceil(horas)}hs`, urgencia: 'proximo' };
+    const dias = Math.ceil(horas / 24);
+    return { texto: `Vence en ${dias} día${dias > 1 ? 's' : ''}`, urgencia: 'lejos' };
+  }
+  const diasVencido = Math.floor(-horas / 24);
+  if (diasVencido <= 0) return { texto: '⏰ Vence hoy', urgencia: 'proximo' };
+  if (diasVencido <= 2) return { texto: `Hace ${diasVencido} día${diasVencido > 1 ? 's' : ''} que venció`, urgencia: 'reciente' };
+  return { texto: `🔴 Hace ${diasVencido} días sin contacto`, urgencia: 'critico' };
+}
+
+const COLORES_AVATAR = ['bg-accentPurple', 'bg-accentTeal', 'bg-accentMagenta', 'bg-successText', 'bg-warningText', 'bg-infoText'];
+function colorAvatar(nombre) {
+  const n = (nombre || '').split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  return COLORES_AVATAR[n % COLORES_AVATAR.length];
+}
+function iniciales(nombre) {
+  return (nombre || '?').split(' ').filter(Boolean).slice(0, 2).map((p) => p[0].toUpperCase()).join('');
+}
+
+// Indicadores rápidos sobre un lead+fila: 🔥 caliente, ⭐ alta prioridad, 💰 posible venta, 📞 esperando respuesta
+function indicadores(lead, fila) {
+  const lista = [];
+  if (lead.Prioridad === 'Alta') lista.push({ icono: '⭐', titulo: 'Alta prioridad' });
+  if (RESULTADOS_PROGRESO.includes(fila.Resultado)) lista.push({ icono: '💰', titulo: 'Posible venta en curso' });
+  if (fila.Contactado === 'TRUE' && fila.Resultado === 'No contestó') lista.push({ icono: '📞', titulo: 'Esperando respuesta' });
+  if (fila.Resultado === 'Interesado' || RESULTADOS_PROGRESO.includes(fila.Resultado)) lista.push({ icono: '🔥', titulo: 'Lead caliente' });
+  return lista;
+}
+
+function coincideBusquedaAmplia(lead, texto) {
+  const t = texto.trim().toLowerCase();
+  if (!t) return true;
+  return [lead.Nombre, lead.Apellido, lead.WhatsApp, lead.EmailEstudiante, lead.InstagramUsuario, lead.Curso, lead.Origen, lead.Pais]
+    .filter(Boolean).some((v) => v.toLowerCase().includes(t));
+}
+
+// Agrupa un array de filas de seguimiento por la dimensión elegida (curso, responsable, país u origen),
+// ordena cada grupo según el criterio elegido, y devuelve un array de grupos ordenado alfabéticamente
+// ("Sin definir" siempre al final).
+function agruparYOrdenar(filas, buscarLead, dimension, ordenPor) {
   const grupos = {};
   filas.forEach((f) => {
     const lead = buscarLead(f.LeadID);
-    const curso = lead?.Curso || 'Sin curso definido';
-    if (!grupos[curso]) grupos[curso] = [];
-    grupos[curso].push(f);
+    let clave = 'Sin definir';
+    if (dimension === 'curso') clave = lead?.Curso || 'Sin curso definido';
+    else if (dimension === 'responsable') clave = f.AsignadoANombre || 'Sin asignar';
+    else if (dimension === 'pais') clave = lead?.Pais || 'Sin país';
+    else if (dimension === 'origen') clave = lead?.Origen || 'Sin origen';
+    if (!grupos[clave]) grupos[clave] = [];
+    grupos[clave].push(f);
   });
   Object.values(grupos).forEach((arr) => {
     arr.sort((a, b) => {
       const la = buscarLead(a.LeadID);
       const lb = buscarLead(b.LeadID);
-      const fechaA = new Date(la?.FechaIngreso || 0);
-      const fechaB = new Date(lb?.FechaIngreso || 0);
-      if (fechaA - fechaB !== 0) return fechaA - fechaB;
-      return (la?.Nombre || '').localeCompare(lb?.Nombre || '', 'es');
+      if (ordenPor === 'atrasado') return new Date(a.FechaVence) - new Date(b.FechaVence);
+      if (ordenPor === 'reciente') return new Date(lb?.FechaIngreso || 0) - new Date(la?.FechaIngreso || 0);
+      if (ordenPor === 'nombre') return (la?.Nombre || '').localeCompare(lb?.Nombre || '', 'es');
+      // default: más antiguos primero
+      return new Date(la?.FechaIngreso || 0) - new Date(lb?.FechaIngreso || 0);
     });
   });
   return Object.entries(grupos).sort(([a], [b]) => {
-    if (a === 'Sin curso definido') return 1;
-    if (b === 'Sin curso definido') return -1;
+    const esSinDefinir = (x) => ['Sin definir', 'Sin curso definido', 'Sin asignar', 'Sin país', 'Sin origen'].includes(x);
+    if (esSinDefinir(a)) return 1;
+    if (esSinDefinir(b)) return -1;
     return a.localeCompare(b, 'es');
   });
 }
@@ -69,6 +127,12 @@ export default function SeguimientoPage() {
   const [leadVenta, setLeadVenta] = useState(null);
   const [busqueda, setBusqueda] = useState('');
   const [filtroCurso, setFiltroCurso] = useState('');
+  const [filtrosExtra, setFiltrosExtra] = useState([]); // 'sinAsignar' | 'conWhatsapp' | 'sinWhatsapp' | 'conEmail' | 'altaPrioridad' | 'hoy' | 'atrasados'
+  const [dimensionAgrupacion, setDimensionAgrupacion] = useState('curso');
+  const [ordenPor, setOrdenPor] = useState('antiguos');
+  const [seleccionados, setSeleccionados] = useState(new Set());
+  const [modalReasignar, setModalReasignar] = useState(null); // { leadId, lote } o { masivo: true }
+  const busquedaRef = useRef(null);
 
   const puedeReasignar = usuario?.roles?.includes('Admin') || usuario?.roles?.includes('Coordinador');
 
@@ -76,6 +140,17 @@ export default function SeguimientoPage() {
     if (!usuario) return;
     cargarDatos();
   }, [usuario]);
+
+  useEffect(() => {
+    function onKeyDown(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        busquedaRef.current?.focus();
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   async function cargarDatos() {
     setCargando(true);
@@ -114,83 +189,59 @@ export default function SeguimientoPage() {
     cargarDatos();
   }
 
-  async function confirmarVenta(datos) {
-    await fetch('/api/ventas', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...datos, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
+  async function reasignarMasivo(nuevoEmail, nuevoNombre) {
+    const filas = [...seleccionados].map((clave) => {
+      const [leadId, lote] = clave.split('__');
+      return { leadId, lote };
     });
-    setLeadVenta(null);
-    mostrarToast('Venta registrada');
+    for (const f of filas) {
+      await fetch('/api/seguimiento', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accion: 'reasignar', leadId: f.leadId, lote: f.lote, nuevoEmail, nuevoNombre,
+          solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
+        })
+      });
+    }
+    mostrarToast(`${filas.length} lead(s) reasignado(s) a ${nuevoNombre}`);
+    setSeleccionados(new Set());
+    setModalReasignar(null);
     cargarDatos();
   }
 
-  if (cargandoSesion) {
-    return null;
-  }
-  if (!usuario) {
-    if (typeof window !== 'undefined') router.push('/');
-    return null;
-  }
-  if (!puedeVerOperativo(usuario)) {
-    if (typeof window !== 'undefined') router.push('/inscritos');
-    return null;
-  }
-
-  const ahora = new Date();
-  const buscarLead = (leadId) => leads.find((l) => l.ID === leadId);
-
-  // Un registro de seguimiento solo se muestra si: el lead todavía no fue marcado como venta,
-  // Y no dio ya una respuesta definitiva/de avance en ningún lote previo (eso lo saca del camino
-  // de seguimiento para siempre — no tiene sentido seguir "molestando").
-  const leadsResueltos = new Set(
-    seguimiento.filter((s) => RESULTADOS_FINALES.includes(s.Resultado)).map((s) => s.LeadID)
-  );
-  const esValidoSinFiltro = (s) => {
-    const l = buscarLead(s.LeadID);
-    return Boolean(l) && l.Estado !== 'Comprado' && !leadsResueltos.has(s.LeadID);
-  };
-  function coincideFiltroRapido(lead) {
-    if (!filtroCurso) return true;
-    if (filtroCurso === 'OTROS') return !FILTROS_RAPIDOS.includes(lead.Curso);
-    return lead.Curso === filtroCurso;
-  }
-  const filaValida = (s) => {
-    if (!esValidoSinFiltro(s)) return false;
-    const lead = buscarLead(s.LeadID);
-    if (busqueda.trim() && !`${lead.Nombre} ${lead.Apellido}`.toLowerCase().includes(busqueda.trim().toLowerCase())) {
-      return false;
+  async function marcarContactoMasivo(resultado) {
+    const filas = [...seleccionados].map((clave) => {
+      const [leadId, lote] = clave.split('__');
+      return { leadId, lote };
+    });
+    for (const f of filas) {
+      await registrarContactoSilencioso(f.leadId, f.lote, resultado);
     }
-    return coincideFiltroRapido(lead);
-  };
+    mostrarToast(`${filas.length} lead(s) marcado(s) como "${resultado}"`);
+    setSeleccionados(new Set());
+    cargarDatos();
+  }
 
-  const vencido = (s) => new Date(s.FechaVence) <= ahora;
+  async function registrarContactoSilencioso(leadId, lote, resultado) {
+    await fetch('/api/seguimiento', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        accion: 'contactar', leadId, lote, resultado, observaciones: '', proximaAccion: '',
+        solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
+      })
+    });
+  }
 
-  // LOTE 0 y LOTE 1 son EXACTAMENTE el mismo dato (la fila de Seguimiento del Lote "1"),
-  // la única diferencia es si ya venció el plazo de 48hs o no — visualmente son idénticos.
-  const lote0 = seguimiento.filter((s) => s.Lote === '1' && !vencido(s) && filaValida(s));
-  const lote1 = seguimiento.filter((s) => s.Lote === '1' && vencido(s) && filaValida(s));
-  const lote2 = seguimiento.filter((s) => s.Lote === '2' && vencido(s) && filaValida(s));
-  const lote3 = seguimiento.filter((s) => s.Lote === '3' && vencido(s) && filaValida(s));
-  const lote4 = seguimiento.filter((s) => s.Lote === '4' && vencido(s) && filaValida(s));
-  const lote5 = seguimiento.filter((s) => s.Lote === '5' && vencido(s) && filaValida(s));
+  function exportarSeleccionados() {
+    const filas = seguimiento.filter((s) => seleccionados.has(`${s.LeadID}__${s.Lote}`));
+    exportarFilas(filas);
+  }
 
-  // Contadores para los filtros rápidos: sobre TODOS los leads con seguimiento pendiente
-  // (sin aplicar todavía el filtro de curso), para que el número no cambie según lo que ya esté filtrado.
-  const todasLasFilasPendientes = seguimiento.filter((s) => esValidoSinFiltro(s));
-  const leadIdsUnicos = [...new Set(todasLasFilasPendientes.map((s) => s.LeadID))];
-  const contadoresPorCurso = { total: leadIdsUnicos.length, otros: 0 };
-  FILTROS_RAPIDOS.forEach((c) => { contadoresPorCurso[c] = 0; });
-  leadIdsUnicos.forEach((id) => {
-    const lead = buscarLead(id);
-    const curso = lead?.Curso;
-    if (FILTROS_RAPIDOS.includes(curso)) contadoresPorCurso[curso]++;
-    else contadoresPorCurso.otros++;
-  });
-
-  function exportarExcel() {
+  function exportarFilas(filas) {
     const hoja = XLSX.utils.json_to_sheet(
-      seguimiento.map((s) => {
+      filas.map((s) => {
         const l = buscarLead(s.LeadID);
         return {
           Lead: l ? `${l.Nombre} ${l.Apellido}` : s.LeadID,
@@ -209,15 +260,113 @@ export default function SeguimientoPage() {
     XLSX.writeFile(libro, `seguimiento-${new Date().toISOString().slice(0, 10)}.xlsx`);
   }
 
+  async function confirmarVenta(datos) {
+    await fetch('/api/ventas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...datos, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
+    });
+    setLeadVenta(null);
+    mostrarToast('Venta registrada');
+    cargarDatos();
+  }
+
+  function toggleSeleccion(leadId, lote) {
+    const clave = `${leadId}__${lote}`;
+    setSeleccionados((prev) => {
+      const copia = new Set(prev);
+      if (copia.has(clave)) copia.delete(clave); else copia.add(clave);
+      return copia;
+    });
+  }
+
+  function toggleFiltroExtra(f) {
+    setFiltrosExtra((prev) => (prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f]));
+  }
+
+  if (cargandoSesion) return null;
+  if (!usuario) {
+    if (typeof window !== 'undefined') router.push('/');
+    return null;
+  }
+  if (!puedeVerOperativo(usuario)) {
+    if (typeof window !== 'undefined') router.push('/inscritos');
+    return null;
+  }
+
+  const ahora = new Date();
+  const buscarLead = (leadId) => leads.find((l) => l.ID === leadId);
+
+  const leadsResueltos = new Set(
+    seguimiento.filter((s) => RESULTADOS_FINALES.includes(s.Resultado)).map((s) => s.LeadID)
+  );
+  const esValidoSinFiltro = (s) => {
+    const l = buscarLead(s.LeadID);
+    return Boolean(l) && l.Estado !== 'Comprado' && !leadsResueltos.has(s.LeadID);
+  };
+  function coincideFiltroRapido(lead) {
+    if (!filtroCurso) return true;
+    if (filtroCurso === 'OTROS') return !FILTROS_RAPIDOS.includes(lead.Curso);
+    return lead.Curso === filtroCurso;
+  }
+  function coincideFiltrosExtra(lead, fila) {
+    if (filtrosExtra.includes('sinAsignar') && fila.AsignadoAEmail) return false;
+    if (filtrosExtra.includes('conWhatsapp') && !lead.WhatsApp) return false;
+    if (filtrosExtra.includes('sinWhatsapp') && lead.WhatsApp) return false;
+    if (filtrosExtra.includes('conEmail') && !lead.EmailEstudiante) return false;
+    if (filtrosExtra.includes('altaPrioridad') && lead.Prioridad !== 'Alta') return false;
+    if (filtrosExtra.includes('hoy') && estadoVencimiento(fila.FechaVence).urgencia !== 'proximo') return false;
+    if (filtrosExtra.includes('atrasados') && !['reciente', 'critico'].includes(estadoVencimiento(fila.FechaVence).urgencia)) return false;
+    return true;
+  }
+  const filaValida = (s) => {
+    if (!esValidoSinFiltro(s)) return false;
+    const lead = buscarLead(s.LeadID);
+    if (!coincideBusquedaAmplia(lead, busqueda)) return false;
+    if (!coincideFiltrosExtra(lead, s)) return false;
+    return coincideFiltroRapido(lead);
+  };
+
+  const vencido = (s) => new Date(s.FechaVence) <= ahora;
+
+  const lote0 = seguimiento.filter((s) => s.Lote === '1' && !vencido(s) && filaValida(s));
+  const lote1 = seguimiento.filter((s) => s.Lote === '1' && vencido(s) && filaValida(s));
+  const lote2 = seguimiento.filter((s) => s.Lote === '2' && vencido(s) && filaValida(s));
+  const lote3 = seguimiento.filter((s) => s.Lote === '3' && vencido(s) && filaValida(s));
+  const lote4 = seguimiento.filter((s) => s.Lote === '4' && vencido(s) && filaValida(s));
+  const lote5 = seguimiento.filter((s) => s.Lote === '5' && vencido(s) && filaValida(s));
+
+  const todasLasFilasPendientes = seguimiento.filter((s) => esValidoSinFiltro(s));
+  const leadIdsUnicos = [...new Set(todasLasFilasPendientes.map((s) => s.LeadID))];
+  const contadoresPorCurso = { total: leadIdsUnicos.length, otros: 0 };
+  FILTROS_RAPIDOS.forEach((c) => { contadoresPorCurso[c] = 0; });
+  leadIdsUnicos.forEach((id) => {
+    const lead = buscarLead(id);
+    const curso = lead?.Curso;
+    if (FILTROS_RAPIDOS.includes(curso)) contadoresPorCurso[curso]++;
+    else contadoresPorCurso.otros++;
+  });
+
+  function exportarExcel() {
+    exportarFilas(seguimiento);
+  }
+
+  const propsComunes = {
+    buscarLead, onContactar: registrarContacto, onReasignar: reasignar,
+    onVerFicha: setFichaLeadId, onMarcarVenta: setLeadVenta, puedeReasignar,
+    seleccionados, onToggleSeleccion: toggleSeleccion, onAbrirReasignarModal: (leadId, lote) => setModalReasignar({ leadId, lote }),
+    dimensionAgrupacion, ordenPor
+  };
+
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
-      <div className="max-w-5xl mx-auto px-6 pb-16">
+      <div className="max-w-[1300px] mx-auto px-4 pb-24">
         {cargando ? (
           <p className="text-textSec text-sm">Cargando…</p>
         ) : (
           <>
-            <div className="flex justify-between items-start mb-4 no-print gap-3 flex-wrap">
+            <div className="flex justify-between items-start mb-3 no-print gap-3 flex-wrap">
               <div className="flex items-center gap-2 flex-wrap">
                 <FiltroPill activo={!filtroCurso} onClick={() => setFiltroCurso('')} label="Todos" count={contadoresPorCurso.total} />
                 {FILTROS_RAPIDOS.map((c) => (
@@ -226,13 +375,48 @@ export default function SeguimientoPage() {
                 ))}
                 <FiltroPill activo={filtroCurso === 'OTROS'} onClick={() => setFiltroCurso('OTROS')}
                   label="Otros" count={contadoresPorCurso.otros} />
-                <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
-                  placeholder="🔍 Buscar por nombre…"
-                  className="bg-bg border border-border rounded-lg px-3 py-2 text-sm w-48" />
+                <input ref={busquedaRef} value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
+                  placeholder="🔍 Buscar (Ctrl+F): nombre, whatsapp, email, IG, curso, país…"
+                  className="bg-bg border border-border rounded-lg px-3 py-2 text-sm w-64" />
               </div>
               <button onClick={exportarExcel} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm shrink-0">
                 ⬇ Exportar a Excel
               </button>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap mb-3 no-print">
+              {[
+                { k: 'sinAsignar', l: 'Sin asignar' }, { k: 'conWhatsapp', l: 'Con WhatsApp' },
+                { k: 'sinWhatsapp', l: 'Sin WhatsApp' }, { k: 'conEmail', l: 'Con Email' },
+                { k: 'altaPrioridad', l: '⭐ Alta prioridad' }, { k: 'hoy', l: '⏰ Vence hoy' }, { k: 'atrasados', l: '🔴 Atrasados' }
+              ].map(({ k, l }) => (
+                <button key={k} onClick={() => toggleFiltroExtra(k)}
+                  className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors ${
+                    filtrosExtra.includes(k) ? 'bg-infoBg border-infoText/40 text-infoText' : 'bg-surface2 border-border text-textMuted hover:text-textSec'
+                  }`}>
+                  {l}
+                </button>
+              ))}
+
+              <span className="w-px h-4 bg-border mx-1" />
+
+              <label className="text-[11px] text-textMuted">Agrupar por</label>
+              <select value={dimensionAgrupacion} onChange={(e) => setDimensionAgrupacion(e.target.value)}
+                className="bg-surface2 border border-border rounded-md px-2 py-1 text-[11px]">
+                <option value="curso">Curso</option>
+                <option value="responsable">Responsable</option>
+                <option value="pais">País</option>
+                <option value="origen">Origen</option>
+              </select>
+
+              <label className="text-[11px] text-textMuted">Ordenar</label>
+              <select value={ordenPor} onChange={(e) => setOrdenPor(e.target.value)}
+                className="bg-surface2 border border-border rounded-md px-2 py-1 text-[11px]">
+                <option value="antiguos">Más antiguos primero</option>
+                <option value="atrasado">Más atrasado</option>
+                <option value="reciente">Más reciente</option>
+                <option value="nombre">Nombre</option>
+              </select>
             </div>
 
             <SeccionLote
@@ -241,48 +425,70 @@ export default function SeguimientoPage() {
                 "No contestó" o "Va a pensarlo", sigue escalando de lote en lote (1 → 2 → 3 → 4 → 5) hasta
                 resolverse. Si registrás <b>"No le interesa"</b>, se saca del camino de seguimiento y no vuelve
                 a aparecer. Apenas se marca la venta, el lead desaparece de todos los lotes automáticamente.</>}
-              filas={lote0} buscarLead={buscarLead} onContactar={registrarContacto} onReasignar={reasignar}
-              onVerFicha={setFichaLeadId} onMarcarVenta={setLeadVenta} puedeReasignar={puedeReasignar} conObservaciones
+              filas={lote0} conObservaciones {...propsComunes}
             />
-
             <SeccionLote
               titulo="LOTE 1 – Contactar a las 48 horas" subtitulo={`${lote1.length} lead(s) por contactar`}
               explicacion={<>Si registrás "No contestó" o "Va a pensarlo" pasa solo al Lote 2 (10 días). Si marcás la venta, desaparece de acá.</>}
-              filas={lote1} buscarLead={buscarLead} onContactar={registrarContacto} onReasignar={reasignar}
-              onVerFicha={setFichaLeadId} onMarcarVenta={setLeadVenta} puedeReasignar={puedeReasignar} conObservaciones
+              filas={lote1} conObservaciones {...propsComunes}
             />
-
             <SeccionLote
               titulo="LOTE 2 – Contactar a los 10 días" subtitulo={`${lote2.length} lead(s) que no respondieron en el Lote 1`}
               explicacion={<>Si sigue sin resolverse, pasa al Lote 3 (al mes). Si marcás la venta, desaparece de acá.</>}
-              filas={lote2} buscarLead={buscarLead} onContactar={registrarContacto} onReasignar={reasignar}
-              onVerFicha={setFichaLeadId} onMarcarVenta={setLeadVenta} puedeReasignar={puedeReasignar}
+              filas={lote2} {...propsComunes}
             />
-
             <SeccionLote
               titulo="LOTE 3 – Contactar al mes" subtitulo={`${lote3.length} lead(s) sin resolver al mes de ingresados`}
               explicacion={<>Requiere que un Coordinador/Admin lo asigne. Si sigue sin resolverse, pasa al Lote 4 (2 meses).</>}
-              filas={lote3} buscarLead={buscarLead} onContactar={registrarContacto} onReasignar={reasignar}
-              onVerFicha={setFichaLeadId} onMarcarVenta={setLeadVenta} puedeReasignar={puedeReasignar} sinAsignarPorDefecto
+              filas={lote3} sinAsignarPorDefecto {...propsComunes}
             />
-
             <SeccionLote
               titulo="LOTE 4 – Contactar a los 2 meses" subtitulo={`${lote4.length} lead(s) sin resolver a los 2 meses de ingresados`}
               explicacion={<>Requiere asignación. Si sigue sin resolverse, pasa al Lote 5 (3 meses).</>}
-              filas={lote4} buscarLead={buscarLead} onContactar={registrarContacto} onReasignar={reasignar}
-              onVerFicha={setFichaLeadId} onMarcarVenta={setLeadVenta} puedeReasignar={puedeReasignar} sinAsignarPorDefecto
+              filas={lote4} sinAsignarPorDefecto {...propsComunes}
             />
-
             <SeccionLote
               ultima
               titulo="LOTE 5 – Contactar a los 3 meses" subtitulo={`${lote5.length} lead(s) sin resolver a los 3 meses de ingresados`}
               explicacion={<>Último lote de seguimiento automático. Si marcás la venta, desaparece de acá como cualquier otro lote.</>}
-              filas={lote5} buscarLead={buscarLead} onContactar={registrarContacto} onReasignar={reasignar}
-              onVerFicha={setFichaLeadId} onMarcarVenta={setLeadVenta} puedeReasignar={puedeReasignar} sinAsignarPorDefecto
+              filas={lote5} sinAsignarPorDefecto {...propsComunes}
             />
           </>
         )}
       </div>
+
+      {seleccionados.size > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 bg-surface2 border-t border-border p-4 flex items-center justify-between flex-wrap gap-3 z-30">
+          <p className="text-sm font-semibold">{seleccionados.size} seleccionado(s)</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            {puedeReasignar && (
+              <button onClick={() => setModalReasignar({ masivo: true })}
+                className="text-xs px-3 py-1.5 rounded-md bg-surface border border-border">Asignar responsable</button>
+            )}
+            <select onChange={(e) => { if (e.target.value) marcarContactoMasivo(e.target.value); e.target.value = ''; }}
+              defaultValue="" className="text-xs px-3 py-1.5 rounded-md bg-surface border border-border">
+              <option value="" disabled>Marcar contacto…</option>
+              {RESULTADOS_CONTACTO.map((r) => <option key={r} value={r}>{r}</option>)}
+            </select>
+            <button onClick={exportarSeleccionados}
+              className="text-xs px-3 py-1.5 rounded-md bg-surface border border-border">⬇ Exportar seleccionados</button>
+            <button onClick={() => setSeleccionados(new Set())}
+              className="text-xs px-3 py-1.5 rounded-md bg-dangerBg text-dangerText">Cancelar</button>
+          </div>
+        </div>
+      )}
+
+      {modalReasignar && (
+        <ModalReasignar
+          onClose={() => setModalReasignar(null)}
+          onConfirmar={(email, nombre) => {
+            if (modalReasignar.masivo) reasignarMasivo(email, nombre);
+            else reasignar(modalReasignar.leadId, modalReasignar.lote, email, nombre);
+            if (!modalReasignar.masivo) setModalReasignar(null);
+          }}
+        />
+      )}
+
       <FichaDrawer leadId={fichaLeadId} usuario={usuario} onClose={() => setFichaLeadId(null)} />
       <ModalVenta lead={leadVenta} onClose={() => setLeadVenta(null)} onConfirm={confirmarVenta} usuarioActual={usuario} />
       {toast}
@@ -318,18 +524,50 @@ function FiltroPill({ activo, onClick, label, count }) {
   );
 }
 
-// Un lote completo: título + explicación + todas sus filas agrupadas por curso, cada grupo
-// plegable/desplegable. Lote 0 y Lote 1 usan este mismo componente — visualmente son idénticos,
-// la diferencia está solo en qué filas les llegan desde afuera (vencidas o no).
-function SeccionLote({ titulo, subtitulo, explicacion, filas, buscarLead, ultima, ...propsFila }) {
-  const [abierta, setAbierta] = useState(true);
-  const grupos = agruparPorCurso(filas, buscarLead);
+// Modal simple para reasignar (individual o masivo), con buscador de persona.
+function ModalReasignar({ onClose, onConfirmar }) {
+  const [busqueda, setBusqueda] = useState('');
+  const filtradas = EMAILS_ASIGNABLES.filter((p) => p.nombre.toLowerCase().includes(busqueda.trim().toLowerCase()));
   return (
-    <div className={`bg-surface border border-border rounded-2xl p-5 ${ultima ? '' : 'mb-4'}`}>
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-surface2 border border-border rounded-2xl p-5 w-80" onClick={(e) => e.stopPropagation()}>
+        <p className="text-sm font-bold mb-3">Reasignar a…</p>
+        <input autoFocus value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
+          placeholder="Buscar persona…" className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm mb-3" />
+        <div className="space-y-1 max-h-56 overflow-y-auto">
+          {filtradas.length === 0 && <p className="text-textMuted text-xs">Sin resultados.</p>}
+          {filtradas.map((p) => (
+            <button key={p.email} onClick={() => onConfirmar(p.email, p.nombre)}
+              className="w-full flex items-center gap-2 text-left px-2 py-2 rounded-lg hover:bg-bg text-sm">
+              <span className={`w-6 h-6 rounded-full ${colorAvatar(p.nombre)} text-white text-[10px] flex items-center justify-center font-bold`}>
+                {iniciales(p.nombre)}
+              </span>
+              {p.nombre}
+            </button>
+          ))}
+        </div>
+        <button onClick={onClose} className="w-full mt-3 text-xs text-textMuted">Cancelar</button>
+      </div>
+    </div>
+  );
+}
+
+function SeccionLote({ titulo, subtitulo, explicacion, filas, buscarLead, ultima, dimensionAgrupacion, ordenPor, ...propsFila }) {
+  const [abierta, setAbierta] = useState(true);
+  const grupos = agruparYOrdenar(filas, buscarLead, dimensionAgrupacion, ordenPor);
+  const contactadas = filas.filter((f) => f.Contactado === 'TRUE').length;
+
+  return (
+    <div className={`bg-surface border border-border rounded-2xl p-5 transition-all ${ultima ? '' : 'mb-4'}`}>
       <button onClick={() => setAbierta(!abierta)} className="w-full flex items-start justify-between text-left">
         <div>
           <p className="text-sm font-semibold mb-1">{titulo}</p>
           <p className="text-textMuted text-xs">{subtitulo}</p>
+          {filas.length > 0 && (
+            <p className="text-textMuted text-[11px] mt-0.5">
+              Total {filas.length} · Contactados {contactadas} · Pendientes {filas.length - contactadas}
+            </p>
+          )}
         </div>
         <span className="text-textMuted text-sm shrink-0 ml-3">{abierta ? '▲' : '▼'}</span>
       </button>
@@ -339,8 +577,8 @@ function SeccionLote({ titulo, subtitulo, explicacion, filas, buscarLead, ultima
           {filas.length === 0 ? (
             <p className="text-textMuted text-sm">Nada pendiente en este lote.</p>
           ) : (
-            grupos.map(([curso, filasDelCurso]) => (
-              <GrupoCurso key={curso} curso={curso} filas={filasDelCurso} buscarLead={buscarLead} {...propsFila} />
+            grupos.map(([clave, filasDelGrupo]) => (
+              <GrupoCurso key={clave} curso={clave} filas={filasDelGrupo} buscarLead={buscarLead} {...propsFila} />
             ))
           )}
         </>
@@ -369,108 +607,167 @@ function GrupoCurso({ curso, filas, buscarLead, ...propsFila }) {
   );
 }
 
-function FilaLote({ fila, lead, onContactar, onReasignar, onVerFicha, onMarcarVenta, puedeReasignar, conObservaciones, sinAsignarPorDefecto }) {
-  const [resultado, setResultado] = useState('');
+const SUGERENCIAS_PROXIMA_ACCION = {
+  'No contestó': ['Volver a llamar', 'Enviar WhatsApp', 'Enviar Email'],
+  'Va a pensarlo': ['Enviar recordatorio en 3 días', 'Enviar WhatsApp']
+};
+
+const PLANTILLAS_WHATSAPP = [
+  { label: 'Hola', texto: '¡Hola! ¿Cómo estás? Te escribo de ILCE.' },
+  { label: 'Seguimiento', texto: 'Hola, quería hacer un seguimiento sobre tu consulta. ¿Seguís interesado/a?' },
+  { label: 'Recordatorio', texto: 'Hola, te recordamos que seguimos a disposición por cualquier consulta.' }
+];
+
+function FilaLote({
+  fila, lead, onContactar, onReasignar, onVerFicha, onMarcarVenta, puedeReasignar, conObservaciones, sinAsignarPorDefecto,
+  seleccionados, onToggleSeleccion, onAbrirReasignarModal
+}) {
+  const [resultadoElegido, setResultadoElegido] = useState(null);
   const [observaciones, setObservaciones] = useState('');
   const [proximaAccion, setProximaAccion] = useState('');
+  const [menuWhatsapp, setMenuWhatsapp] = useState(false);
 
   if (!lead) return null;
   const contactado = fila.Contactado === 'TRUE';
   const sinAsignar = sinAsignarPorDefecto && !fila.AsignadoAEmail;
+  const clave = `${fila.LeadID}__${fila.Lote}`;
+  const seleccionado = seleccionados?.has(clave);
+  const venc = estadoVencimiento(fila.FechaVence);
+  const iconos = indicadores(lead, fila);
 
-  function guardar() {
-    onContactar(fila.LeadID, fila.Lote, resultado, observaciones, proximaAccion);
-    // Si el resultado es "Pago recibido", abrimos directo el modal de venta —
-    // no tiene sentido hacer un segundo click para lo que ya sabemos que va a pasar.
-    if (resultado === 'Pago recibido') onMarcarVenta(lead);
+  const colorUrgencia = {
+    proximo: 'text-warningText', reciente: 'text-warningText', critico: 'text-dangerText', lejos: 'text-textMuted'
+  }[venc.urgencia];
+
+  function elegirResultado(valor) {
+    setResultadoElegido(valor);
   }
 
+  function confirmarResultado() {
+    onContactar(fila.LeadID, fila.Lote, resultadoElegido, observaciones, proximaAccion);
+    if (resultadoElegido === 'Pago recibido') onMarcarVenta(lead);
+    setResultadoElegido(null);
+  }
+
+  const whatsappLimpio = lead.WhatsApp ? lead.WhatsApp.replace(/[^\d]/g, '') : '';
+
   return (
-    <div className="border-t border-border first:border-t-0 py-3">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium">
-          {lead.Nombre} {lead.Apellido} — {lead.Curso || 'sin curso'}
-          <span className="text-textMuted font-normal text-xs ml-2">
-            · {tiempoDesde(lead.FechaIngreso)} ({new Date(lead.FechaIngreso).toLocaleDateString('es-AR')})
-          </span>
-        </p>
-        <div className="flex items-center gap-2">
-          {lead.WhatsApp && (
-            <a href={`https://wa.me/${lead.WhatsApp.replace(/[^\d]/g, '')}`} target="_blank" rel="noopener noreferrer"
-              className="w-6 h-6 flex items-center justify-center rounded-md border border-border text-xs" title="WhatsApp">💬</a>
+    <div className={`border-t border-border first:border-t-0 py-3 transition-colors ${seleccionado ? 'bg-infoBg/30' : ''}`}>
+      <div className="flex items-start gap-2">
+        {onToggleSeleccion && (
+          <input type="checkbox" checked={!!seleccionado} onChange={() => onToggleSeleccion(fila.LeadID, fila.Lote)}
+            className="mt-1.5" />
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between flex-wrap gap-1">
+            <p className="text-sm font-medium flex items-center gap-1.5 flex-wrap">
+              {lead.Nombre} {lead.Apellido} — {lead.Curso || 'sin curso'}
+              {iconos.map((ic) => <span key={ic.icono} title={ic.titulo}>{ic.icono}</span>)}
+              <span className={`font-normal text-xs ${colorUrgencia}`}>· {venc.texto}</span>
+            </p>
+            <div className="flex items-center gap-2">
+              {lead.WhatsApp && (
+                <div className="relative">
+                  <button type="button" onClick={() => setMenuWhatsapp(!menuWhatsapp)}
+                    className="w-6 h-6 flex items-center justify-center rounded-md border border-border text-xs" title="WhatsApp">💬</button>
+                  {menuWhatsapp && (
+                    <div className="absolute right-0 top-7 z-20 bg-surface2 border border-border rounded-lg p-2 w-48 shadow-xl">
+                      <a href={`https://wa.me/${whatsappLimpio}`} target="_blank" rel="noopener noreferrer"
+                        className="block text-xs px-2 py-1.5 rounded hover:bg-bg">Abrir conversación</a>
+                      <button onClick={() => { navigator.clipboard.writeText(lead.WhatsApp); setMenuWhatsapp(false); }}
+                        className="block w-full text-left text-xs px-2 py-1.5 rounded hover:bg-bg">Copiar teléfono</button>
+                      <hr className="border-border my-1" />
+                      <p className="text-[10px] text-textMuted px-2 mb-1">Mensaje predefinido</p>
+                      {PLANTILLAS_WHATSAPP.map((pl) => (
+                        <a key={pl.label} href={`https://wa.me/${whatsappLimpio}?text=${encodeURIComponent(pl.texto)}`}
+                          target="_blank" rel="noopener noreferrer"
+                          className="block text-xs px-2 py-1.5 rounded hover:bg-bg">{pl.label}</a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              {lead.EmailEstudiante && (
+                <a href={`mailto:${lead.EmailEstudiante}`} className="w-6 h-6 flex items-center justify-center rounded-md border border-border text-xs" title="Email">✉️</a>
+              )}
+              <a href={`tel:${whatsappLimpio}`} className="w-6 h-6 flex items-center justify-center rounded-md border border-border text-xs" title="Llamar">📞</a>
+              <button onClick={() => onMarcarVenta(lead)} className="text-xs px-3 py-1 rounded bg-accentPurple text-white">Venta</button>
+              <button onClick={() => onVerFicha(lead.ID)} className="text-accentTeal text-xs font-semibold">Ficha</button>
+            </div>
+          </div>
+
+          <p className="text-xs text-textMuted mt-0.5 mb-1.5 flex items-center gap-2 flex-wrap">
+            {lead.WhatsApp && <span className="inline-flex items-center gap-1">📱 {lead.WhatsApp} <CopyButton valor={lead.WhatsApp} /></span>}
+            {lead.EmailEstudiante && <span className="inline-flex items-center gap-1">✉️ {lead.EmailEstudiante} <CopyButton valor={lead.EmailEstudiante} /></span>}
+            {lead.InstagramUsuario && <span className="inline-flex items-center gap-1">📷 {lead.InstagramUsuario} <CopyButton valor={lead.InstagramUsuario} /></span>}
+            {lead.Pais && <span>🌎 {lead.Pais}</span>}
+            {lead.Origen && <span>Origen: {lead.Origen}</span>}
+            {lead.CursosAdicionales && <span>· También le interesa: {lead.CursosAdicionales}</span>}
+          </p>
+
+          <div className="flex items-center gap-2 text-xs text-textMuted mt-1 mb-2 flex-wrap">
+            {sinAsignar ? (
+              <span className="text-warningText font-semibold">Sin asignación</span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5">
+                <span className={`w-5 h-5 rounded-full ${colorAvatar(fila.AsignadoANombre)} text-white text-[9px] flex items-center justify-center font-bold`}>
+                  {iniciales(fila.AsignadoANombre)}
+                </span>
+                {fila.AsignadoANombre || '—'}
+              </span>
+            )}
+            {puedeReasignar && (
+              <button onClick={() => onAbrirReasignarModal(fila.LeadID, fila.Lote)}
+                className="text-accentTeal font-semibold">{sinAsignar ? 'Asignar' : 'Reasignar'}</button>
+            )}
+          </div>
+
+          {contactado ? (
+            <p className="text-successText text-xs">
+              ✓ {fila.Resultado}
+              {fila.Observaciones && <span className="text-textMuted"> · {fila.Observaciones}</span>}
+              {fila.ProximaAccion && <span className="text-textMuted"> · Próxima acción: {fila.ProximaAccion}</span>}
+            </p>
+          ) : resultadoElegido ? (
+            <div className="bg-bg border border-border rounded-lg p-3">
+              <p className="text-xs font-semibold mb-2">Resultado: {resultadoElegido}</p>
+              {conObservaciones && (
+                <textarea autoFocus rows={2} placeholder="Observaciones (opcional)" value={observaciones}
+                  onChange={(e) => setObservaciones(e.target.value)}
+                  className="w-full bg-surface2 border border-border rounded px-2 py-1.5 text-xs mb-2" />
+              )}
+              {SUGERENCIAS_PROXIMA_ACCION[resultadoElegido] && (
+                <div className="flex gap-1.5 flex-wrap mb-2">
+                  {SUGERENCIAS_PROXIMA_ACCION[resultadoElegido].map((s) => (
+                    <button key={s} type="button" onClick={() => setProximaAccion(s)}
+                      className={`text-[11px] px-2 py-1 rounded-full border ${
+                        proximaAccion === s ? 'bg-accentPurple border-accentPurple text-white' : 'bg-surface2 border-border text-textSec'
+                      }`}>{s}</button>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <button onClick={() => setResultadoElegido(null)} className="text-xs px-3 py-1 rounded bg-surface2 border border-border">Cancelar</button>
+                <button onClick={confirmarResultado} className="text-xs px-3 py-1 rounded bg-accentPurple text-white font-semibold">Guardar ✓</button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {RESULTADOS_PRINCIPALES.map((r) => (
+                <button key={r.valor} onClick={() => elegirResultado(r.valor)}
+                  className="text-xs px-2.5 py-1 rounded-full bg-surface2 border border-border hover:border-accentTeal">
+                  {r.emoji} {r.valor}
+                </button>
+              ))}
+              <select onChange={(e) => { if (e.target.value) elegirResultado(e.target.value); e.target.value = ''; }}
+                defaultValue="" className="text-xs px-2 py-1 rounded-full bg-surface2 border border-border text-textMuted">
+                <option value="" disabled>Otro resultado…</option>
+                {RESULTADOS_SECUNDARIOS.map((r) => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </div>
           )}
-          <button onClick={() => onMarcarVenta(lead)} className="text-xs px-3 py-1 rounded bg-accentPurple text-white">
-            Marcar venta
-          </button>
-          <button onClick={() => onVerFicha(lead.ID)} className="text-accentTeal text-xs font-semibold">Ver ficha</button>
         </div>
       </div>
-
-      <p className="text-xs text-textMuted mt-0.5 mb-1.5 flex items-center gap-2 flex-wrap">
-        {lead.WhatsApp && (
-          <span className="inline-flex items-center gap-1">📱 {lead.WhatsApp} <CopyButton valor={lead.WhatsApp} /></span>
-        )}
-        {lead.EmailEstudiante && (
-          <span className="inline-flex items-center gap-1">✉️ {lead.EmailEstudiante} <CopyButton valor={lead.EmailEstudiante} /></span>
-        )}
-        {lead.InstagramUsuario && (
-          <span className="inline-flex items-center gap-1">📷 {lead.InstagramUsuario} <CopyButton valor={lead.InstagramUsuario} /></span>
-        )}
-        {lead.Pais && <span>🌎 {lead.Pais}</span>}
-        {lead.Origen && <span>Origen: {lead.Origen}</span>}
-      </p>
-
-      <div className="flex items-center gap-2 text-xs text-textMuted mt-1 mb-2">
-        {sinAsignar ? (
-          <span className="text-warningText font-semibold">Sin asignación</span>
-        ) : (
-          <span>Asignado a: {fila.AsignadoANombre || '—'}</span>
-        )}
-        {puedeReasignar && (
-          <select
-            defaultValue=""
-            onChange={(e) => {
-              const opt = e.target.selectedOptions[0];
-              onReasignar(fila.LeadID, fila.Lote, e.target.value, opt.text);
-            }}
-            className="bg-bg border border-border rounded px-2 py-0.5"
-          >
-            <option value="" disabled>{sinAsignar ? 'Asignar a…' : 'Reasignar a…'}</option>
-            {EMAILS_ASIGNABLES.map((p) => <option key={p.email} value={p.email}>{p.nombre}</option>)}
-          </select>
-        )}
-      </div>
-
-      {contactado ? (
-        <p className="text-successText text-xs">
-          ✓ {fila.Resultado}
-          {fila.Observaciones && <span className="text-textMuted"> · {fila.Observaciones}</span>}
-          {fila.ProximaAccion && <span className="text-textMuted"> · Próxima acción: {fila.ProximaAccion}</span>}
-        </p>
-      ) : (
-        <div className="flex items-center gap-2 flex-wrap">
-          <select value={resultado} onChange={(e) => setResultado(e.target.value)}
-            className="bg-bg border border-border rounded px-2 py-1 text-xs">
-            <option value="">Resultado del contacto</option>
-            {RESULTADOS_CONTACTO.map((r) => <option key={r} value={r}>{r}</option>)}
-          </select>
-          {conObservaciones && (
-            <>
-              <input placeholder="Observaciones" value={observaciones} onChange={(e) => setObservaciones(e.target.value)}
-                className="bg-bg border border-border rounded px-2 py-1 text-xs w-36" />
-              <input placeholder="Próxima acción" value={proximaAccion} onChange={(e) => setProximaAccion(e.target.value)}
-                className="bg-bg border border-border rounded px-2 py-1 text-xs w-36" />
-            </>
-          )}
-          <button
-            disabled={!resultado}
-            onClick={guardar}
-            className="text-xs px-3 py-1 rounded bg-accentPurple text-white disabled:opacity-50"
-          >
-            Guardar
-          </button>
-        </div>
-      )}
     </div>
   );
 }
