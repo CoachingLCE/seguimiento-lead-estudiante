@@ -322,18 +322,28 @@ function FiltroPill({ activo, onClick, label, count }) {
 // plegable/desplegable. Lote 0 y Lote 1 usan este mismo componente — visualmente son idénticos,
 // la diferencia está solo en qué filas les llegan desde afuera (vencidas o no).
 function SeccionLote({ titulo, subtitulo, explicacion, filas, buscarLead, ultima, ...propsFila }) {
+  const [abierta, setAbierta] = useState(true);
   const grupos = agruparPorCurso(filas, buscarLead);
   return (
     <div className={`bg-surface border border-border rounded-2xl p-5 ${ultima ? '' : 'mb-4'}`}>
-      <p className="text-sm font-semibold mb-1">{titulo}</p>
-      <p className="text-textMuted text-xs mb-1">{subtitulo}</p>
-      <p className="text-textMuted text-[11px] mb-3">{explicacion}</p>
-      {filas.length === 0 ? (
-        <p className="text-textMuted text-sm">Nada pendiente en este lote.</p>
-      ) : (
-        grupos.map(([curso, filasDelCurso]) => (
-          <GrupoCurso key={curso} curso={curso} filas={filasDelCurso} buscarLead={buscarLead} {...propsFila} />
-        ))
+      <button onClick={() => setAbierta(!abierta)} className="w-full flex items-start justify-between text-left">
+        <div>
+          <p className="text-sm font-semibold mb-1">{titulo}</p>
+          <p className="text-textMuted text-xs">{subtitulo}</p>
+        </div>
+        <span className="text-textMuted text-sm shrink-0 ml-3">{abierta ? '▲' : '▼'}</span>
+      </button>
+      {abierta && (
+        <>
+          <p className="text-textMuted text-[11px] mt-1 mb-3">{explicacion}</p>
+          {filas.length === 0 ? (
+            <p className="text-textMuted text-sm">Nada pendiente en este lote.</p>
+          ) : (
+            grupos.map(([curso, filasDelCurso]) => (
+              <GrupoCurso key={curso} curso={curso} filas={filasDelCurso} buscarLead={buscarLead} {...propsFila} />
+            ))
+          )}
+        </>
       )}
     </div>
   );

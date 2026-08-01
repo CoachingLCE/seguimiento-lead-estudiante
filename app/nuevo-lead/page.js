@@ -7,7 +7,7 @@ import { useSession } from '../../lib/useSession';
 import { tienePermisoCrearLeads } from '../../lib/permisos';
 import {
   CURSOS, ORIGENES, ORIGEN_OTRO, PAISES, CURSO_SIN_DEFINIR, CURSO_OTROS,
-  detectarPaisPorWhatsapp, PRIORIDADES
+  detectarPaisPorWhatsapp
 } from '../../lib/constants';
 
 function contactoVacio() {
@@ -18,41 +18,67 @@ function contactoVacio() {
 // comas, pipes o guiones, y trata de identificar WhatsApp (secuencia de dígitos), País
 // (coincide con la lista de países) y Email (si aparece ahí en vez de en su propio campo).
 // Lo que sobra se junta como Nombre (primer resto) + el resto se guarda en Observaciones.
+function escaparRegex(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function parsearIngresoLibre(texto) {
-  const partes = (texto || '')
-    .split(/\t|\r?\n|\||,|;| - /)
-    .map((p) => p.trim())
-    .filter(Boolean);
+  let resto = texto || '';
 
-  let whatsapp = '';
-  let pais = '';
+  // 1. Email — se busca y se saca de en medio, sin importar dónde esté.
   let email = '';
-  const resto = [];
+  const mEmail = resto.match(/[^\s,;|]+@[^\s,;|]+\.[^\s,;|]+/);
+  if (mEmail) {
+    email = mEmail[0];
+    resto = resto.replace(email, ' ');
+  }
 
-  partes.forEach((parte) => {
-    const soloDigitos = parte.replace(/[^\d]/g, '');
-    if (!whatsapp && soloDigitos.length >= 8 && soloDigitos.length <= 15 && /^[+\d\s()-]+$/.test(parte)) {
-      whatsapp = parte;
-    } else if (!email && /\S+@\S+\.\S+/.test(parte)) {
-      email = parte;
-    } else if (!pais && PAISES.some((p) => p.toLowerCase() === parte.toLowerCase())) {
-      pais = PAISES.find((p) => p.toLowerCase() === parte.toLowerCase());
-    } else {
-      resto.push(parte);
+  // 2. País — se busca como palabra/frase completa en cualquier parte del texto.
+  let pais = '';
+  for (const p of PAISES) {
+    const regex = new RegExp(`\\b${escaparRegex(p)}\\b`, 'i');
+    const m = resto.match(regex);
+    if (m) {
+      pais = p;
+      resto = resto.replace(m[0], ' ');
+      break;
+    }
+  }
+
+  // 3. WhatsApp — se busca la secuencia con más dígitos reales (8 a 15) en cualquier parte
+  // del texto, esté en su propia línea o pegada al resto (ej: "Juan Pérez +54 9 11...").
+  let whatsapp = '';
+  const candidatos = resto.match(/[+]?[\d][\d\s\-()]{6,}\d/g) || [];
+  candidatos.forEach((c) => {
+    const digitos = c.replace(/[^\d]/g, '');
+    const digitosActual = whatsapp.replace(/[^\d]/g, '');
+    if (digitos.length >= 8 && digitos.length <= 15 && digitos.length > digitosActual.length) {
+      whatsapp = c.trim();
     }
   });
+  if (whatsapp) {
+    resto = resto.replace(whatsapp, ' §§ ');
+  }
 
   if (!pais && whatsapp) {
     pais = detectarPaisPorWhatsapp(whatsapp);
   }
 
-  return {
-    nombre: resto[0] || '',
-    whatsapp,
-    pais,
-    email,
-    notasExtra: resto.slice(1).join(' · ')
-  };
+  // 4. Lo que queda: si encontramos el teléfono, todo lo de ANTES es el nombre y todo lo de
+  // DESPUÉS son notas extra. Si no había teléfono, separamos por los delimitadores de siempre.
+  let nombre = '';
+  let notasExtra = '';
+  if (whatsapp) {
+    const partes = resto.split('§§');
+    nombre = (partes[0] || '').trim().replace(/[\s,;|-]+$/, '').trim();
+    notasExtra = partes.slice(1).join(' ').trim().replace(/^[\s,;|-]+/, '').trim();
+  } else {
+    const partes = resto.split(/\t|\r?\n|\||,|;| - /).map((p) => p.trim()).filter(Boolean);
+    nombre = partes[0] || '';
+    notasExtra = partes.slice(1).join(' · ');
+  }
+
+  return { nombre, whatsapp, pais, email, notasExtra };
 }
 
 function tieneMedioDeContacto(contacto) {
@@ -82,7 +108,6 @@ export default function NuevoLeadPage() {
   const [origen, setOrigen] = useState(ORIGENES[0]);
   const [origenPersonalizado, setOrigenPersonalizado] = useState('');
   const [cursosAdicionales, setCursosAdicionales] = useState([]);
-  const [prioridad, setPrioridad] = useState('');
 
   // Cada contacto de la tanda tiene sus propios datos personales
   const [contactos, setContactos] = useState([contactoVacio()]);
@@ -201,7 +226,6 @@ export default function NuevoLeadPage() {
             email: p.email || contacto.email,
             instagram: contacto.instagram,
             pais: p.pais,
-            prioridad,
             notasIniciales: p.notasExtra,
             curso: cursoFinal,
             cursosAdicionales: cursosAdicionales.join(', '),
@@ -216,7 +240,6 @@ export default function NuevoLeadPage() {
       setCursosAdicionales([]);
       setCursoPersonalizado('');
       setOrigenPersonalizado('');
-      setPrioridad('');
       setErrores({});
     } finally {
       setGuardando(false);
@@ -385,18 +408,9 @@ export default function NuevoLeadPage() {
               <span className="text-base leading-none">＋</span> Agregar otro contacto
             </button>
 
-            <div className="grid grid-cols-2 gap-5 mb-5">
-              <div>
-                <label className="text-[13px] font-medium text-textSec block mb-1">Fecha de ingreso</label>
-                <input disabled value={new Date().toLocaleDateString('es-AR')} className={`${inputClsBg} text-textSec`} />
-              </div>
-              <div>
-                <label className="text-[13px] font-medium text-textSec block mb-1">Prioridad (opcional)</label>
-                <select value={prioridad} onChange={(e) => setPrioridad(e.target.value)} className={inputClsBg}>
-                  <option value="">Sin definir</option>
-                  {PRIORIDADES.map((p) => <option key={p} value={p}>{p}</option>)}
-                </select>
-              </div>
+            <div className="mb-5">
+              <label className="text-[13px] font-medium text-textSec block mb-1">Fecha de ingreso</label>
+              <input disabled value={new Date().toLocaleDateString('es-AR')} className={`${inputClsBg} text-textSec max-w-xs`} />
             </div>
 
             <button type="submit" disabled={guardando}
