@@ -61,7 +61,7 @@ export async function POST(request) {
     '', '', '', '', '', '',
     '',
     body.email || '',
-    '',
+    body.notasIniciales || '',
     body.instagram || '',
     '', '', '',
     body.pais || '',

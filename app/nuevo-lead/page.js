@@ -8,19 +8,63 @@ import { tienePermisoCrearLeads } from '../../lib/permisos';
 import { CURSOS, ORIGENES, ORIGEN_OTRO, PAISES, CURSO_SIN_DEFINIR, CURSO_OTROS, detectarPaisPorWhatsapp } from '../../lib/constants';
 
 function contactoVacio() {
-  return { nombre: '', whatsapp: '', email: '', instagram: '', pais: 'Argentina', paisAuto: true };
+  return { raw: '', email: '', instagram: '' };
+}
+
+// Interpreta lo que se pegó/escribió en el campo único: separa por tabs, saltos de línea,
+// comas, pipes o guiones, y trata de identificar WhatsApp (secuencia de dígitos), País
+// (coincide con la lista de países) y Email (si aparece ahí en vez de en su propio campo).
+// Lo que sobra se junta como Nombre (primer resto) + el resto se guarda en Observaciones.
+function parsearIngresoLibre(texto) {
+  const partes = (texto || '')
+    .split(/\t|\r?\n|\||,|;| - /)
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  let whatsapp = '';
+  let pais = '';
+  let email = '';
+  const resto = [];
+
+  partes.forEach((parte) => {
+    const soloDigitos = parte.replace(/[^\d]/g, '');
+    if (!whatsapp && soloDigitos.length >= 8 && soloDigitos.length <= 15 && /^[+\d\s()-]+$/.test(parte)) {
+      whatsapp = parte;
+    } else if (!email && /\S+@\S+\.\S+/.test(parte)) {
+      email = parte;
+    } else if (!pais && PAISES.some((p) => p.toLowerCase() === parte.toLowerCase())) {
+      pais = PAISES.find((p) => p.toLowerCase() === parte.toLowerCase());
+    } else {
+      resto.push(parte);
+    }
+  });
+
+  if (!pais && whatsapp) {
+    pais = detectarPaisPorWhatsapp(whatsapp);
+  }
+
+  return {
+    nombre: resto[0] || '',
+    whatsapp,
+    pais,
+    email,
+    notasExtra: resto.slice(1).join(' · ')
+  };
 }
 
 function tieneMedioDeContacto(contacto) {
-  return Boolean(contacto.whatsapp.trim() || contacto.email.trim() || contacto.instagram.trim());
+  const p = parsearIngresoLibre(contacto.raw);
+  return Boolean(p.whatsapp || contacto.email.trim() || contacto.instagram.trim());
 }
 
 function previewContacto(contacto, cursoTexto) {
+  const p = parsearIngresoLibre(contacto.raw);
   const partes = [
-    contacto.nombre.trim(),
+    p.nombre,
     cursoTexto,
-    contacto.whatsapp.trim(),
-    contacto.email.trim()
+    p.pais && `🌎 ${p.pais}`,
+    p.whatsapp && `📱 ${p.whatsapp}`,
+    (p.email || contacto.email.trim()) && `✉️ ${p.email || contacto.email.trim()}`
   ].filter(Boolean);
   return partes.join(' • ');
 }
@@ -64,19 +108,8 @@ export default function NuevoLeadPage() {
   }
 
   function actualizarContacto(index, campo, valor) {
-    setContactos((prev) => prev.map((c, i) => {
-      if (i !== index) return c;
-      const actualizado = { ...c, [campo]: valor };
-      if (campo === 'pais') {
-        // El usuario tocó el país a mano: dejamos de autocompletarlo para no pisarle la corrección.
-        actualizado.paisAuto = false;
-      } else if (campo === 'whatsapp' && c.paisAuto) {
-        const detectado = detectarPaisPorWhatsapp(valor);
-        if (detectado) actualizado.pais = detectado;
-      }
-      return actualizado;
-    }));
-    if (['nombre', 'whatsapp', 'email'].includes(campo)) {
+    setContactos((prev) => prev.map((c, i) => (i === index ? { ...c, [campo]: valor } : c)));
+    if (['raw', 'email'].includes(campo)) {
       setIgnorarDuplicado((prev) => ({ ...prev, [index]: false }));
       clearTimeout(timersDuplicados.current[index]);
       timersDuplicados.current[index] = setTimeout(() => verificarDuplicado(index), 500);
@@ -86,10 +119,11 @@ export default function NuevoLeadPage() {
   async function verificarDuplicado(index) {
     const contacto = contactos[index];
     if (!contacto) return;
+    const p = parsearIngresoLibre(contacto.raw);
     const params = new URLSearchParams({
-      nombre: contacto.nombre,
-      whatsapp: contacto.whatsapp,
-      email: contacto.email,
+      nombre: p.nombre,
+      whatsapp: p.whatsapp,
+      email: p.email || contacto.email,
       solicitanteEmail: usuario.email
     });
     const res = await fetch(`/api/leads/duplicados?${params}`);
@@ -129,16 +163,18 @@ export default function NuevoLeadPage() {
     try {
       // Se guardan todos los contactos de la tanda, uno por uno, compartiendo curso/origen.
       for (const contacto of contactos) {
+        const p = parsearIngresoLibre(contacto.raw);
         await fetch('/api/leads', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            nombre: contacto.nombre,
+            nombre: p.nombre,
             apellido: '',
-            whatsapp: contacto.whatsapp,
-            email: contacto.email,
+            whatsapp: p.whatsapp,
+            email: p.email || contacto.email,
             instagram: contacto.instagram,
-            pais: contacto.pais,
+            pais: p.pais,
+            notasIniciales: p.notasExtra,
             curso: cursoFinal,
             cursosAdicionales: cursosAdicionales.join(', '),
             origen: origenFinal,
@@ -253,21 +289,18 @@ export default function NuevoLeadPage() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="col-span-2">
-                      <label className="text-xs text-textSec block mb-1">Nombre</label>
-                      <input required value={contacto.nombre} placeholder="Ej: Juan Pérez, o como lo tengas identificado"
-                        onChange={(e) => actualizarContacto(index, 'nombre', e.target.value)}
-                        className="w-full bg-surface2 border border-border rounded-lg px-3 py-2 text-sm" />
-                      {contacto.nombre.trim().toLowerCase() === 'prueba' && (
+                      <label className="text-xs text-textSec block mb-1">
+                        Nombre, país y WhatsApp — pegá o escribí como tengas el dato
+                      </label>
+                      <textarea required rows={2} value={contacto.raw}
+                        placeholder={'Ej: Juan Pérez\nArgentina\n+54 9 11 1234-5678\n\n(podés pegar todo junto, en cualquier orden)'}
+                        onChange={(e) => actualizarContacto(index, 'raw', e.target.value)}
+                        className="w-full bg-surface2 border border-border rounded-lg px-3 py-2 text-sm font-mono" />
+                      {contacto.raw.trim().toLowerCase().includes('prueba') && (
                         <p className="text-infoText text-xs mt-1.5">
                           💡 Podés poner "Prueba" en el nombre para ver cómo funciona cada pantalla. Este lead se borra solo a las 48hs — es solo una prueba.
                         </p>
                       )}
-                    </div>
-                    <div>
-                      <label className="text-xs text-textSec block mb-1">WhatsApp (opcional)</label>
-                      <input value={contacto.whatsapp} placeholder="+54 9 11 1234-5678"
-                        onChange={(e) => actualizarContacto(index, 'whatsapp', e.target.value)}
-                        className="w-full bg-surface2 border border-border rounded-lg px-3 py-2 text-sm" />
                     </div>
                     <div>
                       <label className="text-xs text-textSec block mb-1">Email (opcional)</label>
@@ -281,17 +314,6 @@ export default function NuevoLeadPage() {
                         onChange={(e) => actualizarContacto(index, 'instagram', e.target.value)}
                         className="w-full bg-surface2 border border-border rounded-lg px-3 py-2 text-sm" />
                     </div>
-                    <div>
-                      <label className="text-xs text-textSec block mb-1">
-                        País (opcional)
-                        {contacto.paisAuto && contacto.whatsapp && (
-                          <span className="text-infoText font-normal ml-1.5">· 🌎 detectado automáticamente</span>
-                        )}
-                      </label>
-                      <input list="lista-paises" value={contacto.pais}
-                        onChange={(e) => actualizarContacto(index, 'pais', e.target.value)}
-                        className="w-full bg-surface2 border border-border rounded-lg px-3 py-2 text-sm" />
-                    </div>
                   </div>
 
                   {errores[index] && (
@@ -300,10 +322,6 @@ export default function NuevoLeadPage() {
                 </div>
               );
             })}
-
-            <datalist id="lista-paises">
-              {PAISES.map((p) => <option key={p} value={p} />)}
-            </datalist>
 
             <button type="button" onClick={agregarContacto}
               className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm mb-4">
