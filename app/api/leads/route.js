@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { readSheet, appendRow, updateRow } from '../../../lib/sheets';
-import { findUsuario, tienePermisoOperativo } from '../../../lib/auth';
+import { findUsuario, tienePermisoOperativo, tienePermisoCrearLeads } from '../../../lib/auth';
 import { registrarAccion } from '../../../lib/auditoria';
 import { HORAS_LOTE_1, DIAS_LOTE_3, DIAS_LOTE_4, DIAS_LOTE_5 } from '../../../lib/constants';
 
@@ -19,18 +19,23 @@ export async function GET(request) {
 // body: { nombre, apellido, whatsapp, curso, cursosAdicionales, origen, cargadoPorEmail, cargadoPorNombre }
 export async function POST(request) {
   const body = await request.json();
+  const solicitante = await findUsuario(body.cargadoPorEmail);
+  if (!tienePermisoCrearLeads(solicitante)) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+  }
   const ahora = new Date();
   const fechaIngreso = ahora.toISOString();
   const leadId = `L-${ahora.getTime()}`;
 
   // Columnas Leads: ID, Nombre, Apellido, WhatsApp, Curso, CursosAdicionales, Origen, FechaIngreso,
   // CargadoPorEmail, CargadoPorNombre, Estado, FechaVenta, MedioPago, Modalidad, CantCuotas, ValorCuota,
-  // MontoTotal, Edicion, EmailEstudiante, NotasInternas, InstagramUsuario, Docentes, DetalleCuotas, VendidoPorNombre
+  // MontoTotal, Edicion, EmailEstudiante, NotasInternas, InstagramUsuario, Docentes, DetalleCuotas,
+  // VendidoPorNombre, Pais
   await appendRow('Leads', [
     leadId,
     body.nombre,
     body.apellido,
-    body.whatsapp,
+    body.whatsapp || '',
     body.curso || '',
     body.cursosAdicionales || '',
     body.origen,
@@ -38,9 +43,13 @@ export async function POST(request) {
     body.cargadoPorEmail,
     body.cargadoPorNombre,
     'Lead',
-    '', '', '', '', '', '', '', '', '',
+    '', '', '', '', '', '',
+    '',
+    body.email || '',
+    '',
     body.instagram || '',
-    '', '', ''
+    '', '', '',
+    body.pais || ''
   ]);
 
   // Seguimiento: se crean de una las 3 etapas con tiempo (Lote 1, 2, 3). Lote 0 no se guarda como fila:
@@ -98,7 +107,8 @@ export async function PATCH(request) {
     lead.InstagramUsuario,
     lead.Docentes,
     lead.DetalleCuotas,
-    lead.VendidoPorNombre
+    lead.VendidoPorNombre,
+    lead.Pais
   ]);
 
   if (body.curso !== undefined || body.cursosAdicionales !== undefined) {

@@ -4,7 +4,8 @@ import { registrarAccion } from '../../../lib/auditoria';
 
 // POST /api/ventas -> marca un lead como vendido
 // body: { leadId, medioPago, modalidad: 'totalidad'|'cuotas', cantCuotas, valorCuota, detalleCuotas,
-//         montoTotal, emailEstudiante, edicion, docentes, vendidoPor, solicitanteEmail, solicitanteNombre }
+//         montoTotal, emailEstudiante, edicion, vendidoPor, solicitanteEmail, solicitanteNombre }
+// Nota: "Docentes" ya no se completa desde este modal — se asigna después desde la gestión de la edición.
 export async function POST(request) {
   const body = await request.json();
   const leads = await readSheet('Leads');
@@ -46,12 +47,13 @@ export async function POST(request) {
     esCuotasVariables ? '' : (body.modalidad === 'cuotas' ? body.valorCuota : ''),
     montoTotal,
     body.edicion || '',
-    body.emailEstudiante || '',
+    body.emailEstudiante || lead.EmailEstudiante || '',
     lead.NotasInternas,
     lead.InstagramUsuario,
-    body.docentes || '',
+    lead.Docentes,
     body.detalleCuotas || '',
-    body.vendidoPor || ''
+    body.vendidoPor || '',
+    lead.Pais
   ]);
 
   await registrarAccion(

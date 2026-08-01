@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MEDIOS_PAGO, EQUIPO_VENTAS } from '../lib/constants';
 
 export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) {
@@ -11,10 +11,25 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
   const [cuotasVariables, setCuotasVariables] = useState(['', '']);
   const [emailEstudiante, setEmailEstudiante] = useState('');
   const [edicion, setEdicion] = useState('');
-  const [docentes, setDocentes] = useState('');
   const [vendidoPor, setVendidoPor] = useState(usuarioActual?.nombre || '');
   const [vendidoPorOtro, setVendidoPorOtro] = useState('');
   const [enviando, setEnviando] = useState(false);
+
+  // Cada vez que se abre el modal para un lead distinto, resetea el formulario
+  // (si no, quedarían pegados los valores del lead anterior).
+  useEffect(() => {
+    if (!lead) return;
+    setMedioPago(MEDIOS_PAGO[0]);
+    setModalidad('cuotas');
+    setCantCuotas('');
+    setValorCuota('');
+    setMontoTotal('');
+    setCuotasVariables(['', '']);
+    setEmailEstudiante(lead.EmailEstudiante || '');
+    setEdicion('');
+    setVendidoPor(usuarioActual?.nombre || '');
+    setVendidoPorOtro('');
+  }, [lead?.ID]);
 
   if (!lead) return null;
 
@@ -47,7 +62,6 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
         montoTotal: esVariable ? montoTotalFinal : montoTotal,
         emailEstudiante,
         edicion,
-        docentes,
         vendidoPor: vendidoPor === 'Otro' ? vendidoPorOtro.trim() : vendidoPor
       });
     } finally {
@@ -139,11 +153,6 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
         <label className="text-xs text-textSec block mb-1">Edición (opcional, se puede completar después)</label>
         <input value={edicion} onChange={(e) => setEdicion(e.target.value)}
           placeholder="Ej: Edición 12"
-          className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm mb-3" />
-
-        <label className="text-xs text-textSec block mb-1">Docente(s) de la edición (opcional, se puede completar después)</label>
-        <input value={docentes} onChange={(e) => setDocentes(e.target.value)}
-          placeholder="Ej: Anita Vuono, Gisela Reyes"
           className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm mb-3" />
 
         <label className="text-xs text-textSec block mb-1">Quién cerró la venta</label>

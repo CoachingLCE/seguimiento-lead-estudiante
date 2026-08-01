@@ -1,12 +1,27 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Nav, { puedeVerOperativo } from '../../components/Nav';
+import Nav from '../../components/Nav';
 import { useSession } from '../../lib/useSession';
-import { CURSOS, ORIGENES, CURSO_SIN_DEFINIR, CURSO_OTROS } from '../../lib/constants';
+import { tienePermisoCrearLeads } from '../../lib/permisos';
+import { CURSOS, ORIGENES, ORIGEN_OTRO, PAISES, CURSO_SIN_DEFINIR, CURSO_OTROS } from '../../lib/constants';
 
 function contactoVacio() {
-  return { nombre: '', whatsapp: '', instagram: '' };
+  return { nombre: '', whatsapp: '', email: '', instagram: '', pais: 'Argentina' };
+}
+
+function tieneMedioDeContacto(contacto) {
+  return Boolean(contacto.whatsapp.trim() || contacto.email.trim() || contacto.instagram.trim());
+}
+
+function previewContacto(contacto, cursoTexto) {
+  const partes = [
+    contacto.nombre.trim(),
+    cursoTexto,
+    contacto.whatsapp.trim(),
+    contacto.email.trim()
+  ].filter(Boolean);
+  return partes.join(' • ');
 }
 
 export default function NuevoLeadPage() {
@@ -17,10 +32,12 @@ export default function NuevoLeadPage() {
   const [curso, setCurso] = useState(CURSO_SIN_DEFINIR);
   const [cursoPersonalizado, setCursoPersonalizado] = useState('');
   const [origen, setOrigen] = useState(ORIGENES[0]);
+  const [origenPersonalizado, setOrigenPersonalizado] = useState('');
   const [cursosAdicionales, setCursosAdicionales] = useState([]);
 
   // Cada contacto de la tanda tiene sus propios datos personales
   const [contactos, setContactos] = useState([contactoVacio()]);
+  const [errores, setErrores] = useState({});
 
   const [guardando, setGuardando] = useState(false);
   const [ok, setOk] = useState(false);
@@ -32,7 +49,7 @@ export default function NuevoLeadPage() {
     if (typeof window !== 'undefined') router.push('/');
     return null;
   }
-  if (!puedeVerOperativo(usuario)) {
+  if (!tienePermisoCrearLeads(usuario)) {
     if (typeof window !== 'undefined') router.push('/inscritos');
     return null;
   }
@@ -55,12 +72,24 @@ export default function NuevoLeadPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+
+    // Validación: cada contacto necesita al menos un medio de contacto (WhatsApp, Email o Instagram/Facebook)
+    const nuevosErrores = {};
+    contactos.forEach((contacto, i) => {
+      if (!tieneMedioDeContacto(contacto)) {
+        nuevosErrores[i] = 'Ingresá al menos un medio de contacto (WhatsApp, Email o Instagram/Facebook).';
+      }
+    });
+    setErrores(nuevosErrores);
+    if (Object.keys(nuevosErrores).length > 0) return;
+
     setGuardando(true);
     setOk(false);
     const cursoFinal =
       curso === CURSO_SIN_DEFINIR ? '' :
       curso === CURSO_OTROS ? cursoPersonalizado.trim() :
       curso;
+    const origenFinal = origen === ORIGEN_OTRO ? origenPersonalizado.trim() : origen;
 
     try {
       // Se guardan todos los contactos de la tanda, uno por uno, compartiendo curso/origen.
@@ -72,10 +101,12 @@ export default function NuevoLeadPage() {
             nombre: contacto.nombre,
             apellido: '',
             whatsapp: contacto.whatsapp,
+            email: contacto.email,
             instagram: contacto.instagram,
+            pais: contacto.pais,
             curso: cursoFinal,
             cursosAdicionales: cursosAdicionales.join(', '),
-            origen,
+            origen: origenFinal,
             cargadoPorEmail: usuario.email,
             cargadoPorNombre: usuario.nombre
           })
@@ -85,10 +116,15 @@ export default function NuevoLeadPage() {
       setContactos([contactoVacio()]);
       setCursosAdicionales([]);
       setCursoPersonalizado('');
+      setOrigenPersonalizado('');
+      setErrores({});
     } finally {
       setGuardando(false);
     }
   }
+
+  const cursoTextoPreview =
+    curso === CURSO_SIN_DEFINIR ? '' : curso === CURSO_OTROS ? cursoPersonalizado.trim() : curso;
 
   return (
     <div>
@@ -123,7 +159,13 @@ export default function NuevoLeadPage() {
                 <select value={origen} onChange={(e) => setOrigen(e.target.value)}
                   className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm">
                   {ORIGENES.map((o) => <option key={o}>{o}</option>)}
+                  <option value={ORIGEN_OTRO}>{ORIGEN_OTRO}</option>
                 </select>
+                {origen === ORIGEN_OTRO && (
+                  <input required value={origenPersonalizado} onChange={(e) => setOrigenPersonalizado(e.target.value)}
+                    placeholder="Escribí el origen"
+                    className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm mt-2" />
+                )}
               </div>
             </div>
 
@@ -142,42 +184,70 @@ export default function NuevoLeadPage() {
               </div>
             </div>
 
-            {contactos.map((contacto, index) => (
-              <div key={index} className="bg-bg border border-border rounded-lg p-3 mb-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-textSec">Contacto {index + 1}</span>
-                  {contactos.length > 1 && (
-                    <button type="button" onClick={() => quitarContacto(index)}
-                      className="text-warningText text-xs">✕ Quitar</button>
-                  )}
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="col-span-2">
-                    <label className="text-xs text-textSec block mb-1">Nombre</label>
-                    <input required value={contacto.nombre} placeholder="Ej: Juan Pérez, o como lo tengas identificado"
-                      onChange={(e) => actualizarContacto(index, 'nombre', e.target.value)}
-                      className="w-full bg-surface2 border border-border rounded-lg px-3 py-2 text-sm" />
-                    {contacto.nombre.trim().toLowerCase() === 'prueba' && (
-                      <p className="text-infoText text-xs mt-1.5">
-                        💡 Podés poner "Prueba" en el nombre para ver cómo funciona cada pantalla. Este lead se borra solo a las 48hs — es solo una prueba.
-                      </p>
+            {contactos.map((contacto, index) => {
+              const preview = previewContacto(contacto, cursoTextoPreview);
+              return (
+                <div key={index} className="bg-bg border border-border rounded-lg p-3 mb-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold text-textSec">Contacto {index + 1}</span>
+                    {contactos.length > 1 && (
+                      <button type="button" onClick={() => quitarContacto(index)}
+                        className="text-warningText text-xs">✕ Quitar</button>
                     )}
                   </div>
-                  <div>
-                    <label className="text-xs text-textSec block mb-1">WhatsApp</label>
-                    <input required value={contacto.whatsapp} placeholder="+54 9 11 1234-5678"
-                      onChange={(e) => actualizarContacto(index, 'whatsapp', e.target.value)}
-                      className="w-full bg-surface2 border border-border rounded-lg px-3 py-2 text-sm" />
+
+                  {preview && (
+                    <p className="text-accentTeal text-xs font-medium mb-2 truncate">👤 {preview}</p>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2">
+                      <label className="text-xs text-textSec block mb-1">Nombre</label>
+                      <input required value={contacto.nombre} placeholder="Ej: Juan Pérez, o como lo tengas identificado"
+                        onChange={(e) => actualizarContacto(index, 'nombre', e.target.value)}
+                        className="w-full bg-surface2 border border-border rounded-lg px-3 py-2 text-sm" />
+                      {contacto.nombre.trim().toLowerCase() === 'prueba' && (
+                        <p className="text-infoText text-xs mt-1.5">
+                          💡 Podés poner "Prueba" en el nombre para ver cómo funciona cada pantalla. Este lead se borra solo a las 48hs — es solo una prueba.
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="text-xs text-textSec block mb-1">WhatsApp</label>
+                      <input value={contacto.whatsapp} placeholder="+54 9 11 1234-5678"
+                        onChange={(e) => actualizarContacto(index, 'whatsapp', e.target.value)}
+                        className="w-full bg-surface2 border border-border rounded-lg px-3 py-2 text-sm" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-textSec block mb-1">Email (opcional)</label>
+                      <input type="email" value={contacto.email} placeholder="nombre@correo.com"
+                        onChange={(e) => actualizarContacto(index, 'email', e.target.value)}
+                        className="w-full bg-surface2 border border-border rounded-lg px-3 py-2 text-sm" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-textSec block mb-1">Usuario de Instagram/Facebook (opcional)</label>
+                      <input value={contacto.instagram} placeholder="@usuario"
+                        onChange={(e) => actualizarContacto(index, 'instagram', e.target.value)}
+                        className="w-full bg-surface2 border border-border rounded-lg px-3 py-2 text-sm" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-textSec block mb-1">País (opcional)</label>
+                      <input list="lista-paises" value={contacto.pais}
+                        onChange={(e) => actualizarContacto(index, 'pais', e.target.value)}
+                        className="w-full bg-surface2 border border-border rounded-lg px-3 py-2 text-sm" />
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-xs text-textSec block mb-1">Usuario de Instagram/Facebook (opcional)</label>
-                    <input value={contacto.instagram} placeholder="@usuario"
-                      onChange={(e) => actualizarContacto(index, 'instagram', e.target.value)}
-                      className="w-full bg-surface2 border border-border rounded-lg px-3 py-2 text-sm" />
-                  </div>
+
+                  {errores[index] && (
+                    <p className="text-warningText text-xs mt-2">⚠️ {errores[index]}</p>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
+
+            <datalist id="lista-paises">
+              {PAISES.map((p) => <option key={p} value={p} />)}
+            </datalist>
 
             <button type="button" onClick={agregarContacto}
               className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm mb-4">
@@ -195,6 +265,10 @@ export default function NuevoLeadPage() {
               {guardando ? 'Guardando…' : contactos.length > 1 ? `Guardar ${contactos.length} leads` : 'Guardar lead'}
             </button>
             {ok && <span className="text-successText text-sm ml-3">✓ Lead(s) guardado(s)</span>}
+
+            <p className="text-textMuted text-[11px] mt-4">
+              Solo el nombre y un medio de contacto son necesarios para crear el lead. El resto de la información puede completarse posteriormente.
+            </p>
           </form>
         </div>
       </div>

@@ -4,6 +4,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import {
   tienePermisoOperativo,
+  tienePermisoCrearLeads,
   tienePermisoReportes,
   tienePermisoEstudiantes,
   tienePermisoResumenEstudiantes,
@@ -78,7 +79,7 @@ export default function Nav({ usuario, onLogout }) {
           {tienePermisoAuditoria(usuario) && itemNav('/auditoria', 'Historial de acciones', pathname)}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          {tienePermisoOperativo(usuario) && itemNav('/nuevo-lead', 'Nuevo lead', pathname)}
+          {tienePermisoCrearLeads(usuario) && itemNav('/nuevo-lead', 'Nuevo lead', pathname)}
           {tienePermisoAccesos(usuario) && itemNav('/accesos', 'Accesos', pathname)}
           {tienePermisoBuscador(usuario) && (
             <form onSubmit={buscar} className="ml-auto">
