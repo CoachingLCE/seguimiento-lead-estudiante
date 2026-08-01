@@ -1,7 +1,8 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Nav from '../../components/Nav';
+import FichaDrawer from '../../components/FichaDrawer';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoCrearLeads } from '../../lib/permisos';
 import { CURSOS, ORIGENES, ORIGEN_OTRO, PAISES, CURSO_SIN_DEFINIR, CURSO_OTROS } from '../../lib/constants';
@@ -38,6 +39,10 @@ export default function NuevoLeadPage() {
   // Cada contacto de la tanda tiene sus propios datos personales
   const [contactos, setContactos] = useState([contactoVacio()]);
   const [errores, setErrores] = useState({});
+  const [duplicados, setDuplicados] = useState({});
+  const [ignorarDuplicado, setIgnorarDuplicado] = useState({});
+  const [fichaLeadId, setFichaLeadId] = useState(null);
+  const timersDuplicados = useRef({});
 
   const [guardando, setGuardando] = useState(false);
   const [ok, setOk] = useState(false);
@@ -60,6 +65,25 @@ export default function NuevoLeadPage() {
 
   function actualizarContacto(index, campo, valor) {
     setContactos((prev) => prev.map((c, i) => (i === index ? { ...c, [campo]: valor } : c)));
+    if (['nombre', 'whatsapp', 'email'].includes(campo)) {
+      setIgnorarDuplicado((prev) => ({ ...prev, [index]: false }));
+      clearTimeout(timersDuplicados.current[index]);
+      timersDuplicados.current[index] = setTimeout(() => verificarDuplicado(index), 500);
+    }
+  }
+
+  async function verificarDuplicado(index) {
+    const contacto = contactos[index];
+    if (!contacto) return;
+    const params = new URLSearchParams({
+      nombre: contacto.nombre,
+      whatsapp: contacto.whatsapp,
+      email: contacto.email,
+      solicitanteEmail: usuario.email
+    });
+    const res = await fetch(`/api/leads/duplicados?${params}`);
+    const data = await res.json();
+    setDuplicados((prev) => ({ ...prev, [index]: data.coincidencias || [] }));
   }
 
   function agregarContacto() {
@@ -200,6 +224,22 @@ export default function NuevoLeadPage() {
                     <p className="text-accentTeal text-xs font-medium mb-2 truncate">👤 {preview}</p>
                   )}
 
+                  {duplicados[index]?.length > 0 && !ignorarDuplicado[index] && (
+                    <div className="bg-warningBg border border-warningText/30 rounded-lg p-2.5 mb-2">
+                      <p className="text-warningText text-xs font-semibold mb-1.5">
+                        ⚠️ Ya existe un contacto similar: {duplicados[index][0].nombre} ({duplicados[index][0].curso})
+                      </p>
+                      <div className="flex gap-2">
+                        <button type="button" onClick={() => setFichaLeadId(duplicados[index][0].id)}
+                          className="text-xs px-2.5 py-1 rounded bg-surface2 border border-border">Ver ficha</button>
+                        <a href={`/buscador?leadId=${duplicados[index][0].id}&editar=1`}
+                          className="text-xs px-2.5 py-1 rounded bg-surface2 border border-border">Actualizar</a>
+                        <button type="button" onClick={() => setIgnorarDuplicado((prev) => ({ ...prev, [index]: true }))}
+                          className="text-xs px-2.5 py-1 rounded bg-accentPurple text-white">Crear igualmente</button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-2 gap-3">
                     <div className="col-span-2">
                       <label className="text-xs text-textSec block mb-1">Nombre</label>
@@ -272,6 +312,7 @@ export default function NuevoLeadPage() {
           </form>
         </div>
       </div>
+      <FichaDrawer leadId={fichaLeadId} usuario={usuario} onClose={() => setFichaLeadId(null)} />
     </div>
   );
 }
