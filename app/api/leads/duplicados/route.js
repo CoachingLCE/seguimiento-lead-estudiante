@@ -33,12 +33,36 @@ export async function GET(request) {
     return mismoWhatsapp || mismoEmail || nombreParecido;
   });
 
+  function motivo(l) {
+    if (whatsapp && whatsapp.length >= 6 && soloDigitos(l.WhatsApp) === whatsapp) return 'Mismo WhatsApp';
+    if (email && email.length >= 5 && (l.EmailEstudiante || '').trim().toLowerCase() === email) return 'Mismo email';
+    return 'Nombre parecido';
+  }
+
+  let seguimiento = [];
+  if (coincidencias.length > 0) {
+    seguimiento = await readSheet('Seguimiento');
+  }
+
   return NextResponse.json({
-    coincidencias: coincidencias.slice(0, 5).map((l) => ({
-      id: l.ID,
-      nombre: [l.Nombre, l.Apellido].filter(Boolean).join(' '),
-      curso: l.Curso || 'sin curso',
-      estado: l.Estado
-    }))
+    coincidencias: coincidencias.slice(0, 5).map((l) => {
+      const filasLead = seguimiento
+        .filter((s) => s.LeadID === l.ID)
+        .sort((a, b) => new Date(b.FechaVence) - new Date(a.FechaVence));
+      const conResponsable = filasLead.find((s) => s.AsignadoANombre);
+      const conResultado = filasLead
+        .filter((s) => s.Resultado)
+        .sort((a, b) => new Date(b.FechaContacto || 0) - new Date(a.FechaContacto || 0))[0];
+
+      return {
+        id: l.ID,
+        nombre: [l.Nombre, l.Apellido].filter(Boolean).join(' '),
+        curso: l.Curso || 'sin curso',
+        estado: l.Estado,
+        responsable: conResponsable?.AsignadoANombre || '',
+        ultimaGestion: conResultado ? `${conResultado.Resultado}` : '',
+        motivo: motivo(l)
+      };
+    })
   });
 }

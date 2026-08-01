@@ -1,5 +1,5 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Nav from '../../components/Nav';
 import FichaDrawer from '../../components/FichaDrawer';
@@ -10,22 +10,26 @@ import {
   detectarPaisPorWhatsapp
 } from '../../lib/constants';
 
+const CLAVE_BORRADOR = 'nuevoLead:borrador';
+const CLAVE_ULTIMO_CURSO = 'nuevoLead:ultimoCurso';
+const CLAVE_ULTIMO_ORIGEN = 'nuevoLead:ultimoOrigen';
+const CLAVE_ULTIMOS_ADICIONALES = 'nuevoLead:ultimosAdicionales';
+
+let contadorIds = 0;
 function contactoVacio() {
-  return { raw: '', email: '', instagram: '' };
+  contadorIds += 1;
+  return { key: `c${Date.now()}${contadorIds}`, raw: '', email: '', instagram: '' };
 }
 
-// Interpreta lo que se pegó/escribió en el campo único: separa por tabs, saltos de línea,
-// comas, pipes o guiones, y trata de identificar WhatsApp (secuencia de dígitos), País
-// (coincide con la lista de países) y Email (si aparece ahí en vez de en su propio campo).
-// Lo que sobra se junta como Nombre (primer resto) + el resto se guarda en Observaciones.
 function escaparRegex(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+// Interpreta lo que se pegó/escribió: separa por tabs, saltos de línea, comas, pipes o guiones,
+// y también detecta teléfono/país como subcadenas sueltas dentro de una sola línea.
 function parsearIngresoLibre(texto) {
   let resto = texto || '';
 
-  // 1. Email — se busca y se saca de en medio, sin importar dónde esté.
   let email = '';
   const mEmail = resto.match(/[^\s,;|]+@[^\s,;|]+\.[^\s,;|]+/);
   if (mEmail) {
@@ -33,7 +37,6 @@ function parsearIngresoLibre(texto) {
     resto = resto.replace(email, ' ');
   }
 
-  // 2. País — se busca como palabra/frase completa en cualquier parte del texto.
   let pais = '';
   for (const p of PAISES) {
     const regex = new RegExp(`\\b${escaparRegex(p)}\\b`, 'i');
@@ -45,8 +48,6 @@ function parsearIngresoLibre(texto) {
     }
   }
 
-  // 3. WhatsApp — se busca la secuencia con más dígitos reales (8 a 15) en cualquier parte
-  // del texto, esté en su propia línea o pegada al resto (ej: "Juan Pérez +54 9 11...").
   let whatsapp = '';
   const candidatos = resto.match(/[+]?[\d][\d\s\-()]{6,}\d/g) || [];
   candidatos.forEach((c) => {
@@ -64,8 +65,6 @@ function parsearIngresoLibre(texto) {
     pais = detectarPaisPorWhatsapp(whatsapp);
   }
 
-  // 4. Lo que queda: si encontramos el teléfono, todo lo de ANTES es el nombre y todo lo de
-  // DESPUÉS son notas extra. Si no había teléfono, separamos por los delimitadores de siempre.
   let nombre = '';
   let notasExtra = '';
   if (whatsapp) {
@@ -81,48 +80,130 @@ function parsearIngresoLibre(texto) {
   return { nombre, whatsapp, pais, email, notasExtra };
 }
 
-function tieneMedioDeContacto(contacto) {
-  const p = parsearIngresoLibre(contacto.raw);
+function tieneMedioDeContacto(contacto, p) {
   return Boolean(p.whatsapp || contacto.email.trim() || contacto.instagram.trim());
 }
 
-function previewContacto(contacto, cursoTexto) {
-  const p = parsearIngresoLibre(contacto.raw);
-  const partes = [
-    p.nombre,
-    cursoTexto,
-    p.pais && `🌎 ${p.pais}`,
-    p.whatsapp && `📱 ${p.whatsapp}`,
-    (p.email || contacto.email.trim()) && `✉️ ${p.email || contacto.email.trim()}`
-  ].filter(Boolean);
-  return partes.join(' • ');
+// Estado visual de una card: vacio | error | duplicado | completo
+function estadoContacto(contacto, p, tieneDuplicadoSinIgnorar) {
+  if (!contacto.raw.trim()) return 'vacio';
+  if (!p.nombre.trim() || !tieneMedioDeContacto(contacto, p)) return 'error';
+  if (tieneDuplicadoSinIgnorar) return 'duplicado';
+  return 'completo';
 }
+
+const ESTILOS_ESTADO = {
+  vacio: { borde: 'border-border', badge: '⚪', texto: 'text-textMuted', label: 'Vacío' },
+  completo: { borde: 'border-successText/50', badge: '🟢', texto: 'text-successText', label: 'Completo' },
+  duplicado: { borde: 'border-warningText/60', badge: '🟠', texto: 'text-warningText', label: 'Posible duplicado' },
+  error: { borde: 'border-dangerText/60', badge: '🔴', texto: 'text-dangerText', label: 'Error' }
+};
 
 export default function NuevoLeadPage() {
   const { usuario, cargando: cargandoSesion, logout } = useSession();
   const router = useRouter();
 
-  // Datos compartidos por toda la tanda (curso y origen aplican a todos los contactos)
   const [curso, setCurso] = useState(CURSO_SIN_DEFINIR);
   const [cursoPersonalizado, setCursoPersonalizado] = useState('');
   const [origen, setOrigen] = useState(ORIGEN_SIN_DEFINIR);
   const [origenPersonalizado, setOrigenPersonalizado] = useState('');
   const [cursosAdicionales, setCursosAdicionales] = useState([]);
 
-  // Cada contacto de la tanda tiene sus propios datos personales
   const [contactos, setContactos] = useState([contactoVacio()]);
   const [errores, setErrores] = useState({});
   const [duplicados, setDuplicados] = useState({});
   const [ignorarDuplicado, setIgnorarDuplicado] = useState({});
   const [fichaLeadId, setFichaLeadId] = useState(null);
-  const timersDuplicados = useRef({});
+  const [colapsadas, setColapsadas] = useState({});
+  const [arrastrando, setArrastrando] = useState(null);
+
+  const [borradorDisponible, setBorradorDisponible] = useState(false);
+  const [mostrarPegarLista, setMostrarPegarLista] = useState(false);
+  const [textoPegarLista, setTextoPegarLista] = useState('');
 
   const [guardando, setGuardando] = useState(false);
-  const [ok, setOk] = useState(false);
+  const [progreso, setProgreso] = useState({ actual: 0, total: 0 });
+  const [resultadoFinal, setResultadoFinal] = useState(null);
 
-  if (cargandoSesion) {
-    return null;
+  const timersDuplicados = useRef({});
+  const refsCards = useRef({});
+  const cargaInicialHecha = useRef(false);
+
+  // Cargar autocompletado / detectar borrador pendiente al entrar
+  useEffect(() => {
+    if (!usuario || cargaInicialHecha.current) return;
+    cargaInicialHecha.current = true;
+    try {
+      const borradorGuardado = localStorage.getItem(CLAVE_BORRADOR);
+      if (borradorGuardado) {
+        const d = JSON.parse(borradorGuardado);
+        const hayAlgo = (d.contactos || []).some((c) => c.raw?.trim() || c.email?.trim() || c.instagram?.trim());
+        if (hayAlgo) {
+          setBorradorDisponible(true);
+          return;
+        }
+      }
+    } catch (e) { /* ignorar borrador corrupto */ }
+    aplicarAutocompletado();
+  }, [usuario]);
+
+  function aplicarAutocompletado() {
+    try {
+      const ultimoCurso = localStorage.getItem(CLAVE_ULTIMO_CURSO);
+      const ultimoOrigen = localStorage.getItem(CLAVE_ULTIMO_ORIGEN);
+      const ultimosAdicionales = JSON.parse(localStorage.getItem(CLAVE_ULTIMOS_ADICIONALES) || '[]');
+      if (ultimoCurso) setCurso(ultimoCurso);
+      if (ultimoOrigen) setOrigen(ultimoOrigen);
+      if (Array.isArray(ultimosAdicionales)) setCursosAdicionales(ultimosAdicionales);
+    } catch (e) { /* ignorar */ }
   }
+
+  function recuperarBorrador() {
+    try {
+      const d = JSON.parse(localStorage.getItem(CLAVE_BORRADOR));
+      setCurso(d.curso || CURSO_SIN_DEFINIR);
+      setCursoPersonalizado(d.cursoPersonalizado || '');
+      setOrigen(d.origen || ORIGEN_SIN_DEFINIR);
+      setOrigenPersonalizado(d.origenPersonalizado || '');
+      setCursosAdicionales(d.cursosAdicionales || []);
+      setContactos((d.contactos || []).length > 0 ? d.contactos.map((c) => ({ ...c, key: c.key || contactoVacio().key })) : [contactoVacio()]);
+    } catch (e) { /* ignorar */ }
+    setBorradorDisponible(false);
+  }
+
+  function descartarBorrador() {
+    localStorage.removeItem(CLAVE_BORRADOR);
+    setBorradorDisponible(false);
+    aplicarAutocompletado();
+  }
+
+  // Autoguardado del borrador (debounced)
+  useEffect(() => {
+    if (!cargaInicialHecha.current || borradorDisponible) return;
+    const t = setTimeout(() => {
+      try {
+        localStorage.setItem(CLAVE_BORRADOR, JSON.stringify({
+          curso, cursoPersonalizado, origen, origenPersonalizado, cursosAdicionales, contactos
+        }));
+      } catch (e) { /* ignorar */ }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [curso, cursoPersonalizado, origen, origenPersonalizado, cursosAdicionales, contactos, borradorDisponible]);
+
+  // Atajos de teclado
+  useEffect(() => {
+    function onKeyDown(e) {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'Enter') { e.preventDefault(); document.getElementById('form-nuevo-lead')?.requestSubmit(); }
+        else if (e.key.toLowerCase() === 'n') { e.preventDefault(); agregarContacto(); }
+        else if (e.key.toLowerCase() === 'd') { e.preventDefault(); duplicarContacto(contactos.length - 1); }
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [contactos]);
+
+  if (cargandoSesion) return null;
   if (!usuario) {
     if (typeof window !== 'undefined') router.push('/');
     return null;
@@ -150,9 +231,7 @@ export default function NuevoLeadPage() {
     if (!contacto) return;
     const p = parsearIngresoLibre(contacto.raw);
     const params = new URLSearchParams({
-      nombre: p.nombre,
-      whatsapp: p.whatsapp,
-      email: p.email || contacto.email,
+      nombre: p.nombre, whatsapp: p.whatsapp, email: p.email || contacto.email,
       solicitanteEmail: usuario.email
     });
     const res = await fetch(`/api/leads/duplicados?${params}`);
@@ -160,8 +239,12 @@ export default function NuevoLeadPage() {
     setDuplicados((prev) => ({ ...prev, [index]: data.coincidencias || [] }));
   }
 
-  // Si se pegan varios contactos juntos (separados por una línea en blanco), los separamos
-  // automáticamente en una tarjeta por contacto — no hace falta pegar de a uno.
+  function crearContactosDesdeTexto(texto, indexBase) {
+    const bloques = texto.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
+    if (bloques.length === 0) return null;
+    return bloques.map((b) => ({ ...contactoVacio(), raw: b }));
+  }
+
   function manejarPegado(e, index) {
     const texto = e.clipboardData.getData('text');
     const bloques = texto.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
@@ -182,93 +265,193 @@ export default function NuevoLeadPage() {
 
   function duplicarContacto(index) {
     setContactos((prev) => {
-      const copia = { ...prev[index] };
+      const copia = { ...prev[index], key: contactoVacio().key };
       return [...prev.slice(0, index + 1), copia, ...prev.slice(index + 1)];
     });
+  }
+
+  function copiarUltimoContacto() {
+    if (contactos.length === 0) return;
+    duplicarContacto(contactos.length - 1);
   }
 
   function quitarContacto(index) {
     setContactos((prev) => prev.filter((_, i) => i !== index));
   }
 
+  function toggleColapsada(index) {
+    setColapsadas((prev) => ({ ...prev, [index]: !prev[index] }));
+  }
+
+  function pegarListaCompleta() {
+    const nuevos = crearContactosDesdeTexto(textoPegarLista);
+    if (nuevos && nuevos.length > 0) {
+      setContactos((prev) => {
+        const primerVacio = prev.length === 1 && !prev[0].raw.trim();
+        return primerVacio ? nuevos : [...prev, ...nuevos];
+      });
+    }
+    setMostrarPegarLista(false);
+    setTextoPegarLista('');
+  }
+
+  // Drag & drop simple para reordenar
+  function onDragStart(index) { setArrastrando(index); }
+  function onDragOver(e) { e.preventDefault(); }
+  function onDrop(index) {
+    if (arrastrando === null || arrastrando === index) return;
+    setContactos((prev) => {
+      const copia = [...prev];
+      const [movido] = copia.splice(arrastrando, 1);
+      copia.splice(index, 0, movido);
+      return copia;
+    });
+    setArrastrando(null);
+  }
+
+  // Datos derivados para el panel/resumen
+  const infoContactos = contactos.map((contacto, i) => {
+    const p = parsearIngresoLibre(contacto.raw);
+    const dupSinIgnorar = (duplicados[i]?.length > 0) && !ignorarDuplicado[i];
+    return { p, estado: estadoContacto(contacto, p, dupSinIgnorar) };
+  });
+  const completos = infoContactos.filter((i) => i.estado === 'completo').length;
+  const conError = infoContactos.filter((i) => i.estado === 'error').length;
+  const conDuplicado = infoContactos.filter((i) => i.estado === 'duplicado').length;
+  const listosParaGuardar = completos + conDuplicado; // el duplicado también se puede guardar si se confirma
+  const cursoTextoPreview = curso === CURSO_SIN_DEFINIR ? '' : curso === CURSO_OTROS ? cursoPersonalizado.trim() : curso;
+
   async function handleSubmit(e) {
     e.preventDefault();
 
-    // Validación: cada contacto necesita al menos un medio de contacto (WhatsApp, Email o Instagram/Facebook)
     const nuevosErrores = {};
     contactos.forEach((contacto, i) => {
-      if (!tieneMedioDeContacto(contacto)) {
+      const p = parsearIngresoLibre(contacto.raw);
+      if (!p.nombre.trim()) {
+        nuevosErrores[i] = 'Falta el nombre.';
+      } else if (!tieneMedioDeContacto(contacto, p)) {
         nuevosErrores[i] = 'Ingresá al menos un medio de contacto (WhatsApp, Email o Instagram/Facebook).';
       }
     });
     setErrores(nuevosErrores);
-    if (Object.keys(nuevosErrores).length > 0) return;
+    if (Object.keys(nuevosErrores).length > 0) {
+      const primerIndexError = Object.keys(nuevosErrores).map(Number).sort((a, b) => a - b)[0];
+      refsCards.current[primerIndexError]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
 
     setGuardando(true);
-    setOk(false);
+    setProgreso({ actual: 0, total: contactos.length });
     const cursoFinal =
-      curso === CURSO_SIN_DEFINIR ? '' :
-      curso === CURSO_OTROS ? cursoPersonalizado.trim() :
-      curso;
+      curso === CURSO_SIN_DEFINIR ? '' : curso === CURSO_OTROS ? cursoPersonalizado.trim() : curso;
     const origenFinal =
-      origen === ORIGEN_SIN_DEFINIR ? '' :
-      origen === ORIGEN_OTRO ? origenPersonalizado.trim() :
-      origen;
+      origen === ORIGEN_SIN_DEFINIR ? '' : origen === ORIGEN_OTRO ? origenPersonalizado.trim() : origen;
 
     try {
-      // Se guardan todos los contactos de la tanda, uno por uno, compartiendo curso/origen.
+      let i = 0;
       for (const contacto of contactos) {
         const p = parsearIngresoLibre(contacto.raw);
         await fetch('/api/leads', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            nombre: p.nombre,
-            apellido: '',
-            whatsapp: p.whatsapp,
-            email: p.email || contacto.email,
-            instagram: contacto.instagram,
-            pais: p.pais,
-            notasIniciales: p.notasExtra,
-            curso: cursoFinal,
-            cursosAdicionales: cursosAdicionales.join(', '),
-            origen: origenFinal,
-            cargadoPorEmail: usuario.email,
-            cargadoPorNombre: usuario.nombre
+            nombre: p.nombre, apellido: '', whatsapp: p.whatsapp, email: p.email || contacto.email,
+            instagram: contacto.instagram, pais: p.pais, notasIniciales: p.notasExtra,
+            curso: cursoFinal, cursosAdicionales: cursosAdicionales.join(', '), origen: origenFinal,
+            cargadoPorEmail: usuario.email, cargadoPorNombre: usuario.nombre
           })
         });
+        i += 1;
+        setProgreso({ actual: i, total: contactos.length });
       }
-      setOk(true);
+
+      // Guardar autocompletado para la próxima carga
+      try {
+        localStorage.setItem(CLAVE_ULTIMO_CURSO, curso);
+        localStorage.setItem(CLAVE_ULTIMO_ORIGEN, origen);
+        localStorage.setItem(CLAVE_ULTIMOS_ADICIONALES, JSON.stringify(cursosAdicionales));
+        localStorage.removeItem(CLAVE_BORRADOR);
+      } catch (err) { /* ignorar */ }
+
+      setResultadoFinal({ cantidad: contactos.length, curso: cursoTextoPreview || 'sin definir' });
       setContactos([contactoVacio()]);
-      setCursosAdicionales([]);
-      setCursoPersonalizado('');
-      setOrigenPersonalizado('');
       setErrores({});
+      setDuplicados({});
+      setIgnorarDuplicado({});
     } finally {
       setGuardando(false);
     }
   }
 
-  const cursoTextoPreview =
-    curso === CURSO_SIN_DEFINIR ? '' : curso === CURSO_OTROS ? cursoPersonalizado.trim() : curso;
+  function seguirCargando() {
+    setResultadoFinal(null);
+  }
 
-  const inputCls = 'w-full bg-surface2 border border-border rounded-lg px-3 py-2 text-sm ' +
-    'focus:outline-none focus:border-accentTeal transition-colors';
-  const inputClsBg = 'w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm ' +
-    'focus:outline-none focus:border-accentTeal transition-colors';
+  const inputCls = 'w-full bg-surface2 border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accentTeal transition-colors';
+  const inputClsBg = 'w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accentTeal transition-colors';
+
+  // Pantalla de éxito
+  if (resultadoFinal) {
+    return (
+      <div>
+        <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
+        <div className="max-w-xl mx-auto px-4 pb-16 pt-10 text-center">
+          <div className="bg-surface border border-border rounded-2xl p-10">
+            <p className="text-5xl mb-3">🎉</p>
+            <h3 className="text-lg font-bold mb-1">
+              {resultadoFinal.cantidad} lead{resultadoFinal.cantidad > 1 ? 's' : ''} creado{resultadoFinal.cantidad > 1 ? 's' : ''} correctamente
+            </h3>
+            <p className="text-textSec text-sm mb-6">{resultadoFinal.cantidad} · {resultadoFinal.curso}</p>
+            <div className="flex flex-col gap-2">
+              <button onClick={() => router.push('/buscador')}
+                className="w-full bg-gradient-to-r from-accentPurple to-accentMagenta text-white rounded-xl py-3 text-sm font-semibold">
+                Ir al buscador
+              </button>
+              <button onClick={seguirCargando}
+                className="w-full bg-surface2 border border-border rounded-xl py-3 text-sm font-medium">
+                Seguir cargando
+              </button>
+              <button onClick={() => router.push('/seguimiento')}
+                className="w-full bg-surface2 border border-border rounded-xl py-3 text-sm font-medium">
+                Ver últimos creados
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
-      <div className="max-w-[1400px] mx-auto px-4 pb-16">
-        <div className="bg-surface border border-border rounded-2xl p-6 w-full">
-          <h3 className="text-lg font-bold mb-0.5">Nuevo lead</h3>
-          <p className="text-textMuted text-xs mb-5">
-            Podés cargar varios contactos de una — comparten curso y origen.
-          </p>
-          <form onSubmit={handleSubmit}>
+      <div className="max-w-[1500px] mx-auto px-4 pb-24">
 
-            {/* Curso + Cómo llegaron */}
+        {borradorDisponible && (
+          <div className="bg-infoBg border border-infoText/30 rounded-xl p-4 mb-4 flex items-center justify-between flex-wrap gap-3">
+            <p className="text-sm text-text">📝 Encontramos una carga sin terminar. ¿Querés recuperarla?</p>
+            <div className="flex gap-2">
+              <button onClick={recuperarBorrador} className="text-xs px-3 py-1.5 rounded-md bg-accentPurple text-white font-semibold">Recuperar</button>
+              <button onClick={descartarBorrador} className="text-xs px-3 py-1.5 rounded-md bg-surface2 border border-border">Descartar</button>
+            </div>
+          </div>
+        )}
+
+        <form id="form-nuevo-lead" onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5 items-start">
+
+          {/* COLUMNA PRINCIPAL */}
+          <div className="bg-surface border border-border rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-0.5">
+              <h3 className="text-lg font-bold">Nuevo lead</h3>
+              <button type="button" onClick={() => setMostrarPegarLista(true)}
+                className="text-xs px-3 py-1.5 rounded-lg bg-surface2 border border-border text-textSec hover:text-text">
+                📋 Pegar lista completa
+              </button>
+            </div>
+            <p className="text-textMuted text-xs mb-5">
+              Podés cargar varios contactos de una — comparten curso y origen. Atajos: Ctrl+Enter guardar · Ctrl+N nuevo contacto · Ctrl+D duplicar.
+            </p>
+
             <div className="grid grid-cols-2 gap-5 mb-4">
               <div>
                 <label className="text-[13px] font-medium text-textSec block mb-1">Curso (para toda la tanda)</label>
@@ -278,9 +461,7 @@ export default function NuevoLeadPage() {
                   <option value={CURSO_OTROS}>{CURSO_OTROS}</option>
                 </select>
                 {curso === CURSO_SIN_DEFINIR && (
-                  <p className="text-textMuted text-[12px] mt-1 flex items-center gap-1">
-                    <span>ℹ️</span> Podrás modificar esta información más adelante.
-                  </p>
+                  <p className="text-textMuted text-[12px] mt-1 flex items-center gap-1"><span>ℹ️</span> Podrás modificar esta información más adelante.</p>
                 )}
                 {curso === CURSO_OTROS && (
                   <input required value={cursoPersonalizado} onChange={(e) => setCursoPersonalizado(e.target.value)}
@@ -295,9 +476,7 @@ export default function NuevoLeadPage() {
                   <option value={ORIGEN_OTRO}>{ORIGEN_OTRO}</option>
                 </select>
                 {origen === ORIGEN_SIN_DEFINIR && (
-                  <p className="text-textMuted text-[12px] mt-1 flex items-center gap-1">
-                    <span>ℹ️</span> Podrás modificar esta información más adelante.
-                  </p>
+                  <p className="text-textMuted text-[12px] mt-1 flex items-center gap-1"><span>ℹ️</span> Podrás modificar esta información más adelante.</p>
                 )}
                 {origen === ORIGEN_OTRO && (
                   <input required value={origenPersonalizado} onChange={(e) => setOrigenPersonalizado(e.target.value)}
@@ -308,7 +487,6 @@ export default function NuevoLeadPage() {
 
             <hr className="border-border mb-4" />
 
-            {/* Otros cursos — chips */}
             <div className="mb-5">
               <label className="text-[13px] font-medium text-textSec block mb-1.5">
                 ¿Les interesan otros cursos también? <span className="text-textMuted font-normal">(opcional, aplica a toda la tanda)</span>
@@ -319,9 +497,8 @@ export default function NuevoLeadPage() {
                   return (
                     <button type="button" key={c} onClick={() => toggleCursoAdicional(c)}
                       className={`text-[13px] px-3 py-1.5 rounded-full border transition-colors ${
-                        activo
-                          ? 'bg-accentPurple border-accentPurple text-white font-medium'
-                          : 'bg-surface2 border-border text-textSec hover:border-accentTeal hover:text-text'
+                        activo ? 'bg-accentPurple border-accentPurple text-white font-medium'
+                               : 'bg-surface2 border-border text-textSec hover:border-accentTeal hover:text-text'
                       }`}>
                       {c}
                     </button>
@@ -330,113 +507,221 @@ export default function NuevoLeadPage() {
               </div>
             </div>
 
-            {/* Contactos */}
+            {/* CONTACTOS */}
             {contactos.map((contacto, index) => {
-              const preview = previewContacto(contacto, cursoTextoPreview);
+              const { p, estado } = infoContactos[index];
+              const estilo = ESTILOS_ESTADO[estado];
+              const colapsada = colapsadas[index] && contactos.length > 2;
+
               return (
-                <div key={index} className={index > 0 ? 'border-t border-border pt-4 mt-4' : ''}>
+                <div key={contacto.key}
+                  ref={(el) => { refsCards.current[index] = el; }}
+                  draggable={contactos.length > 1}
+                  onDragStart={() => onDragStart(index)}
+                  onDragOver={onDragOver}
+                  onDrop={() => onDrop(index)}
+                  className={`bg-bg border-2 rounded-xl p-4 mb-3 transition-all ${estilo.borde} ${arrastrando === index ? 'opacity-40' : 'opacity-100'}`}>
+
                   <div className="flex items-center justify-between mb-2.5">
-                    <span className="text-[14px] font-semibold text-text">Contacto {index + 1}</span>
-                    {contactos.length > 1 && (
-                      <div className="flex items-center gap-3">
-                        <button type="button" onClick={() => duplicarContacto(index)}
-                          className="text-textMuted hover:text-accentTeal text-[12px]">⧉ Duplicar</button>
-                        <button type="button" onClick={() => quitarContacto(index)}
-                          className="text-textMuted hover:text-warningText text-[12px]">🗑 Eliminar</button>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {contactos.length > 1 && <span className="text-textMuted cursor-grab select-none" title="Arrastrar para reordenar">⠿</span>}
+                      <span className="text-[14px]">👤</span>
+                      <span className="text-[14px] font-semibold text-text">Contacto {index + 1}</span>
+                      <span className={`text-[11px] font-medium ${estilo.texto}`}>{estilo.badge} {estilo.label}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {contactos.length > 2 && (
+                        <button type="button" onClick={() => toggleColapsada(index)} className="text-textMuted hover:text-text text-[12px]">
+                          {colapsada ? '▼ Expandir' : '▲ Contraer'}
+                        </button>
+                      )}
+                      {contactos.length > 1 && (
+                        <>
+                          <button type="button" onClick={() => duplicarContacto(index)} className="text-textMuted hover:text-accentTeal text-[12px]">⧉ Duplicar</button>
+                          <button type="button" onClick={() => quitarContacto(index)} className="text-textMuted hover:text-warningText text-[12px]">🗑 Eliminar</button>
+                        </>
+                      )}
+                    </div>
                   </div>
 
-                  {duplicados[index]?.length > 0 && !ignorarDuplicado[index] && (
-                    <div className="bg-warningBg border border-warningText/30 rounded-lg p-2.5 mb-3">
-                      <p className="text-warningText text-[13px] font-semibold mb-1.5">
-                        ⚠️ Ya existe un contacto similar: {duplicados[index][0].nombre} ({duplicados[index][0].curso})
-                      </p>
-                      <div className="flex gap-2">
-                        <button type="button" onClick={() => setFichaLeadId(duplicados[index][0].id)}
-                          className="text-[12px] px-2.5 py-1 rounded bg-surface2 border border-border">Ver ficha</button>
-                        <a href={`/buscador?leadId=${duplicados[index][0].id}&editar=1`}
-                          className="text-[12px] px-2.5 py-1 rounded bg-surface2 border border-border">Actualizar</a>
-                        <button type="button" onClick={() => setIgnorarDuplicado((prev) => ({ ...prev, [index]: true }))}
-                          className="text-[12px] px-2.5 py-1 rounded bg-accentPurple text-white">Crear igualmente</button>
+                  {!colapsada && (
+                    <>
+                      {duplicados[index]?.length > 0 && !ignorarDuplicado[index] && (
+                        <div className="bg-warningBg border border-warningText/30 rounded-lg p-3 mb-3">
+                          <p className="text-warningText text-[13px] font-semibold mb-1.5">
+                            🟠 Ya existe un contacto similar — {duplicados[index][0].motivo}
+                          </p>
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[12px] text-textSec mb-2.5">
+                            <p><span className="text-textMuted">Nombre:</span> {duplicados[index][0].nombre}</p>
+                            <p><span className="text-textMuted">Curso:</span> {duplicados[index][0].curso}</p>
+                            <p><span className="text-textMuted">Estado:</span> {duplicados[index][0].estado}</p>
+                            <p><span className="text-textMuted">Responsable:</span> {duplicados[index][0].responsable || '—'}</p>
+                            {duplicados[index][0].ultimaGestion && (
+                              <p className="col-span-2"><span className="text-textMuted">Última gestión:</span> {duplicados[index][0].ultimaGestion}</p>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <button type="button" onClick={() => setFichaLeadId(duplicados[index][0].id)}
+                              className="text-[12px] px-2.5 py-1 rounded bg-surface2 border border-border">Ver ficha</button>
+                            <a href={`/buscador?leadId=${duplicados[index][0].id}&editar=1`}
+                              className="text-[12px] px-2.5 py-1 rounded bg-surface2 border border-border">Actualizar</a>
+                            <button type="button" onClick={() => setIgnorarDuplicado((prev) => ({ ...prev, [index]: true }))}
+                              className="text-[12px] px-2.5 py-1 rounded bg-accentPurple text-white">Crear igualmente</button>
+                          </div>
+                        </div>
+                      )}
+
+                      <label className="text-[13px] font-medium text-textSec block mb-1">
+                        Pegá el contacto como lo recibiste
+                      </label>
+                      <textarea rows={3} value={contacto.raw}
+                        onPaste={(e) => manejarPegado(e, index)}
+                        placeholder={'Juan Pérez\nArgentina\n+54 9 11 5555 5555\n\nTambién podés pegar varios contactos juntos (separados por una línea en blanco).'}
+                        onChange={(e) => actualizarContacto(index, 'raw', e.target.value)}
+                        className={`w-full bg-surface2 border-2 rounded-xl px-4 py-3.5 text-[15px] leading-relaxed
+                          focus:outline-none transition-colors ${
+                            estado === 'error' ? 'border-dangerText/50 focus:border-dangerText' :
+                            estado === 'duplicado' ? 'border-warningText/50 focus:border-warningText' :
+                            estado === 'completo' ? 'border-successText/50 focus:border-successText' :
+                            'border-border focus:border-accentTeal'
+                          }`} />
+
+                      {/* "Detectamos:" */}
+                      {contacto.raw.trim() && (
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 mb-1 text-[12px]">
+                          <span className={p.nombre ? 'text-successText' : 'text-textMuted'}>{p.nombre ? '✓' : '○'} Nombre{p.nombre ? `: ${p.nombre}` : ' detectado'}</span>
+                          <span className={p.pais ? 'text-successText' : 'text-textMuted'}>{p.pais ? '✓' : '○'} País{p.pais ? `: ${p.pais}` : ''}</span>
+                          <span className={p.whatsapp ? 'text-successText' : 'text-textMuted'}>{p.whatsapp ? '✓' : '○'} WhatsApp{p.whatsapp ? `: ${p.whatsapp}` : ''}</span>
+                          <span className={(p.email || contacto.email) ? 'text-successText' : 'text-textMuted'}>{(p.email || contacto.email) ? '✓' : '○'} Email{p.email ? `: ${p.email}` : ''}</span>
+                          {p.notasExtra && <span className="text-infoText">📝 Notas: {p.notasExtra}</span>}
+                        </div>
+                      )}
+
+                      {contacto.raw.trim().toLowerCase().includes('prueba') && (
+                        <p className="text-infoText text-[12px] mb-2 flex items-center gap-1">
+                          <span>💡</span> "Prueba" en el nombre borra este lead solo a las 48hs — es solo una prueba.
+                        </p>
+                      )}
+
+                      <div className="grid grid-cols-2 gap-4 mt-3">
+                        <div>
+                          <label className="text-[13px] font-medium text-textSec block mb-1">Email</label>
+                          <input type="email" value={contacto.email} placeholder="juan@email.com"
+                            onChange={(e) => actualizarContacto(index, 'email', e.target.value)} className={inputCls} />
+                        </div>
+                        <div>
+                          <label className="text-[13px] font-medium text-textSec block mb-1">Instagram / Facebook</label>
+                          <input value={contacto.instagram} placeholder="@juanperez"
+                            onChange={(e) => actualizarContacto(index, 'instagram', e.target.value)} className={inputCls} />
+                        </div>
                       </div>
-                    </div>
+
+                      {errores[index] && <p className="text-dangerText text-[12px] mt-2">⚠️ {errores[index]}</p>}
+                    </>
                   )}
 
-                  {/* Campo protagonista: Nombre + País + WhatsApp */}
-                  <label className="text-[13px] font-medium text-textSec block mb-1">
-                    Nombre, país y WhatsApp — pegá o escribí como tengas el dato
-                  </label>
-                  <textarea required rows={3} value={contacto.raw}
-                    onPaste={(e) => manejarPegado(e, index)}
-                    placeholder={'Juan Pérez\nArgentina\n+54 9 11 5555 5555\n\nTambién podés pegar varios contactos juntos.'}
-                    onChange={(e) => actualizarContacto(index, 'raw', e.target.value)}
-                    className="w-full bg-bg border-2 border-border rounded-xl px-4 py-3.5 text-[15px] leading-relaxed
-                      focus:outline-none focus:border-accentTeal transition-colors" />
-
-                  <div className="flex items-center justify-between mt-1.5 mb-3">
-                    <p className="text-textMuted text-[12px]">
-                      {contactos.length} {contactos.length === 1 ? 'contacto detectado' : 'contactos detectados'}
-                    </p>
-                    {preview && (
-                      <p className="text-accentTeal text-[12px] font-medium truncate max-w-[70%]">👤 {preview}</p>
-                    )}
-                  </div>
-
-                  {contacto.raw.trim().toLowerCase().includes('prueba') && (
-                    <p className="text-infoText text-[12px] mb-3 flex items-center gap-1">
-                      <span>💡</span> Podés poner "Prueba" en el nombre para ver cómo funciona cada pantalla. Este lead se borra solo a las 48hs — es solo una prueba.
-                    </p>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-[13px] font-medium text-textSec block mb-1">Email</label>
-                      <input type="email" value={contacto.email} placeholder="juan@email.com"
-                        onChange={(e) => actualizarContacto(index, 'email', e.target.value)}
-                        className={inputCls} />
-                    </div>
-                    <div>
-                      <label className="text-[13px] font-medium text-textSec block mb-1">Instagram / Facebook</label>
-                      <input value={contacto.instagram} placeholder="@juanperez"
-                        onChange={(e) => actualizarContacto(index, 'instagram', e.target.value)}
-                        className={inputCls} />
-                    </div>
-                  </div>
-
-                  {errores[index] && (
-                    <p className="text-warningText text-[12px] mt-2">⚠️ {errores[index]}</p>
+                  {colapsada && (
+                    <p className="text-textSec text-[13px]">{p.nombre || '(sin nombre)'} {p.whatsapp && `· 📱 ${p.whatsapp}`}</p>
                   )}
                 </div>
               );
             })}
 
-            <button type="button" onClick={agregarContacto}
-              className="w-full flex items-center justify-center gap-2 bg-surface2 border border-border rounded-lg
-                py-2.5 text-[13px] font-medium text-textSec hover:text-text hover:border-accentTeal transition-colors mt-4 mb-5">
-              <span className="text-base leading-none">＋</span> Agregar otro contacto
-            </button>
+            <div className="flex gap-2 mt-1">
+              <button type="button" onClick={agregarContacto}
+                className="flex-1 flex items-center justify-center gap-2 bg-surface2 border border-border rounded-lg py-2.5 text-[13px] font-medium text-textSec hover:text-text hover:border-accentTeal transition-colors">
+                <span className="text-base leading-none">＋</span> Agregar otro contacto
+              </button>
+              {contactos.length > 0 && contactos[contactos.length - 1].raw.trim() && (
+                <button type="button" onClick={copiarUltimoContacto}
+                  className="px-4 bg-surface2 border border-border rounded-lg text-[13px] font-medium text-textSec hover:text-text">
+                  ⧉ Copiar último
+                </button>
+              )}
+            </div>
 
-            <div className="mb-5">
+            <div className="mt-5">
               <label className="text-[13px] font-medium text-textSec block mb-1">Fecha de ingreso</label>
               <input disabled value={new Date().toLocaleDateString('es-AR')} className={`${inputClsBg} text-textSec max-w-xs`} />
             </div>
 
-            <button type="submit" disabled={guardando}
-              className="w-full bg-gradient-to-r from-accentPurple to-accentMagenta text-white rounded-xl
-                py-3.5 text-[15px] font-semibold shadow-lg shadow-accentPurple/20
-                hover:shadow-xl hover:shadow-accentPurple/30 hover:brightness-110
-                transition-all disabled:opacity-60 disabled:hover:shadow-lg disabled:hover:brightness-100">
-              {guardando ? 'Guardando…' : contactos.length > 1 ? `Guardar ${contactos.length} leads` : 'Guardar lead'}
-            </button>
-            {ok && <p className="text-successText text-sm mt-2 text-center">✓ Lead(s) guardado(s)</p>}
-
-            <p className="text-textMuted text-[12px] mt-3 flex items-center gap-1">
+            <p className="text-textMuted text-[12px] mt-4 flex items-center gap-1">
               <span>ℹ️</span> Solo el nombre y un medio de contacto son necesarios para crear el lead. El resto de la información puede completarse posteriormente.
             </p>
-          </form>
-        </div>
+          </div>
+
+          {/* PANEL LATERAL FIJO */}
+          <div className="lg:sticky lg:top-4 bg-surface border border-border rounded-2xl p-5 flex flex-col gap-3">
+            <p className="text-sm font-bold">Resumen</p>
+            <div className="text-[13px] text-textSec space-y-1">
+              <p><span className="text-textMuted">Curso:</span> {cursoTextoPreview || 'sin definir'}</p>
+              <p><span className="text-textMuted">Cómo llegó:</span> {origen === ORIGEN_SIN_DEFINIR ? 'sin definir' : (origen === ORIGEN_OTRO ? origenPersonalizado : origen)}</p>
+              <p><span className="text-textMuted">Adicionales:</span> {cursosAdicionales.length > 0 ? cursosAdicionales.join(', ') : '—'}</p>
+            </div>
+
+            <hr className="border-border" />
+
+            <div className="text-[13px] space-y-1">
+              <p className="font-semibold text-text">{contactos.length} contacto{contactos.length !== 1 ? 's' : ''}</p>
+              {completos > 0 && <p className="text-successText">✅ {completos} completo{completos !== 1 ? 's' : ''}</p>}
+              {conError > 0 && <p className="text-dangerText">🔴 {conError} con error</p>}
+              {conDuplicado > 0 && <p className="text-warningText">🟠 {conDuplicado} posible{conDuplicado !== 1 ? 's' : ''} duplicado{conDuplicado !== 1 ? 's' : ''}</p>}
+            </div>
+
+            <div>
+              <div className="w-full h-2 bg-bg rounded-full overflow-hidden border border-border">
+                <div className="h-full bg-gradient-to-r from-accentPurple to-accentMagenta transition-all"
+                  style={{ width: `${contactos.length ? (listosParaGuardar / contactos.length) * 100 : 0}%` }} />
+              </div>
+              <p className="text-textMuted text-[11px] mt-1">{listosParaGuardar} de {contactos.length} listos para guardar</p>
+            </div>
+
+            <button type="submit" disabled={guardando}
+              className="w-full bg-gradient-to-r from-accentPurple to-accentMagenta text-white rounded-xl py-3 text-[14px] font-semibold
+                shadow-lg shadow-accentPurple/20 hover:shadow-xl hover:shadow-accentPurple/30 hover:brightness-110
+                transition-all disabled:opacity-60 disabled:hover:shadow-lg disabled:hover:brightness-100 mt-1">
+              {guardando
+                ? `Guardando ${progreso.actual} de ${progreso.total}…`
+                : contactos.length > 1 ? `Guardar ${contactos.length} leads` : 'Guardar lead'}
+            </button>
+            {guardando && progreso.total > 1 && (
+              <div className="w-full h-1.5 bg-bg rounded-full overflow-hidden border border-border -mt-1">
+                <div className="h-full bg-accentTeal transition-all" style={{ width: `${(progreso.actual / progreso.total) * 100}%` }} />
+              </div>
+            )}
+          </div>
+        </form>
       </div>
+
+      {/* BOTÓN FLOTANTE */}
+      <button type="button" onClick={agregarContacto}
+        className="fixed bottom-6 right-6 lg:right-[340px] w-14 h-14 rounded-full bg-gradient-to-r from-accentPurple to-accentMagenta
+          text-white text-2xl shadow-xl hover:brightness-110 transition-all flex items-center justify-center z-40"
+        title="Agregar contacto (Ctrl+N)">
+        ＋
+      </button>
+
+      {/* MODAL PEGAR LISTA COMPLETA */}
+      {mostrarPegarLista && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-surface2 border border-border rounded-2xl p-6 w-full max-w-2xl">
+            <p className="text-sm font-bold mb-1">📋 Pegar lista completa</p>
+            <p className="text-textMuted text-xs mb-3">
+              Pegá varios contactos separados por una línea en blanco entre cada uno. Se crea una tarjeta por cada uno.
+            </p>
+            <textarea rows={10} value={textoPegarLista} onChange={(e) => setTextoPegarLista(e.target.value)}
+              placeholder={'Juan Pérez\nArgentina\n+54 9 11 5555 5555\n\nMaría López\n+54 9 11 4444 4444\n\nPedro Ruiz\n+54 9 11 3333 3333'}
+              className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm font-mono mb-4" />
+            <div className="flex gap-3">
+              <button onClick={() => { setMostrarPegarLista(false); setTextoPegarLista(''); }}
+                className="flex-1 bg-surface border border-border rounded-lg py-2 text-sm">Cancelar</button>
+              <button onClick={pegarListaCompleta}
+                className="flex-1 bg-accentPurple text-white rounded-lg py-2 text-sm font-semibold">Crear tarjetas</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <FichaDrawer leadId={fichaLeadId} usuario={usuario} onClose={() => setFichaLeadId(null)} />
     </div>
   );
