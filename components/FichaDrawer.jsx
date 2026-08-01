@@ -16,6 +16,22 @@ function iconoPara(accion) {
   return '•';
 }
 
+function CopyButton({ valor }) {
+  const [copiado, setCopiado] = useState(false);
+  function copiar(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    navigator.clipboard.writeText(valor);
+    setCopiado(true);
+    setTimeout(() => setCopiado(false), 1500);
+  }
+  return (
+    <button onClick={copiar} title="Copiar" className="text-textMuted hover:text-accentTeal">
+      {copiado ? '✓' : '📋'}
+    </button>
+  );
+}
+
 export default function FichaDrawer({ leadId, usuario, onClose }) {
   const [datos, setDatos] = useState(null);
   const [cargando, setCargando] = useState(true);
@@ -52,8 +68,11 @@ export default function FichaDrawer({ leadId, usuario, onClose }) {
         ) : (
           <>
             <h3 className="text-base font-bold pr-6">{lead.Nombre} {lead.Apellido}</h3>
-            <p className="text-textSec text-xs mb-4">
-              {lead.Curso || 'Sin curso definido'} · {lead.WhatsApp} · Ingresó {new Date(lead.FechaIngreso).toLocaleDateString('es-AR')}
+            <p className="text-textSec text-xs mb-4 flex items-center gap-1.5 flex-wrap">
+              <span>{lead.Curso || 'Sin curso definido'}</span>
+              {lead.WhatsApp && <span className="inline-flex items-center gap-1">· {lead.WhatsApp} <CopyButton valor={lead.WhatsApp} /></span>}
+              {lead.EmailEstudiante && <span className="inline-flex items-center gap-1">· {lead.EmailEstudiante} <CopyButton valor={lead.EmailEstudiante} /></span>}
+              <span>· Ingresó {new Date(lead.FechaIngreso).toLocaleDateString('es-AR')}</span>
             </p>
 
             <div className="flex items-center gap-2 mb-4">

@@ -290,6 +290,22 @@ export default function SeguimientoPage() {
   );
 }
 
+function CopyButton({ valor }) {
+  const [copiado, setCopiado] = useState(false);
+  function copiar(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    navigator.clipboard.writeText(valor);
+    setCopiado(true);
+    setTimeout(() => setCopiado(false), 1500);
+  }
+  return (
+    <button onClick={copiar} title="Copiar" className="text-textMuted hover:text-accentTeal">
+      {copiado ? '✓' : '📋'}
+    </button>
+  );
+}
+
 function FiltroPill({ activo, onClick, label, count }) {
   return (
     <button onClick={onClick}
@@ -380,14 +396,18 @@ function FilaLote({ fila, lead, onContactar, onReasignar, onVerFicha, onMarcarVe
         </div>
       </div>
 
-      <p className="text-xs text-textMuted mt-0.5 mb-1.5">
-        {[
-          lead.WhatsApp && `📱 ${lead.WhatsApp}`,
-          lead.EmailEstudiante && `✉️ ${lead.EmailEstudiante}`,
-          lead.InstagramUsuario && `📷 ${lead.InstagramUsuario}`,
-          lead.Pais && `🌎 ${lead.Pais}`,
-          lead.Origen && `Origen: ${lead.Origen}`
-        ].filter(Boolean).join('  ·  ')}
+      <p className="text-xs text-textMuted mt-0.5 mb-1.5 flex items-center gap-2 flex-wrap">
+        {lead.WhatsApp && (
+          <span className="inline-flex items-center gap-1">📱 {lead.WhatsApp} <CopyButton valor={lead.WhatsApp} /></span>
+        )}
+        {lead.EmailEstudiante && (
+          <span className="inline-flex items-center gap-1">✉️ {lead.EmailEstudiante} <CopyButton valor={lead.EmailEstudiante} /></span>
+        )}
+        {lead.InstagramUsuario && (
+          <span className="inline-flex items-center gap-1">📷 {lead.InstagramUsuario} <CopyButton valor={lead.InstagramUsuario} /></span>
+        )}
+        {lead.Pais && <span>🌎 {lead.Pais}</span>}
+        {lead.Origen && <span>Origen: {lead.Origen}</span>}
       </p>
 
       <div className="flex items-center gap-2 text-xs text-textMuted mt-1 mb-2">
