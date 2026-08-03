@@ -92,6 +92,13 @@ function estadoContacto(contacto, p, tieneDuplicadoSinIgnorar) {
   return 'completo';
 }
 
+// Texto específico de qué falta, para no dejar el badge de error genérico sin explicación.
+function motivoError(contacto, p) {
+  if (!p.nombre.trim() && !tieneMedioDeContacto(contacto, p)) return 'Falta el nombre y un medio de contacto';
+  if (!p.nombre.trim()) return 'Falta el nombre';
+  return 'Falta un medio de contacto (WhatsApp, Email o Instagram)';
+}
+
 const ESTILOS_ESTADO = {
   vacio: { borde: 'border-border', badge: '⚪', texto: 'text-textMuted', label: 'Vacío' },
   completo: { borde: 'border-successText/50', badge: '🟢', texto: 'text-successText', label: 'Completo' },
@@ -527,7 +534,9 @@ export default function NuevoLeadPage() {
                       {contactos.length > 1 && <span className="text-textMuted cursor-grab select-none" title="Arrastrar para reordenar">⠿</span>}
                       <span className="text-[14px]">👤</span>
                       <span className="text-[14px] font-semibold text-text">Contacto {index + 1}</span>
-                      <span className={`text-[11px] font-medium ${estilo.texto}`}>{estilo.badge} {estilo.label}</span>
+                      <span className={`text-[11px] font-medium ${estilo.texto}`}>
+                        {estilo.badge} {estado === 'error' ? motivoError(contacto, p) : estilo.label}
+                      </span>
                     </div>
                     <div className="flex items-center gap-3">
                       {contactos.length > 2 && (
@@ -605,8 +614,10 @@ export default function NuevoLeadPage() {
 
                       <div className="grid grid-cols-2 gap-4 mt-3">
                         <div>
-                          <label className="text-[13px] font-medium text-textSec block mb-1">Email</label>
-                          <input type="email" value={contacto.email} placeholder="juan@email.com"
+                          <label className="text-[13px] font-medium text-textSec block mb-1">
+                            Email {!contacto.email && p.email && <span className="text-successText font-normal">· detectado arriba</span>}
+                          </label>
+                          <input type="email" value={contacto.email || p.email} placeholder="juan@email.com"
                             onChange={(e) => actualizarContacto(index, 'email', e.target.value)} className={inputCls} />
                         </div>
                         <div>
