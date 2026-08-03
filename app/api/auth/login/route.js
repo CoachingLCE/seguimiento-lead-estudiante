@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { findUsuario } from '../../../../lib/auth';
 import { verifyPassword } from '../../../../lib/passwords';
+import { registrarAccion } from '../../../../lib/auditoria';
 
 // POST /api/auth/login -> { email, password }
 export async function POST(request) {
@@ -12,6 +13,7 @@ export async function POST(request) {
   }
 
   if (!usuario.activo) {
+    await registrarAccion(body.email, usuario.nombre, 'Intento de login rechazado', 'Usuario desactivado');
     return NextResponse.json({ error: 'Tu usuario está desactivado. Pedile a Diego que lo reactive.' }, { status: 403 });
   }
 
@@ -23,8 +25,11 @@ export async function POST(request) {
   }
 
   if (!verifyPassword(body.password, usuario.passwordHash)) {
+    await registrarAccion(body.email, usuario.nombre, 'Intento de login fallido', 'Contraseña incorrecta');
     return NextResponse.json({ error: 'Contraseña incorrecta' }, { status: 401 });
   }
+
+  await registrarAccion(body.email, usuario.nombre, 'Inició sesión', '');
 
   return NextResponse.json({
     usuario: { email: usuario.email, nombre: usuario.nombre, roles: usuario.roles }
