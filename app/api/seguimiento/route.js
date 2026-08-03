@@ -18,6 +18,7 @@ export async function GET(request) {
 // PATCH /api/seguimiento -> acciones posibles según body.accion
 // 1) registrar contacto:  { accion: 'contactar', leadId, lote, resultado, observaciones, proximaAccion, solicitanteEmail, solicitanteNombre }
 // 2) reasignar lote:      { accion: 'reasignar', leadId, lote, nuevoEmail, nuevoNombre, solicitanteEmail, solicitanteNombre }
+// 3) deshacer resultado:  { accion: 'deshacer', leadId, lote, solicitanteEmail, solicitanteNombre } — solo Admin/Coordinador
 export async function PATCH(request) {
   const body = await request.json();
   const seguimiento = await readSheet('Seguimiento');
@@ -40,6 +41,25 @@ export async function PATCH(request) {
     await registrarAccion(
       body.solicitanteEmail, body.solicitanteNombre,
       `Reasignó Lote ${fila.Lote}`, `A ${body.nuevoNombre}`, fila.LeadID
+    );
+    return NextResponse.json({ ok: true });
+  }
+
+  if (body.accion === 'deshacer') {
+    const solicitante = await findUsuario(body.solicitanteEmail);
+    const puedeDeshacer =
+      solicitante && (solicitante.roles.includes('Admin') || solicitante.roles.includes('Coordinador'));
+    if (!puedeDeshacer) {
+      return NextResponse.json({ error: 'No autorizado para deshacer un resultado' }, { status: 403 });
+    }
+    const resultadoAnterior = fila.Resultado;
+    await updateRow('Seguimiento', fila._rowIndex, [
+      fila.LeadID, fila.Lote, fila.FechaVence, fila.AsignadoAEmail, fila.AsignadoANombre,
+      'FALSE', '', '', '', ''
+    ]);
+    await registrarAccion(
+      body.solicitanteEmail, body.solicitanteNombre,
+      `Deshizo un resultado en Lote ${fila.Lote}`, `Resultado anterior: "${resultadoAnterior}"`, fila.LeadID
     );
     return NextResponse.json({ ok: true });
   }

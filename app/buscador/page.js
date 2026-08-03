@@ -170,6 +170,22 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
 
   const asignadoActual = seguimiento.find((s) => s.Lote === '1')?.AsignadoAEmail;
   const puedeEditar = tienePermisoEditarLead(usuario, lead, asignadoActual);
+  const puedeDeshacer = usuario?.roles?.includes('Admin') || usuario?.roles?.includes('Coordinador');
+  const [deshaciendo, setDeshaciendo] = useState(null);
+
+  async function deshacerResultado(lote) {
+    setDeshaciendo(lote);
+    await fetch('/api/seguimiento', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        accion: 'deshacer', leadId: lead.ID, lote,
+        solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
+      })
+    });
+    setDeshaciendo(null);
+    onActualizar?.();
+  }
   const whatsappLimpio = (lead.WhatsApp || '').replace(/[^\d]/g, '');
 
   // Derivados para KPIs / progreso / alertas
@@ -442,13 +458,24 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
           <p className="text-sm font-semibold mb-3">Seguimiento comercial</p>
           {seguimiento.length === 0 ? <p className="text-textMuted text-sm">Sin seguimiento comercial.</p> : (
             seguimiento.map((s) => (
-              <p key={s.Lote} className="text-sm text-textSec mb-1">
-                Lote {s.Lote}: {s.Contactado === 'TRUE'
-                  ? `${s.Resultado} (${tiempoRelativo(s.FechaContacto)}) — responsable: ${s.AsignadoANombre || 'No asignado'}`
-                  : `Pendiente — asignado a: ${s.AsignadoANombre || 'No asignado'}`}
-              </p>
+              <div key={s.Lote} className="flex items-center justify-between gap-3 mb-1.5">
+                <p className="text-sm text-textSec">
+                  Lote {s.Lote}: {s.Contactado === 'TRUE'
+                    ? `${s.Resultado} (${tiempoRelativo(s.FechaContacto)}) — responsable: ${s.AsignadoANombre || 'No asignado'}`
+                    : `Pendiente — asignado a: ${s.AsignadoANombre || 'No asignado'}`}
+                </p>
+                {s.Contactado === 'TRUE' && puedeDeshacer && (
+                  <button onClick={() => deshacerResultado(s.Lote)} disabled={deshaciendo === s.Lote}
+                    className="text-xs text-warningText font-semibold shrink-0">
+                    {deshaciendo === s.Lote ? 'Deshaciendo…' : '↩ Deshacer'}
+                  </button>
+                )}
+              </div>
             ))
           )}
+          <p className="text-textMuted text-[11px] mt-2">
+            "Deshacer" vuelve ese lote a pendiente — útil si se registró un resultado por error (ej: "Pago recibido" sin que corresponda). El lead vuelve a aparecer en Seguimiento.
+          </p>
         </div>
       )}
 
