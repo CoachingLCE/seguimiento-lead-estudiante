@@ -6,6 +6,7 @@ import { useSession } from '../lib/useSession';
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [mantenerSesion, setMantenerSesion] = useState(true);
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(false);
   const { login } = useSession();
@@ -26,7 +27,7 @@ export default function LoginPage() {
         setError(data.error || 'No se pudo iniciar sesión');
         return;
       }
-      login(data.usuario);
+      login(data.usuario, mantenerSesion);
       const roles = data.usuario.roles || [];
       const puedeVerOperativo = roles.some((r) => ['Admin', 'Coordinador', 'Inscripciones'].includes(r));
       if (puedeVerOperativo) {
@@ -68,6 +69,10 @@ export default function LoginPage() {
             className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm mb-3"
           />
           {error && <p className="text-warningText text-xs mb-3">{error}</p>}
+          <label className="flex items-center gap-2 text-xs text-textSec mb-4 cursor-pointer">
+            <input type="checkbox" checked={mantenerSesion} onChange={(e) => setMantenerSesion(e.target.checked)} />
+            Mantener sesión abierta
+          </label>
           <button
             type="submit"
             disabled={cargando}
