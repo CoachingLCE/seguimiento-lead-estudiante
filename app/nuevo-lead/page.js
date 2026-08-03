@@ -111,8 +111,10 @@ export default function NuevoLeadPage() {
   const router = useRouter();
 
   const [curso, setCurso] = useState(CURSO_SIN_DEFINIR);
+  const [cursoAutocompletado, setCursoAutocompletado] = useState(false);
   const [cursoPersonalizado, setCursoPersonalizado] = useState('');
   const [origen, setOrigen] = useState(ORIGEN_SIN_DEFINIR);
+  const [origenAutocompletado, setOrigenAutocompletado] = useState(false);
   const [origenPersonalizado, setOrigenPersonalizado] = useState('');
   const [cursosAdicionales, setCursosAdicionales] = useState([]);
 
@@ -159,8 +161,8 @@ export default function NuevoLeadPage() {
       const ultimoCurso = localStorage.getItem(CLAVE_ULTIMO_CURSO);
       const ultimoOrigen = localStorage.getItem(CLAVE_ULTIMO_ORIGEN);
       const ultimosAdicionales = JSON.parse(localStorage.getItem(CLAVE_ULTIMOS_ADICIONALES) || '[]');
-      if (ultimoCurso) setCurso(ultimoCurso);
-      if (ultimoOrigen) setOrigen(ultimoOrigen);
+      if (ultimoCurso) { setCurso(ultimoCurso); setCursoAutocompletado(true); }
+      if (ultimoOrigen) { setOrigen(ultimoOrigen); setOrigenAutocompletado(true); }
       if (Array.isArray(ultimosAdicionales)) setCursosAdicionales(ultimosAdicionales);
     } catch (e) { /* ignorar */ }
   }
@@ -372,10 +374,15 @@ export default function NuevoLeadPage() {
         setProgreso({ actual: i, total: contactos.length });
       }
 
-      // Guardar autocompletado para la próxima carga
+      // Guardar autocompletado para la próxima carga — "Otro" nunca se recuerda, porque el texto
+      // libre que escribió la persona no queda guardado y volvería a pedirlo vacío sin que se note.
       try {
         localStorage.setItem(CLAVE_ULTIMO_CURSO, curso);
-        localStorage.setItem(CLAVE_ULTIMO_ORIGEN, origen);
+        if (origen !== ORIGEN_OTRO) {
+          localStorage.setItem(CLAVE_ULTIMO_ORIGEN, origen);
+        } else {
+          localStorage.removeItem(CLAVE_ULTIMO_ORIGEN);
+        }
         localStorage.setItem(CLAVE_ULTIMOS_ADICIONALES, JSON.stringify(cursosAdicionales));
         localStorage.removeItem(CLAVE_BORRADOR);
       } catch (err) { /* ignorar */ }
@@ -461,8 +468,11 @@ export default function NuevoLeadPage() {
 
             <div className="grid grid-cols-2 gap-5 mb-4">
               <div>
-                <label className="text-[13px] font-medium text-textSec block mb-1">Curso (para toda la tanda)</label>
-                <select value={curso} onChange={(e) => setCurso(e.target.value)} className={inputClsBg}>
+                <label className="text-[13px] font-medium text-textSec block mb-1">
+                  Curso (para toda la tanda)
+                  {cursoAutocompletado && <span className="text-infoText font-normal ml-1.5">· recordado de la carga anterior</span>}
+                </label>
+                <select value={curso} onChange={(e) => { setCurso(e.target.value); setCursoAutocompletado(false); }} className={inputClsBg}>
                   <option value={CURSO_SIN_DEFINIR}>{CURSO_SIN_DEFINIR}</option>
                   {CURSOS.map((c) => <option key={c}>{c}</option>)}
                   <option value={CURSO_OTROS}>{CURSO_OTROS}</option>
@@ -476,8 +486,11 @@ export default function NuevoLeadPage() {
                 )}
               </div>
               <div>
-                <label className="text-[13px] font-medium text-textSec block mb-1">Cómo llegaron (para toda la tanda)</label>
-                <select value={origen} onChange={(e) => setOrigen(e.target.value)} className={inputClsBg}>
+                <label className="text-[13px] font-medium text-textSec block mb-1">
+                  Cómo llegaron (para toda la tanda)
+                  {origenAutocompletado && <span className="text-infoText font-normal ml-1.5">· recordado de la carga anterior</span>}
+                </label>
+                <select value={origen} onChange={(e) => { setOrigen(e.target.value); setOrigenAutocompletado(false); }} className={inputClsBg}>
                   <option value={ORIGEN_SIN_DEFINIR}>{ORIGEN_SIN_DEFINIR}</option>
                   {ORIGENES.map((o) => <option key={o}>{o}</option>)}
                   <option value={ORIGEN_OTRO}>{ORIGEN_OTRO}</option>
