@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { readSheet, updateRow } from '../../../lib/sheets';
-import { enviarMailBienvenidaEstudiante } from '../../../lib/mailer';
+import { enviarMailBienvenidaEstudiante, enviarMailAltaPlataforma } from '../../../lib/mailer';
 import { findUsuario, tienePermisoEstudiantes } from '../../../lib/auth';
 import { registrarAccion } from '../../../lib/auditoria';
 
@@ -41,6 +41,14 @@ export async function PATCH(request) {
       fila.AbonoTotalidad,
       fila.Docentes
     ]);
+    if (nuevoValor && fila.EmailEstudiante) {
+      try {
+        await enviarMailAltaPlataforma(fila.EmailEstudiante, fila.NombreEstudiante, fila.Curso);
+      } catch (err) {
+        // El alta ya quedó guardada — si falla el mail, no se rompe la acción principal.
+        console.error('Error enviando mail de alta en plataforma:', err);
+      }
+    }
     await registrarAccion(
       body.solicitanteEmail, body.solicitanteNombre,
       nuevoValor ? 'Realizó el alta en plataforma' : 'Desmarcó el alta en plataforma',
@@ -55,7 +63,7 @@ export async function PATCH(request) {
       return NextResponse.json({ error: 'Falta el email del estudiante' }, { status: 400 });
     }
     try {
-      await enviarMailBienvenidaEstudiante(email, fila.NombreEstudiante, fila.Curso);
+      await enviarMailBienvenidaEstudiante(email, fila.NombreEstudiante);
     } catch (err) {
       return NextResponse.json({ error: 'No se pudo enviar el mail' }, { status: 500 });
     }
