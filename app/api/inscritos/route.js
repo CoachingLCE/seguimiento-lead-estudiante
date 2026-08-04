@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { readSheet, updateRow } from '../../../lib/sheets';
-import { enviarMailBienvenidaEstudiante, enviarMailAltaPlataforma } from '../../../lib/mailer';
+import { enviarMailBienvenidaEstudiante } from '../../../lib/mailer';
+// NOTA: enviarMailAltaPlataforma existe en lib/mailer.js lista para usarse — Diego pidió
+// no enviarla todavía (por ahora), solo dejar activo el mail de Bienvenida.
 import { findUsuario, tienePermisoEstudiantes } from '../../../lib/auth';
 import { registrarAccion } from '../../../lib/auditoria';
 
@@ -41,14 +43,14 @@ export async function PATCH(request) {
       fila.AbonoTotalidad,
       fila.Docentes
     ]);
-    if (nuevoValor && fila.EmailEstudiante) {
-      try {
-        await enviarMailAltaPlataforma(fila.EmailEstudiante, fila.NombreEstudiante, fila.Curso);
-      } catch (err) {
-        // El alta ya quedó guardada — si falla el mail, no se rompe la acción principal.
-        console.error('Error enviando mail de alta en plataforma:', err);
-      }
-    }
+    // Desactivado por ahora a pedido de Diego — descomentar cuando se quiera activar este mail.
+    // if (nuevoValor && fila.EmailEstudiante) {
+    //   try {
+    //     await enviarMailAltaPlataforma(fila.EmailEstudiante, fila.NombreEstudiante, fila.Curso);
+    //   } catch (err) {
+    //     console.error('Error enviando mail de alta en plataforma:', err);
+    //   }
+    // }
     await registrarAccion(
       body.solicitanteEmail, body.solicitanteNombre,
       nuevoValor ? 'Realizó el alta en plataforma' : 'Desmarcó el alta en plataforma',
