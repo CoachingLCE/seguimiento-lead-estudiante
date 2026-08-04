@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { readSheet, updateRow } from '../../../lib/sheets';
+import { readSheet, updateRow, deleteRows } from '../../../lib/sheets';
 import { enviarMailBienvenidaEstudiante } from '../../../lib/mailer';
 // NOTA: enviarMailAltaPlataforma existe en lib/mailer.js lista para usarse — Diego pidió
 // no enviarla todavía (por ahora), solo dejar activo el mail de Bienvenida.
@@ -84,4 +84,38 @@ export async function PATCH(request) {
   }
 
   return NextResponse.json({ error: 'Acción no reconocida' }, { status: 400 });
+}
+
+// DELETE /api/inscritos -> elimina un estudiante por completo: la fila de Inscritos,
+// el Lead/venta asociado, y su Seguimiento — todo junto, porque si solo se borra el
+// Inscrito y el Lead sigue en Estado "Comprado", el cron lo vuelve a generar solo al otro día.
+// Solo Admin. body: { inscritoId, solicitanteEmail, solicitanteNombre }
+export async function DELETE(request) {
+  const body = await request.json();
+  const solicitante = await findUsuario(body.solicitanteEmail);
+  if (!solicitante || !solicitante.roles.includes('Admin')) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+  }
+
+  const [inscritos, leads, seguimiento] = await Promise.all([
+    readSheet('Inscritos'), readSheet('Leads'), readSheet('Seguimiento')
+  ]);
+  const inscrito = inscritos.find((i) => i.ID === body.inscritoId);
+  if (!inscrito) {
+    return NextResponse.json({ error: 'Estudiante no encontrado' }, { status: 404 });
+  }
+  const lead = leads.find((l) => l.ID === inscrito.LeadId);
+  const filasSeguimiento = seguimiento.filter((s) => s.LeadID === inscrito.LeadId);
+
+  await deleteRows('Inscritos', [inscrito._rowIndex]);
+  if (lead) await deleteRows('Leads', [lead._rowIndex]);
+  if (filasSeguimiento.length > 0) await deleteRows('Seguimiento', filasSeguimiento.map((s) => s._rowIndex));
+
+  await registrarAccion(
+    body.solicitanteEmail, body.solicitanteNombre,
+    'Eliminó un estudiante (junto con su lead/venta)',
+    `${inscrito.NombreEstudiante} — ${inscrito.Curso || 'sin curso'}`
+  );
+
+  return NextResponse.json({ ok: true });
 }

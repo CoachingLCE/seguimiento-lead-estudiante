@@ -18,6 +18,7 @@ export default function InscritosPage() {
   const [emailTemporal, setEmailTemporal] = useState('');
   const [enviandoBienvenidaId, setEnviandoBienvenidaId] = useState(null);
   const [fichaLeadId, setFichaLeadId] = useState(null);
+  const [confirmarEliminar, setConfirmarEliminar] = useState(null);
   const [busqueda, setBusqueda] = useState('');
   const [filtroCurso, setFiltroCurso] = useState('');
   const [filtroEdicion, setFiltroEdicion] = useState('');
@@ -26,6 +27,21 @@ export default function InscritosPage() {
   const [ordenDir, setOrdenDir] = useState('desc');
 
   const puedeVer = tienePermisoEstudiantes(usuario);
+  const esAdmin = usuario?.roles?.includes('Admin');
+
+  async function eliminarEstudiante() {
+    if (!confirmarEliminar) return;
+    await fetch('/api/inscritos', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        inscritoId: confirmarEliminar.ID,
+        solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
+      })
+    });
+    setConfirmarEliminar(null);
+    cargarInscritos();
+  }
 
   useEffect(() => {
     if (!usuario) return;
@@ -180,7 +196,7 @@ export default function InscritosPage() {
                   <th className="cursor-pointer select-none" onClick={() => ordenarPor('Edicion')}>Edición{flecha('Edicion')}</th>
                   <th>Docente(s)</th>
                   <th className="cursor-pointer select-none" onClick={() => ordenarPor('FechaInscripcion')}>Fecha inscripción{flecha('FechaInscripcion')}</th>
-                  <th>Alta plataforma</th><th>Bienvenida</th><th></th>
+                  <th>Alta plataforma</th><th>Bienvenida</th><th></th>{esAdmin && <th></th>}
                 </tr>
               </thead>
               <tbody>
@@ -236,6 +252,12 @@ export default function InscritosPage() {
                     <td>
                       <button onClick={() => setFichaLeadId(i.LeadId)} className="text-accentTeal text-xs font-semibold">Ver ficha</button>
                     </td>
+                    {esAdmin && (
+                      <td>
+                        <button onClick={() => setConfirmarEliminar(i)}
+                          className="text-xs text-dangerText font-semibold">🗑</button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -245,6 +267,25 @@ export default function InscritosPage() {
       </div>
       <FichaDrawer leadId={fichaLeadId} usuario={usuario} onClose={() => setFichaLeadId(null)} />
       {toast}
+
+      {confirmarEliminar && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-surface2 border border-border rounded-2xl p-6 w-96">
+            <p className="text-sm font-bold mb-2">¿Estás seguro de que querés eliminar este estudiante?</p>
+            <p className="text-textSec text-sm mb-5">
+              <b>{confirmarEliminar.NombreEstudiante}</b> — {confirmarEliminar.Curso || 'sin curso'}.<br/>
+              Esto borra también el lead y la venta asociada, así el sistema no lo vuelve a generar solo al otro día.
+              Esta acción no se puede deshacer.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmarEliminar(null)}
+                className="flex-1 bg-surface border border-border rounded-lg py-2 text-sm">Cancelar</button>
+              <button onClick={eliminarEstudiante}
+                className="flex-1 bg-dangerText text-white rounded-lg py-2 text-sm font-semibold">Eliminar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
