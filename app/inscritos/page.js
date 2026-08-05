@@ -155,6 +155,7 @@ export default function InscritosPage() {
         <div className="flex items-center justify-between mb-3 no-print gap-3 flex-wrap">
           <p className="text-textMuted text-xs">
             El estudiante aparece acá solo, 24hs después de confirmarse la venta — no hace falta cargarlo a mano.
+            <br />La lista se actualiza automáticamente todos los días a las 7:00 AM.
           </p>
           <div className="flex items-center gap-2 shrink-0 flex-wrap">
             <select value={filtroCurso} onChange={(e) => setFiltroCurso(e.target.value)}

@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Nav from '../../components/Nav';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoBuscador, tienePermisoEditarLead, tienePermisoEditarVenta } from '../../lib/permisos';
-import { ORIGENES, ORIGEN_OTRO, CURSOS, CURSO_OTROS, CURSO_SIN_DEFINIR, PAISES } from '../../lib/constants';
+import { ORIGENES, ORIGEN_OTRO, CURSOS, CURSO_OTROS, CURSO_SIN_DEFINIR, PAISES, enlaceGmail } from '../../lib/constants';
 
 const SEP_NOTAS = '\n@@\n';
 
@@ -330,7 +330,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
                 className="text-xs px-3 py-1.5 rounded-lg bg-surface2 border border-border">💬 WhatsApp</a>
             )}
             {lead.EmailEstudiante && (
-              <a href={`mailto:${lead.EmailEstudiante}`} className="text-xs px-3 py-1.5 rounded-lg bg-surface2 border border-border">✉ Email</a>
+              <a href={enlaceGmail(lead.EmailEstudiante)} target="_blank" rel="noopener noreferrer" className="text-xs px-3 py-1.5 rounded-lg bg-surface2 border border-border">✉ Email</a>
             )}
             {lead.WhatsApp && (
               <a href={`tel:${whatsappLimpio}`} className="text-xs px-3 py-1.5 rounded-lg bg-surface2 border border-border">📞 Llamar</a>

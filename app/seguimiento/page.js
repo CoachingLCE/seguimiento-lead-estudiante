@@ -7,7 +7,7 @@ import FichaDrawer from '../../components/FichaDrawer';
 import ModalVenta from '../../components/ModalVenta';
 import { useToast } from '../../components/Toast';
 import { useSession } from '../../lib/useSession';
-import { RESULTADOS_CONTACTO, RESULTADOS_FINALES, RESULTADOS_PROGRESO } from '../../lib/constants';
+import { RESULTADOS_CONTACTO, RESULTADOS_FINALES, RESULTADOS_PROGRESO, enlaceGmail } from '../../lib/constants';
 
 const EMAILS_ASIGNABLES = [
   { email: 'jesabel.reigada@institutoilce.com', nombre: 'Jesabel Reigada' },
@@ -745,7 +745,7 @@ function FilaLote({
                 </div>
               )}
               {lead.EmailEstudiante && (
-                <a href={`mailto:${lead.EmailEstudiante}`} className="w-6 h-6 flex items-center justify-center rounded-md border border-border text-xs" title="Email">✉️</a>
+                <a href={enlaceGmail(lead.EmailEstudiante)} target="_blank" rel="noopener noreferrer" className="w-6 h-6 flex items-center justify-center rounded-md border border-border text-xs" title="Email">✉️</a>
               )}
               <a href={`tel:${whatsappLimpio}`} className="w-6 h-6 flex items-center justify-center rounded-md border border-border text-xs" title="Llamar">📞</a>
               <button onClick={() => onMarcarVenta(lead)} className="text-xs px-3 py-1 rounded bg-accentPurple text-white">Venta</button>

@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { enlaceGmail } from '../lib/constants';
 
 // Mapea el texto de la acción de auditoría a un ícono representativo para el timeline.
 function iconoPara(accion) {
@@ -81,7 +82,7 @@ export default function FichaDrawer({ leadId, usuario, onClose }) {
                   className="text-xs px-3 py-1.5 rounded-md bg-surface border border-border">💬 WhatsApp</a>
               )}
               {lead.EmailEstudiante && (
-                <a href={`mailto:${lead.EmailEstudiante}`}
+                <a href={enlaceGmail(lead.EmailEstudiante)} target="_blank" rel="noopener noreferrer"
                   className="text-xs px-3 py-1.5 rounded-md bg-surface border border-border">✉ Email</a>
               )}
               <span className={`ml-auto text-[10.5px] px-2.5 py-1 rounded-full font-semibold ${
