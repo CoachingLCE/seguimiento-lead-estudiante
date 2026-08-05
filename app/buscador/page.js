@@ -3,7 +3,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Nav from '../../components/Nav';
 import { useSession } from '../../lib/useSession';
-import { tienePermisoBuscador, tienePermisoEditarLead } from '../../lib/permisos';
+import { tienePermisoBuscador, tienePermisoEditarLead, tienePermisoEditarVenta } from '../../lib/permisos';
 import { ORIGENES, ORIGEN_OTRO, CURSOS, CURSO_OTROS, CURSO_SIN_DEFINIR, PAISES } from '../../lib/constants';
 
 const SEP_NOTAS = '\n@@\n';
@@ -243,6 +243,41 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
     setEditando(false);
   }
 
+  const puedeEditarVenta = tienePermisoEditarVenta(usuario);
+  const [editandoVenta, setEditandoVenta] = useState(false);
+  const [datosVenta, setDatosVenta] = useState({
+    montoTotal: lead.MontoTotal || '', medioPago: lead.MedioPago || '', modalidad: lead.Modalidad || '',
+    edicion: lead.Edicion || '', docentes: lead.Docentes || '', vendidoPor: lead.VendidoPorNombre || ''
+  });
+  const [guardandoVenta, setGuardandoVenta] = useState(false);
+
+  function actualizarDatoVenta(campo, valor) {
+    setDatosVenta((prev) => ({ ...prev, [campo]: valor }));
+  }
+
+  async function guardarEdicionVenta() {
+    setGuardandoVenta(true);
+    await fetch('/api/leads', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        leadId: lead.ID, ...datosVenta,
+        solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
+      })
+    });
+    setGuardandoVenta(false);
+    setEditandoVenta(false);
+    onActualizar?.();
+  }
+
+  function cancelarEdicionVenta() {
+    setDatosVenta({
+      montoTotal: lead.MontoTotal || '', medioPago: lead.MedioPago || '', modalidad: lead.Modalidad || '',
+      edicion: lead.Edicion || '', docentes: lead.Docentes || '', vendidoPor: lead.VendidoPorNombre || ''
+    });
+    setEditandoVenta(false);
+  }
+
   async function guardarNota() {
     if (!notaNueva.trim()) return;
     setGuardandoNota(true);
@@ -378,7 +413,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
         <Kpi label="Último contacto" valor={ultimoContacto ? tiempoRelativo(ultimoContacto.FechaContacto) : 'Sin contacto'} />
         <Kpi label="Estado" valor={lead.Estado === 'Comprado' ? '🟢 Compró' : '⚪ Lead'} />
         <Kpi label="Responsable" valor={responsableFila?.AsignadoANombre || 'No asignado'} />
-        <Kpi label="Monto" valor={lead.MontoTotal ? `$${Number(lead.MontoTotal).toLocaleString('es-AR')}` : '—'} grande={!!lead.MontoTotal} />
+        <Kpi label="Monto" valor={lead.MontoTotal && !Number.isNaN(Number(lead.MontoTotal)) ? `$${Number(lead.MontoTotal).toLocaleString('es-AR')}` : '—'} grande={!!lead.MontoTotal} />
         <Kpi label="Curso" valor={lead.Curso || 'Sin definir'} />
         <Kpi label="Edición" valor={inscrito?.Edicion || '—'} />
       </div>
@@ -481,12 +516,17 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
 
       {tab === 'Venta' && (
         <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm">
-          <p className="text-xs font-bold text-textMuted uppercase tracking-wide mb-3">Venta</p>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-bold text-textMuted uppercase tracking-wide">Venta</p>
+            {lead.Estado === 'Comprado' && puedeEditarVenta && !editandoVenta && (
+              <button onClick={() => setEditandoVenta(true)} className="text-accentTeal text-xs font-semibold">✏️ Editar</button>
+            )}
+          </div>
           {lead.Estado !== 'Comprado' ? (
             <p className="text-textMuted text-sm">Sin seguimiento comercial — todavía no se registró una venta.</p>
-          ) : (
+          ) : !editandoVenta ? (
             <>
-              <Campo label="Monto" valor={lead.MontoTotal ? `$${Number(lead.MontoTotal).toLocaleString('es-AR')}` : null} vacio="—" grande />
+              <Campo label="Monto" valor={lead.MontoTotal && !Number.isNaN(Number(lead.MontoTotal)) ? `$${Number(lead.MontoTotal).toLocaleString('es-AR')}` : null} vacio="—" grande />
               <Campo label="Forma de pago" valor={lead.MedioPago} />
               <Campo label="Modalidad" valor={lead.Modalidad} />
               {lead.DetalleCuotas && <Campo label="Detalle de cuotas" valor={`$${lead.DetalleCuotas}`} />}
@@ -494,6 +534,51 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
               <Campo label="Fecha" valor={lead.FechaVenta ? fechaLarga(lead.FechaVenta) : null} vacio="—" />
               {lead.Docentes && <Campo label="Docente(s)" valor={lead.Docentes} />}
             </>
+          ) : (
+            <div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-textSec block mb-1">Monto</label>
+                  <input type="number" value={datosVenta.montoTotal} onChange={(e) => actualizarDatoVenta('montoTotal', e.target.value)}
+                    className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label className="text-xs text-textSec block mb-1">Forma de pago</label>
+                  <input value={datosVenta.medioPago} onChange={(e) => actualizarDatoVenta('medioPago', e.target.value)}
+                    className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label className="text-xs text-textSec block mb-1">Modalidad</label>
+                  <input value={datosVenta.modalidad} onChange={(e) => actualizarDatoVenta('modalidad', e.target.value)}
+                    className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label className="text-xs text-textSec block mb-1">Vendedor</label>
+                  <input value={datosVenta.vendidoPor} onChange={(e) => actualizarDatoVenta('vendidoPor', e.target.value)}
+                    className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label className="text-xs text-textSec block mb-1">Edición</label>
+                  <input value={datosVenta.edicion} onChange={(e) => actualizarDatoVenta('edicion', e.target.value)}
+                    className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label className="text-xs text-textSec block mb-1">Docente(s)</label>
+                  <input value={datosVenta.docentes} onChange={(e) => actualizarDatoVenta('docentes', e.target.value)}
+                    className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
+                </div>
+              </div>
+              <p className="text-textMuted text-[11px] mt-2">
+                El detalle de cuotas variables (si lo hay) no se edita desde acá todavía — solo estos campos.
+              </p>
+              <div className="flex items-center gap-3 mt-3">
+                <button onClick={guardarEdicionVenta} disabled={guardandoVenta}
+                  className="bg-gradient-to-r from-accentPurple to-accentMagenta text-white rounded-lg px-4 py-1.5 text-sm font-semibold disabled:opacity-60">
+                  {guardandoVenta ? 'Guardando…' : 'Guardar cambios'}
+                </button>
+                <button onClick={cancelarEdicionVenta} className="text-textMuted text-sm">Cancelar</button>
+              </div>
+            </div>
           )}
         </div>
       )}

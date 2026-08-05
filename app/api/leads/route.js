@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { readSheet, appendRow, updateRow, deleteRows } from '../../../lib/sheets';
-import { findUsuario, tienePermisoOperativo, tienePermisoCrearLeads, tienePermisoEditarLead } from '../../../lib/auth';
+import { findUsuario, tienePermisoOperativo, tienePermisoCrearLeads, tienePermisoEditarLead, tienePermisoEditarVenta } from '../../../lib/auth';
 import { registrarAccion } from '../../../lib/auditoria';
 import { HORAS_LOTE_1, DIAS_LOTE_3, DIAS_LOTE_4, DIAS_LOTE_5 } from '../../../lib/constants';
 
@@ -16,7 +16,13 @@ const CAMPOS_EDITABLES = {
   instagram: { columna: 'InstagramUsuario', label: 'Instagram/Facebook' },
   pais: { columna: 'Pais', label: 'País' },
   prioridad: { columna: 'Prioridad', label: 'Prioridad' },
-  notasInternas: { columna: 'NotasInternas', label: 'Observaciones' }
+  notasInternas: { columna: 'NotasInternas', label: 'Observaciones' },
+  montoTotal: { columna: 'MontoTotal', label: 'Monto' },
+  medioPago: { columna: 'MedioPago', label: 'Medio de pago' },
+  modalidad: { columna: 'Modalidad', label: 'Modalidad' },
+  edicion: { columna: 'Edicion', label: 'Edición' },
+  docentes: { columna: 'Docentes', label: 'Docente(s)' },
+  vendidoPor: { columna: 'VendidoPorNombre', label: 'Vendido por' }
 };
 
 // GET /api/leads?solicitanteEmail=... -> todos los leads (para dashboard/seguimiento/reportes)
@@ -120,6 +126,12 @@ export async function PATCH(request) {
   const filaLote1 = seguimiento.find((s) => s.LeadID === lead.ID && s.Lote === '1');
   if (!tienePermisoEditarLead(solicitante, lead, filaLote1?.AsignadoAEmail)) {
     return NextResponse.json({ error: 'No autorizado para editar este lead' }, { status: 403 });
+  }
+
+  const CAMPOS_DE_VENTA = ['montoTotal', 'medioPago', 'modalidad', 'edicion', 'docentes', 'vendidoPor'];
+  const tocaCampoDeVenta = CAMPOS_DE_VENTA.some((c) => body[c] !== undefined);
+  if (tocaCampoDeVenta && !tienePermisoEditarVenta(solicitante)) {
+    return NextResponse.json({ error: 'No autorizado para editar datos de la venta' }, { status: 403 });
   }
 
   const valoresActuales = {
