@@ -1,7 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import ThemeSelector from './ThemeSelector';
 import {
   tienePermisoOperativo,
@@ -37,13 +36,6 @@ function itemNav(href, label, pathname) {
 
 export default function Nav({ usuario, onLogout }) {
   const pathname = usePathname();
-  const router = useRouter();
-  const [busqueda, setBusqueda] = useState('');
-
-  function buscar(e) {
-    e.preventDefault();
-    if (busqueda.trim()) router.push(`/buscador?q=${encodeURIComponent(busqueda.trim())}`);
-  }
 
   return (
     <div className="max-w-5xl mx-auto px-6 pt-6 no-print">
@@ -84,14 +76,7 @@ export default function Nav({ usuario, onLogout }) {
           {tienePermisoCrearLeads(usuario) && itemNav('/nuevo-lead', 'Nuevo lead', pathname)}
           {tienePermisoAccesos(usuario) && itemNav('/accesos', 'Accesos', pathname)}
           {tienePermisoBuscador(usuario) && (
-            <form onSubmit={buscar} className="ml-auto">
-              <input
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                placeholder="🔍 Buscar alumno…"
-                className="h-9 bg-surface2 border border-border rounded-lg px-3 text-sm w-48"
-              />
-            </form>
+            <span className="ml-auto">{itemNav('/buscador', '🔍 Buscador', pathname)}</span>
           )}
         </div>
       </nav>

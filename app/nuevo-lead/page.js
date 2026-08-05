@@ -37,6 +37,15 @@ function parsearIngresoLibre(texto) {
     resto = resto.replace(email, ' ');
   }
 
+  // @usuario (Instagram/Facebook) — se busca después del email para no confundir un @handle
+  // suelto con la arroba de una dirección de correo.
+  let instagram = '';
+  const mInsta = resto.match(/@[\w.]+/);
+  if (mInsta) {
+    instagram = mInsta[0];
+    resto = resto.replace(instagram, ' ');
+  }
+
   let pais = '';
   for (const p of PAISES) {
     const regex = new RegExp(`\\b${escaparRegex(p)}\\b`, 'i');
@@ -77,11 +86,11 @@ function parsearIngresoLibre(texto) {
     notasExtra = partes.slice(1).join(' · ');
   }
 
-  return { nombre, whatsapp, pais, email, notasExtra };
+  return { nombre, whatsapp, pais, email, instagram, notasExtra };
 }
 
 function tieneMedioDeContacto(contacto, p) {
-  return Boolean(p.whatsapp || contacto.email.trim() || contacto.instagram.trim());
+  return Boolean(p.whatsapp || contacto.email.trim() || p.instagram || contacto.instagram.trim());
 }
 
 // Estado visual de una card: vacio | error | duplicado | completo
@@ -365,7 +374,7 @@ export default function NuevoLeadPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             nombre: p.nombre, apellido: '', whatsapp: p.whatsapp, email: p.email || contacto.email,
-            instagram: contacto.instagram, pais: p.pais, notasIniciales: p.notasExtra,
+            instagram: p.instagram || contacto.instagram, pais: p.pais, notasIniciales: p.notasExtra,
             curso: cursoFinal, cursosAdicionales: cursosAdicionales.join(', '), origen: origenFinal,
             cargadoPorEmail: usuario.email, cargadoPorNombre: usuario.nombre
           })
@@ -615,6 +624,7 @@ export default function NuevoLeadPage() {
                           <span className={p.pais ? 'text-successText' : 'text-textMuted'}>{p.pais ? '✓' : '○'} País{p.pais ? `: ${p.pais}` : ''}</span>
                           <span className={p.whatsapp ? 'text-successText' : 'text-textMuted'}>{p.whatsapp ? '✓' : '○'} WhatsApp{p.whatsapp ? `: ${p.whatsapp}` : ''}</span>
                           <span className={(p.email || contacto.email) ? 'text-successText' : 'text-textMuted'}>{(p.email || contacto.email) ? '✓' : '○'} Email{p.email ? `: ${p.email}` : ''}</span>
+                          <span className={(p.instagram || contacto.instagram) ? 'text-successText' : 'text-textMuted'}>{(p.instagram || contacto.instagram) ? '✓' : '○'} Instagram/Facebook{p.instagram ? `: ${p.instagram}` : ''}</span>
                           {p.notasExtra && <span className="text-infoText">📝 Notas: {p.notasExtra}</span>}
                         </div>
                       )}
@@ -634,8 +644,10 @@ export default function NuevoLeadPage() {
                             onChange={(e) => actualizarContacto(index, 'email', e.target.value)} className={inputCls} />
                         </div>
                         <div>
-                          <label className="text-[13px] font-medium text-textSec block mb-1">Instagram / Facebook</label>
-                          <input value={contacto.instagram} placeholder="@juanperez"
+                          <label className="text-[13px] font-medium text-textSec block mb-1">
+                            Instagram / Facebook {!contacto.instagram && p.instagram && <span className="text-successText font-normal">· detectado arriba</span>}
+                          </label>
+                          <input value={contacto.instagram || p.instagram} placeholder="@juanperez"
                             onChange={(e) => actualizarContacto(index, 'instagram', e.target.value)} className={inputCls} />
                         </div>
                       </div>

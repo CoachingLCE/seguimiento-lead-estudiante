@@ -165,12 +165,12 @@ export default function SeguimientoPage() {
     setCargando(false);
   }
 
-  async function registrarContacto(leadId, lote, resultado, observaciones, proximaAccion) {
+  async function registrarContacto(leadId, lote, resultado, observaciones, proximaAccion, fechaProgramada) {
     await fetch('/api/seguimiento', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        accion: 'contactar', leadId, lote, resultado, observaciones, proximaAccion,
+        accion: 'contactar', leadId, lote, resultado, observaciones, proximaAccion, fechaProgramada,
         solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
       })
     });
@@ -357,6 +357,12 @@ export default function SeguimientoPage() {
   const lote4 = seguimiento.filter((s) => s.Lote === '4' && vencido(s) && filaValida(s));
   const lote5 = seguimiento.filter((s) => s.Lote === '5' && vencido(s) && filaValida(s));
 
+  // LOTE PROGRAMADO: cualquier fila (de cualquier lote) donde alguien pidió "contactame el [fecha]"
+  // y esa fecha ya llegó — aparece acá aunque técnicamente esté "esperando" en su lote numérico.
+  const loteProgramado = seguimiento.filter((s) =>
+    s.FechaProgramada && new Date(s.FechaProgramada) <= ahora && filaValida(s)
+  );
+
   const todasLasFilasPendientes = seguimiento.filter((s) => esValidoSinFiltro(s));
   const leadIdsUnicos = [...new Set(todasLasFilasPendientes.map((s) => s.LeadID))];
   const contadoresPorCurso = { total: leadIdsUnicos.length, otros: 0 };
@@ -469,10 +475,15 @@ export default function SeguimientoPage() {
               filas={lote4} sinAsignarPorDefecto {...propsComunes}
             />
             <SeccionLote
-              ultima
               titulo="LOTE 5 – Contactar a los 3 meses" subtitulo={`${lote5.length} lead(s) sin resolver a los 3 meses de ingresados`}
               explicacion={<>Último lote de seguimiento automático. Si marcás la venta, desaparece de acá como cualquier otro lote.</>}
               filas={lote5} sinAsignarPorDefecto {...propsComunes}
+            />
+            <SeccionLote
+              ultima
+              titulo="📅 LOTE PROGRAMADO" subtitulo={`${loteProgramado.length} lead(s) que pidieron ser contactados en una fecha puntual, y esa fecha ya llegó`}
+              explicacion={<>Aparece acá cualquier lead (esté en el lote que esté) al que le registraste "contactame el [fecha]" y esa fecha ya se cumplió. No reemplaza su lote normal, es un recordatorio extra.</>}
+              filas={loteProgramado} sinAsignarPorDefecto {...propsComunes}
             />
           </>
         )}
@@ -670,6 +681,7 @@ function FilaLote({
   const [resultadoElegido, setResultadoElegido] = useState(null);
   const [observaciones, setObservaciones] = useState('');
   const [proximaAccion, setProximaAccion] = useState('');
+  const [fechaProgramada, setFechaProgramada] = useState('');
   const [menuWhatsapp, setMenuWhatsapp] = useState(false);
 
   if (!lead) return null;
@@ -689,7 +701,7 @@ function FilaLote({
   }
 
   function confirmarResultado() {
-    onContactar(fila.LeadID, fila.Lote, resultadoElegido, observaciones, proximaAccion);
+    onContactar(fila.LeadID, fila.Lote, resultadoElegido, observaciones, proximaAccion, fechaProgramada);
     if (resultadoElegido === 'Pago recibido') onMarcarVenta(lead);
     setResultadoElegido(null);
   }
@@ -789,6 +801,13 @@ function FilaLote({
                         proximaAccion === s ? 'bg-accentPurple border-accentPurple text-white' : 'bg-surface2 border-border text-textSec'
                       }`}>{s}</button>
                   ))}
+                </div>
+              )}
+              {!RESULTADOS_FINALES.includes(resultadoElegido) && (
+                <div className="mb-2">
+                  <label className="text-[11px] text-textMuted block mb-1">📅 ¿Te pidió que lo contactes en una fecha puntual? (opcional)</label>
+                  <input type="date" value={fechaProgramada} onChange={(e) => setFechaProgramada(e.target.value)}
+                    className="bg-surface2 border border-border rounded px-2 py-1 text-xs" />
                 </div>
               )}
               <div className="flex gap-2">

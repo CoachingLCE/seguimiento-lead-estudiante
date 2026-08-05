@@ -113,16 +113,25 @@ export default function AuditoriaPage() {
                 </tr>
               </thead>
               <tbody>
-                {registrosFiltrados.map((r, i) => (
-                  <tr key={i} className="border-b border-border">
-                    <td className="py-2">{new Date(r.Fecha).toLocaleString('es-AR')}</td>
-                    <td>{r.UsuarioNombre}</td>
-                    <td className={r.Accion === 'Registró una venta' ? 'text-successText font-semibold' : ''}>
-                      {r.Accion === 'Registró una venta' && '💰 '}{r.Accion}
-                    </td>
-                    <td>{r.Detalle}</td>
-                  </tr>
-                ))}
+                {registrosFiltrados.map((r, i) => {
+                  const esVenta = r.Accion === 'Registró una venta';
+                  const esLogin = r.Accion === 'Inició sesión';
+                  const esLoginFallido = (r.Accion || '').toLowerCase().includes('login fallido') || (r.Accion || '').toLowerCase().includes('login rechazado');
+                  return (
+                    <tr key={i} className="border-b border-border">
+                      <td className="py-2">{new Date(r.Fecha).toLocaleString('es-AR')}</td>
+                      <td>{r.UsuarioNombre}</td>
+                      <td className={
+                        esVenta ? 'text-successText font-semibold' :
+                        esLogin ? 'text-infoText font-medium' :
+                        esLoginFallido ? 'text-dangerText font-medium' : ''
+                      }>
+                        {esVenta && '💰 '}{esLogin && '🔑 '}{esLoginFallido && '⚠️ '}{r.Accion}
+                      </td>
+                      <td>{r.Detalle}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}
