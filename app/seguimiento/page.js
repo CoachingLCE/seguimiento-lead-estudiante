@@ -621,7 +621,14 @@ function SeccionLote({ titulo, subtitulo, explicacion, filas, buscarLead, ultima
           <p className="text-textMuted text-xs">{subtitulo}</p>
           {filas.length > 0 && (
             <p className="text-textMuted text-[11px] mt-0.5">
-              Total {filas.length} · Contactados {contactadas} · Pendientes {filas.length - contactadas}
+              Total {filas.length} · Contactados {contactadas} ·{' '}
+              {filas.length - contactadas > 0 ? (
+                <span className="text-warningText font-semibold drop-shadow-[0_0_6px_rgba(251,191,36,0.55)]">
+                  Pendientes {filas.length - contactadas}
+                </span>
+              ) : (
+                <>Pendientes {filas.length - contactadas}</>
+              )}
             </p>
           )}
         </div>
