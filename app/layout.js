@@ -2,6 +2,7 @@ import './globals.css';
 import ComoFuncionaGate from '../components/ComoFuncionaGate';
 import VersionBadge from '../components/VersionBadge';
 import TutorialHandbook from '../components/TutorialHandbook';
+import { ThemeProvider } from '../lib/ThemeContext';
 
 export const metadata = {
   title: 'Seguimiento de LEAD-Estudiante — ILCE',
@@ -12,10 +13,12 @@ export default function RootLayout({ children }) {
   return (
     <html lang="es">
       <body>
-        {children}
-        <ComoFuncionaGate />
-        <VersionBadge />
-        <TutorialHandbook />
+        <ThemeProvider>
+          {children}
+          <ComoFuncionaGate />
+          <VersionBadge />
+          <TutorialHandbook />
+        </ThemeProvider>
       </body>
     </html>
   );

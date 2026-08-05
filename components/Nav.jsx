@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
+import ThemeSelector from './ThemeSelector';
 import {
   tienePermisoOperativo,
   tienePermisoCrearLeads,
@@ -55,6 +56,7 @@ export default function Nav({ usuario, onLogout }) {
         </div>
 
         <div className="flex items-center gap-4">
+          <ThemeSelector />
           {usuario && (
             <div className="text-right text-sm">
               <p className="font-semibold">{usuario.nombre}</p>

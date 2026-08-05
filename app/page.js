@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from '../lib/useSession';
+import ThemeSelector from '../components/ThemeSelector';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -47,6 +48,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex justify-center pt-24 px-6">
+      <div className="fixed top-4 right-4"><ThemeSelector /></div>
       <div className="w-80 bg-surface2 border border-border rounded-2xl p-7">
         <h2 className="text-center text-lg font-semibold mb-1">Seguimiento de LEAD-Estudiante</h2>
         <p className="text-center text-textSec text-sm mb-5">Ingresá con tu usuario y contraseña</p>

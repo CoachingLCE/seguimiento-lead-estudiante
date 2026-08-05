@@ -2,10 +2,56 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Paleta oscura (default, y también explícita con [data-theme="dark"]) */
+:root,
+[data-theme='dark'] {
+  --color-bg: 11 14 26;
+  --color-surface: 18 22 42;
+  --color-surface2: 24 29 53;
+  --color-border: 38 44 74;
+  --color-text: 238 240 248;
+  --color-textSec: 154 161 194;
+  --color-textMuted: 107 114 153;
+  --color-accentTeal: 34 211 238;
+  --color-accentPurple: 124 58 237;
+  --color-accentMagenta: 192 38 211;
+  --color-successBg: 15 46 34;
+  --color-successText: 74 222 128;
+  --color-warningBg: 51 33 8;
+  --color-warningText: 251 191 36;
+  --color-infoBg: 15 31 51;
+  --color-infoText: 96 165 250;
+  --color-dangerBg: 51 20 20;
+  --color-dangerText: 248 113 113;
+}
+
+/* Paleta clara */
+[data-theme='light'] {
+  --color-bg: 248 250 252;
+  --color-surface: 255 255 255;
+  --color-surface2: 241 245 249;
+  --color-border: 226 232 240;
+  --color-text: 15 23 42;
+  --color-textSec: 71 85 105;
+  --color-textMuted: 148 163 184;
+  --color-accentTeal: 8 145 178;
+  --color-accentPurple: 124 58 237;
+  --color-accentMagenta: 162 28 175;
+  --color-successBg: 220 252 231;
+  --color-successText: 21 128 61;
+  --color-warningBg: 254 243 199;
+  --color-warningText: 161 98 7;
+  --color-infoBg: 219 234 254;
+  --color-infoText: 29 78 216;
+  --color-dangerBg: 254 226 226;
+  --color-dangerText: 185 28 28;
+}
+
 body {
-  background-color: #0b0e1a;
-  color: #eef0f8;
+  background-color: rgb(var(--color-bg));
+  color: rgb(var(--color-text));
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  transition: background-color .25s ease, color .25s ease;
 }
 
 @media print {
