@@ -28,7 +28,8 @@ function meses() {
 }
 
 function money(n) {
-  return `$${Number(n || 0).toLocaleString('es-AR', { maximumFractionDigits: 0 })}`;
+  const num = Number(n);
+  return `$${(Number.isFinite(num) ? num : 0).toLocaleString('es-AR', { maximumFractionDigits: 0 })}`;
 }
 
 function Flecha({ actual, anterior, invertido = false }) {
@@ -110,6 +111,8 @@ export default function ReportesPage() {
   const [cargando, setCargando] = useState(true);
   const [cargado, setCargado] = useState(false);
   const [fichaLeadId, setFichaLeadId] = useState(null);
+  const [montosRotos, setMontosRotos] = useState(null);
+  const [corrigiendo, setCorrigiendo] = useState(false);
 
   const [busqueda, setBusqueda] = useState('');
   const [filtros, setFiltros] = useState({
@@ -175,6 +178,24 @@ export default function ReportesPage() {
     a.href = url; a.download = `reporte-${mes}.csv`; a.click();
     URL.revokeObjectURL(url);
   }
+  async function verMontosRotos() {
+    const r = await fetch(`/api/leads/corregir-montos?solicitanteEmail=${encodeURIComponent(usuario.email)}`).then((res) => res.json());
+    setMontosRotos(r.encontrados || []);
+  }
+
+  async function corregirMontos() {
+    setCorrigiendo(true);
+    const r = await fetch('/api/leads/corregir-montos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
+    }).then((res) => res.json());
+    setCorrigiendo(false);
+    setMontosRotos(null);
+    cargarDatos(mes);
+    alert(`✓ Se corrigieron ${r.corregidos} monto(s) automáticamente.`);
+  }
+
   function exportarPDF() {
     const doc = new jsPDF();
     doc.setFontSize(14);
@@ -226,6 +247,37 @@ export default function ReportesPage() {
           </div>
         ) : (
           <>
+            {usuario?.roles?.includes('Admin') && (
+              <div className="bg-surface border border-border rounded-2xl p-4">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <p className="text-xs font-semibold text-textSec">🔧 Diagnóstico: montos inválidos ("$NaN")</p>
+                  <button onClick={verMontosRotos} className="text-xs px-3 py-1.5 rounded-lg bg-surface2 border border-border">Buscar</button>
+                </div>
+                {montosRotos && (
+                  montosRotos.length === 0 ? (
+                    <p className="text-successText text-xs mt-2">✓ No hay montos rotos en toda la base.</p>
+                  ) : (
+                    <div className="mt-3 space-y-1.5">
+                      {montosRotos.map((m) => (
+                        <p key={m.id} className="text-xs text-textSec">
+                          {m.nombre} — actual: <span className="text-dangerText">"{m.montoActual}"</span>
+                          {m.seRecuperaSolo
+                            ? <> → se recalcula a <span className="text-successText">${m.montoRecalculado.toLocaleString('es-AR')}</span></>
+                            : <span className="text-warningText"> — necesita revisión manual (no tiene cantidad/valor de cuota guardado)</span>}
+                        </p>
+                      ))}
+                      {montosRotos.some((m) => m.seRecuperaSolo) && (
+                        <button onClick={corregirMontos} disabled={corrigiendo}
+                          className="text-xs px-3 py-1.5 rounded-lg bg-accentPurple text-white font-semibold mt-2 disabled:opacity-60">
+                          {corrigiendo ? 'Corrigiendo…' : `Corregir los ${montosRotos.filter((m) => m.seRecuperaSolo).length} que se pueden recalcular`}
+                        </button>
+                      )}
+                    </div>
+                  )
+                )}
+              </div>
+            )}
+
             {/* ALERTAS */}
             {datos.alertas.length > 0 && (
               <div className="bg-warningBg border border-warningText/30 rounded-2xl p-4">

@@ -14,11 +14,18 @@ function diasDelMes(mes) {
   return new Date(y, m, 0).getDate();
 }
 
+function numeroValido(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
 // Calcula el bloque de métricas para un mes puntual: KPIs, series por día, rankings, embudo.
 // Recibe los leads/seguimiento YA filtrados a ese mes para no leer el Sheet de nuevo por cada mes.
 function calcularBloque(mes, leadsDelMes, seguimientoDeEsosLeads) {
   const compras = leadsDelMes.filter((l) => l.Estado === 'Comprado');
-  const montoTotal = compras.reduce((acc, c) => acc + Number(c.MontoTotal || 0), 0);
+  // Un solo registro con MontoTotal invalido (ej: guardado como texto "NaN" por un bug viejo)
+  // no debe arruinar la suma de TODO el mes — se lo trata como $0 para ese registro puntual.
+  const montoTotal = compras.reduce((acc, c) => acc + numeroValido(c.MontoTotal), 0);
   const conversion = leadsDelMes.length ? (compras.length / leadsDelMes.length) * 100 : 0;
   const ticketPromedio = compras.length ? montoTotal / compras.length : 0;
 
@@ -31,7 +38,7 @@ function calcularBloque(mes, leadsDelMes, seguimientoDeEsosLeads) {
   compras.forEach((c) => {
     if (!c.FechaVenta) return;
     const dia = new Date(c.FechaVenta).getDate();
-    if (porDia[dia]) { porDia[dia].ventas += 1; porDia[dia].monto += Number(c.MontoTotal || 0); }
+    if (porDia[dia]) { porDia[dia].ventas += 1; porDia[dia].monto += numeroValido(c.MontoTotal); }
   });
   const serieDiaria = Object.entries(porDia).map(([dia, v]) => ({ dia: Number(dia), ventas: v.ventas, monto: v.monto }));
   const mejorDia = serieDiaria.reduce((mejor, d) => (d.monto > (mejor?.monto || 0) ? d : mejor), null);
@@ -46,7 +53,7 @@ function calcularBloque(mes, leadsDelMes, seguimientoDeEsosLeads) {
       valores.forEach((v) => {
         if (!conteo[v]) conteo[v] = { cantidad: 0, monto: 0 };
         conteo[v].cantidad += 1;
-        conteo[v].monto += Number(c.MontoTotal || 0) / valores.length;
+        conteo[v].monto += numeroValido(c.MontoTotal) / valores.length;
       });
     });
     return Object.entries(conteo)
