@@ -47,6 +47,76 @@ function iconoAccion(accion) {
 
 const TABS = ['Resumen', 'Actividad', 'Seguimiento', 'Venta', 'Alumno', 'Notas'];
 
+const CLAVE_BUSQUEDAS_RECIENTES = 'ilce-busquedas-recientes';
+const CLAVE_VISTOS_RECIENTES = 'ilce-vistos-recientes';
+
+function guardarBusquedaReciente(texto) {
+  try {
+    const previas = JSON.parse(localStorage.getItem(CLAVE_BUSQUEDAS_RECIENTES) || '[]');
+    const actualizadas = [texto, ...previas.filter((t) => t.toLowerCase() !== texto.toLowerCase())].slice(0, 6);
+    localStorage.setItem(CLAVE_BUSQUEDAS_RECIENTES, JSON.stringify(actualizadas));
+  } catch (e) { /* ignorar */ }
+}
+function leerBusquedasRecientes() {
+  try { return JSON.parse(localStorage.getItem(CLAVE_BUSQUEDAS_RECIENTES) || '[]'); } catch (e) { return []; }
+}
+function guardarVisto(item) {
+  try {
+    const previos = JSON.parse(localStorage.getItem(CLAVE_VISTOS_RECIENTES) || '[]');
+    const actualizados = [item, ...previos.filter((p) => p.id !== item.id)].slice(0, 8);
+    localStorage.setItem(CLAVE_VISTOS_RECIENTES, JSON.stringify(actualizados));
+  } catch (e) { /* ignorar */ }
+}
+function leerVistosRecientes() {
+  try { return JSON.parse(localStorage.getItem(CLAVE_VISTOS_RECIENTES) || '[]'); } catch (e) { return []; }
+}
+
+// Resalta en negrita la parte del texto que coincide con la búsqueda.
+function Resaltado({ texto, q }) {
+  if (!texto || !q) return texto || '';
+  const idx = texto.toLowerCase().indexOf(q.toLowerCase());
+  if (idx === -1) return texto;
+  return (
+    <>
+      {texto.slice(0, idx)}
+      <b className="text-accentTeal">{texto.slice(idx, idx + q.length)}</b>
+      {texto.slice(idx + q.length)}
+    </>
+  );
+}
+
+const CHIPS_FILTRO = ['Todos', 'Leads', 'Estudiantes', 'Comprados'];
+
+function TarjetaResultado({ r, q, router }) {
+  const tonoEstado = r.estado === 'Comprado' ? 'success' : r.estado === 'Estudiante' ? 'info' : 'warning';
+  return (
+    <div className="bg-surface border border-border rounded-2xl p-4 transition-all hover:-translate-y-0.5 hover:border-accentPurple/40 hover:shadow-lg hover:shadow-accentPurple/10">
+      <div className="flex items-start justify-between gap-2 mb-1.5">
+        <p className="text-sm font-bold"><Resaltado texto={r.nombre} q={q} /></p>
+        <Badge tono={tonoEstado}>{r.estado}</Badge>
+      </div>
+      <p className="text-textSec text-xs mb-1">
+        <Resaltado texto={r.curso} q={q} />{r.edicion && <> · Edición {r.edicion}</>}
+      </p>
+      <p className="text-textMuted text-[11px] mb-1">
+        {r.responsable && <>Responsable: <Resaltado texto={r.responsable} q={q} /> · </>}
+        {r.ultimoContacto ? `Último contacto: ${tiempoRelativo(r.ultimoContacto.fecha)} (${r.ultimoContacto.resultado})` : 'Sin contacto registrado'}
+      </p>
+      {r.coincidencias?.length > 0 && (
+        <p className="text-infoText text-[10.5px] mb-2">🔎 Encontrado en: {r.coincidencias.join(', ')}</p>
+      )}
+      <div className="flex items-center gap-2 flex-wrap mt-2">
+        <button onClick={() => router.push(`/buscador?leadId=${r.id}`)}
+          className="text-xs px-2.5 py-1 rounded-md bg-accentPurple text-white font-semibold">Ver ficha</button>
+        <button onClick={() => router.push(`/buscador?leadId=${r.id}&editar=1`)}
+          className="text-xs px-2.5 py-1 rounded-md bg-surface2 border border-border">Editar</button>
+        <button onClick={() => router.push('/seguimiento')}
+          className="text-xs px-2.5 py-1 rounded-md bg-surface2 border border-border">Ir al seguimiento</button>
+      </div>
+    </div>
+  );
+}
+
 function BuscadorContent() {
   const { usuario, logout } = useSession();
   const router = useRouter();
@@ -59,22 +129,38 @@ function BuscadorContent() {
   const [resultados, setResultados] = useState([]);
   const [ficha, setFicha] = useState(null);
   const [cargando, setCargando] = useState(false);
+  const [chipActivo, setChipActivo] = useState('Todos');
+  const [busquedasRecientes, setBusquedasRecientes] = useState([]);
+  const [vistosRecientes, setVistosRecientes] = useState([]);
 
   const puedeVer = tienePermisoBuscador(usuario);
 
   useEffect(() => {
+    setBusquedasRecientes(leerBusquedasRecientes());
+    setVistosRecientes(leerVistosRecientes());
+  }, []);
+
+  useEffect(() => {
     if (!usuario || !puedeVer) return;
     if (leadId) cargarFicha();
-    else if (qInicial) buscar(qInicial);
-  }, [usuario, leadId, qInicial]);
+  }, [usuario, leadId]);
+
+  // Búsqueda en vivo: apenas hay 2+ caracteres, con un pequeño debounce.
+  useEffect(() => {
+    if (!usuario || !puedeVer || leadId) return;
+    if (q.trim().length < 2) { setResultados([]); return; }
+    const t = setTimeout(() => buscar(q.trim()), 300);
+    return () => clearTimeout(t);
+  }, [q, usuario, leadId]);
 
   async function buscar(texto) {
     setCargando(true);
-    setFicha(null);
     const r = await fetch(`/api/buscador?q=${encodeURIComponent(texto)}&solicitanteEmail=${encodeURIComponent(usuario.email)}`)
       .then((res) => res.json());
     setResultados(r.resultados || []);
     setCargando(false);
+    guardarBusquedaReciente(texto);
+    setBusquedasRecientes(leerBusquedasRecientes());
   }
 
   async function cargarFicha() {
@@ -83,12 +169,18 @@ function BuscadorContent() {
       .then((res) => res.json());
     setFicha(r);
     setCargando(false);
+    if (r.lead) {
+      guardarVisto({ id: r.lead.ID, nombre: `${r.lead.Nombre} ${r.lead.Apellido}`, curso: r.lead.Curso || 'sin curso', fecha: new Date().toISOString() });
+    }
   }
 
-  function handleSubmit(e) {
-    e.preventDefault();
-    router.push(`/buscador?q=${encodeURIComponent(q)}`);
-  }
+  const resultadosFiltrados = resultados.filter((r) => {
+    if (chipActivo === 'Todos') return true;
+    if (chipActivo === 'Leads') return r.estado === 'Lead';
+    if (chipActivo === 'Estudiantes') return r.estado === 'Estudiante';
+    if (chipActivo === 'Comprados') return r.estado === 'Comprado' || r.estado === 'Estudiante';
+    return true;
+  });
 
   if (!usuario || !puedeVer) return null;
 
@@ -96,44 +188,75 @@ function BuscadorContent() {
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
       <div className="max-w-5xl mx-auto px-6 pb-16">
-        <form onSubmit={handleSubmit} className="mb-5">
-          <input
-            value={q} onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscar por nombre, apellido, email o celular…"
-            className="w-full max-w-md bg-bg border border-border rounded-lg px-3 py-2 text-sm"
-          />
-        </form>
+        {!leadId && (
+          <>
+            <input
+              value={q} onChange={(e) => setQ(e.target.value)}
+              placeholder="Buscar por nombre, email, WhatsApp, curso, edición, país, observaciones…"
+              className="w-full bg-bg border border-border rounded-lg px-3 py-2.5 text-sm mb-3 focus:outline-none focus:border-accentTeal"
+            />
+
+            {q.trim().length >= 2 && (
+              <div className="flex items-center gap-2 flex-wrap mb-4">
+                {CHIPS_FILTRO.map((c) => (
+                  <button key={c} onClick={() => setChipActivo(c)}
+                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                      chipActivo === c ? 'bg-accentPurple border-accentPurple text-white' : 'bg-surface2 border-border text-textSec hover:text-text'
+                    }`}>
+                    {c}
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
+        )}
 
         {cargando && <p className="text-textSec text-sm">Cargando…</p>}
 
-        {!leadId && !cargando && (
-          <div className="bg-surface border border-border rounded-2xl p-5">
-            {resultados.length === 0 ? (
-              <p className="text-textMuted text-sm">{qInicial ? 'Sin resultados.' : 'Escribí algo para buscar.'}</p>
-            ) : (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-textSec text-left border-b border-border">
-                    <th className="py-2">ID</th><th>Nombre</th><th>Curso</th><th>Estado</th><th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {resultados.map((r) => (
-                    <tr key={r.id} className="border-b border-border">
-                      <td className="py-2 text-textMuted">{r.id}</td>
-                      <td>{r.nombre}</td>
-                      <td>{r.curso}</td>
-                      <td>{r.estado}</td>
-                      <td>
-                        <button onClick={() => router.push(`/buscador?leadId=${r.id}`)}
-                          className="text-xs px-3 py-1 rounded bg-accentPurple text-white">Ver ficha</button>
-                      </td>
-                    </tr>
+        {!leadId && !cargando && q.trim().length < 2 && (
+          <div className="space-y-5">
+            {busquedasRecientes.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-textSec mb-2">Últimas búsquedas</p>
+                <div className="flex flex-wrap gap-2">
+                  {busquedasRecientes.map((b) => (
+                    <button key={b} onClick={() => setQ(b)}
+                      className="text-xs px-3 py-1.5 rounded-full bg-surface2 border border-border text-textSec hover:text-text">
+                      🔍 {b}
+                    </button>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              </div>
             )}
+            <div>
+              <p className="text-xs font-semibold text-textSec mb-2">👁️ Últimos alumnos vistos</p>
+              {vistosRecientes.length === 0 ? (
+                <p className="text-textMuted text-xs">Todavía no viste ninguna ficha.</p>
+              ) : (
+                <div className="grid md:grid-cols-2 gap-2">
+                  {vistosRecientes.map((v) => (
+                    <button key={v.id} onClick={() => router.push(`/buscador?leadId=${v.id}`)}
+                      className="text-left bg-surface border border-border rounded-xl p-3 hover:border-accentTeal transition-colors">
+                      <p className="text-sm font-semibold">{v.nombre}</p>
+                      <p className="text-textMuted text-[11px]">{v.curso} · {tiempoRelativo(v.fecha)}</p>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
+        )}
+
+        {!leadId && !cargando && q.trim().length >= 2 && (
+          resultadosFiltrados.length === 0 ? (
+            <p className="text-textMuted text-sm">Sin resultados para "{q}".</p>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-3">
+              {resultadosFiltrados.map((r) => (
+                <TarjetaResultado key={r.id} r={r} q={q} router={router} />
+              ))}
+            </div>
+          )
         )}
 
         {leadId && ficha && !cargando && (

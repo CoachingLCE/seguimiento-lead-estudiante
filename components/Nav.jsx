@@ -62,7 +62,8 @@ export default function Nav({ usuario, onLogout }) {
   const operativo = [
     tienePermisoOperativo(usuario) && itemNav('/dashboard', 'Dashboard', pathname),
     tienePermisoOperativo(usuario) && itemNav('/seguimiento', 'Seguimiento', pathname),
-    tienePermisoCrearLeads(usuario) && itemNavPrimario('/nuevo-lead', 'Nuevo lead', pathname)
+    tienePermisoCrearLeads(usuario) && itemNavPrimario('/nuevo-lead', 'Nuevo lead', pathname),
+    itemNav('/herramientas', '⚡ Herramientas', pathname)
   ].filter(Boolean);
 
   const analisis = [
