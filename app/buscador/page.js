@@ -295,6 +295,21 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
   const puedeEditar = tienePermisoEditarLead(usuario, lead, asignadoActual);
   const puedeDeshacer = usuario?.roles?.includes('Admin') || usuario?.roles?.includes('Coordinador');
   const [deshaciendo, setDeshaciendo] = useState(null);
+  const [programandoLote, setProgramandoLote] = useState(null);
+  const [fechaAProgramar, setFechaAProgramar] = useState('');
+
+  async function programarFecha(lote) {
+    await fetch('/api/seguimiento', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        accion: 'programar', leadId: lead.ID, lote, fechaProgramada: fechaAProgramar,
+        solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
+      })
+    });
+    setProgramandoLote(null);
+    onActualizar?.();
+  }
 
   async function deshacerResultado(lote) {
     setDeshaciendo(lote);
@@ -616,18 +631,36 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
           <p className="text-sm font-semibold mb-3">Seguimiento comercial</p>
           {seguimiento.length === 0 ? <p className="text-textMuted text-sm">Sin seguimiento comercial.</p> : (
             seguimiento.map((s) => (
-              <div key={s.Lote} className="flex items-center justify-between gap-3 mb-1.5">
+              <div key={s.Lote} className="flex items-center justify-between gap-3 mb-1.5 flex-wrap">
                 <p className="text-sm text-textSec">
                   Lote {s.Lote}: {s.Contactado === 'TRUE'
                     ? `${s.Resultado} (${tiempoRelativo(s.FechaContacto)}) — responsable: ${s.AsignadoANombre || 'No asignado'}`
                     : `Pendiente — asignado a: ${s.AsignadoANombre || 'No asignado'}`}
+                  {s.FechaProgramada && (
+                    <span className="text-infoText"> · 📅 Programado para el {new Date(s.FechaProgramada).toLocaleDateString('es-AR')}</span>
+                  )}
                 </p>
-                {s.Contactado === 'TRUE' && puedeDeshacer && (
-                  <button onClick={() => deshacerResultado(s.Lote)} disabled={deshaciendo === s.Lote}
-                    className="text-xs text-warningText font-semibold shrink-0">
-                    {deshaciendo === s.Lote ? 'Deshaciendo…' : '↩ Deshacer'}
-                  </button>
-                )}
+                <div className="flex items-center gap-2 shrink-0">
+                  {s.Contactado !== 'TRUE' && (
+                    programandoLote === s.Lote ? (
+                      <>
+                        <input type="date" value={fechaAProgramar} onChange={(e) => setFechaAProgramar(e.target.value)}
+                          className="bg-bg border border-border rounded px-2 py-1 text-xs" />
+                        <button onClick={() => programarFecha(s.Lote)} className="text-xs text-accentTeal font-semibold">Guardar</button>
+                        <button onClick={() => setProgramandoLote(null)} className="text-xs text-textMuted">Cancelar</button>
+                      </>
+                    ) : (
+                      <button onClick={() => { setProgramandoLote(s.Lote); setFechaAProgramar(s.FechaProgramada || ''); }}
+                        className="text-xs text-infoText font-semibold">📅 {s.FechaProgramada ? 'Cambiar fecha' : 'Programar contacto'}</button>
+                    )
+                  )}
+                  {s.Contactado === 'TRUE' && puedeDeshacer && (
+                    <button onClick={() => deshacerResultado(s.Lote)} disabled={deshaciendo === s.Lote}
+                      className="text-xs text-warningText font-semibold">
+                      {deshaciendo === s.Lote ? 'Deshaciendo…' : '↩ Deshacer'}
+                    </button>
+                  )}
+                </div>
               </div>
             ))
           )}

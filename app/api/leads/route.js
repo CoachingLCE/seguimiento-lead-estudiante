@@ -78,10 +78,19 @@ export async function POST(request) {
   // es simplemente "todos los leads", se calcula al vuelo desde la hoja Leads.
   // Columnas Seguimiento: LeadID, Lote, FechaVence, AsignadoAEmail, AsignadoANombre, Contactado, Resultado,
   // FechaContacto, Observaciones, ProximaAccion
-  const vence1 = new Date(ahora.getTime() + HORAS_LOTE_1 * 60 * 60 * 1000).toISOString();
-  const vence3 = new Date(ahora.getTime() + DIAS_LOTE_3 * 24 * 60 * 60 * 1000).toISOString();
-  const vence4 = new Date(ahora.getTime() + DIAS_LOTE_4 * 24 * 60 * 60 * 1000).toISOString();
-  const vence5 = new Date(ahora.getTime() + DIAS_LOTE_5 * 24 * 60 * 60 * 1000).toISOString();
+  //
+  // El vencimiento se redondea al INICIO del día correspondiente (00:00), en vez de la hora exacta
+  // en que se cargó el lead. Así, todos los leads cargados el mismo día pasan de lote juntos desde
+  // la mañana siguiente que corresponda, sin que unos aparezcan a la mañana y otros recién a la tarde.
+  function inicioDelDiaMasHoras(horas) {
+    const f = new Date(ahora.getTime() + horas * 60 * 60 * 1000);
+    f.setHours(0, 0, 0, 0);
+    return f.toISOString();
+  }
+  const vence1 = inicioDelDiaMasHoras(HORAS_LOTE_1);
+  const vence3 = inicioDelDiaMasHoras(DIAS_LOTE_3 * 24);
+  const vence4 = inicioDelDiaMasHoras(DIAS_LOTE_4 * 24);
+  const vence5 = inicioDelDiaMasHoras(DIAS_LOTE_5 * 24);
 
   await appendRow('Seguimiento', [
     leadId, '1', vence1, body.cargadoPorEmail, body.cargadoPorNombre, 'FALSE', '', '', '', '', ''

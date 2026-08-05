@@ -19,7 +19,9 @@ export async function GET(request) {
 // 1) registrar contacto:  { accion: 'contactar', leadId, lote, resultado, observaciones, proximaAccion, fechaProgramada?, solicitanteEmail, solicitanteNombre }
 // 2) reasignar lote:      { accion: 'reasignar', leadId, lote, nuevoEmail, nuevoNombre, solicitanteEmail, solicitanteNombre }
 // 3) deshacer resultado:  { accion: 'deshacer', leadId, lote, solicitanteEmail, solicitanteNombre } — solo Admin/Coordinador
-// fechaProgramada (opcional): si alguien dijo "contactame el [fecha]", ese lead reaparece en el
+// 4) programar contacto:  { accion: 'programar', leadId, lote, fechaProgramada, solicitanteEmail, solicitanteNombre }
+//    — fija "contactame el [fecha]" en una fila que sigue pendiente, sin marcarla como contactada.
+// fechaProgramada: si alguien dijo "contactame el [fecha]", ese lead reaparece en el
 // "Lote Programado" en Seguimiento apenas llega esa fecha, sin importar en qué lote numérico esté.
 export async function PATCH(request) {
   const body = await request.json();
@@ -27,6 +29,19 @@ export async function PATCH(request) {
   const fila = seguimiento.find((s) => s.LeadID === body.leadId && s.Lote === String(body.lote));
   if (!fila) {
     return NextResponse.json({ error: 'Registro de seguimiento no encontrado' }, { status: 404 });
+  }
+
+  if (body.accion === 'programar') {
+    await updateRow('Seguimiento', fila._rowIndex, [
+      fila.LeadID, fila.Lote, fila.FechaVence, fila.AsignadoAEmail, fila.AsignadoANombre,
+      fila.Contactado, fila.Resultado, fila.FechaContacto, fila.Observaciones, fila.ProximaAccion,
+      body.fechaProgramada || ''
+    ]);
+    await registrarAccion(
+      body.solicitanteEmail, body.solicitanteNombre,
+      `Programó contacto para el ${body.fechaProgramada}`, `Lote ${fila.Lote}`, fila.LeadID
+    );
+    return NextResponse.json({ ok: true });
   }
 
   if (body.accion === 'reasignar') {
@@ -84,7 +99,9 @@ export async function PATCH(request) {
     if (fila.Lote === '1' && !RESULTADOS_FINALES.includes(body.resultado)) {
       const yaExisteLote2 = seguimiento.some((s) => s.LeadID === fila.LeadID && s.Lote === '2');
       if (!yaExisteLote2) {
-        const vence2 = new Date(ahora.getTime() + DIAS_LOTE_2 * 24 * 60 * 60 * 1000).toISOString();
+        const vence2Fecha = new Date(ahora.getTime() + DIAS_LOTE_2 * 24 * 60 * 60 * 1000);
+        vence2Fecha.setHours(0, 0, 0, 0);
+        const vence2 = vence2Fecha.toISOString();
         await appendRow('Seguimiento', [
           fila.LeadID, '2', vence2, fila.AsignadoAEmail, fila.AsignadoANombre, 'FALSE', '', '', '', '', ''
         ]);
