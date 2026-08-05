@@ -117,7 +117,9 @@ export default function AuditoriaPage() {
                   <tr key={i} className="border-b border-border">
                     <td className="py-2">{new Date(r.Fecha).toLocaleString('es-AR')}</td>
                     <td>{r.UsuarioNombre}</td>
-                    <td>{r.Accion}</td>
+                    <td className={r.Accion === 'Registró una venta' ? 'text-successText font-semibold' : ''}>
+                      {r.Accion === 'Registró una venta' && '💰 '}{r.Accion}
+                    </td>
                     <td>{r.Detalle}</td>
                   </tr>
                 ))}
