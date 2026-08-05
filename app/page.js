@@ -6,6 +6,7 @@ import { useSession } from '../lib/useSession';
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [verPassword, setVerPassword] = useState(false);
   const [mantenerSesion, setMantenerSesion] = useState(true);
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(false);
@@ -60,14 +61,21 @@ export default function LoginPage() {
             className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm mb-3"
           />
           <label className="text-xs text-textSec block mb-1">Contraseña</label>
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm mb-3"
-          />
+          <div className="relative mb-3">
+            <input
+              type={verPassword ? 'text' : 'password'}
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full bg-bg border border-border rounded-lg px-3 py-2 pr-9 text-sm"
+            />
+            <button type="button" onClick={() => setVerPassword(!verPassword)}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-textMuted hover:text-text text-sm"
+              title={verPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}>
+              {verPassword ? '🙈' : '👁️'}
+            </button>
+          </div>
           {error && <p className="text-warningText text-xs mb-3">{error}</p>}
           <label className="flex items-center gap-2 text-xs text-textSec mb-4 cursor-pointer">
             <input type="checkbox" checked={mantenerSesion} onChange={(e) => setMantenerSesion(e.target.checked)} />
