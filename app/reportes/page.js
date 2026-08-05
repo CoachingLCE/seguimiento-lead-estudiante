@@ -473,7 +473,7 @@ export default function ReportesPage() {
                   <thead className="sticky top-0 bg-surface z-10">
                     <tr className="text-textSec text-left border-b border-border">
                       <th className="py-2">Lead</th><th>Curso</th><th>Origen</th><th>Medio de pago</th>
-                      <th>Modalidad</th><th>Monto</th><th>Vendedor</th><th></th>
+                      <th>Modalidad</th><th>Fecha de compra</th><th>Monto</th><th>Vendedor</th><th></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -484,6 +484,9 @@ export default function ReportesPage() {
                         <td><Badge color={colorParaTexto(c.origen)}>{c.origen}</Badge></td>
                         <td><Badge color={colorParaTexto(c.medioPago)}>{c.medioPago}</Badge></td>
                         <td><Badge color={colorParaTexto(c.modalidad)}>{c.modalidad}</Badge></td>
+                        <td className="text-textSec whitespace-nowrap">
+                          {c.fechaVenta ? new Date(c.fechaVenta).toLocaleDateString('es-AR') : '—'}
+                        </td>
                         <td className="font-bold text-successText">{money(c.montoTotal)}</td>
                         <td>{c.vendidoPor}</td>
                         <td><button onClick={() => setFichaLeadId(c.id)} className="text-accentTeal text-xs font-semibold">Ver ficha</button></td>
