@@ -609,7 +609,7 @@ function ModalReasignar({ onClose, onConfirmar }) {
 }
 
 function SeccionLote({ titulo, subtitulo, explicacion, filas, buscarLead, ultima, dimensionAgrupacion, ordenPor, ...propsFila }) {
-  const [abierta, setAbierta] = useState(true);
+  const [abierta, setAbierta] = useState(false);
   const grupos = agruparYOrdenar(filas, buscarLead, dimensionAgrupacion, ordenPor);
   const contactadas = filas.filter((f) => f.Contactado === 'TRUE').length;
 
