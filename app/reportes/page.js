@@ -6,7 +6,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend
+  XAxis, YAxis, CartesianGrid, Tooltip
 } from 'recharts';
 import Nav from '../../components/Nav';
 import FichaDrawer from '../../components/FichaDrawer';
@@ -61,11 +61,68 @@ function Skeleton({ h = 'h-24' }) {
   return <div className={`bg-surface2 border border-border rounded-xl animate-pulse ${h}`} />;
 }
 
-function ChartCard({ titulo, tooltip, children }) {
+function ChartCard({ titulo, subtitulo, valorGrande, comparacion, tooltip, onExportar, alto = 300, children }) {
   return (
-    <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm">
-      <p className="text-sm font-semibold mb-3" title={tooltip}>{titulo}</p>
-      <div style={{ width: '100%', height: 240 }}>{children}</div>
+    <div className="group bg-surface border border-border rounded-2xl p-5 shadow-sm transition-all duration-200
+      hover:-translate-y-0.5 hover:border-accentPurple/40 hover:shadow-lg hover:shadow-accentPurple/10">
+      <div className="flex items-start justify-between mb-1 gap-2">
+        <div>
+          <p className="text-sm font-semibold" title={tooltip}>{titulo}</p>
+          <p className="text-textMuted text-[10.5px]">{subtitulo || 'Mes seleccionado'}</p>
+        </div>
+        {onExportar && (
+          <button onClick={onExportar}
+            className="text-textMuted hover:text-accentTeal text-[11px] shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+            ⬇ Exportar
+          </button>
+        )}
+      </div>
+      {valorGrande !== undefined && (
+        <div className="flex items-baseline gap-2 mb-1">
+          <p className="text-2xl font-bold">{valorGrande}</p>
+          {comparacion}
+        </div>
+      )}
+      <div style={{ width: '100%', height: alto }}>{children}</div>
+    </div>
+  );
+}
+
+// Dona con % principal + total en el centro, y leyenda a la derecha (en vez de abajo).
+function GraficoDona({ datos, onClickItem, activo }) {
+  const total = datos.reduce((acc, d) => acc + d.cantidad, 0);
+  const principal = datos[0];
+  return (
+    <div className="flex items-center gap-4 h-full">
+      <div className="relative w-[150px] h-[150px] shrink-0">
+        <ResponsiveContainer>
+          <PieChart>
+            <Pie data={datos} dataKey="cantidad" nameKey="nombre" innerRadius={48} outerRadius={68} paddingAngle={2}
+              onClick={(d) => onClickItem?.(d.nombre)} cursor="pointer">
+              {datos.map((_, i) => <Cell key={i} fill={PALETA[i % PALETA.length]} />)}
+            </Pie>
+            <Tooltip contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} />
+          </PieChart>
+        </ResponsiveContainer>
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+          <p className="text-xl font-bold">{principal ? `${principal.porcentaje.toFixed(0)}%` : '0%'}</p>
+          <p className="text-textMuted text-[10px]">{total} en total</p>
+        </div>
+      </div>
+      <div className="flex-1 space-y-2 overflow-y-auto max-h-[160px] pr-1">
+        {datos.map((d, i) => (
+          <button key={d.nombre} onClick={() => onClickItem?.(d.nombre)}
+            className={`w-full flex items-center justify-between text-left text-xs gap-2 rounded-md px-1.5 py-1 transition-colors hover:bg-bg ${
+              activo === d.nombre ? 'bg-infoBg' : ''
+            }`}>
+            <span className="flex items-center gap-1.5 truncate">
+              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: PALETA[i % PALETA.length] }} />
+              <span className="truncate">{d.nombre}</span>
+            </span>
+            <span className="text-textSec font-medium shrink-0">{d.porcentaje.toFixed(0)}%</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -194,6 +251,13 @@ export default function ReportesPage() {
     setMontosRotos(null);
     cargarDatos(mes);
     alert(`✓ Se corrigieron ${r.corregidos} monto(s) automáticamente.`);
+  }
+
+  function exportarGrafico(nombreArchivo, filas) {
+    const hoja = XLSX.utils.json_to_sheet(filas);
+    const libro = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(libro, hoja, 'Datos');
+    XLSX.writeFile(libro, `${nombreArchivo}-${mes}.xlsx`);
   }
 
   function exportarPDF() {
@@ -330,7 +394,10 @@ export default function ReportesPage() {
 
             {/* GRÁFICOS */}
             <div className="grid md:grid-cols-2 gap-4">
-              <ChartCard titulo="Evolución de ventas por día" tooltip="Cantidad de ventas confirmadas por día del mes">
+              <ChartCard titulo="Evolución de ventas por día" subtitulo="Mes seleccionado" tooltip="Cantidad de ventas confirmadas por día del mes"
+                valorGrande={`${datos.totalCompras} ventas`}
+                comparacion={<Flecha actual={datos.comparativa.ventas.actual} anterior={datos.comparativa.ventas.anterior} />}
+                onExportar={() => exportarGrafico('ventas-por-dia', datos.serieDiaria)}>
                 <ResponsiveContainer>
                   <LineChart data={datos.serieDiaria}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#262c4a" />
@@ -342,7 +409,10 @@ export default function ReportesPage() {
                 </ResponsiveContainer>
               </ChartCard>
 
-              <ChartCard titulo="Evolución de facturación por día" tooltip="Monto vendido por día del mes">
+              <ChartCard titulo="Evolución de facturación por día" subtitulo="Mes seleccionado" tooltip="Monto vendido por día del mes"
+                valorGrande={money(datos.montoTotal)}
+                comparacion={<Flecha actual={datos.comparativa.facturacion.actual} anterior={datos.comparativa.facturacion.anterior} />}
+                onExportar={() => exportarGrafico('facturacion-por-dia', datos.serieDiaria)}>
                 <ResponsiveContainer>
                   <LineChart data={datos.serieDiaria}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#262c4a" />
@@ -354,7 +424,9 @@ export default function ReportesPage() {
                 </ResponsiveContainer>
               </ChartCard>
 
-              <ChartCard titulo="Ventas por curso">
+              <ChartCard titulo="Ventas por curso" subtitulo="Mes seleccionado"
+                valorGrande={`${datos.rankingCursos.length} curso${datos.rankingCursos.length !== 1 ? 's' : ''}`}
+                onExportar={() => exportarGrafico('ventas-por-curso', datos.rankingCursos)}>
                 <ResponsiveContainer>
                   <BarChart data={datos.rankingCursos} layout="vertical" margin={{ left: 40 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#262c4a" />
@@ -366,7 +438,9 @@ export default function ReportesPage() {
                 </ResponsiveContainer>
               </ChartCard>
 
-              <ChartCard titulo="Facturación por curso">
+              <ChartCard titulo="Facturación por curso" subtitulo="Mes seleccionado"
+                valorGrande={money(datos.montoTotal)}
+                onExportar={() => exportarGrafico('facturacion-por-curso', datos.rankingCursos)}>
                 <ResponsiveContainer>
                   <BarChart data={datos.rankingCursos} layout="vertical" margin={{ left: 40 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#262c4a" />
@@ -378,20 +452,15 @@ export default function ReportesPage() {
                 </ResponsiveContainer>
               </ChartCard>
 
-              <ChartCard titulo="Ventas por origen">
-                <ResponsiveContainer>
-                  <PieChart>
-                    <Pie data={datos.rankingOrigenes} dataKey="cantidad" nameKey="nombre" cx="50%" cy="50%" outerRadius={80}
-                      onClick={(d) => setFiltro('origen', d.nombre)} cursor="pointer">
-                      {datos.rankingOrigenes.map((_, i) => <Cell key={i} fill={PALETA[i % PALETA.length]} />)}
-                    </Pie>
-                    <Tooltip contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} />
-                    <Legend wrapperStyle={{ fontSize: 11 }} />
-                  </PieChart>
-                </ResponsiveContainer>
+              <ChartCard titulo="Ventas por origen" subtitulo="Mes seleccionado" alto={200}
+                valorGrande={`${datos.rankingOrigenes.length} origen${datos.rankingOrigenes.length !== 1 ? 'es' : ''}`}
+                onExportar={() => exportarGrafico('ventas-por-origen', datos.rankingOrigenes)}>
+                <GraficoDona datos={datos.rankingOrigenes} onClickItem={(n) => setFiltro('origen', n)} activo={filtros.origen} />
               </ChartCard>
 
-              <ChartCard titulo="Ventas por vendedor">
+              <ChartCard titulo="Ventas por vendedor" subtitulo="Mes seleccionado"
+                valorGrande={`${datos.rankingVendedores.length} vendedor${datos.rankingVendedores.length !== 1 ? 'es' : ''}`}
+                onExportar={() => exportarGrafico('ventas-por-vendedor', datos.rankingVendedores)}>
                 <ResponsiveContainer>
                   <BarChart data={datos.rankingVendedores}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#262c4a" />
@@ -403,30 +472,16 @@ export default function ReportesPage() {
                 </ResponsiveContainer>
               </ChartCard>
 
-              <ChartCard titulo="Medios de pago">
-                <ResponsiveContainer>
-                  <PieChart>
-                    <Pie data={datos.rankingMedioPago} dataKey="cantidad" nameKey="nombre" cx="50%" cy="50%" outerRadius={80}
-                      onClick={(d) => setFiltro('medioPago', d.nombre)} cursor="pointer">
-                      {datos.rankingMedioPago.map((_, i) => <Cell key={i} fill={PALETA[i % PALETA.length]} />)}
-                    </Pie>
-                    <Tooltip contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} />
-                    <Legend wrapperStyle={{ fontSize: 11 }} />
-                  </PieChart>
-                </ResponsiveContainer>
+              <ChartCard titulo="Medios de pago" subtitulo="Mes seleccionado" alto={200}
+                valorGrande={`${datos.rankingMedioPago.length} medio${datos.rankingMedioPago.length !== 1 ? 's' : ''}`}
+                onExportar={() => exportarGrafico('medios-de-pago', datos.rankingMedioPago)}>
+                <GraficoDona datos={datos.rankingMedioPago} onClickItem={(n) => setFiltro('medioPago', n)} activo={filtros.medioPago} />
               </ChartCard>
 
-              <ChartCard titulo="Modalidades de pago">
-                <ResponsiveContainer>
-                  <PieChart>
-                    <Pie data={datos.rankingModalidad} dataKey="cantidad" nameKey="nombre" cx="50%" cy="50%" outerRadius={80}
-                      onClick={(d) => setFiltro('modalidad', d.nombre)} cursor="pointer">
-                      {datos.rankingModalidad.map((_, i) => <Cell key={i} fill={PALETA[i % PALETA.length]} />)}
-                    </Pie>
-                    <Tooltip contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} />
-                    <Legend wrapperStyle={{ fontSize: 11 }} />
-                  </PieChart>
-                </ResponsiveContainer>
+              <ChartCard titulo="Modalidades de pago" subtitulo="Mes seleccionado" alto={200}
+                valorGrande={`${datos.rankingModalidad.length} modalidad${datos.rankingModalidad.length !== 1 ? 'es' : ''}`}
+                onExportar={() => exportarGrafico('modalidades-de-pago', datos.rankingModalidad)}>
+                <GraficoDona datos={datos.rankingModalidad} onClickItem={(n) => setFiltro('modalidad', n)} activo={filtros.modalidad} />
               </ChartCard>
             </div>
 
