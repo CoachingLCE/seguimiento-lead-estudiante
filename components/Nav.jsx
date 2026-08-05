@@ -23,7 +23,7 @@ function itemNav(href, label, pathname) {
     <Link
       key={href}
       href={href}
-      className={`h-9 flex items-center px-4 rounded-lg text-sm font-medium border whitespace-nowrap ${
+      className={`h-9 flex items-center px-4 rounded-lg text-sm font-medium border whitespace-nowrap transition-colors ${
         pathname === href
           ? 'bg-gradient-to-r from-accentPurple to-accentMagenta text-white border-transparent'
           : 'bg-surface2 border-border text-textSec hover:text-text hover:border-accentTeal'
@@ -34,12 +34,53 @@ function itemNav(href, label, pathname) {
   );
 }
 
+// Nuevo lead es la acción principal de la app: siempre violeta, no solo cuando está activa.
+function itemNavPrimario(href, label, pathname) {
+  return (
+    <Link
+      key={href}
+      href={href}
+      className={`h-9 flex items-center px-4 rounded-lg text-sm font-semibold whitespace-nowrap transition-all shadow-sm ${
+        pathname === href
+          ? 'bg-gradient-to-r from-accentPurple to-accentMagenta text-white shadow-accentPurple/30'
+          : 'bg-gradient-to-r from-accentPurple to-accentMagenta text-white opacity-90 hover:opacity-100 hover:shadow-accentPurple/20'
+      }`}
+    >
+      {label}
+    </Link>
+  );
+}
+
+// Un separador vertical sutil entre categorías — solo se muestra si hay algo de cada lado.
+function Divisor() {
+  return <span className="w-px h-6 bg-border shrink-0" />;
+}
+
 export default function Nav({ usuario, onLogout }) {
   const pathname = usePathname();
 
+  const operativo = [
+    tienePermisoOperativo(usuario) && itemNav('/dashboard', 'Dashboard', pathname),
+    tienePermisoOperativo(usuario) && itemNav('/seguimiento', 'Seguimiento', pathname),
+    tienePermisoCrearLeads(usuario) && itemNavPrimario('/nuevo-lead', 'Nuevo lead', pathname)
+  ].filter(Boolean);
+
+  const analisis = [
+    tienePermisoReportes(usuario) && itemNav('/reportes', 'Reportes', pathname),
+    tienePermisoEstudiantes(usuario) && itemNav('/inscritos', 'Estudiantes', pathname),
+    tienePermisoResumenEstudiantes(usuario) && itemNav('/resumen-estudiantes', 'Resumen Estudiantes', pathname),
+    tienePermisoResumenDiario(usuario) && itemNav('/resumen-diario', 'Resumen diario', pathname),
+    tienePermisoDiplomas(usuario) && itemNav('/diplomas', 'Diplomas', pathname)
+  ].filter(Boolean);
+
+  const administracion = [
+    tienePermisoAuditoria(usuario) && itemNav('/auditoria', 'Historial de acciones', pathname),
+    tienePermisoAccesos(usuario) && itemNav('/accesos', 'Accesos', pathname)
+  ].filter(Boolean);
+
   return (
     <div className="max-w-5xl mx-auto px-6 pt-6 no-print">
-      <div className="flex items-center justify-between mb-3 gap-4">
+      <div className="flex items-center justify-between mb-4 gap-4">
         <div>
           <p className="text-accentTeal uppercase text-xs tracking-widest font-semibold mb-1">
             Instituto ILCE
@@ -61,24 +102,15 @@ export default function Nav({ usuario, onLogout }) {
         </div>
       </div>
 
-      <nav className="mb-3">
-        <div className="flex gap-2 flex-wrap mb-[11px]">
-          {tienePermisoOperativo(usuario) && itemNav('/dashboard', 'Dashboard', pathname)}
-          {tienePermisoOperativo(usuario) && itemNav('/seguimiento', 'Seguimiento', pathname)}
-          {tienePermisoReportes(usuario) && itemNav('/reportes', 'Reportes', pathname)}
-          {tienePermisoEstudiantes(usuario) && itemNav('/inscritos', 'Estudiantes', pathname)}
-          {tienePermisoResumenEstudiantes(usuario) && itemNav('/resumen-estudiantes', 'Resumen Estudiantes', pathname)}
-          {tienePermisoResumenDiario(usuario) && itemNav('/resumen-diario', 'Resumen diario', pathname)}
-          {tienePermisoDiplomas(usuario) && itemNav('/diplomas', 'Diplomas', pathname)}
-          {tienePermisoAuditoria(usuario) && itemNav('/auditoria', 'Historial de acciones', pathname)}
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          {tienePermisoCrearLeads(usuario) && itemNav('/nuevo-lead', 'Nuevo lead', pathname)}
-          {tienePermisoAccesos(usuario) && itemNav('/accesos', 'Accesos', pathname)}
-          {tienePermisoBuscador(usuario) && (
-            <span className="ml-auto">{itemNav('/buscador', '🔍 Buscador', pathname)}</span>
-          )}
-        </div>
+      <nav className="mb-4 flex items-center gap-3 flex-wrap">
+        {operativo.length > 0 && <div className="flex items-center gap-2 flex-wrap">{operativo}</div>}
+        {operativo.length > 0 && analisis.length > 0 && <Divisor />}
+        {analisis.length > 0 && <div className="flex items-center gap-2 flex-wrap">{analisis}</div>}
+        {(operativo.length > 0 || analisis.length > 0) && administracion.length > 0 && <Divisor />}
+        {administracion.length > 0 && <div className="flex items-center gap-2 flex-wrap">{administracion}</div>}
+        {tienePermisoBuscador(usuario) && (
+          <div className="ml-auto">{itemNav('/buscador', '🔍 Buscador', pathname)}</div>
+        )}
       </nav>
     </div>
   );
