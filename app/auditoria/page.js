@@ -115,6 +115,7 @@ export default function AuditoriaPage() {
               <tbody>
                 {registrosFiltrados.map((r, i) => {
                   const esVenta = r.Accion === 'Registró una venta';
+                  const esLead = r.Accion === 'Creó un lead';
                   const esLogin = r.Accion === 'Inició sesión';
                   const esLoginFallido = (r.Accion || '').toLowerCase().includes('login fallido') || (r.Accion || '').toLowerCase().includes('login rechazado');
                   return (
@@ -123,10 +124,11 @@ export default function AuditoriaPage() {
                       <td>{r.UsuarioNombre}</td>
                       <td className={
                         esVenta ? 'text-successText font-semibold' :
+                        esLead ? 'text-accentPurple font-medium' :
                         esLogin ? 'text-infoText font-medium' :
                         esLoginFallido ? 'text-dangerText font-medium' : ''
                       }>
-                        {esVenta && '💰 '}{esLogin && '🔑 '}{esLoginFallido && '⚠️ '}{r.Accion}
+                        {esVenta && '💰 '}{esLead && '📩 '}{esLogin && '🔑 '}{esLoginFallido && '⚠️ '}{r.Accion}
                       </td>
                       <td>{r.Detalle}</td>
                     </tr>
