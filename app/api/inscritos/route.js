@@ -18,15 +18,37 @@ export async function GET(request) {
   return NextResponse.json({ inscritos });
 }
 
-// PATCH /api/inscritos -> dos acciones, ambas editables desde la tabla
+// PATCH /api/inscritos -> acciones editables desde la tabla
 // 1) togglear alta en plataforma: { accion: 'alta', id, nuevoValor, solicitanteEmail, solicitanteNombre }
 // 2) enviar bienvenida:           { accion: 'bienvenida', id, email?, solicitanteEmail, solicitanteNombre }
+// 3) checkbox simple (sin mail):  { accion: 'toggle', campo: 'ConfirmoRecepcion'|'GrupoWhatsApp', id, nuevoValor, solicitanteEmail, solicitanteNombre }
 export async function PATCH(request) {
   const body = await request.json();
   const inscritos = await readSheet('Inscritos');
   const fila = inscritos.find((i) => i.ID === body.id);
   if (!fila) {
     return NextResponse.json({ error: 'Inscrito no encontrado' }, { status: 404 });
+  }
+
+  if (body.accion === 'toggle') {
+    const CAMPOS_PERMITIDOS = { ConfirmoRecepcion: 'Confirmó recepción del mail de bienvenida', GrupoWhatsApp: 'Incorporación al grupo de WhatsApp' };
+    if (!CAMPOS_PERMITIDOS[body.campo]) {
+      return NextResponse.json({ error: 'Campo no permitido' }, { status: 400 });
+    }
+    const nuevoValor = !!body.nuevoValor;
+    const actualizado = { ...fila, [body.campo]: nuevoValor ? 'TRUE' : 'FALSE' };
+    await updateRow('Inscritos', fila._rowIndex, [
+      actualizado.ID, actualizado.LeadId, actualizado.NombreEstudiante, actualizado.EmailEstudiante,
+      actualizado.Curso, actualizado.Edicion, actualizado.FechaInscripcion,
+      actualizado.AltaPlataforma, actualizado.AltaPorEmail, actualizado.AltaPorNombre, actualizado.FechaAlta,
+      actualizado.BienvenidaEnviada, actualizado.BienvenidaPorEmail, actualizado.BienvenidaPorNombre, actualizado.FechaBienvenida,
+      actualizado.AbonoTotalidad, actualizado.Docentes, actualizado.ConfirmoRecepcion, actualizado.GrupoWhatsApp
+    ]);
+    await registrarAccion(
+      body.solicitanteEmail, body.solicitanteNombre,
+      `${nuevoValor ? 'Marcó' : 'Desmarcó'}: ${CAMPOS_PERMITIDOS[body.campo]}`, fila.NombreEstudiante, fila.LeadId
+    );
+    return NextResponse.json({ ok: true });
   }
 
   if (body.accion === 'alta') {
@@ -41,7 +63,7 @@ export async function PATCH(request) {
       nuevoValor ? ahora : '',
       fila.BienvenidaEnviada, fila.BienvenidaPorEmail, fila.BienvenidaPorNombre, fila.FechaBienvenida,
       fila.AbonoTotalidad,
-      fila.Docentes
+      fila.Docentes, fila.ConfirmoRecepcion, fila.GrupoWhatsApp
     ]);
     // Desactivado por ahora a pedido de Diego — descomentar cuando se quiera activar este mail.
     // if (nuevoValor && fila.EmailEstudiante) {
@@ -74,7 +96,7 @@ export async function PATCH(request) {
       fila.ID, fila.LeadId, fila.NombreEstudiante, email, fila.Curso, fila.Edicion,
       fila.FechaInscripcion, fila.AltaPlataforma, fila.AltaPorEmail, fila.AltaPorNombre, fila.FechaAlta,
       'TRUE', body.solicitanteEmail, body.solicitanteNombre, ahora, fila.AbonoTotalidad,
-      fila.Docentes
+      fila.Docentes, fila.ConfirmoRecepcion, fila.GrupoWhatsApp
     ]);
     await registrarAccion(
       body.solicitanteEmail, body.solicitanteNombre,

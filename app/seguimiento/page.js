@@ -347,21 +347,31 @@ export default function SeguimientoPage() {
     if (!coincideFiltrosExtra(lead, s)) return false;
     return coincideFiltroRapido(lead);
   };
+  // Una fila ya contactada no debe seguir apareciendo como "pendiente" en SU lote — pero sí debe
+  // seguir contando en las estadísticas de "Total/Contactados" del encabezado de cada lote.
+  const noContactada = (s) => s.Contactado !== 'TRUE';
 
   const vencido = (s) => new Date(s.FechaVence) <= ahora;
 
-  const lote0 = seguimiento.filter((s) => s.Lote === '1' && !vencido(s) && filaValida(s));
-  const lote1 = seguimiento.filter((s) => s.Lote === '1' && vencido(s) && filaValida(s));
-  const lote2 = seguimiento.filter((s) => s.Lote === '2' && vencido(s) && filaValida(s));
-  const lote3 = seguimiento.filter((s) => s.Lote === '3' && vencido(s) && filaValida(s));
-  const lote4 = seguimiento.filter((s) => s.Lote === '4' && vencido(s) && filaValida(s));
-  const lote5 = seguimiento.filter((s) => s.Lote === '5' && vencido(s) && filaValida(s));
+  const lote0Todas = seguimiento.filter((s) => s.Lote === '1' && !vencido(s) && filaValida(s));
+  const lote0 = lote0Todas.filter(noContactada);
+  const lote1Todas = seguimiento.filter((s) => s.Lote === '1' && vencido(s) && filaValida(s));
+  const lote1 = lote1Todas.filter(noContactada);
+  const lote2Todas = seguimiento.filter((s) => s.Lote === '2' && vencido(s) && filaValida(s));
+  const lote2 = lote2Todas.filter(noContactada);
+  const lote3Todas = seguimiento.filter((s) => s.Lote === '3' && vencido(s) && filaValida(s));
+  const lote3 = lote3Todas.filter(noContactada);
+  const lote4Todas = seguimiento.filter((s) => s.Lote === '4' && vencido(s) && filaValida(s));
+  const lote4 = lote4Todas.filter(noContactada);
+  const lote5Todas = seguimiento.filter((s) => s.Lote === '5' && vencido(s) && filaValida(s));
+  const lote5 = lote5Todas.filter(noContactada);
 
   // LOTE PROGRAMADO: cualquier fila (de cualquier lote) donde alguien pidió "contactame el [fecha]"
   // y esa fecha ya llegó — aparece acá aunque técnicamente esté "esperando" en su lote numérico.
-  const loteProgramado = seguimiento.filter((s) =>
+  const loteProgramadoTodas = seguimiento.filter((s) =>
     s.FechaProgramada && new Date(s.FechaProgramada) <= ahora && filaValida(s)
   );
+  const loteProgramado = loteProgramadoTodas.filter(noContactada);
 
   const todasLasFilasPendientes = seguimiento.filter((s) => esValidoSinFiltro(s));
   const leadIdsUnicos = [...new Set(todasLasFilasPendientes.map((s) => s.LeadID))];
@@ -452,38 +462,38 @@ export default function SeguimientoPage() {
                 "No contestó" o "Va a pensarlo", sigue escalando de lote en lote (1 → 2 → 3 → 4 → 5) hasta
                 resolverse. Si registrás <b>"No le interesa"</b>, se saca del camino de seguimiento y no vuelve
                 a aparecer. Apenas se marca la venta, el lead desaparece de todos los lotes automáticamente.</>}
-              filas={lote0} conObservaciones {...propsComunes}
+              filas={lote0} filasTotales={lote0Todas} conObservaciones {...propsComunes}
             />
             <SeccionLote
               titulo="LOTE 1 – Contactar a las 48 horas" subtitulo={`${lote1.length} lead(s) por contactar`}
               explicacion={<>Si registrás "No contestó" o "Va a pensarlo" pasa solo al Lote 2 (10 días). Si marcás la venta, desaparece de acá.</>}
-              filas={lote1} conObservaciones {...propsComunes}
+              filas={lote1} filasTotales={lote1Todas} conObservaciones {...propsComunes}
             />
             <SeccionLote
               titulo="LOTE 2 – Contactar a los 10 días" subtitulo={`${lote2.length} lead(s) que no respondieron en el Lote 1`}
               explicacion={<>Si sigue sin resolverse, pasa al Lote 3 (al mes). Si marcás la venta, desaparece de acá.</>}
-              filas={lote2} {...propsComunes}
+              filas={lote2} filasTotales={lote2Todas} {...propsComunes}
             />
             <SeccionLote
               titulo="LOTE 3 – Contactar al mes" subtitulo={`${lote3.length} lead(s) sin resolver al mes de ingresados`}
               explicacion={<>Requiere que un Coordinador/Admin lo asigne. Si sigue sin resolverse, pasa al Lote 4 (2 meses).</>}
-              filas={lote3} sinAsignarPorDefecto {...propsComunes}
+              filas={lote3} filasTotales={lote3Todas} sinAsignarPorDefecto {...propsComunes}
             />
             <SeccionLote
               titulo="LOTE 4 – Contactar a los 2 meses" subtitulo={`${lote4.length} lead(s) sin resolver a los 2 meses de ingresados`}
               explicacion={<>Requiere asignación. Si sigue sin resolverse, pasa al Lote 5 (3 meses).</>}
-              filas={lote4} sinAsignarPorDefecto {...propsComunes}
+              filas={lote4} filasTotales={lote4Todas} sinAsignarPorDefecto {...propsComunes}
             />
             <SeccionLote
               titulo="LOTE 5 – Contactar a los 3 meses" subtitulo={`${lote5.length} lead(s) sin resolver a los 3 meses de ingresados`}
               explicacion={<>Último lote de seguimiento automático. Si marcás la venta, desaparece de acá como cualquier otro lote.</>}
-              filas={lote5} sinAsignarPorDefecto {...propsComunes}
+              filas={lote5} filasTotales={lote5Todas} sinAsignarPorDefecto {...propsComunes}
             />
             <SeccionLote
               ultima
               titulo="📅 LOTE PROGRAMADO" subtitulo={`${loteProgramado.length} lead(s) que pidieron ser contactados en una fecha puntual, y esa fecha ya llegó`}
               explicacion={<>Aparece acá cualquier lead (esté en el lote que esté) al que le registraste "contactame el [fecha]" y esa fecha ya se cumplió. No reemplaza su lote normal, es un recordatorio extra.</>}
-              filas={loteProgramado} sinAsignarPorDefecto {...propsComunes}
+              filas={loteProgramado} filasTotales={loteProgramadoTodas} sinAsignarPorDefecto {...propsComunes}
             />
           </>
         )}
@@ -608,10 +618,12 @@ function ModalReasignar({ onClose, onConfirmar }) {
   );
 }
 
-function SeccionLote({ titulo, subtitulo, explicacion, filas, buscarLead, ultima, dimensionAgrupacion, ordenPor, ...propsFila }) {
+function SeccionLote({ titulo, subtitulo, explicacion, filas, filasTotales, buscarLead, ultima, dimensionAgrupacion, ordenPor, ...propsFila }) {
   const [abierta, setAbierta] = useState(false);
   const grupos = agruparYOrdenar(filas, buscarLead, dimensionAgrupacion, ordenPor);
-  const contactadas = filas.filter((f) => f.Contactado === 'TRUE').length;
+  const total = (filasTotales || filas).length;
+  const pendientes = filas.length;
+  const contactadas = total - pendientes;
 
   return (
     <div className={`bg-surface border border-border rounded-2xl p-5 transition-all ${ultima ? '' : 'mb-4'}`}>
@@ -619,15 +631,15 @@ function SeccionLote({ titulo, subtitulo, explicacion, filas, buscarLead, ultima
         <div>
           <p className="text-sm font-semibold mb-1">{titulo}</p>
           <p className="text-textMuted text-xs">{subtitulo}</p>
-          {filas.length > 0 && (
+          {total > 0 && (
             <p className="text-textMuted text-[11px] mt-0.5">
-              Total {filas.length} · Contactados {contactadas} ·{' '}
-              {filas.length - contactadas > 0 ? (
+              Total {total} · Contactados {contactadas} ·{' '}
+              {pendientes > 0 ? (
                 <span className="text-warningText font-semibold drop-shadow-[0_0_6px_rgba(251,191,36,0.55)]">
-                  Pendientes {filas.length - contactadas}
+                  Pendientes {pendientes}
                 </span>
               ) : (
-                <>Pendientes {filas.length - contactadas}</>
+                <>Pendientes {pendientes}</>
               )}
             </p>
           )}

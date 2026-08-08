@@ -2,6 +2,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Nav from '../../components/Nav';
+import ModalVenta from '../../components/ModalVenta';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoBuscador, tienePermisoEditarLead, tienePermisoEditarVenta } from '../../lib/permisos';
 import { ORIGENES, ORIGEN_OTRO, CURSOS, CURSO_OTROS, CURSO_SIN_DEFINIR, PAISES, enlaceGmail } from '../../lib/constants';
@@ -297,6 +298,17 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
   const [deshaciendo, setDeshaciendo] = useState(null);
   const [programandoLote, setProgramandoLote] = useState(null);
   const [fechaAProgramar, setFechaAProgramar] = useState('');
+  const [mostrarModalVenta, setMostrarModalVenta] = useState(false);
+
+  async function confirmarVentaDesdeFicha(datosVenta) {
+    await fetch('/api/ventas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...datosVenta, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
+    });
+    setMostrarModalVenta(false);
+    onActualizar?.();
+  }
 
   async function programarFecha(lote) {
     await fetch('/api/seguimiento', {
@@ -472,6 +484,9 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
             )}
             {lead.WhatsApp && (
               <a href={`tel:${whatsappLimpio}`} className="text-xs px-3 py-1.5 rounded-lg bg-surface2 border border-border">📞 Llamar</a>
+            )}
+            {lead.Estado !== 'Comprado' && (
+              <button onClick={() => setMostrarModalVenta(true)} className="text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-accentPurple to-accentMagenta text-white font-semibold">💰 Marcar venta</button>
             )}
             {puedeEditar && !editando && (
               <button onClick={() => setEditando(true)} className="text-xs px-3 py-1.5 rounded-lg bg-accentPurple text-white font-semibold">✏️ Editar</button>
@@ -780,6 +795,8 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
           )}
         </div>
       )}
+      <ModalVenta lead={mostrarModalVenta ? lead : null} onClose={() => setMostrarModalVenta(false)}
+        onConfirm={confirmarVentaDesdeFicha} usuarioActual={usuario} />
     </div>
   );
 }

@@ -30,7 +30,7 @@ export async function GET(request) {
     const id = `EST-${venta.ID}`;
     // Columnas Inscritos: ID, LeadId, NombreEstudiante, EmailEstudiante, Curso, Edicion, FechaInscripcion,
     // AltaPlataforma, AltaPorEmail, AltaPorNombre, FechaAlta, BienvenidaEnviada, BienvenidaPorEmail,
-    // BienvenidaPorNombre, FechaBienvenida, AbonoTotalidad, Docentes
+    // BienvenidaPorNombre, FechaBienvenida, AbonoTotalidad, Docentes, ConfirmoRecepcion, GrupoWhatsApp
     await appendRow('Inscritos', [
       id,
       venta.ID,
@@ -42,7 +42,8 @@ export async function GET(request) {
       'FALSE', '', '', '',
       'FALSE', '', '', '',
       'FALSE',
-      venta.Docentes || ''
+      venta.Docentes || '',
+      'FALSE', 'FALSE'
     ]);
 
     await registrarAccion(

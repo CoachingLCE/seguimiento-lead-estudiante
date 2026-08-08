@@ -34,7 +34,7 @@ export async function PATCH(request) {
     fila.FechaInscripcion, fila.AltaPlataforma, fila.AltaPorEmail, fila.AltaPorNombre, fila.FechaAlta,
     fila.BienvenidaEnviada, fila.BienvenidaPorEmail, fila.BienvenidaPorNombre, fila.FechaBienvenida,
     body.nuevoValor ? 'TRUE' : 'FALSE',
-    fila.Docentes
+    fila.Docentes, fila.ConfirmoRecepcion, fila.GrupoWhatsApp
   ], 'A');
 
   await registrarAccion(

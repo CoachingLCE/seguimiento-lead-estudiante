@@ -73,6 +73,23 @@ export default function InscritosPage() {
     cargarInscritos();
   }
 
+  async function toggleCampoSimple(inscrito, campo, etiqueta) {
+    const nuevoValor = inscrito[campo] !== 'TRUE';
+    setInscritos((prev) =>
+      prev.map((i) => (i.ID === inscrito.ID ? { ...i, [campo]: nuevoValor ? 'TRUE' : 'FALSE' } : i))
+    );
+    await fetch('/api/inscritos', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        accion: 'toggle', campo, id: inscrito.ID, nuevoValor,
+        solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
+      })
+    });
+    mostrarToast(`${etiqueta} ${nuevoValor ? 'marcado' : 'desmarcado'}`);
+    cargarInscritos();
+  }
+
   async function enviarBienvenidaDesdeTabla(inscrito, email) {
     setEnviandoBienvenidaId(inscrito.ID);
     const res = await fetch('/api/inscritos', {
@@ -197,7 +214,7 @@ export default function InscritosPage() {
                   <th className="cursor-pointer select-none" onClick={() => ordenarPor('Edicion')}>Edición{flecha('Edicion')}</th>
                   <th>Docente(s)</th>
                   <th className="cursor-pointer select-none" onClick={() => ordenarPor('FechaInscripcion')}>Fecha inscripción{flecha('FechaInscripcion')}</th>
-                  <th>Alta plataforma</th><th>Bienvenida</th><th></th>{esAdmin && <th></th>}
+                  <th>Alta plataforma</th><th>Bienvenida</th><th>Confirmó recepción</th><th>Grupo WhatsApp</th><th></th>{esAdmin && <th></th>}
                 </tr>
               </thead>
               <tbody>
@@ -249,6 +266,16 @@ export default function InscritosPage() {
                           {enviandoBienvenidaId === i.ID ? 'Enviando…' : 'ENVIAR BIENVENIDA'}
                         </button>
                       )}
+                    </td>
+                    <td>
+                      <button onClick={() => toggleCampoSimple(i, 'ConfirmoRecepcion', 'Confirmó recepción')} className="text-base leading-none">
+                        {i.ConfirmoRecepcion === 'TRUE' ? '✅' : '⬜'}
+                      </button>
+                    </td>
+                    <td>
+                      <button onClick={() => toggleCampoSimple(i, 'GrupoWhatsApp', 'Grupo WhatsApp')} className="text-base leading-none">
+                        {i.GrupoWhatsApp === 'TRUE' ? '✅' : '⬜'}
+                      </button>
                     </td>
                     <td>
                       <button onClick={() => setFichaLeadId(i.LeadId)} className="text-accentTeal text-xs font-semibold">Ver ficha</button>
