@@ -8,6 +8,21 @@ import { useToast } from '../../components/Toast';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoEstudiantes } from '../../lib/permisos';
 
+// Cada curso tiene siempre el mismo color (por hash de su nombre) — suave, como acento, no como fondo fuerte.
+const PALETA_CURSOS = ['#7c3aed', '#0891b2', '#c026d3', '#16a34a', '#ca8a04', '#2563eb', '#dc2626', '#9333ea'];
+function colorParaCurso(curso) {
+  const n = (curso || 'Sin curso').split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  return PALETA_CURSOS[n % PALETA_CURSOS.length];
+}
+function antiguedad(fecha) {
+  const dias = Math.floor((new Date() - new Date(fecha)) / (24 * 60 * 60 * 1000));
+  if (dias <= 0) return 'Hoy';
+  if (dias === 1) return 'Hace 1 día';
+  if (dias < 30) return `Hace ${dias} días`;
+  const meses = Math.floor(dias / 30);
+  return `Hace ${meses} mes${meses > 1 ? 'es' : ''}`;
+}
+
 export default function InscritosPage() {
   const { usuario, logout } = useSession();
   const router = useRouter();
@@ -168,7 +183,7 @@ export default function InscritosPage() {
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
-      <div className="max-w-5xl mx-auto px-6 pb-16">
+      <div className="max-w-[1400px] mx-auto px-4 pb-16">
         <div className="flex items-center justify-between mb-3 no-print gap-3 flex-wrap">
           <p className="text-textMuted text-xs">
             El estudiante aparece acá solo, 24hs después de confirmarse la venta — no hace falta cargarlo a mano.
@@ -206,90 +221,106 @@ export default function InscritosPage() {
           ) : inscritosFiltrados.length === 0 ? (
             <p className="text-textMuted text-sm">Ningún estudiante coincide con los filtros.</p>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-textSec text-left border-b border-border">
-                  <th className="py-2 cursor-pointer select-none" onClick={() => ordenarPor('NombreEstudiante')}>Estudiante{flecha('NombreEstudiante')}</th>
-                  <th className="cursor-pointer select-none" onClick={() => ordenarPor('Curso')}>Curso{flecha('Curso')}</th>
-                  <th className="cursor-pointer select-none" onClick={() => ordenarPor('Edicion')}>Edición{flecha('Edicion')}</th>
-                  <th>Docente(s)</th>
-                  <th className="cursor-pointer select-none" onClick={() => ordenarPor('FechaInscripcion')}>Fecha inscripción{flecha('FechaInscripcion')}</th>
-                  <th>Alta plataforma</th><th>Bienvenida</th><th>Confirmó recepción</th><th>Grupo WhatsApp</th><th></th>{esAdmin && <th></th>}
-                </tr>
-              </thead>
-              <tbody>
-                {inscritosOrdenados.map((i) => (
-                  <tr key={i.ID} className="border-b border-border align-top">
-                    <td className="py-2">{i.NombreEstudiante}</td>
-                    <td>{i.Curso || '—'}</td>
-                    <td>{i.Edicion || '—'}</td>
-                    <td>{i.Docentes || '—'}</td>
-                    <td>{new Date(i.FechaInscripcion).toLocaleDateString('es-AR')}</td>
-                    <td>
-                      <button onClick={() => toggleAlta(i)} className="text-base leading-none block">
-                        {i.AltaPlataforma === 'TRUE' ? '✅' : '⬜'}
-                      </button>
-                      {i.AltaPlataforma === 'TRUE' && (
-                        <p className="text-textMuted text-[11px] mt-0.5">
-                          {i.AltaPorNombre} · {new Date(i.FechaAlta).toLocaleString('es-AR')}
-                        </p>
-                      )}
-                    </td>
-                    <td>
-                      {i.BienvenidaEnviada === 'TRUE' ? (
-                        <>
-                          <span>✓</span>
-                          <p className="text-textMuted text-[11px] mt-0.5">
-                            {i.BienvenidaPorNombre} · {new Date(i.FechaBienvenida).toLocaleString('es-AR')}
-                          </p>
-                        </>
-                      ) : pidiendoEmailPara === i.ID ? (
-                        <div className="flex items-center gap-1.5">
-                          <input
-                            type="email" autoFocus placeholder="email@mail.com" value={emailTemporal}
-                            onChange={(e) => setEmailTemporal(e.target.value)}
-                            className="bg-bg border border-border rounded px-2 py-1 text-xs w-36"
-                          />
-                          <button
-                            onClick={() => emailTemporal && enviarBienvenidaDesdeTabla(i, emailTemporal)}
-                            className="text-xs px-2 py-1 rounded bg-accentPurple text-white"
-                          >
-                            Enviar
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => clickEnviarBienvenida(i)}
-                          disabled={enviandoBienvenidaId === i.ID}
-                          className="text-xs px-2.5 py-1 rounded-md bg-surface2 border border-border font-semibold disabled:opacity-60"
-                        >
-                          {enviandoBienvenidaId === i.ID ? 'Enviando…' : 'ENVIAR BIENVENIDA'}
-                        </button>
-                      )}
-                    </td>
-                    <td>
-                      <button onClick={() => toggleCampoSimple(i, 'ConfirmoRecepcion', 'Confirmó recepción')} className="text-base leading-none">
-                        {i.ConfirmoRecepcion === 'TRUE' ? '✅' : '⬜'}
-                      </button>
-                    </td>
-                    <td>
-                      <button onClick={() => toggleCampoSimple(i, 'GrupoWhatsApp', 'Grupo WhatsApp')} className="text-base leading-none">
-                        {i.GrupoWhatsApp === 'TRUE' ? '✅' : '⬜'}
-                      </button>
-                    </td>
-                    <td>
-                      <button onClick={() => setFichaLeadId(i.LeadId)} className="text-accentTeal text-xs font-semibold">Ver ficha</button>
-                    </td>
-                    {esAdmin && (
-                      <td>
-                        <button onClick={() => setConfirmarEliminar(i)}
-                          className="text-xs text-dangerText font-semibold">🗑</button>
-                      </td>
-                    )}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[1200px]">
+                <thead>
+                  <tr className="text-textSec text-left border-b border-border">
+                    <th className="py-3 pr-4 cursor-pointer select-none whitespace-normal max-w-[90px]" onClick={() => ordenarPor('FechaInscripcion')}>Fecha de<br/>inscripción{flecha('FechaInscripcion')}</th>
+                    <th className="pr-4 cursor-pointer select-none" onClick={() => ordenarPor('NombreEstudiante')}>Estudiante{flecha('NombreEstudiante')}</th>
+                    <th className="pr-4 cursor-pointer select-none" onClick={() => ordenarPor('Curso')}>Curso{flecha('Curso')}</th>
+                    <th className="pr-4 cursor-pointer select-none" onClick={() => ordenarPor('Edicion')}>Edición{flecha('Edicion')}</th>
+                    <th className="pr-4">Docente(s)</th>
+                    <th className="pr-4 whitespace-normal max-w-[90px]">Estudiante<br/>desde</th>
+                    <th className="pr-4 whitespace-normal max-w-[80px]">Alta<br/>plataforma</th>
+                    <th className="pr-4">Bienvenida</th>
+                    <th className="pr-4 whitespace-normal max-w-[80px]">Confirmó<br/>recepción</th>
+                    <th className="pr-4 whitespace-normal max-w-[80px]">Grupo<br/>WhatsApp</th>
+                    <th>Acciones</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {inscritosOrdenados.map((i) => {
+                    const color = colorParaCurso(i.Curso);
+                    return (
+                      <tr key={i.ID} className="border-b border-border align-top hover:bg-bg/40 transition-colors">
+                        <td className="py-3 pr-4 text-textSec whitespace-nowrap">{new Date(i.FechaInscripcion).toLocaleDateString('es-AR')}</td>
+                        <td className="py-3 pr-4 font-medium">{i.NombreEstudiante}</td>
+                        <td className="py-3 pr-4">
+                          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md font-medium whitespace-nowrap"
+                            style={{ background: `${color}1A`, color }}>
+                            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color }} />
+                            {i.Curso || 'Sin curso'}
+                          </span>
+                        </td>
+                        <td className="py-3 pr-4 text-textSec">{i.Edicion || '—'}</td>
+                        <td className="py-3 pr-4 text-textSec">{i.Docentes || '—'}</td>
+                        <td className="py-3 pr-4 text-textMuted text-xs whitespace-nowrap">{antiguedad(i.FechaInscripcion)}</td>
+                        <td className="py-3 pr-4">
+                          <button onClick={() => toggleAlta(i)} className="text-base leading-none block">
+                            {i.AltaPlataforma === 'TRUE' ? '✅' : '⬜'}
+                          </button>
+                          {i.AltaPlataforma === 'TRUE' && (
+                            <p className="text-textMuted text-[11px] mt-1 whitespace-nowrap">
+                              {i.AltaPorNombre}<br/>{new Date(i.FechaAlta).toLocaleDateString('es-AR')}
+                            </p>
+                          )}
+                        </td>
+                        <td className="py-3 pr-4">
+                          {i.BienvenidaEnviada === 'TRUE' ? (
+                            <>
+                              <span>✓</span>
+                              <p className="text-textMuted text-[11px] mt-1 whitespace-nowrap">
+                                {i.BienvenidaPorNombre}<br/>{new Date(i.FechaBienvenida).toLocaleDateString('es-AR')}
+                              </p>
+                            </>
+                          ) : pidiendoEmailPara === i.ID ? (
+                            <div className="flex items-center gap-1.5">
+                              <input
+                                type="email" autoFocus placeholder="email@mail.com" value={emailTemporal}
+                                onChange={(e) => setEmailTemporal(e.target.value)}
+                                className="bg-bg border border-border rounded px-2 py-1 text-xs w-32"
+                              />
+                              <button
+                                onClick={() => emailTemporal && enviarBienvenidaDesdeTabla(i, emailTemporal)}
+                                className="text-xs px-2 py-1 rounded bg-accentPurple text-white shrink-0"
+                              >
+                                Enviar
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => clickEnviarBienvenida(i)}
+                              disabled={enviandoBienvenidaId === i.ID}
+                              className="text-xs px-2.5 py-1 rounded-md bg-surface2 border border-border font-semibold disabled:opacity-60 whitespace-nowrap"
+                            >
+                              {enviandoBienvenidaId === i.ID ? 'Enviando…' : 'ENVIAR'}
+                            </button>
+                          )}
+                        </td>
+                        <td className="py-3 pr-4">
+                          <span className="text-[10px] px-2 py-1 rounded-full bg-surface2 text-textMuted whitespace-nowrap" title="Próximamente">
+                            🔒 Próximamente
+                          </span>
+                        </td>
+                        <td className="py-3 pr-4">
+                          <button onClick={() => toggleCampoSimple(i, 'GrupoWhatsApp', 'Grupo WhatsApp')} className="text-base leading-none">
+                            {i.GrupoWhatsApp === 'TRUE' ? '✅' : '⬜'}
+                          </button>
+                        </td>
+                        <td className="py-3">
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => setFichaLeadId(i.LeadId)} className="text-accentTeal text-xs font-semibold whitespace-nowrap">Ver ficha</button>
+                            {esAdmin && (
+                              <button onClick={() => setConfirmarEliminar(i)} className="text-xs text-dangerText font-semibold">🗑</button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>
