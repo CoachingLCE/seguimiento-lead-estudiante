@@ -7,13 +7,8 @@ import FichaDrawer from '../../components/FichaDrawer';
 import { useToast } from '../../components/Toast';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoEstudiantes } from '../../lib/permisos';
+import { colorParaCurso } from '../../lib/constants';
 
-// Cada curso tiene siempre el mismo color (por hash de su nombre) — suave, como acento, no como fondo fuerte.
-const PALETA_CURSOS = ['#7c3aed', '#0891b2', '#c026d3', '#16a34a', '#ca8a04', '#2563eb', '#dc2626', '#9333ea'];
-function colorParaCurso(curso) {
-  const n = (curso || 'Sin curso').split('').reduce((a, c) => a + c.charCodeAt(0), 0);
-  return PALETA_CURSOS[n % PALETA_CURSOS.length];
-}
 function antiguedad(fecha) {
   const dias = Math.floor((new Date() - new Date(fecha)) / (24 * 60 * 60 * 1000));
   if (dias <= 0) return 'Hoy';
