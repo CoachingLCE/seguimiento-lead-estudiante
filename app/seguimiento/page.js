@@ -373,6 +373,20 @@ export default function SeguimientoPage() {
   );
   const loteProgramado = loteProgramadoTodas.filter(noContactada);
 
+  // SIN LOTE: leads que ya no aparecen en ningún lote activo, y por qué (venta confirmada,
+  // o un resultado final como "No le interesa"). Sirve como resumen/auditoría de a dónde fue cada uno.
+  const sinLote = [...leadsResueltos]
+    .map((leadId) => {
+      const lead = buscarLead(leadId);
+      if (!lead) return null;
+      if (!coincideBusquedaAmplia(lead, busqueda)) return null;
+      if (!coincideFiltroRapido(lead)) return null;
+      const filasLead = seguimiento.filter((s) => s.LeadID === leadId && RESULTADOS_FINALES.includes(s.Resultado));
+      const masReciente = filasLead.sort((a, b) => new Date(b.FechaContacto) - new Date(a.FechaContacto))[0];
+      return { lead, resultado: masReciente?.Resultado, fecha: masReciente?.FechaContacto, quien: masReciente?.AsignadoANombre };
+    })
+    .filter(Boolean);
+
   const todasLasFilasPendientes = seguimiento.filter((s) => esValidoSinFiltro(s));
   const leadIdsUnicos = [...new Set(todasLasFilasPendientes.map((s) => s.LeadID))];
   const contadoresPorCurso = { total: leadIdsUnicos.length, otros: 0 };
@@ -490,11 +504,12 @@ export default function SeguimientoPage() {
               filas={lote5} filasTotales={lote5Todas} sinAsignarPorDefecto {...propsComunes}
             />
             <SeccionLote
-              ultima
               titulo="📅 LOTE PROGRAMADO" subtitulo={`${loteProgramado.length} lead(s) que pidieron ser contactados en una fecha puntual, y esa fecha ya llegó`}
               explicacion={<>Aparece acá cualquier lead (esté en el lote que esté) al que le registraste "contactame el [fecha]" y esa fecha ya se cumplió. No reemplaza su lote normal, es un recordatorio extra.</>}
               filas={loteProgramado} filasTotales={loteProgramadoTodas} sinAsignarPorDefecto {...propsComunes}
             />
+
+            <SeccionSinLote sinLote={sinLote} onVerFicha={setFichaLeadId} />
           </>
         )}
       </div>
@@ -614,6 +629,40 @@ function ModalReasignar({ onClose, onConfirmar }) {
         </div>
         <button onClick={onClose} className="w-full mt-3 text-xs text-textMuted">Cancelar</button>
       </div>
+    </div>
+  );
+}
+
+// Resumen de leads que ya no están en seguimiento activo: por qué (no le interesa, ya vendido, etc.)
+function SeccionSinLote({ sinLote, onVerFicha }) {
+  const [abierta, setAbierta] = useState(false);
+  return (
+    <div className="bg-surface border border-border rounded-2xl p-5">
+      <button onClick={() => setAbierta(!abierta)} className="w-full flex items-start justify-between text-left">
+        <div>
+          <p className="text-sm font-semibold mb-1">🚫 SIN LOTE</p>
+          <p className="text-textMuted text-xs">{sinLote.length} lead(s) que ya salieron del seguimiento activo — para saber por qué</p>
+        </div>
+        <span className="text-textMuted text-sm shrink-0 ml-3">{abierta ? '▲' : '▼'}</span>
+      </button>
+      {abierta && (
+        <div className="mt-3">
+          {sinLote.length === 0 ? (
+            <p className="text-textMuted text-sm">No hay nadie fuera del seguimiento activo con estos filtros.</p>
+          ) : (
+            sinLote.map(({ lead, resultado, fecha, quien }) => (
+              <div key={lead.ID} className="flex items-center justify-between gap-3 border-t border-border first:border-t-0 py-2">
+                <p className="text-sm text-textSec">
+                  <span className="font-medium text-text">{lead.Nombre} {lead.Apellido}</span> — {lead.Curso || 'sin curso'}
+                  <span className="text-warningText"> · Sin lote debido a que "{resultado}"</span>
+                  {fecha && <span className="text-textMuted"> · {new Date(fecha).toLocaleDateString('es-AR')}{quien && ` · ${quien}`}</span>}
+                </p>
+                <button onClick={() => onVerFicha(lead.ID)} className="text-accentTeal text-xs font-semibold shrink-0">Ver ficha</button>
+              </div>
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }
