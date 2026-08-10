@@ -3,6 +3,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Nav from '../../components/Nav';
 import ModalVenta from '../../components/ModalVenta';
+import CheckboxVisual from '../../components/CheckboxVisual';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoBuscador, tienePermisoEditarLead, tienePermisoEditarVenta } from '../../lib/permisos';
 import { ORIGENES, ORIGEN_OTRO, CURSOS, CURSO_OTROS, CURSO_SIN_DEFINIR, PAISES, enlaceGmail } from '../../lib/constants';
@@ -576,8 +577,8 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
         <div className="flex items-center gap-1 flex-wrap">
           {pasos.map((p, i) => (
             <div key={p.label} className="flex items-center gap-1">
-              <span className={`text-xs px-2.5 py-1 rounded-full ${p.ok ? 'bg-successBg text-successText' : 'bg-surface2 text-textMuted'}`}>
-                {p.ok ? '✓' : '⬜'} {p.label}
+              <span className={`text-xs px-2.5 py-1 rounded-full inline-flex items-center gap-1 ${p.ok ? 'bg-successBg text-successText' : 'bg-surface2 text-textMuted'}`}>
+                <CheckboxVisual marcado={p.ok} tamano={12} /> {p.label}
               </span>
               {i < pasos.length - 1 && <span className="text-textMuted text-xs">→</span>}
             </div>

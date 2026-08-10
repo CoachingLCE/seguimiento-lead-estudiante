@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import Nav from '../../components/Nav';
 import FichaDrawer from '../../components/FichaDrawer';
+import CheckboxVisual from '../../components/CheckboxVisual';
 import { useToast } from '../../components/Toast';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoDiplomas } from '../../lib/permisos';
@@ -97,8 +98,8 @@ export default function DiplomasPage() {
                     <td>{i.Curso || '—'}</td>
                     <td>{i.Edicion || '—'}</td>
                     <td>
-                      <button onClick={() => toggleDiploma(i)} className="text-base leading-none">
-                        {i.AbonoTotalidad === 'TRUE' ? '✅' : '⬜'}
+                      <button onClick={() => toggleDiploma(i)}>
+                        <CheckboxVisual marcado={i.AbonoTotalidad === 'TRUE'} />
                       </button>
                     </td>
                     <td>

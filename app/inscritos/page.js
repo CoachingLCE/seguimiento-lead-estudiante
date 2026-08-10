@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import Nav from '../../components/Nav';
 import FichaDrawer from '../../components/FichaDrawer';
+import CheckboxVisual from '../../components/CheckboxVisual';
 import { useToast } from '../../components/Toast';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoEstudiantes } from '../../lib/permisos';
@@ -251,8 +252,8 @@ export default function InscritosPage() {
                         <td className="py-3 pr-4 text-textSec">{i.Docentes || '—'}</td>
                         <td className="py-3 pr-4 text-textMuted text-xs whitespace-nowrap">{antiguedad(i.FechaInscripcion)}</td>
                         <td className="py-3 pr-4">
-                          <button onClick={() => toggleAlta(i)} className="text-base leading-none block">
-                            {i.AltaPlataforma === 'TRUE' ? '✅' : '⬜'}
+                          <button onClick={() => toggleAlta(i)} className="block">
+                            <CheckboxVisual marcado={i.AltaPlataforma === 'TRUE'} />
                           </button>
                           {i.AltaPlataforma === 'TRUE' && (
                             <p className="text-textMuted text-[11px] mt-1 whitespace-nowrap">
@@ -298,8 +299,8 @@ export default function InscritosPage() {
                           </span>
                         </td>
                         <td className="py-3 pr-4">
-                          <button onClick={() => toggleCampoSimple(i, 'GrupoWhatsApp', 'Grupo WhatsApp')} className="text-base leading-none">
-                            {i.GrupoWhatsApp === 'TRUE' ? '✅' : '⬜'}
+                          <button onClick={() => toggleCampoSimple(i, 'GrupoWhatsApp', 'Grupo WhatsApp')}>
+                            <CheckboxVisual marcado={i.GrupoWhatsApp === 'TRUE'} />
                           </button>
                         </td>
                         <td className="py-3">
