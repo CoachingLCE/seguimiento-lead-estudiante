@@ -352,6 +352,12 @@ export default function SeguimientoPage() {
   const noContactada = (s) => s.Contactado !== 'TRUE';
 
   const vencido = (s) => new Date(s.FechaVence) <= ahora;
+  const maniana = new Date(ahora); maniana.setDate(maniana.getDate() + 1); maniana.setHours(0, 0, 0, 0);
+  const pasadoManiana = new Date(maniana); pasadoManiana.setDate(pasadoManiana.getDate() + 1);
+  const venceManiana = (s) => {
+    const f = new Date(s.FechaVence);
+    return f >= maniana && f < pasadoManiana;
+  };
 
   const lote0Todas = seguimiento.filter((s) => s.Lote === '1' && !vencido(s) && filaValida(s));
   const lote0 = lote0Todas.filter(noContactada);
@@ -365,6 +371,14 @@ export default function SeguimientoPage() {
   const lote4 = lote4Todas.filter(noContactada);
   const lote5Todas = seguimiento.filter((s) => s.Lote === '5' && vencido(s) && filaValida(s));
   const lote5 = lote5Todas.filter(noContactada);
+
+  const seAgreganManiana = (numeroLote) =>
+    seguimiento.filter((s) => s.Lote === numeroLote && !vencido(s) && venceManiana(s) && filaValida(s) && noContactada(s)).length;
+  const lote1Maniana = seAgreganManiana('1');
+  const lote2Maniana = seAgreganManiana('2');
+  const lote3Maniana = seAgreganManiana('3');
+  const lote4Maniana = seAgreganManiana('4');
+  const lote5Maniana = seAgreganManiana('5');
 
   // LOTE PROGRAMADO: cualquier fila (de cualquier lote) donde alguien pidió "contactame el [fecha]"
   // y esa fecha ya llegó — aparece acá aunque técnicamente esté "esperando" en su lote numérico.
@@ -479,27 +493,27 @@ export default function SeguimientoPage() {
               filas={lote0} filasTotales={lote0Todas} conObservaciones {...propsComunes}
             />
             <SeccionLote
-              titulo="LOTE 1 – Contactar a las 48 horas" subtitulo={`${lote1.length} lead(s) por contactar`}
+              titulo="LOTE 1 – Contactar a las 48 horas" subtitulo={`${lote1.length} lead(s) por contactar${lote1Maniana > 0 ? ` · +${lote1Maniana} se agregan mañana` : ''}`}
               explicacion={<>Si registrás "No contestó" o "Va a pensarlo" pasa solo al Lote 2 (10 días). Si marcás la venta, desaparece de acá.</>}
               filas={lote1} filasTotales={lote1Todas} conObservaciones {...propsComunes}
             />
             <SeccionLote
-              titulo="LOTE 2 – Contactar a los 10 días" subtitulo={`${lote2.length} lead(s) que no respondieron en el Lote 1`}
+              titulo="LOTE 2 – Contactar a los 10 días" subtitulo={`${lote2.length} lead(s) que no respondieron en el Lote 1${lote2Maniana > 0 ? ` · +${lote2Maniana} se agregan mañana` : ''}`}
               explicacion={<>Si sigue sin resolverse, pasa al Lote 3 (al mes). Si marcás la venta, desaparece de acá.</>}
               filas={lote2} filasTotales={lote2Todas} {...propsComunes}
             />
             <SeccionLote
-              titulo="LOTE 3 – Contactar al mes" subtitulo={`${lote3.length} lead(s) sin resolver al mes de ingresados`}
+              titulo="LOTE 3 – Contactar al mes" subtitulo={`${lote3.length} lead(s) sin resolver al mes de ingresados${lote3Maniana > 0 ? ` · +${lote3Maniana} se agregan mañana` : ''}`}
               explicacion={<>Requiere que un Coordinador/Admin lo asigne. Si sigue sin resolverse, pasa al Lote 4 (2 meses).</>}
               filas={lote3} filasTotales={lote3Todas} sinAsignarPorDefecto {...propsComunes}
             />
             <SeccionLote
-              titulo="LOTE 4 – Contactar a los 2 meses" subtitulo={`${lote4.length} lead(s) sin resolver a los 2 meses de ingresados`}
+              titulo="LOTE 4 – Contactar a los 2 meses" subtitulo={`${lote4.length} lead(s) sin resolver a los 2 meses de ingresados${lote4Maniana > 0 ? ` · +${lote4Maniana} se agregan mañana` : ''}`}
               explicacion={<>Requiere asignación. Si sigue sin resolverse, pasa al Lote 5 (3 meses).</>}
               filas={lote4} filasTotales={lote4Todas} sinAsignarPorDefecto {...propsComunes}
             />
             <SeccionLote
-              titulo="LOTE 5 – Contactar a los 3 meses" subtitulo={`${lote5.length} lead(s) sin resolver a los 3 meses de ingresados`}
+              titulo="LOTE 5 – Contactar a los 3 meses" subtitulo={`${lote5.length} lead(s) sin resolver a los 3 meses de ingresados${lote5Maniana > 0 ? ` · +${lote5Maniana} se agregan mañana` : ''}`}
               explicacion={<>Último lote de seguimiento automático. Si marcás la venta, desaparece de acá como cualquier otro lote.</>}
               filas={lote5} filasTotales={lote5Todas} sinAsignarPorDefecto {...propsComunes}
             />

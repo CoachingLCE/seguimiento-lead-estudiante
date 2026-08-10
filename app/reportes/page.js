@@ -438,6 +438,22 @@ export default function ReportesPage() {
                 </ResponsiveContainer>
               </ChartCard>
 
+              <ChartCard titulo="Leads por curso" subtitulo="Mes seleccionado — todos los leads, hayan comprado o no"
+                tooltip="A diferencia de 'Ventas por curso', cuenta TODOS los leads que entraron este mes en cada formación"
+                valorGrande={`${datos.totalLeads} leads`}
+                comparacion={<Flecha actual={datos.comparativa.leads.actual} anterior={datos.comparativa.leads.anterior} />}
+                onExportar={() => exportarGrafico('leads-por-curso', datos.leadsPorCurso)}>
+                <ResponsiveContainer>
+                  <BarChart data={datos.leadsPorCurso} layout="vertical" margin={{ left: 40 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#262c4a" />
+                    <XAxis type="number" stroke="#6b7299" fontSize={11} allowDecimals={false} />
+                    <YAxis type="category" dataKey="nombre" stroke="#6b7299" fontSize={10} width={110} />
+                    <Tooltip contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} />
+                    <Bar dataKey="cantidad" fill="#a855f7" radius={[0, 4, 4, 0]} onClick={(d) => setFiltro('curso', d.nombre)} cursor="pointer" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartCard>
+
               <ChartCard titulo="Facturación por curso" subtitulo="Mes seleccionado"
                 valorGrande={money(datos.montoTotal)}
                 onExportar={() => exportarGrafico('facturacion-por-curso', datos.rankingCursos)}>

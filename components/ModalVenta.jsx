@@ -14,6 +14,7 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
   const [vendidoPor, setVendidoPor] = useState(usuarioActual?.nombre || '');
   const [vendidoPorOtro, setVendidoPorOtro] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState('');
 
   // Cada vez que se abre el modal para un lead distinto, resetea el formulario
   // (si no, quedarían pegados los valores del lead anterior).
@@ -29,6 +30,7 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
     setEdicion('');
     setVendidoPor(usuarioActual?.nombre || '');
     setVendidoPorOtro('');
+    setError('');
   }, [lead?.ID]);
 
   if (!lead) return null;
@@ -44,10 +46,25 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
   }
 
   async function handleConfirm() {
+    setError('');
+    const esVariable = modalidad === 'cuotas-variables';
+    const listaCuotas = esVariable ? cuotasVariables.filter((v) => v !== '' && Number(v) > 0) : [];
+
+    if (modalidad === 'totalidad' && (!montoTotal || Number(montoTotal) <= 0)) {
+      setError('El Monto total es obligatorio.');
+      return;
+    }
+    if (modalidad === 'cuotas' && (!cantCuotas || Number(cantCuotas) <= 0 || !valorCuota || Number(valorCuota) <= 0)) {
+      setError('La Cantidad de cuotas y el Valor de cada cuota son obligatorios.');
+      return;
+    }
+    if (esVariable && listaCuotas.length === 0) {
+      setError('Ingresá al menos el valor de una cuota.');
+      return;
+    }
+
     setEnviando(true);
     try {
-      const esVariable = modalidad === 'cuotas-variables';
-      const listaCuotas = esVariable ? cuotasVariables.filter((v) => v !== '') : [];
       const montoTotalFinal = esVariable
         ? listaCuotas.reduce((acc, v) => acc + Number(v), 0)
         : montoTotal;
@@ -106,19 +123,19 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
         {modalidad === 'cuotas' ? (
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
-              <label className="text-xs text-textSec block mb-1">Cantidad de cuotas</label>
+              <label className="text-xs text-textSec block mb-1">Cantidad de cuotas <span className="text-dangerText">*</span></label>
               <input type="number" value={cantCuotas} onChange={(e) => setCantCuotas(e.target.value)}
                 className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
             </div>
             <div>
-              <label className="text-xs text-textSec block mb-1">Valor de cada cuota</label>
+              <label className="text-xs text-textSec block mb-1">Valor de cada cuota <span className="text-dangerText">*</span></label>
               <input type="number" value={valorCuota} onChange={(e) => setValorCuota(e.target.value)}
                 className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
             </div>
           </div>
         ) : modalidad === 'cuotas-variables' ? (
           <div className="mb-3">
-            <label className="text-xs text-textSec block mb-1">Valor de cada cuota, en orden</label>
+            <label className="text-xs text-textSec block mb-1">Valor de cada cuota, en orden <span className="text-dangerText">*</span></label>
             <div className="space-y-2">
               {cuotasVariables.map((valor, i) => (
                 <div key={i} className="flex items-center gap-2">
@@ -139,7 +156,7 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
           </div>
         ) : (
           <div className="mb-3">
-            <label className="text-xs text-textSec block mb-1">Monto total</label>
+            <label className="text-xs text-textSec block mb-1">Monto total <span className="text-dangerText">*</span></label>
             <input type="number" value={montoTotal} onChange={(e) => setMontoTotal(e.target.value)}
               className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
           </div>
@@ -166,6 +183,10 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
           <input value={vendidoPorOtro} onChange={(e) => setVendidoPorOtro(e.target.value)}
             placeholder="Nombre de quién cerró la venta"
             className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm mb-3" />
+        )}
+
+        {error && (
+          <p className="text-dangerText text-xs mb-2 bg-dangerBg rounded-lg px-3 py-2">⚠️ {error}</p>
         )}
 
         <div className="flex gap-2 mt-2">

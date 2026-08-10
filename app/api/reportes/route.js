@@ -69,6 +69,17 @@ function calcularBloque(mes, leadsDelMes, seguimientoDeEsosLeads) {
   const rankingMedioPago = rankear('MedioPago');
   const rankingModalidad = rankear('Modalidad');
 
+  // Leads por curso: a diferencia de rankingCursos (que solo cuenta VENTAS), esto cuenta TODOS
+  // los leads que entraron este mes, hayan comprado o no — para saber qué formaciones generan más interés.
+  const conteoLeadsPorCurso = {};
+  leadsDelMes.forEach((l) => {
+    const c = l.Curso || 'Sin curso definido';
+    conteoLeadsPorCurso[c] = (conteoLeadsPorCurso[c] || 0) + 1;
+  });
+  const leadsPorCurso = Object.entries(conteoLeadsPorCurso)
+    .map(([nombre, cantidad]) => ({ nombre, cantidad, porcentaje: leadsDelMes.length ? (cantidad / leadsDelMes.length) * 100 : 0 }))
+    .sort((a, b) => b.cantidad - a.cantidad);
+
   // Embudo comercial: Lead -> Contactado -> Interesado -> Venta
   const idsConLead = new Set(leadsDelMes.map((l) => l.ID));
   const idsContactados = new Set(seguimientoDeEsosLeads.filter((s) => s.Contactado === 'TRUE').map((s) => s.LeadID));
@@ -90,6 +101,7 @@ function calcularBloque(mes, leadsDelMes, seguimientoDeEsosLeads) {
     totalLeads: leadsDelMes.length, totalCompras: compras.length, montoTotal, conversion, ticketPromedio,
     ventaPromedioPorDia, mejorDia, serieDiaria,
     rankingVendedores, rankingCursos, rankingOrigenes, rankingDocentes, rankingEdiciones, rankingMedioPago, rankingModalidad,
+    leadsPorCurso,
     embudo, vendedoresConVenta: [...vendedoresConVenta], cursosConVenta: [...cursosConVenta]
   };
 }

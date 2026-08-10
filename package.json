@@ -11,6 +11,7 @@
     "googleapis": "^140.0.1",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
+    "lucide-react": "^1.31.0",
     "next": "14.2.35",
     "nodemailer": "^6.9.14",
     "react": "18.3.1",
