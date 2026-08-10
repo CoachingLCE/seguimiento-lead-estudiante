@@ -2,6 +2,8 @@ import './globals.css';
 import ComoFuncionaGate from '../components/ComoFuncionaGate';
 import VersionBadge from '../components/VersionBadge';
 import TutorialHandbook from '../components/TutorialHandbook';
+import ErrorBoundary from '../components/ErrorBoundary';
+import RecuperadorDeChunks from '../components/RecuperadorDeChunks';
 import { ThemeProvider } from '../lib/ThemeContext';
 
 export const metadata = {
@@ -30,12 +32,15 @@ export default function RootLayout({ children }) {
         <script dangerouslySetInnerHTML={{ __html: scriptTema }} />
       </head>
       <body>
-        <ThemeProvider>
-          {children}
-          <ComoFuncionaGate />
-          <VersionBadge />
-          <TutorialHandbook />
-        </ThemeProvider>
+        <RecuperadorDeChunks />
+        <ErrorBoundary>
+          <ThemeProvider>
+            {children}
+            <ComoFuncionaGate />
+            <VersionBadge />
+            <TutorialHandbook />
+          </ThemeProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

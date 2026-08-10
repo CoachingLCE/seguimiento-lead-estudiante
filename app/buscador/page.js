@@ -5,7 +5,7 @@ import Nav from '../../components/Nav';
 import ModalVenta from '../../components/ModalVenta';
 import CheckboxVisual from '../../components/CheckboxVisual';
 import { useSession } from '../../lib/useSession';
-import { tienePermisoBuscador, tienePermisoEditarLead, tienePermisoEditarVenta } from '../../lib/permisos';
+import { tienePermisoBuscador, tienePermisoEditarLead, tienePermisoEditarVenta, tienePermisoEditarContactoEstudiante } from '../../lib/permisos';
 import { ORIGENES, ORIGEN_OTRO, CURSOS, CURSO_OTROS, CURSO_SIN_DEFINIR, PAISES, enlaceGmail } from '../../lib/constants';
 
 const SEP_NOTAS = '\n@@\n';
@@ -295,6 +295,8 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
 
   const asignadoActual = seguimiento.find((s) => s.Lote === '1')?.AsignadoAEmail;
   const puedeEditar = tienePermisoEditarLead(usuario, lead, asignadoActual);
+  const puedeEditarSoloContacto = !puedeEditar && tienePermisoEditarContactoEstudiante(usuario, lead);
+  const [soloContacto, setSoloContacto] = useState(false);
   const puedeDeshacer = usuario?.roles?.includes('Admin') || usuario?.roles?.includes('Coordinador');
   const [deshaciendo, setDeshaciendo] = useState(null);
   const [programandoLote, setProgramandoLote] = useState(null);
@@ -370,15 +372,18 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
 
   async function guardarEdicion() {
     setGuardandoEdicion(true);
-    const cursoFinal = datos.curso === CURSO_SIN_DEFINIR ? '' : datos.curso === CURSO_OTROS ? datos.cursoPersonalizado.trim() : datos.curso;
+    const cuerpo = soloContacto
+      ? { leadId: lead.ID, nombre: datos.nombre, whatsapp: datos.whatsapp, email: datos.email }
+      : {
+          leadId: lead.ID, nombre: datos.nombre, whatsapp: datos.whatsapp, email: datos.email,
+          instagram: datos.instagram, pais: datos.pais,
+          curso: datos.curso === CURSO_SIN_DEFINIR ? '' : datos.curso === CURSO_OTROS ? datos.cursoPersonalizado.trim() : datos.curso,
+          origen: datos.origen
+        };
     await fetch('/api/leads', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        leadId: lead.ID, nombre: datos.nombre, whatsapp: datos.whatsapp, email: datos.email,
-        instagram: datos.instagram, pais: datos.pais, curso: cursoFinal, origen: datos.origen,
-        solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
-      })
+      body: JSON.stringify({ ...cuerpo, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
     });
     setGuardandoEdicion(false);
     setEditando(false);
@@ -490,7 +495,10 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
               <button onClick={() => setMostrarModalVenta(true)} className="text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-accentPurple to-accentMagenta text-white font-semibold">💰 Marcar venta</button>
             )}
             {puedeEditar && !editando && (
-              <button onClick={() => setEditando(true)} className="text-xs px-3 py-1.5 rounded-lg bg-accentPurple text-white font-semibold">✏️ Editar</button>
+              <button onClick={() => { setSoloContacto(false); setEditando(true); }} className="text-xs px-3 py-1.5 rounded-lg bg-accentPurple text-white font-semibold">✏️ Editar</button>
+            )}
+            {puedeEditarSoloContacto && !editando && (
+              <button onClick={() => { setSoloContacto(true); setEditando(true); }} className="text-xs px-3 py-1.5 rounded-lg bg-accentPurple text-white font-semibold">✏️ Editar contacto</button>
             )}
           </div>
         </div>
@@ -508,38 +516,42 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
                 <input value={datos.email} onChange={(e) => actualizarDato('email', e.target.value)}
                   className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
               </div>
-              <div>
-                <label className="text-xs text-textSec block mb-1">Instagram/Facebook</label>
-                <input value={datos.instagram} onChange={(e) => actualizarDato('instagram', e.target.value)}
-                  className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label className="text-xs text-textSec block mb-1">País</label>
-                <input list="lista-paises-ficha" value={datos.pais} onChange={(e) => actualizarDato('pais', e.target.value)}
-                  className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
-                <datalist id="lista-paises-ficha">{PAISES.map((p) => <option key={p} value={p} />)}</datalist>
-              </div>
-              <div>
-                <label className="text-xs text-textSec block mb-1">Curso</label>
-                <select value={datos.curso} onChange={(e) => actualizarDato('curso', e.target.value)}
-                  className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm">
-                  <option value={CURSO_SIN_DEFINIR}>{CURSO_SIN_DEFINIR}</option>
-                  {CURSOS.map((c) => <option key={c}>{c}</option>)}
-                  <option value={CURSO_OTROS}>{CURSO_OTROS}</option>
-                </select>
-                {datos.curso === CURSO_OTROS && (
-                  <input value={datos.cursoPersonalizado} onChange={(e) => actualizarDato('cursoPersonalizado', e.target.value)}
-                    placeholder="Nombre del curso" className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm mt-2" />
-                )}
-              </div>
-              <div>
-                <label className="text-xs text-textSec block mb-1">Cómo llegó</label>
-                <select value={datos.origen} onChange={(e) => actualizarDato('origen', e.target.value)}
-                  className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm">
-                  {ORIGENES.map((o) => <option key={o}>{o}</option>)}
-                  <option value={ORIGEN_OTRO}>{ORIGEN_OTRO}</option>
-                </select>
-              </div>
+              {!soloContacto && (
+                <>
+                  <div>
+                    <label className="text-xs text-textSec block mb-1">Instagram/Facebook</label>
+                    <input value={datos.instagram} onChange={(e) => actualizarDato('instagram', e.target.value)}
+                      className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-textSec block mb-1">País</label>
+                    <input list="lista-paises-ficha" value={datos.pais} onChange={(e) => actualizarDato('pais', e.target.value)}
+                      className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
+                    <datalist id="lista-paises-ficha">{PAISES.map((p) => <option key={p} value={p} />)}</datalist>
+                  </div>
+                  <div>
+                    <label className="text-xs text-textSec block mb-1">Curso</label>
+                    <select value={datos.curso} onChange={(e) => actualizarDato('curso', e.target.value)}
+                      className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm">
+                      <option value={CURSO_SIN_DEFINIR}>{CURSO_SIN_DEFINIR}</option>
+                      {CURSOS.map((c) => <option key={c}>{c}</option>)}
+                      <option value={CURSO_OTROS}>{CURSO_OTROS}</option>
+                    </select>
+                    {datos.curso === CURSO_OTROS && (
+                      <input value={datos.cursoPersonalizado} onChange={(e) => actualizarDato('cursoPersonalizado', e.target.value)}
+                        placeholder="Nombre del curso" className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm mt-2" />
+                    )}
+                  </div>
+                  <div>
+                    <label className="text-xs text-textSec block mb-1">Cómo llegó</label>
+                    <select value={datos.origen} onChange={(e) => actualizarDato('origen', e.target.value)}
+                      className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm">
+                      {ORIGENES.map((o) => <option key={o}>{o}</option>)}
+                      <option value={ORIGEN_OTRO}>{ORIGEN_OTRO}</option>
+                    </select>
+                  </div>
+                </>
+              )}
             </div>
             <div className="flex items-center gap-3 mt-4">
               <button onClick={guardarEdicion} disabled={guardandoEdicion}

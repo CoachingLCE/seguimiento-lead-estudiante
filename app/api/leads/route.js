@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { readSheet, appendRow, updateRow, deleteRows } from '../../../lib/sheets';
-import { findUsuario, tienePermisoOperativo, tienePermisoCrearLeads, tienePermisoEditarLead, tienePermisoEditarVenta } from '../../../lib/auth';
+import { findUsuario, tienePermisoOperativo, tienePermisoCrearLeads, tienePermisoEditarLead, tienePermisoEditarVenta, tienePermisoEditarContactoEstudiante } from '../../../lib/auth';
 import { registrarAccion } from '../../../lib/auditoria';
 import { HORAS_LOTE_1, DIAS_LOTE_3, DIAS_LOTE_4, DIAS_LOTE_5 } from '../../../lib/constants';
 
@@ -133,7 +133,19 @@ export async function PATCH(request) {
   // El "responsable actual" para el chequeo de permisos es el de la fila de Lote 1 de este lead
   // (es la que se asigna a la creadora por defecto, y la primera que puede reasignarse a otra persona).
   const filaLote1 = seguimiento.find((s) => s.LeadID === lead.ID && s.Lote === '1');
-  if (!tienePermisoEditarLead(solicitante, lead, filaLote1?.AsignadoAEmail)) {
+
+  // El rol Estudiantes no tiene permiso general para editar la ficha, pero sí puede corregir
+  // Nombre/WhatsApp/Email de un alumno ya inscripto — mientras el pedido no incluya otros campos.
+  const CAMPOS_SOLO_CONTACTO = ['nombre', 'whatsapp', 'email'];
+  const CAMPOS_SIEMPRE_PERMITIDOS = ['leadId', 'solicitanteEmail', 'solicitanteNombre'];
+  const soloPideCamposDeContacto = Object.keys(body).every(
+    (k) => CAMPOS_SIEMPRE_PERMITIDOS.includes(k) || CAMPOS_SOLO_CONTACTO.includes(k)
+  );
+  const autorizado =
+    tienePermisoEditarLead(solicitante, lead, filaLote1?.AsignadoAEmail) ||
+    (soloPideCamposDeContacto && tienePermisoEditarContactoEstudiante(solicitante, lead));
+
+  if (!autorizado) {
     return NextResponse.json({ error: 'No autorizado para editar este lead' }, { status: 403 });
   }
 
