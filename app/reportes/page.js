@@ -61,6 +61,37 @@ function Skeleton({ h = 'h-24' }) {
   return <div className={`bg-surface2 border border-border rounded-xl animate-pulse ${h}`} />;
 }
 
+// Si el nombre de un curso es muy largo, lo parte en 2 líneas por la palabra más cercana
+// a la mitad — para que nunca se corte a mitad de palabra ni se superponga con el de al lado.
+function partirEnDosLineas(texto, maxChars = 15) {
+  if (!texto || texto.length <= maxChars) return [texto || ''];
+  const palabras = texto.split(' ');
+  let linea1 = '';
+  let i = 0;
+  while (i < palabras.length && (linea1 + ' ' + palabras[i]).trim().length <= maxChars) {
+    linea1 = (linea1 + ' ' + palabras[i]).trim();
+    i++;
+  }
+  if (!linea1) { linea1 = palabras[0]; i = 1; } // palabra sola más larga que maxChars: no partirla
+  const linea2 = palabras.slice(i).join(' ');
+  return linea2 ? [linea1, linea2] : [linea1];
+}
+
+// Tick del eje Y para el gráfico "Leads por curso": nunca reduce el tamaño de fuente,
+// en cambio parte el nombre en 2 líneas si no entra en una sola.
+function TickCursoDosLineas({ x, y, payload }) {
+  const lineas = partirEnDosLineas(payload.value, 15);
+  return (
+    <g transform={`translate(${x},${y})`}>
+      {lineas.map((linea, i) => (
+        <text key={i} x={0} y={0} dy={(i - (lineas.length - 1) / 2) * 13 + 4} textAnchor="end" fill="#9aa1c2" fontSize={11}>
+          {linea}
+        </text>
+      ))}
+    </g>
+  );
+}
+
 function ChartCard({ titulo, subtitulo, valorGrande, comparacion, tooltip, onExportar, alto = 300, children }) {
   return (
     <div className="group bg-surface border border-border rounded-2xl p-5 shadow-sm transition-all duration-200
@@ -442,12 +473,14 @@ export default function ReportesPage() {
                 tooltip="A diferencia de 'Ventas por curso', cuenta TODOS los leads que entraron este mes en cada formación"
                 valorGrande={`${datos.totalLeads} leads`}
                 comparacion={<Flecha actual={datos.comparativa.leads.actual} anterior={datos.comparativa.leads.anterior} />}
-                onExportar={() => exportarGrafico('leads-por-curso', datos.leadsPorCurso)}>
+                onExportar={() => exportarGrafico('leads-por-curso', datos.leadsPorCurso)}
+                alto={Math.max(280, datos.leadsPorCurso.length * 46)}>
                 <ResponsiveContainer>
-                  <BarChart data={datos.leadsPorCurso} layout="vertical" margin={{ left: 40 }}>
+                  <BarChart data={datos.leadsPorCurso} layout="vertical" margin={{ left: 50, top: 5, bottom: 5 }} barCategoryGap="30%">
                     <CartesianGrid strokeDasharray="3 3" stroke="#262c4a" />
                     <XAxis type="number" stroke="#6b7299" fontSize={11} allowDecimals={false} />
-                    <YAxis type="category" dataKey="nombre" stroke="#6b7299" fontSize={10} width={110} />
+                    <YAxis type="category" dataKey="nombre" stroke="#6b7299" width={140}
+                      tick={<TickCursoDosLineas />} interval={0} />
                     <Tooltip contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} />
                     <Bar dataKey="cantidad" fill="#a855f7" radius={[0, 4, 4, 0]} onClick={(d) => setFiltro('curso', d.nombre)} cursor="pointer" />
                   </BarChart>
