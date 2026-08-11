@@ -607,10 +607,17 @@ function CopyButton({ valor }) {
   );
 }
 
-// "+N se agregan mañana" — con destello animado para que se note de un vistazo.
+// "+N se agregan mañana" — texto base 100% sólido y nítido (color ámbar normal), con un
+// reflejo fino superpuesto encima que se desliza cada pocos segundos. El texto se duplica
+// en una capa absoluta idéntica: la de abajo es el color real, la de arriba solo deja ver
+// el brillo pasando, nunca cambia el color base ni agrega sombra/blur.
 function AvisoManiana({ cantidad }) {
+  const texto = `+${cantidad} se agregan mañana`;
   return (
-    <> · <span className="aviso-manana-shine">+{cantidad} se agregan mañana</span></>
+    <> · <span className="aviso-manana-wrap">
+      {texto}
+      <span className="aviso-manana-overlay" aria-hidden="true">{texto}</span>
+    </span></>
   );
 }
 

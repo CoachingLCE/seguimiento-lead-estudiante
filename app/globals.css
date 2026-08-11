@@ -54,32 +54,37 @@ body {
   transition: background-color .25s ease, color .25s ease;
 }
 
-/* Destello que recorre "+N se agregan mañana" — barrido rápido con pausas entre ciclos,
-   para que llame la atención sin resultar molesto ni parecer publicidad. */
-@keyframes brillo-recorrido-manana {
-  0%, 55% { background-position: 220% 0; }
-  80% { background-position: -120% 0; }
-  100% { background-position: -120% 0; }
-}
-.aviso-manana-shine {
+/* Shimmer sobre "+N se agregan mañana": el texto de abajo queda 100% sólido y nítido
+   (color ámbar normal, sin blur ni sombra). Un reflejo fino se desliza por encima cada
+   pocos segundos, superpuesto exactamente sobre las letras — no una nube de luz alrededor. */
+.aviso-manana-wrap {
   position: relative;
   display: inline-block;
   font-weight: 700;
+  color: rgb(var(--color-warningText));
+}
+.aviso-manana-overlay {
+  position: absolute;
+  inset: 0;
   background-image: linear-gradient(
     100deg,
-    rgb(var(--color-warningText)) 32%,
-    #fff8e1 48%,
-    #ffffff 50%,
-    #fff8e1 52%,
-    rgb(var(--color-warningText)) 68%
+    transparent 42%,
+    rgba(255, 255, 255, .9) 50%,
+    transparent 58%
   );
-  background-size: 250% 100%;
+  background-size: 300% 100%;
   background-repeat: no-repeat;
+  background-position: -200% 0;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  text-shadow: 0 0 10px rgba(251, 191, 36, .45);
-  animation: brillo-recorrido-manana 4.5s ease-in-out infinite;
+  pointer-events: none;
+  animation: brillo-recorrido-manana 3.6s ease-in-out infinite;
+}
+@keyframes brillo-recorrido-manana {
+  0%, 55% { background-position: -200% 0; }
+  75% { background-position: 200% 0; }
+  100% { background-position: 200% 0; }
 }
 
 @media print {
