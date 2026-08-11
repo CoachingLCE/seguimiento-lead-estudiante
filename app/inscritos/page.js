@@ -225,7 +225,6 @@ export default function InscritosPage() {
                     <th className="pr-4 cursor-pointer select-none" onClick={() => ordenarPor('NombreEstudiante')}>Estudiante{flecha('NombreEstudiante')}</th>
                     <th className="pr-4 cursor-pointer select-none" onClick={() => ordenarPor('Curso')}>Curso{flecha('Curso')}</th>
                     <th className="pr-4 cursor-pointer select-none" onClick={() => ordenarPor('Edicion')}>Edición{flecha('Edicion')}</th>
-                    <th className="pr-4">Docente(s)</th>
                     <th className="pr-4 whitespace-normal max-w-[90px]">Estudiante<br/>desde</th>
                     <th className="pr-4">Bienvenida</th>
                     <th className="pr-4 whitespace-normal max-w-[80px]">Confirmó<br/>recepción</th>
@@ -249,7 +248,6 @@ export default function InscritosPage() {
                           </span>
                         </td>
                         <td className="py-3 pr-4 text-textSec">{i.Edicion || '—'}</td>
-                        <td className="py-3 pr-4 text-textSec">{i.Docentes || '—'}</td>
                         <td className="py-3 pr-4 text-textMuted text-xs whitespace-nowrap">{antiguedad(i.FechaInscripcion)}</td>
                         <td className="py-3 pr-4">
                           {i.BienvenidaEnviada === 'TRUE' ? (
