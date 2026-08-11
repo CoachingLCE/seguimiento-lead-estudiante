@@ -19,6 +19,43 @@ function numeroValido(v) {
   return Number.isFinite(n) ? n : 0;
 }
 
+// Proyecta cuándo va a entrar cada cuota, asumiendo que se pagan cada 30 días exactos desde la
+// venta (no hay fecha real de pago de cada cuota registrada, así que esto es una ESTIMACIÓN,
+// no un dato confirmado). Para "Totalidad" es un solo ingreso, el día de la venta.
+// Devuelve la serie por día para el mes pedido, sumando cualquier cuota (de ventas de este mes
+// o de meses anteriores) que caiga dentro de este mes.
+function calcularIngresosPorDia(mes, todosLosLeads) {
+  const totalDias = diasDelMes(mes);
+  const [anio, mesNum] = mes.split('-').map(Number);
+  const inicioMes = new Date(anio, mesNum - 1, 1);
+  const finMes = new Date(anio, mesNum, 1);
+
+  const porDia = {};
+  for (let d = 1; d <= totalDias; d++) porDia[d] = 0;
+
+  const comprados = todosLosLeads.filter((l) => l.Estado === 'Comprado' && l.FechaVenta);
+  comprados.forEach((l) => {
+    const fechaVenta = new Date(l.FechaVenta);
+    let cuotas;
+    if (l.Modalidad === 'Totalidad' || !l.CantCuotas || Number(l.CantCuotas) <= 1) {
+      cuotas = [numeroValido(l.MontoTotal)];
+    } else {
+      const detalle = (l.DetalleCuotas || '').split(',').map((v) => Number(v.trim())).filter((v) => v > 0);
+      cuotas = detalle.length > 0
+        ? detalle
+        : Array(Number(l.CantCuotas) || 0).fill(numeroValido(l.ValorCuota));
+    }
+    cuotas.forEach((monto, i) => {
+      const fechaCuota = new Date(fechaVenta.getTime() + i * 30 * 24 * 60 * 60 * 1000);
+      if (fechaCuota >= inicioMes && fechaCuota < finMes) {
+        porDia[fechaCuota.getDate()] += monto;
+      }
+    });
+  });
+
+  return Object.entries(porDia).map(([dia, monto]) => ({ dia: Number(dia), monto }));
+}
+
 // Calcula el bloque de métricas para un mes puntual: KPIs, series por día, rankings, embudo.
 // Recibe los leads/seguimiento YA filtrados a ese mes para no leer el Sheet de nuevo por cada mes.
 function calcularBloque(mes, leadsDelMes, seguimientoDeEsosLeads) {
@@ -128,6 +165,8 @@ export async function GET(request) {
 
   const actual = calcularBloque(mes, leadsDelMes, seguimientoDelMes);
   const anterior = calcularBloque(mesAnterior, leadsMesAnterior, seguimientoMesAnterior);
+  const ingresosPorDia = calcularIngresosPorDia(mes, leads);
+  const ingresosTotalesDelMes = ingresosPorDia.reduce((acc, d) => acc + d.monto, 0);
 
   // Alertas automáticas
   const alertas = [];
@@ -167,6 +206,7 @@ export async function GET(request) {
   return NextResponse.json({
     mes, mesAnterior,
     ...actual,
+    ingresosPorDia, ingresosTotalesDelMes,
     comparativa: {
       leads: { actual: actual.totalLeads, anterior: anterior.totalLeads },
       ventas: { actual: actual.totalCompras, anterior: anterior.totalCompras },

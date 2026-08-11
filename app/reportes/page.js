@@ -6,7 +6,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend
 } from 'recharts';
 import Nav from '../../components/Nav';
 import FichaDrawer from '../../components/FichaDrawer';
@@ -440,19 +440,29 @@ export default function ReportesPage() {
                 </ResponsiveContainer>
               </ChartCard>
 
-              <ChartCard titulo="Evolución de facturación por día" subtitulo="Mes seleccionado" tooltip="Monto vendido por día del mes"
+              <ChartCard titulo="Evolución de facturación e ingresos por día" subtitulo="Mes seleccionado"
+                tooltip="Facturación: valor total de cada venta, el día que se cerró. Ingresos: estimación de qué cuota cae en cada día (cada 30 días desde la venta) — no es un dato confirmado, es una proyección."
                 valorGrande={money(datos.montoTotal)}
                 comparacion={<Flecha actual={datos.comparativa.facturacion.actual} anterior={datos.comparativa.facturacion.anterior} />}
-                onExportar={() => exportarGrafico('facturacion-por-dia', datos.serieDiaria)}>
+                onExportar={() => exportarGrafico('facturacion-e-ingresos-por-dia', datos.serieDiaria.map((d, i) => ({
+                  dia: d.dia, facturacion: d.monto, ingresosEstimados: datos.ingresosPorDia[i]?.monto || 0
+                })))}>
                 <ResponsiveContainer>
-                  <LineChart data={datos.serieDiaria}>
+                  <LineChart data={datos.serieDiaria.map((d, i) => ({
+                    dia: d.dia, facturacion: d.monto, ingresos: datos.ingresosPorDia[i]?.monto || 0
+                  }))}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#262c4a" />
                     <XAxis dataKey="dia" stroke="#6b7299" fontSize={11} />
                     <YAxis stroke="#6b7299" fontSize={11} tickFormatter={(v) => `$${v / 1000}k`} />
                     <Tooltip formatter={(v) => money(v)} contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} />
-                    <Line type="monotone" dataKey="monto" stroke="#7c3aed" strokeWidth={2} dot={false} />
+                    <Legend wrapperStyle={{ fontSize: 11 }} formatter={(v) => (v === 'facturacion' ? 'Facturación' : 'Ingresos (estimado)')} />
+                    <Line type="monotone" dataKey="facturacion" stroke="#7c3aed" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="ingresos" stroke="#4ade80" strokeWidth={2} dot={false} strokeDasharray="4 3" />
                   </LineChart>
                 </ResponsiveContainer>
+                <p className="text-textMuted text-[10.5px] mt-1.5">
+                  🟢 Ingresos es una estimación (cuotas cada 30 días desde la venta) — no es un dato confirmado de cobro real.
+                </p>
               </ChartCard>
 
               <ChartCard titulo="Ventas por curso" subtitulo="Mes seleccionado"
