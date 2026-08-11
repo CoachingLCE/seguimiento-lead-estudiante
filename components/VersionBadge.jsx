@@ -1,13 +1,18 @@
 'use client';
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { APP_VERSION, APP_UPDATED_AT } from '../lib/version';
 import { CHANGELOG } from '../lib/changelog';
 
 export default function VersionBadge() {
+  const pathname = usePathname();
   const [abierto, setAbierto] = useState(false);
   const fecha = new Date(APP_UPDATED_AT + 'T00:00:00').toLocaleDateString('es-AR', {
     day: '2-digit', month: '2-digit', year: 'numeric'
   });
+
+  // Pantalla pública para estudiantes — no tiene sentido mostrar acá cosas del equipo interno.
+  if (pathname === '/confirmar-recepcion') return null;
 
   return (
     <>

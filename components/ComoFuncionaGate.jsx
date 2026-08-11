@@ -4,6 +4,6 @@ import ComoFunciona from './ComoFunciona';
 
 export default function ComoFuncionaGate() {
   const pathname = usePathname();
-  if (pathname === '/') return null;
+  if (pathname === '/' || pathname === '/confirmar-recepcion') return null;
   return <ComoFunciona />;
 }

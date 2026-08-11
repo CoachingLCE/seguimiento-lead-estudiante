@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 
 const KEY_VISTO = 'ilce-leads-tutorial-visto';
 
@@ -32,15 +33,19 @@ const PASOS = [
 ];
 
 export default function TutorialHandbook() {
+  const pathname = usePathname();
   const [abierto, setAbierto] = useState(false);
   const [paso, setPaso] = useState(0);
 
   useEffect(() => {
+    if (pathname === '/confirmar-recepcion') return;
     const visto = typeof window !== 'undefined' && window.localStorage.getItem(KEY_VISTO);
     if (!visto) {
       setAbierto(true);
     }
-  }, []);
+  }, [pathname]);
+
+  if (pathname === '/confirmar-recepcion') return null;
 
   function cerrar() {
     window.localStorage.setItem(KEY_VISTO, 'true');
