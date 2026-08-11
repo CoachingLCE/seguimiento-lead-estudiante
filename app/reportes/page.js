@@ -15,16 +15,10 @@ import { useSession } from '../../lib/useSession';
 
 const PALETA = ['#7c3aed', '#22d3ee', '#c026d3', '#4ade80', '#fbbf24', '#60a5fa', '#f87171', '#a78bfa'];
 
-function meses() {
-  const lista = [];
-  const ahora = new Date();
-  for (let i = 0; i < 12; i++) {
-    const f = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
-    const valor = `${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, '0')}`;
-    const label = f.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
-    lista.push({ valor, label: label.charAt(0).toUpperCase() + label.slice(1) });
-  }
-  return lista;
+function labelDeMes(valor) {
+  const [y, m] = valor.split('-').map(Number);
+  const label = new Date(y, m - 1, 1).toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+  return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 function money(n) {
@@ -194,7 +188,8 @@ function colorParaTexto(texto) {
 export default function ReportesPage() {
   const { usuario, logout } = useSession();
   const router = useRouter();
-  const [mes, setMes] = useState(meses()[0].valor);
+  const [mes, setMes] = useState('');
+  const [mesesDisponibles, setMesesDisponibles] = useState([]);
   const [datos, setDatos] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
@@ -210,7 +205,18 @@ export default function ReportesPage() {
 
   if (usuario && !cargado) {
     setCargado(true);
-    cargarDatos(mes);
+    inicializar();
+  }
+
+  async function inicializar() {
+    let lista = [new Date().toISOString().slice(0, 7)];
+    try {
+      const r = await fetch(`/api/reportes/meses-disponibles?solicitanteEmail=${encodeURIComponent(usuario.email)}`).then((res) => res.json());
+      if (r.meses?.length > 0) lista = r.meses;
+    } catch (err) { /* si falla, se usa el mes actual como respaldo */ }
+    setMesesDisponibles(lista);
+    setMes(lista[0]);
+    cargarDatos(lista[0]);
   }
 
   async function cargarDatos(mesElegido) {
@@ -335,7 +341,7 @@ export default function ReportesPage() {
             <label className="text-xs text-textSec block mb-1">Mes</label>
             <select value={mes} onChange={(e) => cambiarMes(e.target.value)}
               className="bg-bg border border-border rounded-lg px-3 py-2 text-sm">
-              {meses().map((m) => <option key={m.valor} value={m.valor}>{m.label}</option>)}
+              {mesesDisponibles.map((m) => <option key={m} value={m}>{labelDeMes(m)}</option>)}
             </select>
           </div>
           <div className="flex-1 min-w-[200px]">
