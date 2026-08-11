@@ -2,7 +2,7 @@
 import { useRouter } from 'next/navigation';
 import {
   MessageSquare, Mail, Calendar, HardDrive, Sheet, Video, Archive,
-  GraduationCap, Settings, HelpCircle, DollarSign
+  GraduationCap, Settings, HelpCircle, DollarSign, BookOpen
 } from 'lucide-react';
 import Nav from '../../components/Nav';
 import { useSession } from '../../lib/useSession';
@@ -21,6 +21,8 @@ const RECURSOS_INSTITUCIONALES = [
   { icono: GraduationCap, nombre: 'Volver al campus', url: 'https://campus.institutoilce.com/' },
   { icono: Settings, nombre: 'Admin Campus', url: 'https://campus.institutoilce.com/wp-admin/' },
   { icono: HelpCircle, nombre: 'Preguntas frecuentes estudiantes', url: 'https://www.coachingeducativolider.com/preguntas-frecuentes-estudiantes' },
+  { icono: BookOpen, nombre: 'Manual académico', url: 'https://www.coachingeducativolider.com/manualacad%C3%A9mico' },
+  { icono: BookOpen, nombre: 'Manual inscripciones', url: 'https://www.coachingeducativolider.com/manual-inscripciones' },
   { icono: DollarSign, nombre: 'Valores de los cursos', url: null }
 ];
 
