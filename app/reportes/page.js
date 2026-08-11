@@ -252,6 +252,8 @@ export default function ReportesPage() {
     setBusqueda('');
   }
 
+  const [ordenFecha, setOrdenFecha] = useState('desc'); // 'desc' = mas reciente primero
+
   const comprasFiltradas = useMemo(() => {
     if (!datos) return [];
     return datos.compras.filter((c) => {
@@ -268,8 +270,12 @@ export default function ReportesPage() {
       if (filtros.montoMin && Number(c.montoTotal) < Number(filtros.montoMin)) return false;
       if (filtros.montoMax && Number(c.montoTotal) > Number(filtros.montoMax)) return false;
       return true;
+    }).sort((a, b) => {
+      const fa = new Date(a.fechaVenta || 0);
+      const fb = new Date(b.fechaVenta || 0);
+      return ordenFecha === 'desc' ? fb - fa : fa - fb;
     });
-  }, [datos, busqueda, filtros]);
+  }, [datos, busqueda, filtros, ordenFecha]);
 
   function exportarExcel() {
     const hoja = XLSX.utils.json_to_sheet(comprasFiltradas);
@@ -614,7 +620,11 @@ export default function ReportesPage() {
                   <thead className="sticky top-0 bg-surface z-10">
                     <tr className="text-textSec text-left border-b border-border">
                       <th className="py-2">Lead</th><th>Curso</th><th>Origen</th><th>Medio de pago</th>
-                      <th>Modalidad</th><th>Fecha de compra</th><th>Monto</th><th>Vendedor</th><th></th>
+                      <th>Modalidad</th>
+                      <th className="cursor-pointer select-none" onClick={() => setOrdenFecha(ordenFecha === 'desc' ? 'asc' : 'desc')}>
+                        Fecha de compra {ordenFecha === 'desc' ? '▼' : '▲'}
+                      </th>
+                      <th>Monto</th><th>Vendedor</th><th></th>
                     </tr>
                   </thead>
                   <tbody>
