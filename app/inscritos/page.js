@@ -227,9 +227,9 @@ export default function InscritosPage() {
                     <th className="pr-4 cursor-pointer select-none" onClick={() => ordenarPor('Edicion')}>Edición{flecha('Edicion')}</th>
                     <th className="pr-4">Docente(s)</th>
                     <th className="pr-4 whitespace-normal max-w-[90px]">Estudiante<br/>desde</th>
-                    <th className="pr-4 whitespace-normal max-w-[80px]">Alta<br/>plataforma</th>
                     <th className="pr-4">Bienvenida</th>
                     <th className="pr-4 whitespace-normal max-w-[80px]">Confirmó<br/>recepción</th>
+                    <th className="pr-4 whitespace-normal max-w-[80px]">Alta<br/>plataforma</th>
                     <th className="pr-4 whitespace-normal max-w-[80px]">Grupo<br/>WhatsApp</th>
                     <th>Acciones</th>
                   </tr>
@@ -251,16 +251,6 @@ export default function InscritosPage() {
                         <td className="py-3 pr-4 text-textSec">{i.Edicion || '—'}</td>
                         <td className="py-3 pr-4 text-textSec">{i.Docentes || '—'}</td>
                         <td className="py-3 pr-4 text-textMuted text-xs whitespace-nowrap">{antiguedad(i.FechaInscripcion)}</td>
-                        <td className="py-3 pr-4">
-                          <button onClick={() => toggleAlta(i)} className="block">
-                            <CheckboxVisual marcado={i.AltaPlataforma === 'TRUE'} />
-                          </button>
-                          {i.AltaPlataforma === 'TRUE' && (
-                            <p className="text-textMuted text-[11px] mt-1 whitespace-nowrap">
-                              {i.AltaPorNombre}<br/>{new Date(i.FechaAlta).toLocaleDateString('es-AR')}
-                            </p>
-                          )}
-                        </td>
                         <td className="py-3 pr-4">
                           {i.BienvenidaEnviada === 'TRUE' ? (
                             <>
@@ -297,6 +287,16 @@ export default function InscritosPage() {
                           <button onClick={() => toggleCampoSimple(i, 'ConfirmoRecepcion', 'Confirmó recepción')}>
                             <CheckboxVisual marcado={i.ConfirmoRecepcion === 'TRUE'} />
                           </button>
+                        </td>
+                        <td className="py-3 pr-4">
+                          <button onClick={() => toggleAlta(i)} className="block">
+                            <CheckboxVisual marcado={i.AltaPlataforma === 'TRUE'} />
+                          </button>
+                          {i.AltaPlataforma === 'TRUE' && (
+                            <p className="text-textMuted text-[11px] mt-1 whitespace-nowrap">
+                              {i.AltaPorNombre}<br/>{new Date(i.FechaAlta).toLocaleDateString('es-AR')}
+                            </p>
+                          )}
                         </td>
                         <td className="py-3 pr-4">
                           <button onClick={() => toggleCampoSimple(i, 'GrupoWhatsApp', 'Grupo WhatsApp')}>
