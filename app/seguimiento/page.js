@@ -272,7 +272,7 @@ export default function SeguimientoPage() {
           Resultado: s.Resultado,
           Observaciones: s.Observaciones,
           ProximaAccion: s.ProximaAccion,
-          FechaVence: s.FechaVence ? new Date(s.FechaVence).toLocaleString('es-AR') : ''
+          FechaVence: s.FechaVence ? new Date(s.FechaVence).toLocaleString('es-AR', { hour12: false }) : ''
         };
       })
     );

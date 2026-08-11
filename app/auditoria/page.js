@@ -38,7 +38,7 @@ export default function AuditoriaPage() {
   function exportarExcel() {
     const hoja = XLSX.utils.json_to_sheet(
       registros.map((r) => ({
-        Fecha: new Date(r.Fecha).toLocaleString('es-AR'),
+        Fecha: new Date(r.Fecha).toLocaleString('es-AR', { hour12: false }),
         Usuario: r.UsuarioNombre,
         Accion: r.Accion,
         Detalle: r.Detalle,
@@ -120,7 +120,7 @@ export default function AuditoriaPage() {
                   const esLoginFallido = (r.Accion || '').toLowerCase().includes('login fallido') || (r.Accion || '').toLowerCase().includes('login rechazado');
                   return (
                     <tr key={i} className="border-b border-border">
-                      <td className="py-2">{new Date(r.Fecha).toLocaleString('es-AR')}</td>
+                      <td className="py-2">{new Date(r.Fecha).toLocaleString('es-AR', { hour12: false })}</td>
                       <td>{r.UsuarioNombre}</td>
                       <td className={
                         esVenta ? 'text-successText font-semibold' :

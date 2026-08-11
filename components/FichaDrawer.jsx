@@ -114,7 +114,7 @@ export default function FichaDrawer({ leadId, usuario, onClose }) {
                     }`}>
                       {iconoPara(ev.accion)}
                     </div>
-                    <p className="text-textMuted text-[10.5px]">{new Date(ev.fecha).toLocaleString('es-AR')}</p>
+                    <p className="text-textMuted text-[10.5px]">{new Date(ev.fecha).toLocaleString('es-AR', { hour12: false })}</p>
                     <p className="text-xs font-semibold flex items-center gap-1.5">
                       {ev.accion}
                       {ev.automatico && (
