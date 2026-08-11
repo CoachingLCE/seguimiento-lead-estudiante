@@ -493,27 +493,27 @@ export default function SeguimientoPage() {
               filas={lote0} filasTotales={lote0Todas} conObservaciones {...propsComunes}
             />
             <SeccionLote
-              titulo="LOTE 1 – Contactar a las 48 horas" subtitulo={`${lote1.length} lead(s) por contactar${lote1Maniana > 0 ? ` · +${lote1Maniana} se agregan mañana` : ''}`}
+              titulo="LOTE 1 – Contactar a las 48 horas" subtitulo={<>{lote1.length} lead(s) por contactar{lote1Maniana > 0 && <AvisoManiana cantidad={lote1Maniana} />}</>}
               explicacion={<>Si registrás "No contestó" o "Va a pensarlo" pasa solo al Lote 2 (10 días). Si marcás la venta, desaparece de acá.</>}
               filas={lote1} filasTotales={lote1Todas} conObservaciones {...propsComunes}
             />
             <SeccionLote
-              titulo="LOTE 2 – Contactar a los 10 días" subtitulo={`${lote2.length} lead(s) que no respondieron en el Lote 1${lote2Maniana > 0 ? ` · +${lote2Maniana} se agregan mañana` : ''}`}
+              titulo="LOTE 2 – Contactar a los 10 días" subtitulo={<>{lote2.length} lead(s) que no respondieron en el Lote 1{lote2Maniana > 0 && <AvisoManiana cantidad={lote2Maniana} />}</>}
               explicacion={<>Si sigue sin resolverse, pasa al Lote 3 (al mes). Si marcás la venta, desaparece de acá.</>}
               filas={lote2} filasTotales={lote2Todas} {...propsComunes}
             />
             <SeccionLote
-              titulo="LOTE 3 – Contactar al mes" subtitulo={`${lote3.length} lead(s) sin resolver al mes de ingresados${lote3Maniana > 0 ? ` · +${lote3Maniana} se agregan mañana` : ''}`}
+              titulo="LOTE 3 – Contactar al mes" subtitulo={<>{lote3.length} lead(s) sin resolver al mes de ingresados{lote3Maniana > 0 && <AvisoManiana cantidad={lote3Maniana} />}</>}
               explicacion={<>Requiere que un Coordinador/Admin lo asigne. Si sigue sin resolverse, pasa al Lote 4 (2 meses).</>}
               filas={lote3} filasTotales={lote3Todas} sinAsignarPorDefecto {...propsComunes}
             />
             <SeccionLote
-              titulo="LOTE 4 – Contactar a los 2 meses" subtitulo={`${lote4.length} lead(s) sin resolver a los 2 meses de ingresados${lote4Maniana > 0 ? ` · +${lote4Maniana} se agregan mañana` : ''}`}
+              titulo="LOTE 4 – Contactar a los 2 meses" subtitulo={<>{lote4.length} lead(s) sin resolver a los 2 meses de ingresados{lote4Maniana > 0 && <AvisoManiana cantidad={lote4Maniana} />}</>}
               explicacion={<>Requiere asignación. Si sigue sin resolverse, pasa al Lote 5 (3 meses).</>}
               filas={lote4} filasTotales={lote4Todas} sinAsignarPorDefecto {...propsComunes}
             />
             <SeccionLote
-              titulo="LOTE 5 – Contactar a los 3 meses" subtitulo={`${lote5.length} lead(s) sin resolver a los 3 meses de ingresados${lote5Maniana > 0 ? ` · +${lote5Maniana} se agregan mañana` : ''}`}
+              titulo="LOTE 5 – Contactar a los 3 meses" subtitulo={<>{lote5.length} lead(s) sin resolver a los 3 meses de ingresados{lote5Maniana > 0 && <AvisoManiana cantidad={lote5Maniana} />}</>}
               explicacion={<>Último lote de seguimiento automático. Si marcás la venta, desaparece de acá como cualquier otro lote.</>}
               filas={lote5} filasTotales={lote5Todas} sinAsignarPorDefecto {...propsComunes}
             />
@@ -604,6 +604,13 @@ function CopyButton({ valor }) {
     <button onClick={copiar} title="Copiar" className="text-textMuted hover:text-accentTeal">
       {copiado ? '✓' : '📋'}
     </button>
+  );
+}
+
+// "+N se agregan mañana" — con destello animado para que se note de un vistazo.
+function AvisoManiana({ cantidad }) {
+  return (
+    <> · <span className="aviso-manana-shine">+{cantidad} se agregan mañana</span></>
   );
 }
 
