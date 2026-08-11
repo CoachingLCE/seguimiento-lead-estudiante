@@ -222,10 +222,10 @@ export default function InscritosPage() {
                 <thead>
                   <tr className="text-textSec text-left border-b border-border">
                     <th className="py-3 pr-4 cursor-pointer select-none whitespace-normal max-w-[90px]" onClick={() => ordenarPor('FechaInscripcion')}>Fecha de<br/>inscripción{flecha('FechaInscripcion')}</th>
+                    <th className="pr-4 whitespace-normal max-w-[90px]">Estudiante<br/>desde</th>
                     <th className="pr-4 cursor-pointer select-none" onClick={() => ordenarPor('NombreEstudiante')}>Estudiante{flecha('NombreEstudiante')}</th>
                     <th className="pr-4 cursor-pointer select-none" onClick={() => ordenarPor('Curso')}>Curso{flecha('Curso')}</th>
                     <th className="pr-4 cursor-pointer select-none" onClick={() => ordenarPor('Edicion')}>Edición{flecha('Edicion')}</th>
-                    <th className="pr-4 whitespace-normal max-w-[90px]">Estudiante<br/>desde</th>
                     <th className="pr-4">Bienvenida</th>
                     <th className="pr-4 whitespace-normal max-w-[80px]">Confirmó<br/>recepción</th>
                     <th className="pr-4 whitespace-normal max-w-[80px]">Alta<br/>plataforma</th>
@@ -239,6 +239,7 @@ export default function InscritosPage() {
                     return (
                       <tr key={i.ID} className="border-b border-border align-top hover:bg-bg/40 transition-colors">
                         <td className="py-3 pr-4 text-textSec whitespace-nowrap">{new Date(i.FechaInscripcion).toLocaleDateString('es-AR')}</td>
+                        <td className="py-3 pr-4 text-textMuted text-xs whitespace-nowrap">{antiguedad(i.FechaInscripcion)}</td>
                         <td className="py-3 pr-4 font-medium">{i.NombreEstudiante}</td>
                         <td className="py-3 pr-4">
                           <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md font-medium whitespace-nowrap"
@@ -248,7 +249,6 @@ export default function InscritosPage() {
                           </span>
                         </td>
                         <td className="py-3 pr-4 text-textSec">{i.Edicion || '—'}</td>
-                        <td className="py-3 pr-4 text-textMuted text-xs whitespace-nowrap">{antiguedad(i.FechaInscripcion)}</td>
                         <td className="py-3 pr-4">
                           {i.BienvenidaEnviada === 'TRUE' ? (
                             <>
