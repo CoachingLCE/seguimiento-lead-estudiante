@@ -65,7 +65,7 @@ export async function PATCH(request) {
     ]);
     if (nuevoValor && fila.EmailEstudiante) {
       try {
-        await enviarMailAltaPlataforma(fila.EmailEstudiante, fila.NombreEstudiante, fila.Curso, fila.Edicion);
+        await enviarMailAltaPlataforma(fila.EmailEstudiante, fila.NombreEstudiante, fila.Curso, fila.Edicion, fila.ID);
       } catch (err) {
         // El alta ya quedó guardada — si falla el mail, no se rompe la acción principal.
         console.error('Error enviando mail de alta en plataforma:', err);
@@ -85,7 +85,7 @@ export async function PATCH(request) {
       return NextResponse.json({ error: 'Falta el email del estudiante' }, { status: 400 });
     }
     try {
-      await enviarMailBienvenidaEstudiante(email, fila.NombreEstudiante);
+      await enviarMailBienvenidaEstudiante(email, fila.NombreEstudiante, fila.ID);
     } catch (err) {
       return NextResponse.json({ error: 'No se pudo enviar el mail' }, { status: 500 });
     }

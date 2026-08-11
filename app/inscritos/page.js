@@ -294,9 +294,9 @@ export default function InscritosPage() {
                           )}
                         </td>
                         <td className="py-3 pr-4">
-                          <span className="text-[10px] px-2 py-1 rounded-full bg-surface2 text-textMuted whitespace-nowrap" title="Próximamente">
-                            🔒 Próximamente
-                          </span>
+                          <button onClick={() => toggleCampoSimple(i, 'ConfirmoRecepcion', 'Confirmó recepción')}>
+                            <CheckboxVisual marcado={i.ConfirmoRecepcion === 'TRUE'} />
+                          </button>
                         </td>
                         <td className="py-3 pr-4">
                           <button onClick={() => toggleCampoSimple(i, 'GrupoWhatsApp', 'Grupo WhatsApp')}>
