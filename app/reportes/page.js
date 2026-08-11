@@ -11,7 +11,6 @@ import {
 import Nav from '../../components/Nav';
 import FichaDrawer from '../../components/FichaDrawer';
 import { tienePermisoReportes } from '../../lib/permisos';
-import { PAISES } from '../../lib/constants';
 import { useSession } from '../../lib/useSession';
 
 const PALETA = ['#7c3aed', '#22d3ee', '#c026d3', '#4ade80', '#fbbf24', '#60a5fa', '#f87171', '#a78bfa'];
@@ -608,7 +607,7 @@ export default function ReportesPage() {
                   className="bg-bg border border-border rounded-lg px-2 py-1.5 text-xs" />
                 <select value={filtros.pais} onChange={(e) => setFiltro('pais', e.target.value)} className="bg-bg border border-border rounded-lg px-2 py-1.5 text-xs">
                   <option value="">País (todos)</option>
-                  {PAISES.map((p) => <option key={p}>{p}</option>)}
+                  {[...new Set(datos.compras.map((c) => c.pais).filter(Boolean))].map((p) => <option key={p}>{p}</option>)}
                 </select>
               </div>
             </div>
