@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx';
 import Nav from '../../components/Nav';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoResumenEstudiantes } from '../../lib/permisos';
+import { colorParaCurso } from '../../lib/constants';
 
 export default function ResumenEstudiantesPage() {
   const { usuario, logout } = useSession();
@@ -55,12 +56,47 @@ export default function ResumenEstudiantesPage() {
                 ⬇ Exportar a Excel
               </button>
             </div>
-            <div className="grid grid-cols-5 gap-3 mb-6">
+            <div className="grid grid-cols-3 md:grid-cols-7 gap-3 mb-6">
               <Stat label="Total estudiantes" value={datos.totalEstudiantes} />
               <Stat label="Altas pendientes" value={datos.altasPendientes} />
               <Stat label="Altas hoy" value={datos.altasHoy} />
               <Stat label="Bienvenidas pendientes" value={datos.bienvenidasPendientes} />
               <Stat label="Bienvenidas hoy" value={datos.bienvenidasHoy} />
+              <Stat label="Confirmaron recepción" value={datos.confirmaronRecepcion} />
+              <Stat label="En grupo WhatsApp" value={datos.enGrupoWhatsapp} />
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4 mb-4">
+              <div className="bg-surface border border-border rounded-2xl p-5">
+                <p className="text-sm font-semibold mb-3">🎓 Estudiantes por curso</p>
+                {datos.porCurso.length === 0 ? <p className="text-textMuted text-sm">Sin datos.</p> : (
+                  <div className="space-y-2">
+                    {datos.porCurso.map((c) => (
+                      <div key={c.curso} className="flex items-center justify-between text-sm">
+                        <span className="flex items-center gap-1.5 truncate">
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ background: colorParaCurso(c.curso) }} />
+                          <span className="truncate">{c.curso}</span>
+                        </span>
+                        <span className="text-textSec font-semibold shrink-0">{c.cantidad}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-surface border border-border rounded-2xl p-5">
+                <p className="text-sm font-semibold mb-3">📚 Estudiantes por edición</p>
+                {datos.porEdicion.length === 0 ? <p className="text-textMuted text-sm">Sin datos.</p> : (
+                  <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                    {datos.porEdicion.map((e) => (
+                      <div key={e.edicion} className="flex items-center justify-between text-sm gap-2">
+                        <span className="truncate">{e.edicion}</span>
+                        <span className="text-textSec font-semibold shrink-0">{e.cantidad}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="bg-surface border border-border rounded-2xl p-5">

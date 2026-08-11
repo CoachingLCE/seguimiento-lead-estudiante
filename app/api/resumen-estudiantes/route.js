@@ -18,6 +18,28 @@ export async function GET(request) {
   const altasHoy = inscritos.filter((i) => i.AltaPlataforma === 'TRUE' && esHoy(i.FechaAlta)).length;
   const bienvenidasPendientes = inscritos.filter((i) => i.BienvenidaEnviada !== 'TRUE').length;
   const bienvenidasHoy = inscritos.filter((i) => i.BienvenidaEnviada === 'TRUE' && esHoy(i.FechaBienvenida)).length;
+  const confirmaronRecepcion = inscritos.filter((i) => i.ConfirmoRecepcion === 'TRUE').length;
+  const enGrupoWhatsapp = inscritos.filter((i) => i.GrupoWhatsApp === 'TRUE').length;
+
+  // Estudiantes por curso — para ver de un vistazo qué formaciones están creciendo más.
+  const conteoPorCurso = {};
+  inscritos.forEach((i) => {
+    const c = i.Curso || 'Sin curso definido';
+    conteoPorCurso[c] = (conteoPorCurso[c] || 0) + 1;
+  });
+  const porCurso = Object.entries(conteoPorCurso)
+    .map(([curso, cantidad]) => ({ curso, cantidad }))
+    .sort((a, b) => b.cantidad - a.cantidad);
+
+  // Estudiantes por edición dentro de cada curso (ej: "Coaching Educativo — Edición 12")
+  const conteoPorEdicion = {};
+  inscritos.forEach((i) => {
+    const clave = `${i.Curso || 'Sin curso definido'} — ${i.Edicion || 'Sin edición'}`;
+    conteoPorEdicion[clave] = (conteoPorEdicion[clave] || 0) + 1;
+  });
+  const porEdicion = Object.entries(conteoPorEdicion)
+    .map(([edicion, cantidad]) => ({ edicion, cantidad }))
+    .sort((a, b) => b.cantidad - a.cantidad);
 
   const porUsuario = {};
   const sumar = (nombre, campo) => {
@@ -36,6 +58,10 @@ export async function GET(request) {
     altasHoy,
     bienvenidasPendientes,
     bienvenidasHoy,
+    confirmaronRecepcion,
+    enGrupoWhatsapp,
+    porCurso,
+    porEdicion,
     porUsuario
   });
 }
