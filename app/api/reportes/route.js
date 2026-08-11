@@ -41,9 +41,12 @@ function calcularIngresosPorDia(mes, todosLosLeads) {
       cuotas = [numeroValido(l.MontoTotal)];
     } else {
       const detalle = (l.DetalleCuotas || '').split(',').map((v) => Number(v.trim())).filter((v) => v > 0);
+      // Por si CantCuotas tiene un valor invalido/negativo/absurdo guardado por error — nunca debe
+      // romper todo el reporte por un solo registro con un dato raro.
+      const cantidadSegura = Math.min(Math.max(0, Math.floor(numeroValido(l.CantCuotas))), 60);
       cuotas = detalle.length > 0
         ? detalle
-        : Array(Number(l.CantCuotas) || 0).fill(numeroValido(l.ValorCuota));
+        : Array(cantidadSegura).fill(numeroValido(l.ValorCuota));
     }
     cuotas.forEach((monto, i) => {
       const fechaCuota = new Date(fechaVenta.getTime() + i * 30 * 24 * 60 * 60 * 1000);
@@ -153,7 +156,8 @@ export async function GET(request) {
   const mes = searchParams.get('mes');
   const mesAnterior = mesAnteriorDe(mes);
 
-  const [leads, seguimiento] = await Promise.all([readSheet('Leads'), readSheet('Seguimiento')]);
+  try {
+    const [leads, seguimiento] = await Promise.all([readSheet('Leads'), readSheet('Seguimiento')]);
 
   const leadsDelMes = leads.filter((l) => (l.FechaIngreso || '').slice(0, 7) === mes);
   const leadsMesAnterior = leads.filter((l) => (l.FechaIngreso || '').slice(0, 7) === mesAnterior);
@@ -217,4 +221,8 @@ export async function GET(request) {
     alertas,
     compras
   });
+  } catch (err) {
+    console.error('Error generando reportes:', err);
+    return NextResponse.json({ error: 'Ocurrió un error generando el reporte. Probá de nuevo o avisale a Diego.' }, { status: 500 });
+  }
 }

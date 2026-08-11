@@ -197,6 +197,7 @@ export default function ReportesPage() {
   const [mes, setMes] = useState(meses()[0].valor);
   const [datos, setDatos] = useState(null);
   const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState('');
   const [cargado, setCargado] = useState(false);
   const [fichaLeadId, setFichaLeadId] = useState(null);
   const [montosRotos, setMontosRotos] = useState(null);
@@ -214,9 +215,22 @@ export default function ReportesPage() {
 
   async function cargarDatos(mesElegido) {
     setCargando(true);
-    const r = await fetch(`/api/reportes?mes=${mesElegido}&solicitanteEmail=${encodeURIComponent(usuario.email)}`).then((res) => res.json());
-    setDatos(r);
-    setCargando(false);
+    setError('');
+    try {
+      const res = await fetch(`/api/reportes?mes=${mesElegido}&solicitanteEmail=${encodeURIComponent(usuario.email)}`);
+      const r = await res.json();
+      if (!res.ok || r.error) {
+        setError(r.error || 'No se pudieron cargar los datos.');
+        setDatos(null);
+      } else {
+        setDatos(r);
+      }
+    } catch (err) {
+      setError('No se pudo conectar con el servidor. Probá de nuevo.');
+      setDatos(null);
+    } finally {
+      setCargando(false);
+    }
   }
 
   function cambiarMes(m) {
@@ -336,7 +350,14 @@ export default function ReportesPage() {
           </div>
         </div>
 
-        {cargando || !datos ? (
+        {error ? (
+          <div className="bg-dangerBg border border-dangerText/30 rounded-2xl p-6 text-center">
+            <p className="text-dangerText text-sm font-semibold mb-3">⚠️ {error}</p>
+            <button onClick={() => cargarDatos(mes)} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">
+              Reintentar
+            </button>
+          </div>
+        ) : cargando || !datos ? (
           <div className="grid grid-cols-3 md:grid-cols-7 gap-3">
             {Array.from({ length: 7 }).map((_, i) => <Skeleton key={i} />)}
           </div>
