@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { readSheet } from '../../../lib/sheets';
 import { findUsuario, tienePermisoResumenEstudiantes } from '../../../lib/auth';
+import { normalizarEdicion } from '../../../lib/constants';
 
 // GET /api/resumen-estudiantes?solicitanteEmail=...
 export async function GET(request) {
@@ -32,9 +33,11 @@ export async function GET(request) {
     .sort((a, b) => b.cantidad - a.cantidad);
 
   // Estudiantes por edición dentro de cada curso (ej: "Coaching Educativo — Edición 12")
+  // Normaliza "edición 16" / "Edición 16" / "EDICIÓN 16" a "Edición 16" — si no, se agrupan
+  // como cosas distintas por una simple diferencia de mayúscula/minúscula al tipearlo.
   const conteoPorEdicion = {};
   inscritos.forEach((i) => {
-    const clave = `${i.Curso || 'Sin curso definido'} — ${i.Edicion || 'Sin edición'}`;
+    const clave = `${i.Curso || 'Sin curso definido'} — ${normalizarEdicion(i.Edicion) || 'Sin edición'}`;
     conteoPorEdicion[clave] = (conteoPorEdicion[clave] || 0) + 1;
   });
   const porEdicion = Object.entries(conteoPorEdicion)

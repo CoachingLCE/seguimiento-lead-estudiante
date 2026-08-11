@@ -8,7 +8,7 @@ import CheckboxVisual from '../../components/CheckboxVisual';
 import { useToast } from '../../components/Toast';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoEstudiantes } from '../../lib/permisos';
-import { colorParaCurso } from '../../lib/constants';
+import { colorParaCurso, normalizarEdicion } from '../../lib/constants';
 
 function antiguedad(fecha) {
   const dias = Math.floor((new Date() - new Date(fecha)) / (24 * 60 * 60 * 1000));
@@ -128,7 +128,7 @@ export default function InscritosPage() {
   if (!usuario || !puedeVer) return null;
 
   const cursosUnicos = [...new Set(inscritos.map((i) => i.Curso).filter(Boolean))].sort();
-  const edicionesUnicas = [...new Set(inscritos.map((i) => i.Edicion).filter(Boolean))].sort();
+  const edicionesUnicas = [...new Set(inscritos.map((i) => normalizarEdicion(i.Edicion)).filter(Boolean))].sort();
   const docentesUnicos = [...new Set(
     inscritos.flatMap((i) => (i.Docentes || '').split(',').map((d) => d.trim()).filter(Boolean))
   )].sort();
@@ -136,7 +136,7 @@ export default function InscritosPage() {
   const inscritosFiltrados = inscritos
     .filter((i) => !busqueda.trim() || (i.NombreEstudiante || '').toLowerCase().includes(busqueda.trim().toLowerCase()))
     .filter((i) => !filtroCurso || i.Curso === filtroCurso)
-    .filter((i) => !filtroEdicion || i.Edicion === filtroEdicion)
+    .filter((i) => !filtroEdicion || normalizarEdicion(i.Edicion) === filtroEdicion)
     .filter((i) => !filtroDocente || (i.Docentes || '').split(',').map((d) => d.trim()).includes(filtroDocente));
 
   const inscritosOrdenados = [...inscritosFiltrados].sort((a, b) => {
@@ -248,7 +248,7 @@ export default function InscritosPage() {
                             {i.Curso || 'Sin curso'}
                           </span>
                         </td>
-                        <td className="py-3 pr-4 text-textSec">{i.Edicion || '—'}</td>
+                        <td className="py-3 pr-4 text-textSec">{normalizarEdicion(i.Edicion) || '—'}</td>
                         <td className="py-3 pr-4">
                           {i.BienvenidaEnviada === 'TRUE' ? (
                             <>
