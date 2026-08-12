@@ -302,6 +302,26 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
   const [programandoLote, setProgramandoLote] = useState(null);
   const [fechaAProgramar, setFechaAProgramar] = useState('');
   const [mostrarModalVenta, setMostrarModalVenta] = useState(false);
+  const [mostrarFormBaja, setMostrarFormBaja] = useState(false);
+  const [fechaBaja, setFechaBaja] = useState(new Date().toISOString().slice(0, 10));
+  const [motivoBaja, setMotivoBaja] = useState('');
+  const [guardandoBaja, setGuardandoBaja] = useState(false);
+  const bajaExistente = seguimiento.find((s) => s.Lote === 'baja');
+
+  async function registrarBaja() {
+    setGuardandoBaja(true);
+    await fetch('/api/seguimiento', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        accion: 'dar_baja', leadId: lead.ID, fechaBaja, motivo: motivoBaja.trim(),
+        solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
+      })
+    });
+    setGuardandoBaja(false);
+    setMostrarFormBaja(false);
+    onActualizar?.();
+  }
 
   async function confirmarVentaDesdeFicha(datosVenta) {
     await fetch('/api/ventas', {
@@ -773,11 +793,47 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
           {!inscrito ? (
             <p className="text-textMuted text-sm">Sin seguimiento comercial — todavía no es alumno.</p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-2 mb-4">
               <p className="text-sm">{inscrito.AltaPlataforma === 'TRUE' ? '🟢' : '⚪'} Alta en plataforma {inscrito.AltaPlataforma === 'TRUE' && `— ${inscrito.AltaPorNombre}`}</p>
               <p className="text-sm">{inscrito.BienvenidaEnviada === 'TRUE' ? '🟢' : '⚪'} Bienvenida {inscrito.BienvenidaEnviada === 'TRUE' && `— ${inscrito.BienvenidaPorNombre}`}</p>
               <p className="text-sm">{inscrito.Docentes ? '🟢' : '⚪'} Docente(s) {inscrito.Docentes && `— ${inscrito.Docentes}`}</p>
               <p className="text-sm">{inscrito.AbonoTotalidad === 'TRUE' ? '🟢' : '🟡'} Diploma {inscrito.AbonoTotalidad === 'TRUE' ? '(habilitado)' : '(pendiente de pago total)'}</p>
+            </div>
+          )}
+
+          {bajaExistente ? (
+            <div className="border-t border-border pt-4">
+              <p className="text-warningText text-sm">🔴 {bajaExistente.Observaciones}</p>
+              <p className="text-textMuted text-[11px] mt-1">
+                Va a reaparecer en el "LOTE BAJAS" de Seguimiento el {new Date(bajaExistente.FechaVence).toLocaleDateString('es-AR')}.
+              </p>
+            </div>
+          ) : lead.Estado === 'Comprado' && (
+            <div className="border-t border-border pt-4">
+              {!mostrarFormBaja ? (
+                <button onClick={() => setMostrarFormBaja(true)} className="text-xs text-dangerText font-semibold">
+                  🔴 Dar de baja de la cursada
+                </button>
+              ) : (
+                <div className="bg-bg border border-border rounded-lg p-3">
+                  <p className="text-xs font-semibold mb-2">Registrar baja de la cursada</p>
+                  <label className="text-[11px] text-textMuted block mb-1">Fecha de baja</label>
+                  <input type="date" value={fechaBaja} onChange={(e) => setFechaBaja(e.target.value)}
+                    className="bg-surface2 border border-border rounded px-2 py-1 text-xs mb-2" />
+                  <label className="text-[11px] text-textMuted block mb-1">Motivo (opcional)</label>
+                  <textarea rows={2} value={motivoBaja} onChange={(e) => setMotivoBaja(e.target.value)}
+                    placeholder="Ej: Problemas de horario, motivos personales…"
+                    className="w-full bg-surface2 border border-border rounded px-2 py-1.5 text-xs mb-2" />
+                  <p className="text-textMuted text-[11px] mb-2">A los 90 días de esta fecha, va a aparecer en el "LOTE BAJAS" de Seguimiento para volver a contactarlo.</p>
+                  <div className="flex gap-2">
+                    <button onClick={() => setMostrarFormBaja(false)} className="text-xs px-3 py-1 rounded bg-surface2 border border-border">Cancelar</button>
+                    <button onClick={registrarBaja} disabled={guardandoBaja}
+                      className="text-xs px-3 py-1 rounded bg-dangerText text-white font-semibold disabled:opacity-60">
+                      {guardandoBaja ? 'Guardando…' : 'Confirmar baja'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

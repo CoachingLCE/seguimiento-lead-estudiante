@@ -21,10 +21,31 @@ export async function GET(request) {
 // 3) deshacer resultado:  { accion: 'deshacer', leadId, lote, solicitanteEmail, solicitanteNombre } — solo Admin/Coordinador
 // 4) programar contacto:  { accion: 'programar', leadId, lote, fechaProgramada, solicitanteEmail, solicitanteNombre }
 //    — fija "contactame el [fecha]" en una fila que sigue pendiente, sin marcarla como contactada.
+// 5) dar de baja:         { accion: 'dar_baja', leadId, fechaBaja, motivo?, solicitanteEmail, solicitanteNombre }
+//    — crea una fila nueva de seguimiento (Lote "baja") que vence a los 90 días de la fecha de baja.
 // fechaProgramada: si alguien dijo "contactame el [fecha]", ese lead reaparece en el
 // "Lote Programado" en Seguimiento apenas llega esa fecha, sin importar en qué lote numérico esté.
 export async function PATCH(request) {
   const body = await request.json();
+
+  // Dar de baja: crea una fila NUEVA de seguimiento (Lote "baja"), no actualiza una existente.
+  // A los 90 días de la baja, ese lead aparece en el "LOTE BAJAS" para volver a contactarlo.
+  if (body.accion === 'dar_baja') {
+    const fechaBaja = new Date(body.fechaBaja || new Date().toISOString());
+    const vence = new Date(fechaBaja.getTime() + 90 * 24 * 60 * 60 * 1000);
+    vence.setHours(0, 0, 0, 0);
+    await appendRow('Seguimiento', [
+      body.leadId, 'baja', vence.toISOString(), '', '', 'FALSE', '',
+      '', `Baja registrada el ${fechaBaja.toLocaleDateString('es-AR')}${body.motivo ? ` — Motivo: ${body.motivo}` : ''}`,
+      '', ''
+    ]);
+    await registrarAccion(
+      body.solicitanteEmail, body.solicitanteNombre,
+      'Registró una baja de la cursada', body.motivo || '', body.leadId
+    );
+    return NextResponse.json({ ok: true });
+  }
+
   const seguimiento = await readSheet('Seguimiento');
   const fila = seguimiento.find((s) => s.LeadID === body.leadId && s.Lote === String(body.lote));
   if (!fila) {

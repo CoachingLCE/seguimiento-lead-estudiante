@@ -323,7 +323,9 @@ export default function SeguimientoPage() {
   );
   const esValidoSinFiltro = (s) => {
     const l = buscarLead(s.LeadID);
-    return Boolean(l) && l.Estado !== 'Comprado' && !leadsResueltos.has(s.LeadID);
+    if (!l) return false;
+    if (s.Lote === 'baja') return true; // las bajas son justamente de gente ya Comprada
+    return l.Estado !== 'Comprado' && !leadsResueltos.has(s.LeadID);
   };
   function coincideFiltroRapido(lead) {
     if (!filtroCurso) return true;
@@ -386,6 +388,11 @@ export default function SeguimientoPage() {
     s.FechaProgramada && new Date(s.FechaProgramada) <= ahora && filaValida(s)
   );
   const loteProgramado = loteProgramadoTodas.filter(noContactada);
+
+  // LOTE BAJAS: alguien que se dio de baja de la cursada, 90 días después de la baja,
+  // para ofrecerle volver a información y ver si se reincorpora.
+  const loteBajasTodas = seguimiento.filter((s) => s.Lote === 'baja' && vencido(s) && filaValida(s));
+  const loteBajas = loteBajasTodas.filter(noContactada);
 
   // SIN LOTE: leads que ya no aparecen en ningún lote activo, y por qué (venta confirmada,
   // o un resultado final como "No le interesa"). Sirve como resumen/auditoría de a dónde fue cada uno.
@@ -521,6 +528,11 @@ export default function SeguimientoPage() {
               titulo="📅 LOTE PROGRAMADO" subtitulo={`${loteProgramado.length} lead(s) que pidieron ser contactados en una fecha puntual, y esa fecha ya llegó`}
               explicacion={<>Aparece acá cualquier lead (esté en el lote que esté) al que le registraste "contactame el [fecha]" y esa fecha ya se cumplió. No reemplaza su lote normal, es un recordatorio extra.</>}
               filas={loteProgramado} filasTotales={loteProgramadoTodas} sinAsignarPorDefecto {...propsComunes}
+            />
+            <SeccionLote
+              titulo="🔴 LOTE BAJAS" subtitulo={`${loteBajas.length} estudiante(s) que se dieron de baja hace 90 días — momento de re-ofrecerles información`}
+              explicacion={<>Cuando alguien se da de baja de la cursada, se marca desde su ficha (pestaña Alumno). A los 90 días aparece acá, para contactarlo y ver si quiere reincorporarse.</>}
+              filas={loteBajas} filasTotales={loteBajasTodas} sinAsignarPorDefecto {...propsComunes}
             />
 
             <SeccionSinLote sinLote={sinLote} onVerFicha={setFichaLeadId} />
@@ -798,7 +810,7 @@ function FilaLote({
 
   function confirmarResultado() {
     onContactar(fila.LeadID, fila.Lote, resultadoElegido, observaciones, proximaAccion, fechaProgramada);
-    if (resultadoElegido === 'Pago recibido') onMarcarVenta(lead);
+    if (resultadoElegido === 'Pago recibido' && fila.Lote !== 'baja') onMarcarVenta(lead);
     setResultadoElegido(null);
   }
 
@@ -844,7 +856,9 @@ function FilaLote({
                 <a href={enlaceGmail(lead.EmailEstudiante)} target="_blank" rel="noopener noreferrer" className="w-6 h-6 flex items-center justify-center rounded-md border border-border text-xs" title="Email">✉️</a>
               )}
               <a href={`tel:${whatsappLimpio}`} className="w-6 h-6 flex items-center justify-center rounded-md border border-border text-xs" title="Llamar">📞</a>
-              <button onClick={() => onMarcarVenta(lead)} className="text-xs px-3 py-1 rounded bg-accentPurple text-white">Venta</button>
+              {fila.Lote !== 'baja' && (
+                <button onClick={() => onMarcarVenta(lead)} className="text-xs px-3 py-1 rounded bg-accentPurple text-white">Venta</button>
+              )}
               <button onClick={() => onVerFicha(lead.ID)} className="text-accentTeal text-xs font-semibold">Ficha</button>
             </div>
           </div>
