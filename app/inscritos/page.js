@@ -8,7 +8,7 @@ import CheckboxVisual from '../../components/CheckboxVisual';
 import { useToast } from '../../components/Toast';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoEstudiantes } from '../../lib/permisos';
-import { colorParaCurso, normalizarEdicion } from '../../lib/constants';
+import { colorParaCurso, normalizarEdicion, horasHabilesTranscurridas } from '../../lib/constants';
 
 function antiguedad(fecha) {
   const dias = Math.floor((new Date() - new Date(fecha)) / (24 * 60 * 60 * 1000));
@@ -30,6 +30,7 @@ export default function InscritosPage() {
   const [enviandoBienvenidaId, setEnviandoBienvenidaId] = useState(null);
   const [fichaLeadId, setFichaLeadId] = useState(null);
   const [confirmarEliminar, setConfirmarEliminar] = useState(null);
+  const [tab, setTab] = useState('lista');
   const [busqueda, setBusqueda] = useState('');
   const [filtroCurso, setFiltroCurso] = useState('');
   const [filtroEdicion, setFiltroEdicion] = useState('');
@@ -127,6 +128,22 @@ export default function InscritosPage() {
 
   if (!usuario || !puedeVer) return null;
 
+  // Alerta 1: se envió Bienvenida o se hizo el Alta, pero no confirmó recepción, y ya pasaron
+  // 48hs hábiles desde ese envío — momento de reforzar con el estudiante.
+  const alertasConfirmacion = inscritos.filter((i) => {
+    if (i.ConfirmoRecepcion === 'TRUE') return false;
+    const fechaEnvio = i.FechaBienvenida || i.FechaAlta;
+    if (!fechaEnvio) return false;
+    return horasHabilesTranscurridas(fechaEnvio) >= 48;
+  });
+
+  // Alerta 2: el estudiante ingresó hace 48hs hábiles y todavía no se le envió la Bienvenida.
+  const alertasBienvenidaPendiente = inscritos.filter((i) =>
+    i.BienvenidaEnviada !== 'TRUE' && horasHabilesTranscurridas(i.FechaInscripcion) >= 48
+  );
+
+  const totalAlertas = alertasConfirmacion.length + alertasBienvenidaPendiente.length;
+
   const cursosUnicos = [...new Set(inscritos.map((i) => i.Curso).filter(Boolean))].sort();
   const edicionesUnicas = [...new Set(inscritos.map((i) => normalizarEdicion(i.Edicion)).filter(Boolean))].sort();
   const docentesUnicos = [...new Set(
@@ -180,6 +197,68 @@ export default function InscritosPage() {
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
       <div className="max-w-[1400px] mx-auto px-4 pb-16">
+        <div className="flex items-center gap-2 mb-4 no-print">
+          <button onClick={() => setTab('lista')}
+            className={`text-sm px-4 py-2 rounded-lg font-semibold transition-colors ${
+              tab === 'lista' ? 'bg-accentPurple text-white' : 'bg-surface2 border border-border text-textSec'
+            }`}>
+            Lista
+          </button>
+          <button onClick={() => setTab('alertas')}
+            className={`text-sm px-4 py-2 rounded-lg font-semibold transition-colors ${
+              tab === 'alertas' ? 'bg-accentPurple text-white' : 'bg-surface2 border border-border text-textSec'
+            }`}>
+            🔔 Alertas {totalAlertas > 0 && <span className="ml-1 text-warningText">({totalAlertas})</span>}
+          </button>
+        </div>
+
+        {tab === 'alertas' ? (
+          <div className="space-y-4">
+            <div className="bg-surface border border-border rounded-2xl p-5">
+              <p className="text-sm font-semibold mb-1">📩 Sin confirmar recepción — hace 48hs hábiles o más</p>
+              <p className="text-textMuted text-xs mb-3">Se les envió Bienvenida o Alta en plataforma, pero todavía no confirmaron que lo recibieron. Convendría reforzar con ellos.</p>
+              {alertasConfirmacion.length === 0 ? (
+                <p className="text-textMuted text-sm">Sin alertas — todos confirmaron o todavía no pasaron las 48hs hábiles.</p>
+              ) : (
+                <div className="space-y-2">
+                  {alertasConfirmacion.map((i) => {
+                    const fechaEnvio = i.FechaBienvenida || i.FechaAlta;
+                    return (
+                      <div key={i.ID} className="flex items-center justify-between gap-3 border-t border-border first:border-t-0 pt-2 first:pt-0">
+                        <p className="text-sm">
+                          <span className="font-medium">{i.NombreEstudiante}</span> — {i.Curso || 'sin curso'}
+                          <span className="text-warningText"> · Hace {Math.floor(horasHabilesTranscurridas(fechaEnvio))}hs hábiles</span>
+                        </p>
+                        <button onClick={() => setFichaLeadId(i.LeadId)} className="text-accentTeal text-xs font-semibold shrink-0">Ver ficha</button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-surface border border-border rounded-2xl p-5">
+              <p className="text-sm font-semibold mb-1">👋 Bienvenida pendiente — hace 48hs hábiles o más</p>
+              <p className="text-textMuted text-xs mb-3">Ingresaron hace 48hs hábiles o más y todavía no se les envió el mail de Bienvenida.</p>
+              {alertasBienvenidaPendiente.length === 0 ? (
+                <p className="text-textMuted text-sm">Sin alertas — todos con Bienvenida enviada, o todavía no pasaron las 48hs hábiles.</p>
+              ) : (
+                <div className="space-y-2">
+                  {alertasBienvenidaPendiente.map((i) => (
+                    <div key={i.ID} className="flex items-center justify-between gap-3 border-t border-border first:border-t-0 pt-2 first:pt-0">
+                      <p className="text-sm">
+                        <span className="font-medium">{i.NombreEstudiante}</span> — {i.Curso || 'sin curso'}
+                        <span className="text-warningText"> · Hace {Math.floor(horasHabilesTranscurridas(i.FechaInscripcion))}hs hábiles</span>
+                      </p>
+                      <button onClick={() => setFichaLeadId(i.LeadId)} className="text-accentTeal text-xs font-semibold shrink-0">Ver ficha</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+        <>
         <div className="flex items-center justify-between mb-3 no-print gap-3 flex-wrap">
           <p className="text-textMuted text-xs">
             El estudiante aparece acá solo, 24hs después de confirmarse la venta — no hace falta cargarlo a mano.
@@ -317,6 +396,8 @@ export default function InscritosPage() {
             </div>
           )}
         </div>
+        </>
+        )}
       </div>
       <FichaDrawer leadId={fichaLeadId} usuario={usuario} onClose={() => setFichaLeadId(null)} />
       {toast}
