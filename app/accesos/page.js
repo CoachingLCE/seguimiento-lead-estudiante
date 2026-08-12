@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Nav from '../../components/Nav';
 import { useSession } from '../../lib/useSession';
@@ -21,6 +21,10 @@ export default function AccesosPage() {
   const [rolesEnEdicion, setRolesEnEdicion] = useState([]);
   const [confirmarEliminar, setConfirmarEliminar] = useState(null); // usuario a confirmar
   const [textoBajasMasivas, setTextoBajasMasivas] = useState('');
+  const previewBajas = useMemo(
+    () => (textoBajasMasivas.trim() ? parsearBloquesBajas(textoBajasMasivas) : []),
+    [textoBajasMasivas]
+  );
   const [cargandoBajasMasivas, setCargandoBajasMasivas] = useState(false);
   const [resultadoBajasMasivas, setResultadoBajasMasivas] = useState(null);
   const [mostrarListaBajas, setMostrarListaBajas] = useState(false);
@@ -145,6 +149,33 @@ export default function AccesosPage() {
   // en su propia línea (por si se pega todo junto sin saltos, como pasó una vez). Cuando un campo
   // que YA estaba completado en la persona actual vuelve a aparecer, se entiende que arrancó
   // una persona nueva — así funciona tanto con líneas en blanco entre bloques como sin ellas.
+  // Si un bloque no tiene ninguna etiqueta, se interpreta línea por línea: la primera línea que
+  // no sea fecha ni algo entre paréntesis es el nombre; una línea con formato dd/mm/aaaa es la
+  // fecha; el resto (incluido lo que esté entre paréntesis) se guarda como referencia de curso/motivo.
+  function heuristicaSinEtiquetas(bloque) {
+    const entrada = { nombre: '', curso: '', email: '', whatsapp: '', fecha: '', motivo: '' };
+    const lineas = bloque.split('\n').map((l) => l.trim()).filter(Boolean);
+    const restantes = [];
+    lineas.forEach((linea) => {
+      const mFecha = linea.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      const mEmail = linea.match(/[^\s]+@[^\s]+\.[^\s]+/);
+      const mWpp = linea.match(/^[+]?[\d\s\-()]{8,}$/);
+      if (mFecha && !entrada.fecha) {
+        entrada.fecha = new Date(Number(mFecha[3]), Number(mFecha[2]) - 1, Number(mFecha[1])).toISOString();
+      } else if (mEmail && !entrada.email) {
+        entrada.email = mEmail[0];
+      } else if (mWpp && !entrada.whatsapp) {
+        entrada.whatsapp = linea;
+      } else if (!entrada.nombre) {
+        entrada.nombre = linea.replace(/^[(\-•]+|[)\-]+$/g, '').trim();
+      } else {
+        restantes.push(linea.replace(/^[(\-•]+|[)\-]+$/g, '').trim());
+      }
+    });
+    if (restantes.length > 0) entrada.curso = restantes.join(' ');
+    return entrada;
+  }
+
   function parsearBloquesBajas(texto) {
     const patron = /(nombre|curso|e[-\s]?mail|whatsapp|wpp|tel[eé]?fono?|fecha|motivo)\s*:\s*([\s\S]*?)(?=(?:nombre|curso|e[-\s]?mail|whatsapp|wpp|tel[eé]?fono?|fecha|motivo)\s*:|$)/gi;
     const entradas = [];
@@ -175,6 +206,14 @@ export default function AccesosPage() {
       }
     }
     if (actual) entradas.push(actual);
+
+    // Si no se detectó NINGUNA etiqueta en todo el texto, se cae a la heurística por bloque
+    // (separado por línea en blanco), igual que si no hubiera escrito "Nombre:", "Fecha:", etc.
+    if (entradas.length === 0) {
+      const bloques = texto.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
+      bloques.forEach((bloque) => entradas.push(heuristicaSinEtiquetas(bloque)));
+    }
+
     entradas.forEach((e) => { if (!e.fecha) e.fecha = new Date().toISOString(); });
     return entradas;
   }
@@ -335,6 +374,21 @@ export default function AccesosPage() {
           <textarea rows={8} value={textoBajasMasivas} onChange={(e) => setTextoBajasMasivas(e.target.value)}
             placeholder={'Nombre: María Agustina Roldán\nCurso: Coaching de Equipos\nEmail: ag.roldan.est@gmail.com\nWhatsApp: +54 9 11 1234-5678\nFecha: 12/08/2026\n\nNombre: Otra Persona\nEmail: otra@mail.com'}
             className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm font-mono mb-2" />
+
+          {textoBajasMasivas.trim() && (
+            <div className="mb-3 space-y-2">
+              <p className="text-textMuted text-[11px]">👀 Se van a cargar {previewBajas.length} persona{previewBajas.length !== 1 ? 's' : ''}:</p>
+              {previewBajas.map((p, i) => (
+                <div key={i} className="bg-bg border border-border rounded-lg p-2.5 text-[12px] flex flex-wrap gap-x-4 gap-y-1">
+                  <span className={p.nombre ? 'text-successText' : 'text-dangerText'}>{p.nombre ? '✓' : '✗'} Nombre{p.nombre ? `: ${p.nombre}` : ' (falta)'}</span>
+                  <span className={p.curso ? 'text-successText' : 'text-textMuted'}>{p.curso ? '✓' : '○'} Curso{p.curso ? `: ${p.curso}` : ''}</span>
+                  <span className={p.email ? 'text-successText' : 'text-textMuted'}>{p.email ? '✓' : '○'} Email{p.email ? `: ${p.email}` : ''}</span>
+                  <span className={p.whatsapp ? 'text-successText' : 'text-textMuted'}>{p.whatsapp ? '✓' : '○'} WhatsApp{p.whatsapp ? `: ${p.whatsapp}` : ''}</span>
+                  <span className="text-infoText">📅 {new Date(p.fecha).toLocaleDateString('es-AR')}</span>
+                </div>
+              ))}
+            </div>
+          )}
           <button onClick={cargarBajasMasivas} disabled={cargandoBajasMasivas || !textoBajasMasivas.trim()}
             className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-50 mb-3">
             {cargandoBajasMasivas ? 'Cargando…' : 'Cargar bajas'}
