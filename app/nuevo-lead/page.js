@@ -27,7 +27,34 @@ function escaparRegex(s) {
 
 // Interpreta lo que se pegó/escribió: separa por tabs, saltos de línea, comas, pipes o guiones,
 // y también detecta teléfono/país como subcadenas sueltas dentro de una sola línea.
+// Si el texto tiene etiquetas explícitas (Nombre:, Curso:, Email:, WhatsApp:, País:, Instagram:),
+// las reconoce directamente — funciona con o sin saltos de línea entre cada una (busca en
+// cualquier parte del texto, no depende de que cada campo esté en su propia línea).
+// Devuelve { valores, restante } — "restante" es lo que sobró sin etiquetar, para que la
+// heurística de siempre siga completando lo que falte (país/whatsapp/email sin etiqueta, etc).
+function detectarCamposEtiquetados(texto) {
+  const patron = /(nombre|curso|pa[ií]s|e[-\s]?mail|whatsapp|wpp|tel[eé]?fono?|instagram|facebook|ig|fb)\s*:\s*([\s\S]*?)(?=(?:nombre|curso|pa[ií]s|e[-\s]?mail|whatsapp|wpp|tel[eé]?fono?|instagram|facebook|ig|fb)\s*:|$)/gi;
+  const valores = {};
+  let huboEtiquetas = false;
+  let match;
+  while ((match = patron.exec(texto)) !== null) {
+    const etiqueta = match[1].toLowerCase().replace(/[\s-]/g, '');
+    const valor = match[2].replace(/\n+/g, ' ').trim();
+    if (!valor) continue;
+    huboEtiquetas = true;
+    if (etiqueta.startsWith('nombre')) valores.nombre = valor;
+    else if (etiqueta.startsWith('curso')) valores.curso = valor;
+    else if (etiqueta.startsWith('pais')) valores.pais = valor;
+    else if (etiqueta.startsWith('email') || etiqueta.startsWith('mail')) valores.email = valor;
+    else if (etiqueta.startsWith('whatsapp') || etiqueta.startsWith('wpp') || etiqueta.startsWith('tel')) valores.whatsapp = valor;
+    else if (etiqueta.startsWith('instagram') || etiqueta.startsWith('facebook') || etiqueta === 'ig' || etiqueta === 'fb') valores.instagram = valor;
+  }
+  return huboEtiquetas ? valores : null;
+}
+
 function parsearIngresoLibre(texto) {
+  const etiquetados = detectarCamposEtiquetados(texto);
+
   let resto = texto || '';
 
   let email = '';
@@ -86,7 +113,14 @@ function parsearIngresoLibre(texto) {
     notasExtra = partes.slice(1).join(' · ');
   }
 
-  return { nombre, whatsapp, pais, email, instagram, notasExtra };
+  return {
+    nombre: etiquetados?.nombre || nombre,
+    whatsapp: etiquetados?.whatsapp || whatsapp,
+    pais: etiquetados?.pais || pais,
+    email: etiquetados?.email || email,
+    instagram: etiquetados?.instagram || instagram,
+    notasExtra
+  };
 }
 
 function tieneMedioDeContacto(contacto, p) {
