@@ -39,8 +39,36 @@ export async function GET(request) {
   return NextResponse.json({ bajas });
 }
 
-// POST /api/seguimiento/baja-masiva -> carga varias bajas de una, identificando a cada persona
-// por su email. body: { entradas: [{ email, fecha, motivo }], solicitanteEmail, solicitanteNombre }
+function soloDigitos(v) {
+  return (v || '').replace(/[^\d]/g, '');
+}
+
+// Busca al estudiante con lo que haya disponible, en orden de confiabilidad:
+// email exacto > WhatsApp exacto > nombre (+ curso si hay más de un resultado por nombre).
+function buscarEstudiante(entrada, leadsComprados) {
+  const email = (entrada.email || '').trim().toLowerCase();
+  if (email) {
+    return leadsComprados.filter((l) => (l.EmailEstudiante || '').trim().toLowerCase() === email);
+  }
+  const whatsapp = soloDigitos(entrada.whatsapp);
+  if (whatsapp && whatsapp.length >= 6) {
+    return leadsComprados.filter((l) => soloDigitos(l.WhatsApp) === whatsapp);
+  }
+  const nombre = (entrada.nombre || '').trim().toLowerCase();
+  if (nombre) {
+    let candidatos = leadsComprados.filter((l) => `${l.Nombre} ${l.Apellido}`.trim().toLowerCase() === nombre);
+    if (candidatos.length > 1 && entrada.curso) {
+      const curso = entrada.curso.trim().toLowerCase();
+      candidatos = candidatos.filter((l) => (l.Curso || '').toLowerCase() === curso);
+    }
+    return candidatos;
+  }
+  return [];
+}
+
+// POST /api/seguimiento/baja-masiva -> carga varias bajas de una. Cada entrada puede tener
+// cualquier combinación de estos datos (todos opcionales, con al menos uno para poder identificar
+// a la persona): { nombre, curso, email, whatsapp, fecha, motivo }
 export async function POST(request) {
   const body = await request.json();
   const solicitante = await findUsuario(body.solicitanteEmail);
@@ -49,18 +77,29 @@ export async function POST(request) {
   }
 
   const [leads, seguimiento] = await Promise.all([readSheet('Leads'), readSheet('Seguimiento')]);
+  const leadsComprados = leads.filter((l) => l.Estado === 'Comprado');
   const yaTieneBaja = new Set(seguimiento.filter((s) => s.Lote === 'baja').map((s) => s.LeadID));
 
-  const resultado = { procesados: [], noEncontrados: [], yaExistentes: [] };
+  const resultado = { procesados: [], noEncontrados: [], yaExistentes: [], ambiguos: [] };
 
   for (const entrada of body.entradas || []) {
-    const email = (entrada.email || '').trim().toLowerCase();
-    if (!email) continue;
-    const lead = leads.find((l) => (l.EmailEstudiante || '').trim().toLowerCase() === email && l.Estado === 'Comprado');
-    if (!lead) {
-      resultado.noEncontrados.push(entrada.email);
+    const etiqueta = entrada.nombre || entrada.email || entrada.whatsapp || '(sin datos)';
+    if (!entrada.nombre && !entrada.email && !entrada.whatsapp) {
+      resultado.noEncontrados.push(etiqueta);
       continue;
     }
+
+    const candidatos = buscarEstudiante(entrada, leadsComprados);
+    if (candidatos.length === 0) {
+      resultado.noEncontrados.push(etiqueta);
+      continue;
+    }
+    if (candidatos.length > 1) {
+      resultado.ambiguos.push(`${etiqueta} (${candidatos.length} coincidencias — agregá curso o email para precisar)`);
+      continue;
+    }
+
+    const lead = candidatos[0];
     if (yaTieneBaja.has(lead.ID)) {
       resultado.yaExistentes.push(`${lead.Nombre} ${lead.Apellido}`);
       continue;

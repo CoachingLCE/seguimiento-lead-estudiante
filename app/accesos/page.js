@@ -133,21 +133,41 @@ export default function AccesosPage() {
     cargarUsuarios();
   }
 
-  function parsearLineasBajas(texto) {
-    return texto.split('\n').map((linea) => linea.trim()).filter(Boolean).map((linea) => {
-      const [email, fechaTexto] = linea.split(',').map((p) => p.trim());
-      let fecha = new Date().toISOString();
-      if (fechaTexto) {
-        const [d, m, y] = fechaTexto.split('/');
-        if (d && m && y) fecha = new Date(Number(y), Number(m) - 1, Number(d)).toISOString();
-      }
-      return { email, fecha };
+  // Cada persona es un bloque separado por una línea en blanco, con campos "Etiqueta: valor"
+  // en cualquier orden — todos opcionales, con al menos uno para poder identificarla.
+  // Ej:
+  //   Nombre: María Agustina Roldán
+  //   Curso: Coaching de Equipos
+  //   Email: ag.roldan.est@gmail.com
+  //   WhatsApp: +54 9 11 1234-5678
+  //   Fecha: 12/08/2026
+  function parsearBloquesBajas(texto) {
+    const bloques = texto.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
+    return bloques.map((bloque) => {
+      const entrada = { nombre: '', curso: '', email: '', whatsapp: '', fecha: '', motivo: '' };
+      bloque.split('\n').forEach((linea) => {
+        const idx = linea.indexOf(':');
+        if (idx === -1) return;
+        const etiqueta = linea.slice(0, idx).trim().toLowerCase();
+        const valor = linea.slice(idx + 1).trim();
+        if (!valor) return;
+        if (etiqueta.startsWith('nombre')) entrada.nombre = valor;
+        else if (etiqueta.startsWith('curso')) entrada.curso = valor;
+        else if (etiqueta.startsWith('mail') || etiqueta.startsWith('email')) entrada.email = valor;
+        else if (etiqueta.startsWith('whatsapp') || etiqueta.startsWith('wpp') || etiqueta.startsWith('tel')) entrada.whatsapp = valor;
+        else if (etiqueta.startsWith('fecha')) {
+          const [d, m, y] = valor.split('/');
+          entrada.fecha = d && m && y ? new Date(Number(y), Number(m) - 1, Number(d)).toISOString() : '';
+        } else if (etiqueta.startsWith('motivo')) entrada.motivo = valor;
+      });
+      if (!entrada.fecha) entrada.fecha = new Date().toISOString();
+      return entrada;
     });
   }
 
   async function cargarBajasMasivas() {
     setCargandoBajasMasivas(true);
-    const entradas = parsearLineasBajas(textoBajasMasivas);
+    const entradas = parsearBloquesBajas(textoBajasMasivas);
     const r = await fetch('/api/seguimiento/baja-masiva', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -293,11 +313,12 @@ export default function AccesosPage() {
           <hr className="border-border my-4" />
           <p className="text-sm font-semibold mb-1">🔴 Gestión de bajas</p>
           <p className="text-textMuted text-xs mb-3">
-            Cargá varias bajas de una — una línea por persona, formato <code>email, fecha (opcional)</code>.
-            Si no ponés fecha, se usa hoy. Se identifica a cada persona por su email de estudiante.
+            Cargá varias bajas de una — un bloque por persona, separados por una línea en blanco.
+            Poné lo que tengas (todo opcional, con al menos un dato para identificarla): Nombre, Curso, Email, WhatsApp, Fecha, Motivo.
+            Se busca primero por Email, si no hay por WhatsApp, si no hay por Nombre (+Curso si hay más de una persona con ese nombre).
           </p>
-          <textarea rows={4} value={textoBajasMasivas} onChange={(e) => setTextoBajasMasivas(e.target.value)}
-            placeholder={'ag.roldan.est@gmail.com, 12/08/2026\notra.persona@mail.com'}
+          <textarea rows={8} value={textoBajasMasivas} onChange={(e) => setTextoBajasMasivas(e.target.value)}
+            placeholder={'Nombre: María Agustina Roldán\nCurso: Coaching de Equipos\nEmail: ag.roldan.est@gmail.com\nWhatsApp: +54 9 11 1234-5678\nFecha: 12/08/2026\n\nNombre: Otra Persona\nEmail: otra@mail.com'}
             className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm font-mono mb-2" />
           <button onClick={cargarBajasMasivas} disabled={cargandoBajasMasivas || !textoBajasMasivas.trim()}
             className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-50 mb-3">
@@ -311,6 +332,9 @@ export default function AccesosPage() {
               )}
               {resultadoBajasMasivas.yaExistentes.length > 0 && (
                 <p className="text-warningText">⚠️ Ya tenían una baja registrada: {resultadoBajasMasivas.yaExistentes.join(', ')}</p>
+              )}
+              {resultadoBajasMasivas.ambiguos?.length > 0 && (
+                <p className="text-warningText">⚠️ Ambiguos, precisá más datos: {resultadoBajasMasivas.ambiguos.join(' · ')}</p>
               )}
               {resultadoBajasMasivas.noEncontrados.length > 0 && (
                 <p className="text-dangerText">✗ No encontrados (o no son estudiantes con venta confirmada): {resultadoBajasMasivas.noEncontrados.join(', ')}</p>
