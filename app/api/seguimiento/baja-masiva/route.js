@@ -82,72 +82,80 @@ export async function POST(request) {
   const leadsComprados = leads.filter((l) => l.Estado === 'Comprado');
   const yaTieneBaja = new Set(seguimiento.filter((s) => s.Lote === 'baja').map((s) => s.LeadID));
 
-  const resultado = { procesados: [], creados: [], noEncontrados: [], yaExistentes: [], ambiguos: [] };
+  const resultado = { procesados: [], creados: [], noEncontrados: [], yaExistentes: [], ambiguos: [], errores: [] };
 
   for (const entrada of body.entradas || []) {
     const etiqueta = entrada.nombre || entrada.email || entrada.whatsapp || '(sin datos)';
-    if (!entrada.nombre && !entrada.email && !entrada.whatsapp) {
-      resultado.noEncontrados.push(etiqueta);
-      continue;
-    }
-
-    let candidatos = buscarEstudiante(entrada, leadsComprados);
-    if (candidatos.length > 1) {
-      resultado.ambiguos.push(`${etiqueta} (${candidatos.length} coincidencias — agregá curso o email para precisar)`);
-      continue;
-    }
-
-    let lead = candidatos[0];
-    let fueCreado = false;
-
-    // No existe todavía: se crea un registro mínimo, ya marcado como Comprado, para que quede
-    // en el sistema (Estudiantes, Reportes, etc.) y se le pueda registrar la baja.
-    if (!lead) {
-      if (!entrada.nombre) {
+    try {
+      if (!entrada.nombre && !entrada.email && !entrada.whatsapp) {
         resultado.noEncontrados.push(etiqueta);
         continue;
       }
+
+      let candidatos = buscarEstudiante(entrada, leadsComprados);
+      if (candidatos.length > 1) {
+        resultado.ambiguos.push(`${etiqueta} (${candidatos.length} coincidencias — agregá curso o email para precisar)`);
+        continue;
+      }
+
+      let lead = candidatos[0];
+      let fueCreado = false;
+
+      // No existe todavía: se crea un registro mínimo, ya marcado como Comprado, para que quede
+      // en el sistema (Estudiantes, Reportes, etc.) y se le pueda registrar la baja.
+      if (!lead) {
+        if (!entrada.nombre) {
+          resultado.noEncontrados.push(etiqueta);
+          continue;
+        }
+        const fechaBajaNueva = new Date(entrada.fecha || new Date().toISOString());
+        const nuevoId = `L-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        await appendRow('Leads', [
+          nuevoId, entrada.nombre.trim(), '', entrada.whatsapp || '', entrada.curso || '', '',
+          'Carga manual (baja)', fechaBajaNueva.toISOString(), body.solicitanteEmail, body.solicitanteNombre,
+          'Comprado', fechaBajaNueva.toISOString(), '', '', '', '', '',
+          '', entrada.email || '', 'Alumna/o cargada manualmente al registrar su baja — no tiene historial de venta previo en el sistema.',
+          '', '', '', '', '', ''
+        ]);
+        await appendRow('Inscritos', [
+          `EST-${nuevoId}`, nuevoId, entrada.nombre.trim(), entrada.email || '', entrada.curso || '', '',
+          fechaBajaNueva.toISOString(), 'FALSE', '', '', '', 'FALSE', '', '', '', 'FALSE', '', 'FALSE', 'FALSE'
+        ]);
+        await registrarAccion(
+          body.solicitanteEmail, body.solicitanteNombre,
+          'Creó un registro manual (al no encontrarla al cargar una baja)', entrada.nombre.trim(), nuevoId
+        );
+        lead = { ID: nuevoId, Nombre: entrada.nombre.trim(), Apellido: '' };
+        fueCreado = true;
+        // Se agrega también al set en memoria, por si esta MISMA tanda tiene otra entrada
+        // que coincida con la persona recién creada (evita duplicar en el mismo envío).
+        leadsComprados.push({ ...lead, EmailEstudiante: entrada.email || '', WhatsApp: entrada.whatsapp || '', Curso: entrada.curso || '' });
+      }
+
+      if (!fueCreado && yaTieneBaja.has(lead.ID)) {
+        resultado.yaExistentes.push(`${lead.Nombre} ${lead.Apellido}`);
+        continue;
+      }
+
       const fechaBaja = new Date(entrada.fecha || new Date().toISOString());
-      const nuevoId = `L-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-      const [nombre, ...restoApellido] = entrada.nombre.trim().split(' ');
-      await appendRow('Leads', [
-        nuevoId, entrada.nombre.trim(), '', entrada.whatsapp || '', entrada.curso || '', '',
-        'Carga manual (baja)', fechaBaja.toISOString(), body.solicitanteEmail, body.solicitanteNombre,
-        'Comprado', fechaBaja.toISOString(), '', '', '', '', '',
-        '', entrada.email || '', 'Alumna/o cargada manualmente al registrar su baja — no tiene historial de venta previo en el sistema.',
-        '', '', '', '', '', ''
+      const vence = new Date(fechaBaja.getTime() + 90 * 24 * 60 * 60 * 1000);
+      vence.setHours(0, 0, 0, 0);
+      await appendRow('Seguimiento', [
+        lead.ID, 'baja', vence.toISOString(), '', '', 'FALSE', '',
+        '', `Baja registrada el ${fechaBaja.toLocaleDateString('es-AR')}${entrada.motivo ? ` — Motivo: ${entrada.motivo}` : ''}`,
+        '', ''
       ]);
-      await appendRow('Inscritos', [
-        `EST-${nuevoId}`, nuevoId, entrada.nombre.trim(), entrada.email || '', entrada.curso || '', '',
-        fechaBaja.toISOString(), 'FALSE', '', '', '', 'FALSE', '', '', '', 'FALSE', '', 'FALSE', 'FALSE'
-      ]);
+      yaTieneBaja.add(lead.ID);
       await registrarAccion(
         body.solicitanteEmail, body.solicitanteNombre,
-        'Creó un registro manual (al no encontrarla al cargar una baja)', entrada.nombre.trim(), nuevoId
+        'Registró una baja de la cursada (carga masiva)', entrada.motivo || '', lead.ID
       );
-      lead = { ID: nuevoId, Nombre: entrada.nombre.trim(), Apellido: '' };
-      fueCreado = true;
+      if (fueCreado) resultado.creados.push(`${lead.Nombre} ${lead.Apellido}`.trim());
+      else resultado.procesados.push(`${lead.Nombre} ${lead.Apellido}`.trim());
+    } catch (err) {
+      console.error(`Error procesando entrada de baja (${etiqueta}):`, err);
+      resultado.errores.push(`${etiqueta}: ${err.message || 'error desconocido'}`);
     }
-
-    if (!fueCreado && yaTieneBaja.has(lead.ID)) {
-      resultado.yaExistentes.push(`${lead.Nombre} ${lead.Apellido}`);
-      continue;
-    }
-
-    const fechaBaja = new Date(entrada.fecha || new Date().toISOString());
-    const vence = new Date(fechaBaja.getTime() + 90 * 24 * 60 * 60 * 1000);
-    vence.setHours(0, 0, 0, 0);
-    await appendRow('Seguimiento', [
-      lead.ID, 'baja', vence.toISOString(), '', '', 'FALSE', '',
-      '', `Baja registrada el ${fechaBaja.toLocaleDateString('es-AR')}${entrada.motivo ? ` — Motivo: ${entrada.motivo}` : ''}`,
-      '', ''
-    ]);
-    await registrarAccion(
-      body.solicitanteEmail, body.solicitanteNombre,
-      'Registró una baja de la cursada (carga masiva)', entrada.motivo || '', lead.ID
-    );
-    if (fueCreado) resultado.creados.push(`${lead.Nombre} ${lead.Apellido}`.trim());
-    else resultado.procesados.push(`${lead.Nombre} ${lead.Apellido}`.trim());
   }
 
   return NextResponse.json(resultado);

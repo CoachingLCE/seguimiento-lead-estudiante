@@ -221,15 +221,24 @@ export default function AccesosPage() {
   async function cargarBajasMasivas() {
     setCargandoBajasMasivas(true);
     const entradas = parsearBloquesBajas(textoBajasMasivas);
-    const r = await fetch('/api/seguimiento/baja-masiva', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ entradas, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
-    }).then((res) => res.json());
-    setResultadoBajasMasivas(r);
-    setTextoBajasMasivas('');
+    try {
+      const res = await fetch('/api/seguimiento/baja-masiva', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entradas, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
+      });
+      const r = await res.json();
+      if (!res.ok) {
+        setResultadoBajasMasivas({ procesados: [], creados: [], noEncontrados: [], yaExistentes: [], ambiguos: [], errores: [r.error || 'Error desconocido del servidor'] });
+      } else {
+        setResultadoBajasMasivas(r);
+        setTextoBajasMasivas('');
+        if (mostrarListaBajas) cargarListaBajas(true);
+      }
+    } catch (err) {
+      setResultadoBajasMasivas({ procesados: [], creados: [], noEncontrados: [], yaExistentes: [], ambiguos: [], errores: ['No se pudo conectar con el servidor. Probá de nuevo.'] });
+    }
     setCargandoBajasMasivas(false);
-    if (mostrarListaBajas) cargarListaBajas(true);
   }
 
   async function cargarListaBajas(forzarAbrir) {
@@ -407,6 +416,9 @@ export default function AccesosPage() {
               )}
               {resultadoBajasMasivas.ambiguos?.length > 0 && (
                 <p className="text-warningText">⚠️ Ambiguos, precisá más datos: {resultadoBajasMasivas.ambiguos.join(' · ')}</p>
+              )}
+              {resultadoBajasMasivas.errores?.length > 0 && (
+                <p className="text-dangerText">🛑 Error al procesar: {resultadoBajasMasivas.errores.join(' · ')}</p>
               )}
               {resultadoBajasMasivas.noEncontrados.length > 0 && (
                 <p className="text-dangerText">✗ No encontrados (o no son estudiantes con venta confirmada): {resultadoBajasMasivas.noEncontrados.join(', ')}</p>
