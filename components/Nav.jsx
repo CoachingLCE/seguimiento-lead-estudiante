@@ -12,7 +12,8 @@ import {
   tienePermisoAccesos,
   tienePermisoAuditoria,
   tienePermisoDiplomas,
-  tienePermisoBuscador
+  tienePermisoBuscador,
+  tienePermisoBajas
 } from '../lib/permisos';
 
 // Reexport para no romper imports existentes en otras páginas (`import { puedeVerOperativo } from '.../Nav'`)
@@ -76,6 +77,7 @@ export default function Nav({ usuario, onLogout }) {
 
   const administracion = [
     tienePermisoAuditoria(usuario) && itemNav('/auditoria', 'Historial de acciones', pathname),
+    tienePermisoBajas(usuario) && itemNav('/bajas', '🔴 Bajas', pathname),
     tienePermisoAccesos(usuario) && itemNav('/accesos', 'Accesos', pathname)
   ].filter(Boolean);
 

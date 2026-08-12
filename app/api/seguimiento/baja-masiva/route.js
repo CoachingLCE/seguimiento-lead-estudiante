@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { readSheet, appendRow } from '../../../../lib/sheets';
-import { findUsuario } from '../../../../lib/auth';
+import { findUsuario, tienePermisoBajas } from '../../../../lib/auth';
 import { registrarAccion } from '../../../../lib/auditoria';
 
 // GET /api/seguimiento/baja-masiva?solicitanteEmail=... -> TODAS las bajas registradas
@@ -9,7 +9,7 @@ import { registrarAccion } from '../../../../lib/auditoria';
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const solicitante = await findUsuario(searchParams.get('solicitanteEmail'));
-  if (!solicitante || !solicitante.roles.includes('Admin')) {
+  if (!tienePermisoBajas(solicitante)) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
   }
 
@@ -74,7 +74,7 @@ function buscarEstudiante(entrada, leadsComprados) {
 export async function POST(request) {
   const body = await request.json();
   const solicitante = await findUsuario(body.solicitanteEmail);
-  if (!solicitante || !solicitante.roles.includes('Admin')) {
+  if (!tienePermisoBajas(solicitante)) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
   }
 
