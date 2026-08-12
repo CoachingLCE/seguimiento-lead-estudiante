@@ -21,7 +21,7 @@ function heuristicaSinEtiquetas(bloque) {
   const lineas = bloque.split('\n').map((l) => l.trim()).filter(Boolean);
   const restantes = [];
   lineas.forEach((linea) => {
-    const mFecha = linea.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    const mFecha = linea.match(/^(\d{1,2})[/\-](\d{1,2})[/\-](\d{4})$/);
     const mEmail = linea.match(/[^\s]+@[^\s]+\.[^\s]+/);
     const mWpp = linea.match(/^[+]?[\d\s\-()]{8,}$/);
     if (mFecha && !entrada.fecha) {
@@ -63,7 +63,7 @@ function parsearBloquesBajas(texto) {
       actual = { nombre: '', curso: '', email: '', whatsapp: '', fecha: '', motivo: '' };
     }
     if (campo === 'fecha') {
-      const [d, m, y] = valor.split('/');
+      const [d, m, y] = valor.split(/[/\-]/);
       actual.fecha = d && m && y ? new Date(Number(y), Number(m) - 1, Number(d)).toISOString() : '';
     } else {
       actual[campo] = valor;
