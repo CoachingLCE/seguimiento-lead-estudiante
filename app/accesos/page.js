@@ -20,6 +20,12 @@ export default function AccesosPage() {
   const [editandoRoles, setEditandoRoles] = useState(null); // email del usuario en edición de roles
   const [rolesEnEdicion, setRolesEnEdicion] = useState([]);
   const [confirmarEliminar, setConfirmarEliminar] = useState(null); // usuario a confirmar
+  const [textoBajasMasivas, setTextoBajasMasivas] = useState('');
+  const [cargandoBajasMasivas, setCargandoBajasMasivas] = useState(false);
+  const [resultadoBajasMasivas, setResultadoBajasMasivas] = useState(null);
+  const [mostrarListaBajas, setMostrarListaBajas] = useState(false);
+  const [listaBajas, setListaBajas] = useState([]);
+
   const [creadorLimpieza, setCreadorLimpieza] = useState('');
   const [previewLimpieza, setPreviewLimpieza] = useState(null);
   const [confirmarLimpieza, setConfirmarLimpieza] = useState(false);
@@ -125,6 +131,39 @@ export default function AccesosPage() {
     else setMensaje(`✓ Usuario ${confirmarEliminar.Email} eliminado`);
     setConfirmarEliminar(null);
     cargarUsuarios();
+  }
+
+  function parsearLineasBajas(texto) {
+    return texto.split('\n').map((linea) => linea.trim()).filter(Boolean).map((linea) => {
+      const [email, fechaTexto] = linea.split(',').map((p) => p.trim());
+      let fecha = new Date().toISOString();
+      if (fechaTexto) {
+        const [d, m, y] = fechaTexto.split('/');
+        if (d && m && y) fecha = new Date(Number(y), Number(m) - 1, Number(d)).toISOString();
+      }
+      return { email, fecha };
+    });
+  }
+
+  async function cargarBajasMasivas() {
+    setCargandoBajasMasivas(true);
+    const entradas = parsearLineasBajas(textoBajasMasivas);
+    const r = await fetch('/api/seguimiento/baja-masiva', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entradas, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
+    }).then((res) => res.json());
+    setResultadoBajasMasivas(r);
+    setTextoBajasMasivas('');
+    setCargandoBajasMasivas(false);
+    if (mostrarListaBajas) cargarListaBajas(true);
+  }
+
+  async function cargarListaBajas(forzarAbrir) {
+    if (!forzarAbrir && mostrarListaBajas) { setMostrarListaBajas(false); return; }
+    const r = await fetch(`/api/seguimiento/baja-masiva?solicitanteEmail=${encodeURIComponent(usuario.email)}`).then((res) => res.json());
+    setListaBajas(r.bajas || []);
+    setMostrarListaBajas(true);
   }
 
   async function verPreviewLimpieza() {
@@ -248,6 +287,68 @@ export default function AccesosPage() {
                   </button>
                 </div>
               ))}
+            </div>
+          )}
+
+          <hr className="border-border my-4" />
+          <p className="text-sm font-semibold mb-1">🔴 Gestión de bajas</p>
+          <p className="text-textMuted text-xs mb-3">
+            Cargá varias bajas de una — una línea por persona, formato <code>email, fecha (opcional)</code>.
+            Si no ponés fecha, se usa hoy. Se identifica a cada persona por su email de estudiante.
+          </p>
+          <textarea rows={4} value={textoBajasMasivas} onChange={(e) => setTextoBajasMasivas(e.target.value)}
+            placeholder={'ag.roldan.est@gmail.com, 12/08/2026\notra.persona@mail.com'}
+            className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm font-mono mb-2" />
+          <button onClick={cargarBajasMasivas} disabled={cargandoBajasMasivas || !textoBajasMasivas.trim()}
+            className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-50 mb-3">
+            {cargandoBajasMasivas ? 'Cargando…' : 'Cargar bajas'}
+          </button>
+
+          {resultadoBajasMasivas && (
+            <div className="bg-bg border border-border rounded-lg p-3 mb-3 text-sm space-y-1">
+              {resultadoBajasMasivas.procesados.length > 0 && (
+                <p className="text-successText">✓ Registradas: {resultadoBajasMasivas.procesados.join(', ')}</p>
+              )}
+              {resultadoBajasMasivas.yaExistentes.length > 0 && (
+                <p className="text-warningText">⚠️ Ya tenían una baja registrada: {resultadoBajasMasivas.yaExistentes.join(', ')}</p>
+              )}
+              {resultadoBajasMasivas.noEncontrados.length > 0 && (
+                <p className="text-dangerText">✗ No encontrados (o no son estudiantes con venta confirmada): {resultadoBajasMasivas.noEncontrados.join(', ')}</p>
+              )}
+            </div>
+          )}
+
+          <button onClick={() => cargarListaBajas()} className="text-xs text-accentTeal font-semibold mb-2">
+            {mostrarListaBajas ? '▲ Ocultar' : '▼ Ver'} todas las bajas registradas (incluye las que todavía están esperando)
+          </button>
+          {mostrarListaBajas && (
+            <div className="bg-bg border border-border rounded-lg p-3 max-h-72 overflow-y-auto">
+              {listaBajas.length === 0 ? (
+                <p className="text-textMuted text-xs">Sin bajas registradas todavía.</p>
+              ) : (
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="text-textSec text-left border-b border-border">
+                      <th className="py-1.5">Nombre</th><th>Curso</th><th>Fecha baja</th><th>Disponible</th><th>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {listaBajas.map((b) => (
+                      <tr key={b.leadId} className="border-b border-border">
+                        <td className="py-1.5">{b.nombre}</td>
+                        <td>{b.curso}</td>
+                        <td>{new Date(b.fechaBaja).toLocaleDateString('es-AR')}</td>
+                        <td>{new Date(b.fechaDisponible).toLocaleDateString('es-AR')}</td>
+                        <td>
+                          {b.contactado ? <span className="text-successText">Contactado</span>
+                            : b.disponibleAhora ? <span className="text-warningText">En Lote Bajas</span>
+                            : <span className="text-textMuted">Faltan {b.diasFaltantes} días</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           )}
 
