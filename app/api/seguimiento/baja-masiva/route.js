@@ -69,6 +69,8 @@ function buscarEstudiante(entrada, leadsComprados) {
 // POST /api/seguimiento/baja-masiva -> carga varias bajas de una. Cada entrada puede tener
 // cualquier combinación de estos datos (todos opcionales, con al menos uno para poder identificar
 // a la persona): { nombre, curso, email, whatsapp, fecha, motivo }
+// Si la persona no existe todavía en el sistema (era alumna pero nunca quedó cargada), se crea
+// un registro mínimo de Lead + Inscrito con lo que se haya pasado, y recién ahí se registra la baja.
 export async function POST(request) {
   const body = await request.json();
   const solicitante = await findUsuario(body.solicitanteEmail);
@@ -80,7 +82,7 @@ export async function POST(request) {
   const leadsComprados = leads.filter((l) => l.Estado === 'Comprado');
   const yaTieneBaja = new Set(seguimiento.filter((s) => s.Lote === 'baja').map((s) => s.LeadID));
 
-  const resultado = { procesados: [], noEncontrados: [], yaExistentes: [], ambiguos: [] };
+  const resultado = { procesados: [], creados: [], noEncontrados: [], yaExistentes: [], ambiguos: [] };
 
   for (const entrada of body.entradas || []) {
     const etiqueta = entrada.nombre || entrada.email || entrada.whatsapp || '(sin datos)';
@@ -89,18 +91,45 @@ export async function POST(request) {
       continue;
     }
 
-    const candidatos = buscarEstudiante(entrada, leadsComprados);
-    if (candidatos.length === 0) {
-      resultado.noEncontrados.push(etiqueta);
-      continue;
-    }
+    let candidatos = buscarEstudiante(entrada, leadsComprados);
     if (candidatos.length > 1) {
       resultado.ambiguos.push(`${etiqueta} (${candidatos.length} coincidencias — agregá curso o email para precisar)`);
       continue;
     }
 
-    const lead = candidatos[0];
-    if (yaTieneBaja.has(lead.ID)) {
+    let lead = candidatos[0];
+    let fueCreado = false;
+
+    // No existe todavía: se crea un registro mínimo, ya marcado como Comprado, para que quede
+    // en el sistema (Estudiantes, Reportes, etc.) y se le pueda registrar la baja.
+    if (!lead) {
+      if (!entrada.nombre) {
+        resultado.noEncontrados.push(etiqueta);
+        continue;
+      }
+      const fechaBaja = new Date(entrada.fecha || new Date().toISOString());
+      const nuevoId = `L-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const [nombre, ...restoApellido] = entrada.nombre.trim().split(' ');
+      await appendRow('Leads', [
+        nuevoId, entrada.nombre.trim(), '', entrada.whatsapp || '', entrada.curso || '', '',
+        'Carga manual (baja)', fechaBaja.toISOString(), body.solicitanteEmail, body.solicitanteNombre,
+        'Comprado', fechaBaja.toISOString(), '', '', '', '', '',
+        '', entrada.email || '', 'Alumna/o cargada manualmente al registrar su baja — no tiene historial de venta previo en el sistema.',
+        '', '', '', '', '', ''
+      ]);
+      await appendRow('Inscritos', [
+        `EST-${nuevoId}`, nuevoId, entrada.nombre.trim(), entrada.email || '', entrada.curso || '', '',
+        fechaBaja.toISOString(), 'FALSE', '', '', '', 'FALSE', '', '', '', 'FALSE', '', 'FALSE', 'FALSE'
+      ]);
+      await registrarAccion(
+        body.solicitanteEmail, body.solicitanteNombre,
+        'Creó un registro manual (al no encontrarla al cargar una baja)', entrada.nombre.trim(), nuevoId
+      );
+      lead = { ID: nuevoId, Nombre: entrada.nombre.trim(), Apellido: '' };
+      fueCreado = true;
+    }
+
+    if (!fueCreado && yaTieneBaja.has(lead.ID)) {
       resultado.yaExistentes.push(`${lead.Nombre} ${lead.Apellido}`);
       continue;
     }
@@ -117,7 +146,8 @@ export async function POST(request) {
       body.solicitanteEmail, body.solicitanteNombre,
       'Registró una baja de la cursada (carga masiva)', entrada.motivo || '', lead.ID
     );
-    resultado.procesados.push(`${lead.Nombre} ${lead.Apellido}`);
+    if (fueCreado) resultado.creados.push(`${lead.Nombre} ${lead.Apellido}`.trim());
+    else resultado.procesados.push(`${lead.Nombre} ${lead.Apellido}`.trim());
   }
 
   return NextResponse.json(resultado);

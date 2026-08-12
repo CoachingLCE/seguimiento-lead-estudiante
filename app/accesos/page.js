@@ -330,6 +330,7 @@ export default function AccesosPage() {
             Cargá varias bajas de una — un bloque por persona, separados por una línea en blanco.
             Poné lo que tengas (todo opcional, con al menos un dato para identificarla): Nombre, Curso, Email, WhatsApp, Fecha, Motivo.
             Se busca primero por Email, si no hay por WhatsApp, si no hay por Nombre (+Curso si hay más de una persona con ese nombre).
+            Si no existe todavía en el sistema, se crea un registro mínimo (con lo que hayas puesto) y se le registra la baja igual.
           </p>
           <textarea rows={8} value={textoBajasMasivas} onChange={(e) => setTextoBajasMasivas(e.target.value)}
             placeholder={'Nombre: María Agustina Roldán\nCurso: Coaching de Equipos\nEmail: ag.roldan.est@gmail.com\nWhatsApp: +54 9 11 1234-5678\nFecha: 12/08/2026\n\nNombre: Otra Persona\nEmail: otra@mail.com'}
@@ -343,6 +344,9 @@ export default function AccesosPage() {
             <div className="bg-bg border border-border rounded-lg p-3 mb-3 text-sm space-y-1">
               {resultadoBajasMasivas.procesados.length > 0 && (
                 <p className="text-successText">✓ Registradas: {resultadoBajasMasivas.procesados.join(', ')}</p>
+              )}
+              {resultadoBajasMasivas.creados?.length > 0 && (
+                <p className="text-infoText">🆕 No existían en el sistema, se crearon y se les registró la baja: {resultadoBajasMasivas.creados.join(', ')}</p>
               )}
               {resultadoBajasMasivas.yaExistentes.length > 0 && (
                 <p className="text-warningText">⚠️ Ya tenían una baja registrada: {resultadoBajasMasivas.yaExistentes.join(', ')}</p>
