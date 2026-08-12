@@ -141,28 +141,42 @@ export default function AccesosPage() {
   //   Email: ag.roldan.est@gmail.com
   //   WhatsApp: +54 9 11 1234-5678
   //   Fecha: 12/08/2026
+  // Busca "Etiqueta: valor" en cualquier parte del texto, sin depender de que cada campo esté
+  // en su propia línea (por si se pega todo junto sin saltos, como pasó una vez). Cuando un campo
+  // que YA estaba completado en la persona actual vuelve a aparecer, se entiende que arrancó
+  // una persona nueva — así funciona tanto con líneas en blanco entre bloques como sin ellas.
   function parsearBloquesBajas(texto) {
-    const bloques = texto.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
-    return bloques.map((bloque) => {
-      const entrada = { nombre: '', curso: '', email: '', whatsapp: '', fecha: '', motivo: '' };
-      bloque.split('\n').forEach((linea) => {
-        const idx = linea.indexOf(':');
-        if (idx === -1) return;
-        const etiqueta = linea.slice(0, idx).trim().toLowerCase();
-        const valor = linea.slice(idx + 1).trim();
-        if (!valor) return;
-        if (etiqueta.startsWith('nombre')) entrada.nombre = valor;
-        else if (etiqueta.startsWith('curso')) entrada.curso = valor;
-        else if (etiqueta.startsWith('mail') || etiqueta.startsWith('email')) entrada.email = valor;
-        else if (etiqueta.startsWith('whatsapp') || etiqueta.startsWith('wpp') || etiqueta.startsWith('tel')) entrada.whatsapp = valor;
-        else if (etiqueta.startsWith('fecha')) {
-          const [d, m, y] = valor.split('/');
-          entrada.fecha = d && m && y ? new Date(Number(y), Number(m) - 1, Number(d)).toISOString() : '';
-        } else if (etiqueta.startsWith('motivo')) entrada.motivo = valor;
-      });
-      if (!entrada.fecha) entrada.fecha = new Date().toISOString();
-      return entrada;
-    });
+    const patron = /(nombre|curso|e[-\s]?mail|whatsapp|wpp|tel[eé]?fono?|fecha|motivo)\s*:\s*([\s\S]*?)(?=(?:nombre|curso|e[-\s]?mail|whatsapp|wpp|tel[eé]?fono?|fecha|motivo)\s*:|$)/gi;
+    const entradas = [];
+    let actual = null;
+    let match;
+    while ((match = patron.exec(texto)) !== null) {
+      const etiqueta = match[1].toLowerCase().replace(/[\s-]/g, '');
+      const valor = match[2].replace(/\n+/g, ' ').trim();
+      if (!valor) continue;
+      let campo = null;
+      if (etiqueta.startsWith('nombre')) campo = 'nombre';
+      else if (etiqueta.startsWith('curso')) campo = 'curso';
+      else if (etiqueta.startsWith('email') || etiqueta.startsWith('mail')) campo = 'email';
+      else if (etiqueta.startsWith('whatsapp') || etiqueta.startsWith('wpp') || etiqueta.startsWith('tel')) campo = 'whatsapp';
+      else if (etiqueta.startsWith('fecha')) campo = 'fecha';
+      else if (etiqueta.startsWith('motivo')) campo = 'motivo';
+      if (!campo) continue;
+
+      if (!actual || actual[campo]) {
+        if (actual) entradas.push(actual);
+        actual = { nombre: '', curso: '', email: '', whatsapp: '', fecha: '', motivo: '' };
+      }
+      if (campo === 'fecha') {
+        const [d, m, y] = valor.split('/');
+        actual.fecha = d && m && y ? new Date(Number(y), Number(m) - 1, Number(d)).toISOString() : '';
+      } else {
+        actual[campo] = valor;
+      }
+    }
+    if (actual) entradas.push(actual);
+    entradas.forEach((e) => { if (!e.fecha) e.fecha = new Date().toISOString(); });
+    return entradas;
   }
 
   async function cargarBajasMasivas() {
