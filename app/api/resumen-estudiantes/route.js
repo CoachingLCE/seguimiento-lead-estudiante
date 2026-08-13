@@ -11,7 +11,13 @@ export async function GET(request) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
   }
 
-  const inscritos = await readSheet('Inscritos');
+  const [inscritosSinFiltrar, leads] = await Promise.all([readSheet('Inscritos'), readSheet('Leads')]);
+  // Los registros creados automáticamente al cargar una baja de alguien que no existía en el
+  // sistema (Origen "Carga manual (baja)") no son estudiantes reales — no deben contarse acá.
+  const idsCargaManualBaja = new Set(
+    leads.filter((l) => l.Origen === 'Carga manual (baja)').map((l) => l.ID)
+  );
+  const inscritos = inscritosSinFiltrar.filter((i) => !idsCargaManualBaja.has(i.LeadId));
   const hoyStr = new Date().toDateString();
   const esHoy = (fechaISO) => fechaISO && new Date(fechaISO).toDateString() === hoyStr;
 

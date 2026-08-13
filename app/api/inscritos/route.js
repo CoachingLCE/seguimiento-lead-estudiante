@@ -12,8 +12,14 @@ export async function GET(request) {
   if (!tienePermisoEstudiantes(solicitante)) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
   }
-  const inscritos = await readSheet('Inscritos');
-  return NextResponse.json({ inscritos });
+  const [inscritos, leads] = await Promise.all([readSheet('Inscritos'), readSheet('Leads')]);
+  // Los registros creados automáticamente al cargar una baja de alguien que no existía en el
+  // sistema (Origen "Carga manual (baja)") no son estudiantes reales — no deben aparecer acá.
+  const idsCargaManualBaja = new Set(
+    leads.filter((l) => l.Origen === 'Carga manual (baja)').map((l) => l.ID)
+  );
+  const inscritosFiltrados = inscritos.filter((i) => !idsCargaManualBaja.has(i.LeadId));
+  return NextResponse.json({ inscritos: inscritosFiltrados });
 }
 
 // PATCH /api/inscritos -> acciones editables desde la tabla
