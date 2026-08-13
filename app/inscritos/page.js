@@ -321,10 +321,10 @@ export default function InscritosPage() {
                     <th className="pr-4 cursor-pointer select-none" onClick={() => ordenarPor('NombreEstudiante')}>Estudiante{flecha('NombreEstudiante')}</th>
                     <th className="pr-4 cursor-pointer select-none" onClick={() => ordenarPor('Curso')}>Curso{flecha('Curso')}</th>
                     <th className="pr-4 cursor-pointer select-none" onClick={() => ordenarPor('Edicion')}>Edición{flecha('Edicion')}</th>
-                    <th className="pr-4">Bienvenida</th>
-                    <th className="pr-4 whitespace-normal max-w-[80px]">Confirmó<br/>recepción</th>
-                    <th className="pr-4 whitespace-normal max-w-[80px]">Alta<br/>plataforma</th>
-                    <th className="pr-4 whitespace-normal max-w-[80px]">Grupo<br/>WhatsApp</th>
+                    <th className="pr-4 cursor-help" title="Se manda un mail de bienvenida al estudiante, con info de la formación.">Bienvenida</th>
+                    <th className="pr-4 whitespace-normal max-w-[80px] cursor-help" title="Se marca solo cuando el estudiante toca el botón del mail — o se puede tildar a mano si confirma por otro medio.">Confirmó<br/>recepción</th>
+                    <th className="pr-4 whitespace-normal max-w-[80px] cursor-help" title="Se manda un mail con el acceso a la plataforma y el contenido de la formación.">Alta<br/>plataforma</th>
+                    <th className="pr-4 whitespace-normal max-w-[80px] cursor-help" title="Marcá cuando el estudiante ya fue agregado al grupo de estudio de WhatsApp.">Grupo<br/>WhatsApp</th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
