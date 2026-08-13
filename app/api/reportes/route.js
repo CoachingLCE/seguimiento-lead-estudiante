@@ -33,7 +33,7 @@ function calcularIngresosPorDia(mes, todosLosLeads) {
   const porDia = {};
   for (let d = 1; d <= totalDias; d++) porDia[d] = 0;
 
-  const comprados = todosLosLeads.filter((l) => l.Estado === 'Comprado' && l.FechaVenta);
+  const comprados = todosLosLeads.filter((l) => l.Estado === 'Comprado' && l.FechaVenta && l.Origen !== 'Carga manual (baja)');
   comprados.forEach((l) => {
     const fechaVenta = new Date(l.FechaVenta);
     let cuotas;
@@ -62,7 +62,10 @@ function calcularIngresosPorDia(mes, todosLosLeads) {
 // Calcula el bloque de métricas para un mes puntual: KPIs, series por día, rankings, embudo.
 // Recibe los leads/seguimiento YA filtrados a ese mes para no leer el Sheet de nuevo por cada mes.
 function calcularBloque(mes, leadsDelMes, seguimientoDeEsosLeads) {
-  const compras = leadsDelMes.filter((l) => l.Estado === 'Comprado');
+  // Los registros creados automáticamente al cargar una baja de alguien que no existía en el
+  // sistema (Origen "Carga manual (baja)") no son ventas reales — no deben contarse como compra
+  // en ningún cálculo comercial (ni en el detalle, ni en los totales/rankings).
+  const compras = leadsDelMes.filter((l) => l.Estado === 'Comprado' && l.Origen !== 'Carga manual (baja)');
   // Un solo registro con MontoTotal invalido (ej: guardado como texto "NaN" por un bug viejo)
   // no debe arruinar la suma de TODO el mes — se lo trata como $0 para ese registro puntual.
   const montoTotal = compras.reduce((acc, c) => acc + numeroValido(c.MontoTotal), 0);
@@ -112,7 +115,7 @@ function calcularBloque(mes, leadsDelMes, seguimientoDeEsosLeads) {
   // Leads por curso: a diferencia de rankingCursos (que solo cuenta VENTAS), esto cuenta TODOS
   // los leads que entraron este mes, hayan comprado o no — para saber qué formaciones generan más interés.
   const conteoLeadsPorCurso = {};
-  leadsDelMes.forEach((l) => {
+  leadsDelMes.filter((l) => l.Origen !== 'Carga manual (baja)').forEach((l) => {
     const c = l.Curso || 'Sin curso definido';
     conteoLeadsPorCurso[c] = (conteoLeadsPorCurso[c] || 0) + 1;
   });
@@ -138,7 +141,7 @@ function calcularBloque(mes, leadsDelMes, seguimientoDeEsosLeads) {
   const cursosConVenta = new Set(rankingCursos.map((c) => c.nombre));
 
   return {
-    totalLeads: leadsDelMes.length, totalCompras: compras.length, montoTotal, conversion, ticketPromedio,
+    totalLeads: leadsDelMes.filter((l) => l.Origen !== 'Carga manual (baja)').length, totalCompras: compras.length, montoTotal, conversion, ticketPromedio,
     ventaPromedioPorDia, mejorDia, serieDiaria,
     rankingVendedores, rankingCursos, rankingOrigenes, rankingDocentes, rankingEdiciones, rankingMedioPago, rankingModalidad,
     leadsPorCurso,
@@ -190,7 +193,7 @@ export async function GET(request) {
     if (!actual.vendedoresConVenta.includes(v) && actual.totalCompras > 0) alertas.push(`${v} sin ventas registradas este mes`);
   });
 
-  const compras = leadsDelMes.filter((l) => l.Estado === 'Comprado').map((c) => ({
+  const compras = leadsDelMes.filter((l) => l.Estado === 'Comprado' && l.Origen !== 'Carga manual (baja)').map((c) => ({
     id: c.ID,
     lead: `${c.Nombre} ${c.Apellido}`,
     curso: c.Curso || 'sin curso',
