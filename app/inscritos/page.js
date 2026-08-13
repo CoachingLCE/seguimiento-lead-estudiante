@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import Nav from '../../components/Nav';
@@ -9,6 +9,13 @@ import { useToast } from '../../components/Toast';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoEstudiantes } from '../../lib/permisos';
 import { colorParaCurso, normalizarEdicion, horasHabilesTranscurridas } from '../../lib/constants';
+
+// Los 4 pasos que definen una inscripción "completa": Bienvenida, Confirmó recepción,
+// Alta en plataforma y Grupo de WhatsApp.
+function esInscripcionCompleta(i) {
+  return i.BienvenidaEnviada === 'TRUE' && i.ConfirmoRecepcion === 'TRUE'
+    && i.AltaPlataforma === 'TRUE' && i.GrupoWhatsApp === 'TRUE';
+}
 
 function antiguedad(fecha) {
   const dias = Math.floor((new Date() - new Date(fecha)) / (24 * 60 * 60 * 1000));
@@ -288,7 +295,16 @@ export default function InscritosPage() {
           </div>
         </div>
         <div className="bg-surface border border-border rounded-2xl p-5">
-          <p className="text-sm font-semibold mb-3">Inscritos cargados</p>
+          <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+            <p className="text-sm font-semibold">Inscritos cargados</p>
+            {inscritos.length > 0 && (
+              <p className="text-xs text-textMuted">
+                Inscripciones: <span className="text-text font-semibold">{inscritos.length}</span>
+                {' · '}🟢 Completas: <span className="text-successText font-semibold">{inscritos.filter(esInscripcionCompleta).length}</span>
+                {' · '}🟡 Pendientes: <span className="text-warningText font-semibold">{inscritos.filter((i) => !esInscripcionCompleta(i)).length}</span>
+              </p>
+            )}
+          </div>
           {cargando ? (
             <p className="text-textSec text-sm">Cargando…</p>
           ) : inscritos.length === 0 ? (
@@ -316,7 +332,8 @@ export default function InscritosPage() {
                   {inscritosOrdenados.map((i) => {
                     const color = colorParaCurso(i.Curso);
                     return (
-                      <tr key={i.ID} className="border-b border-border align-top hover:bg-bg/40 transition-colors">
+                      <React.Fragment key={i.ID}>
+                      <tr className="border-b border-border align-top hover:bg-bg/40 transition-colors">
                         <td className="py-3 pr-4 text-textSec whitespace-nowrap">{new Date(i.FechaInscripcion).toLocaleDateString('es-AR')}</td>
                         <td className="py-3 pr-4 text-textMuted text-xs whitespace-nowrap">{antiguedad(i.FechaInscripcion)}</td>
                         <td className="py-3 pr-4 font-medium">{i.NombreEstudiante}</td>
@@ -389,6 +406,15 @@ export default function InscritosPage() {
                           </div>
                         </td>
                       </tr>
+                      {esInscripcionCompleta(i) && (
+                        <tr className="border-b border-border">
+                          <td colSpan={10} className="pt-0 pb-2 pl-4">
+                            <p className="text-successText text-[11px] font-semibold leading-tight">✓ TODO CARGADO</p>
+                            <p className="text-textMuted text-[10.5px] leading-tight">La inscripción está completa</p>
+                          </td>
+                        </tr>
+                      )}
+                      </React.Fragment>
                     );
                   })}
                 </tbody>
