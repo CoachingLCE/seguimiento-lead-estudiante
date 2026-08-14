@@ -550,6 +550,13 @@ export default function ReportesPage() {
                 <GraficoDona datos={datos.rankingOrigenes} onClickItem={(n) => setFiltro('origen', n)} activo={filtros.origen} />
               </ChartCard>
 
+              <ChartCard titulo="Leads por origen" subtitulo="Mes seleccionado — todos los leads, hayan comprado o no" alto={200}
+                tooltip="A diferencia de 'Ventas por origen', cuenta TODOS los leads que entraron este mes por cada canal"
+                valorGrande={`${datos.leadsPorOrigen.length} origen${datos.leadsPorOrigen.length !== 1 ? 'es' : ''}`}
+                onExportar={() => exportarGrafico('leads-por-origen', datos.leadsPorOrigen)}>
+                <GraficoDona datos={datos.leadsPorOrigen} onClickItem={(n) => setFiltro('origen', n)} activo={filtros.origen} />
+              </ChartCard>
+
               <ChartCard titulo="Ventas por vendedor" subtitulo="Mes seleccionado"
                 valorGrande={`${datos.rankingVendedores.length} vendedor${datos.rankingVendedores.length !== 1 ? 'es' : ''}`}
                 onExportar={() => exportarGrafico('ventas-por-vendedor', datos.rankingVendedores)}>

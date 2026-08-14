@@ -123,6 +123,18 @@ function calcularBloque(mes, leadsDelMes, seguimientoDeEsosLeads) {
     .map(([nombre, cantidad]) => ({ nombre, cantidad, porcentaje: leadsDelMes.length ? (cantidad / leadsDelMes.length) * 100 : 0 }))
     .sort((a, b) => b.cantidad - a.cantidad);
 
+  // Leads por origen: a diferencia de rankingOrigenes (que solo cuenta VENTAS), esto cuenta TODOS
+  // los leads que entraron este mes, hayan comprado o no — para saber qué canales generan más interés.
+  const conteoLeadsPorOrigen = {};
+  const leadsRealesDelMes = leadsDelMes.filter((l) => l.Origen !== 'Carga manual (baja)');
+  leadsRealesDelMes.forEach((l) => {
+    const o = l.Origen || 'Sin origen definido';
+    conteoLeadsPorOrigen[o] = (conteoLeadsPorOrigen[o] || 0) + 1;
+  });
+  const leadsPorOrigen = Object.entries(conteoLeadsPorOrigen)
+    .map(([nombre, cantidad]) => ({ nombre, cantidad, porcentaje: leadsRealesDelMes.length ? (cantidad / leadsRealesDelMes.length) * 100 : 0 }))
+    .sort((a, b) => b.cantidad - a.cantidad);
+
   // Embudo comercial: Lead -> Contactado -> Interesado -> Venta
   const idsConLead = new Set(leadsDelMes.map((l) => l.ID));
   const idsContactados = new Set(seguimientoDeEsosLeads.filter((s) => s.Contactado === 'TRUE').map((s) => s.LeadID));
@@ -145,6 +157,7 @@ function calcularBloque(mes, leadsDelMes, seguimientoDeEsosLeads) {
     ventaPromedioPorDia, mejorDia, serieDiaria,
     rankingVendedores, rankingCursos, rankingOrigenes, rankingDocentes, rankingEdiciones, rankingMedioPago, rankingModalidad,
     leadsPorCurso,
+    leadsPorOrigen,
     embudo, vendedoresConVenta: [...vendedoresConVenta], cursosConVenta: [...cursosConVenta]
   };
 }
