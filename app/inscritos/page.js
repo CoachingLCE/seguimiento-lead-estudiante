@@ -32,6 +32,7 @@ export default function InscritosPage() {
   const { toast, mostrarToast } = useToast();
   const [inscritos, setInscritos] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [errorCarga, setErrorCarga] = useState('');
   const [pidiendoEmailPara, setPidiendoEmailPara] = useState(null);
   const [emailTemporal, setEmailTemporal] = useState('');
   const [enviandoBienvenidaId, setEnviandoBienvenidaId] = useState(null);
@@ -70,8 +71,20 @@ export default function InscritosPage() {
 
   async function cargarInscritos() {
     setCargando(true);
-    const r = await fetch(`/api/inscritos?solicitanteEmail=${encodeURIComponent(usuario.email)}`).then((res) => res.json());
-    setInscritos(r.inscritos || []);
+    setErrorCarga('');
+    try {
+      const res = await fetch(`/api/inscritos?solicitanteEmail=${encodeURIComponent(usuario.email)}`);
+      const r = await res.json();
+      if (!res.ok || r.error) {
+        setErrorCarga(r.error || 'No se pudieron cargar los estudiantes.');
+        setInscritos([]);
+      } else {
+        setInscritos(r.inscritos || []);
+      }
+    } catch (err) {
+      setErrorCarga('No se pudo conectar con el servidor. Probá de nuevo.');
+      setInscritos([]);
+    }
     setCargando(false);
   }
 
@@ -305,7 +318,14 @@ export default function InscritosPage() {
               </p>
             )}
           </div>
-          {cargando ? (
+          {errorCarga ? (
+            <div className="bg-dangerBg border border-dangerText/30 rounded-2xl p-6 text-center">
+              <p className="text-dangerText text-sm font-semibold mb-3">⚠️ {errorCarga}</p>
+              <button onClick={cargarInscritos} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">
+                Reintentar
+              </button>
+            </div>
+          ) : cargando ? (
             <p className="text-textSec text-sm">Cargando…</p>
           ) : inscritos.length === 0 ? (
             <p className="text-textMuted text-sm">Todavía no hay estudiantes generados.</p>

@@ -71,7 +71,7 @@ export default function TutorialHandbook() {
 
       {abierto && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4 no-print">
-          <div className="w-full max-w-sm bg-surface2 border border-border rounded-2xl p-6">
+          <div className="w-full max-w-sm bg-surface2 border border-border rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
             <p className="text-textMuted text-xs mb-2">{paso + 1} / {PASOS.length}</p>
             <h3 className="text-lg font-semibold mb-2">{PASOS[paso].titulo}</h3>
             <p className="text-textSec text-sm mb-6 leading-relaxed">{PASOS[paso].texto}</p>

@@ -774,7 +774,7 @@ export default function NuevoLeadPage() {
       {/* MODAL PEGAR LISTA COMPLETA */}
       {mostrarPegarLista && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-surface2 border border-border rounded-2xl p-6 w-full max-w-2xl">
+          <div className="bg-surface2 border border-border rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <p className="text-sm font-bold mb-1">📋 Pegar lista completa</p>
             <p className="text-textMuted text-xs mb-3">
               Pegá varios contactos separados por una línea en blanco entre cada uno. Se crea una tarjeta por cada uno.

@@ -278,6 +278,7 @@ function Badge({ children, tono = 'info' }) {
 }
 
 function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
+  const router = useRouter();
   const { lead, seguimiento, inscrito, historial } = ficha;
   const [tab, setTab] = useState('Resumen');
 
@@ -303,6 +304,20 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
   const [fechaAProgramar, setFechaAProgramar] = useState('');
   const [mostrarModalVenta, setMostrarModalVenta] = useState(false);
   const [mostrarFormBaja, setMostrarFormBaja] = useState(false);
+  const [confirmarEliminarLead, setConfirmarEliminarLead] = useState(false);
+  const [eliminandoLead, setEliminandoLead] = useState(false);
+
+  async function eliminarLead() {
+    setEliminandoLead(true);
+    await fetch('/api/leads', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ leadIds: [lead.ID], solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
+    });
+    setEliminandoLead(false);
+    setConfirmarEliminarLead(false);
+    router.push('/buscador');
+  }
   const [fechaBaja, setFechaBaja] = useState(new Date().toISOString().slice(0, 10));
   const [motivoBaja, setMotivoBaja] = useState('');
   const [guardandoBaja, setGuardandoBaja] = useState(false);
@@ -520,8 +535,33 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
             {puedeEditarSoloContacto && !editando && (
               <button onClick={() => { setSoloContacto(true); setEditando(true); }} className="text-xs px-3 py-1.5 rounded-lg bg-accentPurple text-white font-semibold">✏️ Editar contacto</button>
             )}
+            {usuario.roles?.includes('Admin') && (
+              <button onClick={() => setConfirmarEliminarLead(true)} className="text-xs px-3 py-1.5 rounded-lg bg-dangerBg text-dangerText font-semibold">🗑 Eliminar</button>
+            )}
           </div>
         </div>
+
+        {confirmarEliminarLead && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+            <div className="bg-surface2 border border-border rounded-2xl p-6 w-96">
+              <p className="text-sm font-semibold mb-2">¿Eliminar a {lead.Nombre} {lead.Apellido}?</p>
+              <p className="text-textMuted text-xs mb-4">
+                {lead.Estado === 'Comprado'
+                  ? 'Este lead tiene una venta confirmada — no se puede eliminar, está protegido.'
+                  : 'Se borra el lead y todo su historial de seguimiento. Esta acción no se puede deshacer.'}
+              </p>
+              <div className="flex gap-2">
+                <button onClick={() => setConfirmarEliminarLead(false)} className="text-xs px-3 py-2 rounded-lg bg-surface border border-border flex-1">Cancelar</button>
+                {lead.Estado !== 'Comprado' && (
+                  <button onClick={eliminarLead} disabled={eliminandoLead}
+                    className="text-xs px-3 py-2 rounded-lg bg-dangerText text-white font-semibold flex-1 disabled:opacity-60">
+                    {eliminandoLead ? 'Eliminando…' : 'Sí, eliminar'}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {editando && (
           <div className="mt-4 pt-4 border-t border-border">

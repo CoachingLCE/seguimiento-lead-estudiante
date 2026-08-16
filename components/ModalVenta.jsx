@@ -15,6 +15,9 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
   const [vendidoPorOtro, setVendidoPorOtro] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState('');
+  const [rangoDesde, setRangoDesde] = useState(1);
+  const [rangoHasta, setRangoHasta] = useState(1);
+  const [rangoValor, setRangoValor] = useState('');
 
   // Cada vez que se abre el modal para un lead distinto, resetea el formulario
   // (si no, quedarían pegados los valores del lead anterior).
@@ -43,6 +46,22 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
   }
   function quitarCuotaVariable(i) {
     setCuotasVariables((prev) => prev.filter((_, idx) => idx !== i));
+  }
+  // Completa de una todas las cuotas de un rango (ej: cuota 1 a 4 = $42.000 cada una) — así no
+  // hace falta tipear cada cuota una por una cuando varias comparten el mismo valor.
+  function agregarRangoCuotas() {
+    if (!rangoValor || Number(rangoValor) <= 0 || rangoDesde > rangoHasta) return;
+    setCuotasVariables((prev) => {
+      const nuevo = [...prev];
+      while (nuevo.length < rangoHasta) nuevo.push('');
+      for (let i = rangoDesde - 1; i < rangoHasta; i++) nuevo[i] = rangoValor;
+      return nuevo;
+    });
+    setRangoValor('');
+    // Sigue proponiendo el próximo tramo, para cargar rápido varios rangos seguidos.
+    const siguiente = rangoHasta < 12 ? rangoHasta + 1 : 12;
+    setRangoDesde(siguiente);
+    setRangoHasta(siguiente);
   }
 
   async function handleConfirm() {
@@ -88,7 +107,7 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
-      <div className="w-full max-w-sm bg-surface2 border border-border rounded-2xl p-6">
+      <div className="w-full max-w-sm bg-surface2 border border-border rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
         <h3 className="text-base font-semibold">Marcar como venta</h3>
         <p className="text-textSec text-sm mb-4">{lead.Nombre} {lead.Apellido} · {lead.Curso}</p>
 
@@ -135,6 +154,34 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
           </div>
         ) : modalidad === 'cuotas-variables' ? (
           <div className="mb-3">
+            <label className="text-xs text-textSec block mb-1">Agregar cuotas por rango</label>
+            <p className="text-textMuted text-[10.5px] mb-2">Para cuotas que se repiten en tramos (ej: cuota 1 a 4 = $42.000 cada una).</p>
+            <div className="flex items-end gap-2 mb-3">
+              <div>
+                <span className="text-[10.5px] text-textMuted block mb-1">Cuota desde</span>
+                <select value={rangoDesde} onChange={(e) => setRangoDesde(Number(e.target.value))}
+                  className="bg-bg border border-border rounded-lg px-2 py-1.5 text-sm w-16">
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </div>
+              <div>
+                <span className="text-[10.5px] text-textMuted block mb-1">Hasta</span>
+                <select value={rangoHasta} onChange={(e) => setRangoHasta(Number(e.target.value))}
+                  className="bg-bg border border-border rounded-lg px-2 py-1.5 text-sm w-16">
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </div>
+              <div className="flex-1">
+                <span className="text-[10.5px] text-textMuted block mb-1">Valor de cada una</span>
+                <input type="number" value={rangoValor} onChange={(e) => setRangoValor(e.target.value)}
+                  className="w-full bg-bg border border-border rounded-lg px-2 py-1.5 text-sm" />
+              </div>
+              <button type="button" onClick={agregarRangoCuotas}
+                className="text-xs px-3 py-1.5 rounded-lg bg-accentTeal/20 text-accentTeal font-semibold whitespace-nowrap">
+                + Agregar rango
+              </button>
+            </div>
+
             <label className="text-xs text-textSec block mb-1">Valor de cada cuota, en orden <span className="text-dangerText">*</span></label>
             <div className="space-y-2">
               {cuotasVariables.map((valor, i) => (
@@ -149,7 +196,7 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
               ))}
             </div>
             <button type="button" onClick={agregarCuotaVariable}
-              className="text-accentTeal text-xs font-semibold mt-2">+ Agregar cuota</button>
+              className="text-accentTeal text-xs font-semibold mt-2">+ Agregar cuota individual</button>
             <p className="text-textMuted text-[11px] mt-2">
               Total: ${cuotasVariables.filter((v) => v !== '').reduce((acc, v) => acc + Number(v), 0).toLocaleString('es-AR')}
             </p>
