@@ -92,6 +92,16 @@ export default function Nav({ usuario, onLogout }) {
 
         <div className="flex items-center gap-2">
           <ThemeSelector />
+          {tienePermisoBuscador(usuario) && (
+            <Link href="/buscador" title="Buscador"
+              className={`w-9 h-9 flex items-center justify-center rounded-lg text-base transition-colors ${
+                pathname === '/buscador'
+                  ? 'bg-accentPurple text-white'
+                  : 'bg-surface2 border border-border text-textSec hover:text-text hover:border-accentTeal'
+              }`}>
+              🔍
+            </Link>
+          )}
           <Link href="/herramientas" title="Herramientas"
             className={`w-9 h-9 flex items-center justify-center rounded-lg text-base transition-colors ${
               pathname === '/herramientas'
@@ -118,9 +128,6 @@ export default function Nav({ usuario, onLogout }) {
         {analisis.length > 0 && <div className="flex items-center gap-2 flex-wrap">{analisis}</div>}
         {(operativo.length > 0 || analisis.length > 0) && administracion.length > 0 && <Divisor />}
         {administracion.length > 0 && <div className="flex items-center gap-2 flex-wrap">{administracion}</div>}
-        {tienePermisoBuscador(usuario) && (
-          <div className="ml-auto">{itemNav('/buscador', '🔍 Buscador', pathname)}</div>
-        )}
       </nav>
     </div>
   );
