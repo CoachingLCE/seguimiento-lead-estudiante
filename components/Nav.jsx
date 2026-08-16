@@ -63,8 +63,7 @@ export default function Nav({ usuario, onLogout }) {
   const operativo = [
     tienePermisoOperativo(usuario) && itemNav('/dashboard', 'Dashboard', pathname),
     tienePermisoOperativo(usuario) && itemNav('/seguimiento', 'Seguimiento', pathname),
-    tienePermisoCrearLeads(usuario) && itemNavPrimario('/nuevo-lead', 'Nuevo lead', pathname),
-    itemNav('/herramientas', '⚡ Herramientas', pathname)
+    tienePermisoCrearLeads(usuario) && itemNavPrimario('/nuevo-lead', 'Nuevo lead', pathname)
   ].filter(Boolean);
 
   const analisis = [
@@ -91,10 +90,18 @@ export default function Nav({ usuario, onLogout }) {
           <h1 className="text-2xl font-bold">Seguimiento de LEAD-Estudiante</h1>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           <ThemeSelector />
+          <Link href="/herramientas" title="Herramientas"
+            className={`w-9 h-9 flex items-center justify-center rounded-lg text-base transition-colors ${
+              pathname === '/herramientas'
+                ? 'bg-accentPurple text-white'
+                : 'bg-surface2 border border-border text-textSec hover:text-text hover:border-accentTeal'
+            }`}>
+            ⚡
+          </Link>
           {usuario && (
-            <div className="text-right text-sm">
+            <div className="text-right text-sm ml-2">
               <p className="font-semibold">{usuario.nombre}</p>
               <p className="text-textSec text-xs">{usuario.roles.join(' + ')}</p>
               <button onClick={onLogout} className="text-xs text-textMuted underline mt-1">
