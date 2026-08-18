@@ -143,7 +143,7 @@ export async function POST(request) {
       await appendRow('Seguimiento', [
         lead.ID, 'baja', vence.toISOString(), '', '', 'FALSE', '',
         '', `Baja registrada el ${fechaBaja.toLocaleDateString('es-AR')}${entrada.motivo ? ` — Motivo: ${entrada.motivo}` : ''}`,
-        '', ''
+        '', '', ''
       ]);
       yaTieneBaja.add(lead.ID);
       await registrarAccion(

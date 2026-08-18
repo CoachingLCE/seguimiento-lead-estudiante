@@ -93,18 +93,18 @@ export async function POST(request) {
   const vence5 = inicioDelDiaMasHoras(DIAS_LOTE_5 * 24);
 
   await appendRow('Seguimiento', [
-    leadId, '1', vence1, body.cargadoPorEmail, body.cargadoPorNombre, 'FALSE', '', '', '', '', ''
+    leadId, '1', vence1, body.cargadoPorEmail, body.cargadoPorNombre, 'FALSE', '', '', '', '', '', ''
   ]);
   // Lote 2 no se crea todavía: se genera dinámicamente cuando el Lote 1 se marca contactado sin conversión
   // (ver PATCH en /api/seguimiento). Lotes 3, 4 y 5 sí se pre-crean, "Sin asignación" (AsignadoA vacío).
   await appendRow('Seguimiento', [
-    leadId, '3', vence3, '', '', 'FALSE', '', '', '', '', ''
+    leadId, '3', vence3, '', '', 'FALSE', '', '', '', '', '', ''
   ]);
   await appendRow('Seguimiento', [
-    leadId, '4', vence4, '', '', 'FALSE', '', '', '', '', ''
+    leadId, '4', vence4, '', '', 'FALSE', '', '', '', '', '', ''
   ]);
   await appendRow('Seguimiento', [
-    leadId, '5', vence5, '', '', 'FALSE', '', '', '', '', ''
+    leadId, '5', vence5, '', '', 'FALSE', '', '', '', '', '', ''
   ]);
 
   await registrarAccion(

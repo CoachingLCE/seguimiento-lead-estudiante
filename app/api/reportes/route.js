@@ -60,9 +60,13 @@ function calcularActividadPorPersona(mes, todosLosLeads, todoElSeguimiento) {
   });
 
   todoElSeguimiento.forEach((s) => {
-    if (s.Contactado !== 'TRUE' || !s.AsignadoANombre) return;
+    // Se usa ContactadoPorNombre (quién realmente marcó el contacto) y no AsignadoANombre
+    // (a quién está asignado el lead) — si alguien contacta un lead asignado a otra persona sin
+    // reasignarlo antes, el crédito le corresponde a quien lo hizo, no a quien tenía el lead.
+    const responsableReal = s.ContactadoPorNombre || s.AsignadoANombre;
+    if (s.Contactado !== 'TRUE' || !responsableReal) return;
     if (!dentroDelMes(s.FechaContacto)) return;
-    const p = asegurar(s.AsignadoANombre);
+    const p = asegurar(responsableReal);
     const campo = `contactosLote${s.Lote}`;
     if (p[campo] !== undefined) p[campo] += 1;
   });
