@@ -11,6 +11,7 @@ export default function AuditoriaPage() {
   const router = useRouter();
   const [registros, setRegistros] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [errorCarga, setErrorCarga] = useState('');
   const [filtroUsuario, setFiltroUsuario] = useState('');
   const [desde, setDesde] = useState('');
   const [hasta, setHasta] = useState('');
@@ -26,12 +27,24 @@ export default function AuditoriaPage() {
 
   async function cargarRegistros() {
     setCargando(true);
+    setErrorCarga('');
     const params = new URLSearchParams({ solicitanteEmail: usuario.email });
     if (filtroUsuario) params.set('usuario', filtroUsuario);
     if (desde) params.set('desde', desde);
     if (hasta) params.set('hasta', hasta);
-    const r = await fetch(`/api/auditoria?${params.toString()}`).then((res) => res.json());
-    setRegistros(r.registros || []);
+    try {
+      const res = await fetch(`/api/auditoria?${params.toString()}`);
+      const r = await res.json();
+      if (!res.ok || r.error) {
+        setErrorCarga(r.error || 'No se pudo cargar el historial.');
+        setRegistros([]);
+      } else {
+        setRegistros(r.registros || []);
+      }
+    } catch (err) {
+      setErrorCarga('No se pudo conectar con el servidor. Probá de nuevo.');
+      setRegistros([]);
+    }
     setCargando(false);
   }
 
@@ -101,7 +114,14 @@ export default function AuditoriaPage() {
         </div>
 
         <div className="bg-surface border border-border rounded-2xl p-5 print-section">
-          {cargando ? (
+          {errorCarga ? (
+            <div className="bg-dangerBg border border-dangerText/30 rounded-2xl p-6 text-center">
+              <p className="text-dangerText text-sm font-semibold mb-3">⚠️ {errorCarga}</p>
+              <button onClick={cargarRegistros} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">
+                Reintentar
+              </button>
+            </div>
+          ) : cargando ? (
             <p className="text-textSec text-sm">Cargando…</p>
           ) : registrosFiltrados.length === 0 ? (
             <p className="text-textMuted text-sm">Sin registros para este filtro.</p>

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { readSheet } from '../../../lib/sheets';
+import { readSheet, readSheetCola } from '../../../lib/sheets';
 import { findUsuario, tienePermisoBuscador } from '../../../lib/auth';
 
 // GET /api/buscador?q=...&solicitanteEmail=...           -> resultados de búsqueda
@@ -16,7 +16,7 @@ export async function GET(request) {
   try {
     if (leadId) {
       const [leads, seguimiento, inscritos, auditoria] = await Promise.all([
-        readSheet('Leads'), readSheet('Seguimiento'), readSheet('Inscritos'), readSheet('Auditoria')
+        readSheet('Leads'), readSheet('Seguimiento'), readSheet('Inscritos'), readSheetCola('Auditoria', 5000)
       ]);
       const lead = leads.find((l) => l.ID === leadId);
       if (!lead) return NextResponse.json({ error: 'No encontrado' }, { status: 404 });
