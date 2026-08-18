@@ -36,10 +36,20 @@ export async function GET(request) {
     readSheet('Leads'), readSheet('Seguimiento'), readSheet('Inscritos')
   ]);
 
+  // Antes, por cada lead se recorría TODO Seguimiento e Inscritos de nuevo (búsqueda anidada) —
+  // con muchos leads y muchas filas de seguimiento, esa multiplicación es la principal causa de
+  // que el buscador se sienta lento. Armando mapas una sola vez, cada lead se resuelve al instante.
+  const seguimientoPorLead = new Map();
+  seguimiento.forEach((s) => {
+    if (!seguimientoPorLead.has(s.LeadID)) seguimientoPorLead.set(s.LeadID, []);
+    seguimientoPorLead.get(s.LeadID).push(s);
+  });
+  const inscritoPorLead = new Map(inscritos.map((i) => [i.LeadId, i]));
+
   const resultados = leads
     .map((l) => {
-      const segsLead = seguimiento.filter((s) => s.LeadID === l.ID);
-      const inscrito = inscritos.find((i) => i.LeadId === l.ID) || null;
+      const segsLead = seguimientoPorLead.get(l.ID) || [];
+      const inscrito = inscritoPorLead.get(l.ID) || null;
       const ultimoContacto = segsLead
         .filter((s) => s.Contactado === 'TRUE')
         .sort((a, b) => new Date(b.FechaContacto) - new Date(a.FechaContacto))[0];
