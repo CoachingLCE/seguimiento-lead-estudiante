@@ -13,28 +13,29 @@ export async function GET(request) {
 
   const leadId = searchParams.get('leadId');
 
-  if (leadId) {
-    const [leads, seguimiento, inscritos, auditoria] = await Promise.all([
-      readSheet('Leads'), readSheet('Seguimiento'), readSheet('Inscritos'), readSheet('Auditoria')
+  try {
+    if (leadId) {
+      const [leads, seguimiento, inscritos, auditoria] = await Promise.all([
+        readSheet('Leads'), readSheet('Seguimiento'), readSheet('Inscritos'), readSheet('Auditoria')
+      ]);
+      const lead = leads.find((l) => l.ID === leadId);
+      if (!lead) return NextResponse.json({ error: 'No encontrado' }, { status: 404 });
+
+      const seguimientoLead = seguimiento.filter((s) => s.LeadID === leadId);
+      const inscrito = inscritos.find((i) => i.LeadId === leadId) || null;
+      const historial = auditoria
+        .filter((a) => a.LeadIdRelacionado === leadId)
+        .sort((a, b) => new Date(a.Fecha) - new Date(b.Fecha));
+
+      return NextResponse.json({ lead, seguimiento: seguimientoLead, inscrito, historial });
+    }
+
+    const q = (searchParams.get('q') || '').trim().toLowerCase();
+    if (!q || q.length < 2) return NextResponse.json({ resultados: [] });
+
+    const [leads, seguimiento, inscritos] = await Promise.all([
+      readSheet('Leads'), readSheet('Seguimiento'), readSheet('Inscritos')
     ]);
-    const lead = leads.find((l) => l.ID === leadId);
-    if (!lead) return NextResponse.json({ error: 'No encontrado' }, { status: 404 });
-
-    const seguimientoLead = seguimiento.filter((s) => s.LeadID === leadId);
-    const inscrito = inscritos.find((i) => i.LeadId === leadId) || null;
-    const historial = auditoria
-      .filter((a) => a.LeadIdRelacionado === leadId)
-      .sort((a, b) => new Date(a.Fecha) - new Date(b.Fecha));
-
-    return NextResponse.json({ lead, seguimiento: seguimientoLead, inscrito, historial });
-  }
-
-  const q = (searchParams.get('q') || '').trim().toLowerCase();
-  if (!q || q.length < 2) return NextResponse.json({ resultados: [] });
-
-  const [leads, seguimiento, inscritos] = await Promise.all([
-    readSheet('Leads'), readSheet('Seguimiento'), readSheet('Inscritos')
-  ]);
 
   // Antes, por cada lead se recorría TODO Seguimiento e Inscritos de nuevo (búsqueda anidada) —
   // con muchos leads y muchas filas de seguimiento, esa multiplicación es la principal causa de
@@ -96,4 +97,8 @@ export async function GET(request) {
     }));
 
   return NextResponse.json({ resultados });
+  } catch (err) {
+    console.error('Error en buscador:', err);
+    return NextResponse.json({ error: 'Ocurrió un error. Probá de nuevo o avisale a Diego.' }, { status: 500 });
+  }
 }

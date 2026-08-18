@@ -131,6 +131,7 @@ function BuscadorContent() {
   const [resultados, setResultados] = useState([]);
   const [ficha, setFicha] = useState(null);
   const [cargando, setCargando] = useState(false);
+  const [errorCarga, setErrorCarga] = useState('');
   const [chipActivo, setChipActivo] = useState('Todos');
   const [busquedasRecientes, setBusquedasRecientes] = useState([]);
   const [vistosRecientes, setVistosRecientes] = useState([]);
@@ -157,23 +158,45 @@ function BuscadorContent() {
 
   async function buscar(texto) {
     setCargando(true);
-    const r = await fetch(`/api/buscador?q=${encodeURIComponent(texto)}&solicitanteEmail=${encodeURIComponent(usuario.email)}`)
-      .then((res) => res.json());
-    setResultados(r.resultados || []);
+    setErrorCarga('');
+    try {
+      const res = await fetch(`/api/buscador?q=${encodeURIComponent(texto)}&solicitanteEmail=${encodeURIComponent(usuario.email)}`);
+      const r = await res.json();
+      if (!res.ok || r.error) {
+        setErrorCarga(r.error || 'No se pudo buscar. Probá de nuevo.');
+        setResultados([]);
+      } else {
+        setResultados(r.resultados || []);
+        guardarBusquedaReciente(texto);
+        setBusquedasRecientes(leerBusquedasRecientes());
+      }
+    } catch (err) {
+      setErrorCarga('No se pudo conectar con el servidor. Probá de nuevo.');
+      setResultados([]);
+    }
     setCargando(false);
-    guardarBusquedaReciente(texto);
-    setBusquedasRecientes(leerBusquedasRecientes());
   }
 
   async function cargarFicha() {
     setCargando(true);
-    const r = await fetch(`/api/buscador?leadId=${encodeURIComponent(leadId)}&solicitanteEmail=${encodeURIComponent(usuario.email)}`)
-      .then((res) => res.json());
-    setFicha(r);
-    setCargando(false);
-    if (r.lead) {
-      guardarVisto({ id: r.lead.ID, nombre: `${r.lead.Nombre} ${r.lead.Apellido}`, curso: r.lead.Curso || 'sin curso', fecha: new Date().toISOString() });
+    setErrorCarga('');
+    try {
+      const res = await fetch(`/api/buscador?leadId=${encodeURIComponent(leadId)}&solicitanteEmail=${encodeURIComponent(usuario.email)}`);
+      const r = await res.json();
+      if (!res.ok || r.error) {
+        setErrorCarga(r.error || 'No se pudo cargar esta ficha. Probá de nuevo.');
+        setFicha(null);
+      } else {
+        setFicha(r);
+        if (r.lead) {
+          guardarVisto({ id: r.lead.ID, nombre: `${r.lead.Nombre} ${r.lead.Apellido}`, curso: r.lead.Curso || 'sin curso', fecha: new Date().toISOString() });
+        }
+      }
+    } catch (err) {
+      setErrorCarga('No se pudo conectar con el servidor. Probá de nuevo.');
+      setFicha(null);
     }
+    setCargando(false);
   }
 
   const resultadosFiltrados = resultados.filter((r) => {
@@ -211,6 +234,15 @@ function BuscadorContent() {
               </div>
             )}
           </>
+        )}
+
+        {errorCarga && (
+          <div className="bg-dangerBg border border-dangerText/30 rounded-2xl p-6 text-center mb-4">
+            <p className="text-dangerText text-sm font-semibold mb-3">⚠️ {errorCarga}</p>
+            <button onClick={() => (leadId ? cargarFicha() : buscar(q))} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">
+              Reintentar
+            </button>
+          </div>
         )}
 
         {cargando && <p className="text-textSec text-sm">Cargando…</p>}
