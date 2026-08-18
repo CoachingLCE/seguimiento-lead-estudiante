@@ -622,7 +622,10 @@ export default function ReportesPage() {
             {/* ACTIVIDAD POR PERSONA */}
             <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm mb-4">
               <p className="text-sm font-semibold mb-1">👤 Actividad por persona</p>
-              <p className="text-textMuted text-xs mb-3">Mes seleccionado — leads cargados, contactos por lote y ventas cerradas.</p>
+              <p className="text-textMuted text-xs mb-3">
+                Mes seleccionado — leads cargados, contactos por lote y ventas cerradas.
+                Los contactos solo cuentan desde el 13/08/2026 (cuando se empezó a registrar quién contacta a cada uno de verdad).
+              </p>
               {datos.actividadPorPersona.length === 0 ? (
                 <p className="text-textMuted text-sm">Sin actividad registrada este mes.</p>
               ) : (

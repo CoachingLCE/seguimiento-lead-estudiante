@@ -60,10 +60,10 @@ function calcularActividadPorPersona(mes, todosLosLeads, todoElSeguimiento) {
   });
 
   todoElSeguimiento.forEach((s) => {
-    // Se usa ContactadoPorNombre (quién realmente marcó el contacto) y no AsignadoANombre
-    // (a quién está asignado el lead) — si alguien contacta un lead asignado a otra persona sin
-    // reasignarlo antes, el crédito le corresponde a quien lo hizo, no a quien tenía el lead.
-    const responsableReal = s.ContactadoPorNombre || s.AsignadoANombre;
+    // Solo cuenta si quedó registrado quién REALMENTE hizo el contacto (columna ContactadoPorNombre,
+    // agregada recién). Los contactos de antes de esa columna no se cuentan para nadie — no hay
+    // forma confiable de saber quién los hizo de verdad, mejor no contarlos que atribuirlos mal.
+    const responsableReal = s.ContactadoPorNombre;
     if (s.Contactado !== 'TRUE' || !responsableReal) return;
     if (!dentroDelMes(s.FechaContacto)) return;
     const p = asegurar(responsableReal);
