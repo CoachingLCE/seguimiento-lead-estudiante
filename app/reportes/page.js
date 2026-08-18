@@ -619,6 +619,48 @@ export default function ReportesPage() {
               </div>
             </div>
 
+            {/* ACTIVIDAD POR PERSONA */}
+            <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm mb-4">
+              <p className="text-sm font-semibold mb-1">👤 Actividad por persona</p>
+              <p className="text-textMuted text-xs mb-3">Mes seleccionado — leads cargados, contactos por lote y ventas cerradas.</p>
+              {datos.actividadPorPersona.length === 0 ? (
+                <p className="text-textMuted text-sm">Sin actividad registrada este mes.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-textSec text-left border-b border-border">
+                        <th className="py-2 pr-4">Persona</th>
+                        <th className="pr-4">Leads cargados</th>
+                        <th className="pr-3 text-center">L1</th>
+                        <th className="pr-3 text-center">L2</th>
+                        <th className="pr-3 text-center">L3</th>
+                        <th className="pr-3 text-center">L4</th>
+                        <th className="pr-4 text-center">L5</th>
+                        <th className="pr-4">Total contactos</th>
+                        <th>Ventas cerradas</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {datos.actividadPorPersona.map((p) => (
+                        <tr key={p.nombre} className="border-b border-border">
+                          <td className="py-2 pr-4 font-medium">{p.nombre}</td>
+                          <td className="pr-4">{p.leadsCargados}</td>
+                          <td className="pr-3 text-center text-textSec">{p.contactosLote1}</td>
+                          <td className="pr-3 text-center text-textSec">{p.contactosLote2}</td>
+                          <td className="pr-3 text-center text-textSec">{p.contactosLote3}</td>
+                          <td className="pr-3 text-center text-textSec">{p.contactosLote4}</td>
+                          <td className="pr-4 text-center text-textSec">{p.contactosLote5}</td>
+                          <td className="pr-4 font-semibold">{p.totalContactos}</td>
+                          <td className="text-successText font-semibold">{p.ventasCerradas}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
             {/* TABLA */}
             <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm">
               <p className="text-sm font-semibold mb-3">Detalle de compras <span className="text-textMuted font-normal">({comprasFiltradas.length} de {datos.compras.length})</span></p>

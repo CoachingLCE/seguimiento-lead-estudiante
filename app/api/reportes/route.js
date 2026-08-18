@@ -24,6 +24,57 @@ function numeroValido(v) {
 // no un dato confirmado). Para "Totalidad" es un solo ingreso, el día de la venta.
 // Devuelve la serie por día para el mes pedido, sumando cualquier cuota (de ventas de este mes
 // o de meses anteriores) que caiga dentro de este mes.
+// Actividad por persona del mes seleccionado: leads que cargó, contactos que hizo por cada
+// lote, y ventas que cerró — a diferencia de "Ventas por vendedor" (que solo mira ventas), esto
+// da una foto completa de la productividad comercial de cada persona.
+function calcularActividadPorPersona(mes, todosLosLeads, todoElSeguimiento) {
+  const [anio, mesNum] = mes.split('-').map(Number);
+  const inicioMes = new Date(anio, mesNum - 1, 1);
+  const finMes = new Date(anio, mesNum, 1);
+  const dentroDelMes = (fechaStr) => {
+    if (!fechaStr) return false;
+    const f = new Date(fechaStr);
+    return f >= inicioMes && f < finMes;
+  };
+
+  const porPersona = {};
+  function asegurar(nombre) {
+    if (!porPersona[nombre]) {
+      porPersona[nombre] = {
+        nombre, leadsCargados: 0,
+        contactosLote1: 0, contactosLote2: 0, contactosLote3: 0, contactosLote4: 0, contactosLote5: 0,
+        ventasCerradas: 0
+      };
+    }
+    return porPersona[nombre];
+  }
+
+  todosLosLeads.forEach((l) => {
+    if (l.Origen === 'Carga manual (baja)') return; // no son cargas reales
+    if (l.CargadoPorNombre && dentroDelMes(l.FechaIngreso)) {
+      asegurar(l.CargadoPorNombre).leadsCargados += 1;
+    }
+    if (l.VendidoPorNombre && l.Estado === 'Comprado' && dentroDelMes(l.FechaVenta)) {
+      asegurar(l.VendidoPorNombre).ventasCerradas += 1;
+    }
+  });
+
+  todoElSeguimiento.forEach((s) => {
+    if (s.Contactado !== 'TRUE' || !s.AsignadoANombre) return;
+    if (!dentroDelMes(s.FechaContacto)) return;
+    const p = asegurar(s.AsignadoANombre);
+    const campo = `contactosLote${s.Lote}`;
+    if (p[campo] !== undefined) p[campo] += 1;
+  });
+
+  return Object.values(porPersona)
+    .map((p) => ({
+      ...p,
+      totalContactos: p.contactosLote1 + p.contactosLote2 + p.contactosLote3 + p.contactosLote4 + p.contactosLote5
+    }))
+    .sort((a, b) => (b.leadsCargados + b.totalContactos + b.ventasCerradas) - (a.leadsCargados + a.totalContactos + a.ventasCerradas));
+}
+
 function calcularIngresosPorDia(mes, todosLosLeads) {
   const totalDias = diasDelMes(mes);
   const [anio, mesNum] = mes.split('-').map(Number);
@@ -187,6 +238,7 @@ export async function GET(request) {
   const anterior = calcularBloque(mesAnterior, leadsMesAnterior, seguimientoMesAnterior);
   const ingresosPorDia = calcularIngresosPorDia(mes, leads);
   const ingresosTotalesDelMes = ingresosPorDia.reduce((acc, d) => acc + d.monto, 0);
+  const actividadPorPersona = calcularActividadPorPersona(mes, leads, seguimiento);
 
   // Alertas automáticas
   const alertas = [];
@@ -227,6 +279,7 @@ export async function GET(request) {
     mes, mesAnterior,
     ...actual,
     ingresosPorDia, ingresosTotalesDelMes,
+    actividadPorPersona,
     comparativa: {
       leads: { actual: actual.totalLeads, anterior: anterior.totalLeads },
       ventas: { actual: actual.totalCompras, anterior: anterior.totalCompras },
