@@ -165,16 +165,39 @@ export default function AccesosPage() {
               </tr>
             </thead>
             <tbody className="text-textSec">
-              <tr className="border-b border-border"><td className="py-1.5 pr-3 font-semibold text-text">Admin</td><td className="pr-3">Todo el sistema, sin excepción</td></tr>
-              <tr className="border-b border-border"><td className="py-1.5 pr-3 font-semibold text-text">Coordinador <span className="text-textMuted font-normal">("Coordinadora de inscripciones" — ej. Macarena)</span></td><td className="pr-3">Nuevo lead, Dashboard, Seguimiento (reasigna), Reportes, Resumen diario, Estudiantes, Bajas, Buscador — no ve Resumen Estudiantes, Diplomas, Académico, Historial de acciones ni Accesos</td></tr>
-              <tr className="border-b border-border"><td className="py-1.5 pr-3 font-semibold text-text">Coordinador + Academico <span className="text-textMuted font-normal">("Coordinadora de MKT" — ej. Jennifer)</span></td><td className="pr-3">Todo lo de Coordinador, más Académico</td></tr>
-              <tr className="border-b border-border"><td className="py-1.5 pr-3 font-semibold text-text">Inscripciones</td><td className="pr-3">Nuevo lead, Dashboard, Seguimiento (marca ventas), Buscador — no ve Reportes, Estudiantes, Bajas ni Académico</td></tr>
-              <tr className="border-b border-border"><td className="py-1.5 pr-3 font-semibold text-text">Estudiantes</td><td className="pr-3">Nuevo lead, pantalla Estudiantes (altas, bienvenidas, confirmaciones), Académico, Buscador — no ve Dashboard, Seguimiento, Reportes ni Bajas</td></tr>
-              <tr><td className="py-1.5 pr-3 font-semibold text-text">CoordinadorEstudiantes <span className="text-textMuted font-normal">("Coordinadora académica" — Sofía)</span></td><td className="pr-3">Estudiantes + Resumen de Estudiantes + Académico + Buscador + botón exclusivo para omitir Bienvenida/confirmación — nada del circuito comercial</td></tr>
+              <tr className="border-b border-border">
+                <td className="py-1.5 pr-3 font-semibold text-text">Admin</td>
+                <td className="pr-3">Todo el sistema, sin excepción (incluye Diplomas, Historial de acciones y Accesos, que son exclusivos de Admin)</td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="py-1.5 pr-3 font-semibold text-text">Coordinador <span className="text-textMuted font-normal">("Coordinadora de inscripciones" — ej. Macarena)</span></td>
+                <td className="pr-3">Nuevo lead, Dashboard, Seguimiento (reasigna), Reportes, Resumen diario, Estudiantes, Bajas, Buscador, editar ficha completa y datos de venta — no ve Resumen Estudiantes, Diplomas, Académico, Historial de acciones ni Accesos</td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="py-1.5 pr-3 font-semibold text-text">Coordinador + Academico <span className="text-textMuted font-normal">("Coordinadora de MKT" — ej. Jennifer)</span></td>
+                <td className="pr-3">Todo lo de Coordinador, más Académico</td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="py-1.5 pr-3 font-semibold text-text">Inscripciones</td>
+                <td className="pr-3">Nuevo lead, Dashboard, Seguimiento (marca ventas), Buscador, editar ficha completa — no ve Reportes, Resumen diario, Estudiantes, Bajas, Académico ni datos de venta ya confirmada</td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="py-1.5 pr-3 font-semibold text-text">Estudiantes <span className="text-textMuted font-normal">(Lourdes, Victoria)</span></td>
+                <td className="pr-3">Nuevo lead (para crear), pantalla Estudiantes (altas, bienvenidas, confirmaciones), Académico, Buscador, editar Nombre/Email/WhatsApp de sus alumnos — no ve Dashboard, Seguimiento, Reportes, Resumen diario, Resumen Estudiantes, Bajas ni Diplomas</td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="py-1.5 pr-3 font-semibold text-text">CoordinadorEstudiantes <span className="text-textMuted font-normal">("Coordinadora académica" — Sofía)</span></td>
+                <td className="pr-3">Estudiantes, Resumen de Estudiantes, Académico, Buscador, botón exclusivo para omitir Bienvenida/confirmación — nada del circuito comercial (Nuevo lead, Dashboard, Seguimiento, Reportes, Bajas)</td>
+              </tr>
+              <tr>
+                <td className="py-1.5 pr-3 font-semibold text-text">Academico <span className="text-textMuted font-normal">(solo, sin combinar)</span></td>
+                <td className="pr-3">Únicamente Académico — no suma ningún otro permiso por sí solo, se usa para sumarlo a otro rol (ej: a Coordinador, para Jennifer)</td>
+              </tr>
             </tbody>
           </table>
           <p className="text-textMuted text-[11px] mt-3">⚡ Herramientas (accesos rápidos) está disponible para todos los roles, sin restricción.</p>
           <p className="text-textMuted text-[11px] mt-1">🎓 Académico: hoy en la práctica queda para Diego (Admin), Lourdes y Victoria (Estudiantes), Sofía (Coordinadora académica) y Jennifer (Coordinadora de MKT).</p>
+          <p className="text-textMuted text-[11px] mt-1">📋 Diplomas, Historial de acciones y Accesos son exclusivos de Admin — ningún otro rol los ve, se combine como se combine.</p>
         </div>
 
         <div className="bg-surface border border-border rounded-2xl p-6">
