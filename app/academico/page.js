@@ -193,16 +193,32 @@ export default function AcademicoPage() {
     cargarTodo();
   }
 
-  function exportar() {
-    const hoja = XLSX.utils.json_to_sheet(
-      estudiantesFiltrados.map((e) => ({
-        'Nombre completo': e.NombreCompleto, Email: e.Email,
-        'Situación académica': e.SituacionAcademica, Edición: e.Edicion
-      }))
-    );
+  function datosParaExportar() {
+    return estudiantesFiltrados.map((e) => ({
+      'Nombre completo': e.NombreCompleto, Email: e.Email,
+      'Situación académica': e.SituacionAcademica, Edición: e.Edicion
+    }));
+  }
+
+  function exportarExcel() {
+    const hoja = XLSX.utils.json_to_sheet(datosParaExportar());
     const libro = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(libro, hoja, 'Académico');
     XLSX.writeFile(libro, `academico-${cursoActual}-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  }
+
+  // CSV: es el formato que Google Sheets importa perfecto (Archivo > Importar > Subir), por eso
+  // sirve como "exportar a Sheets" sin necesitar conectarse a una cuenta de Google en particular.
+  function exportarCSV() {
+    const hoja = XLSX.utils.json_to_sheet(datosParaExportar());
+    const csv = XLSX.utils.sheet_to_csv(hoja);
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `academico-${cursoActual}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   if (!usuario || !puedeVer) return null;
@@ -237,7 +253,11 @@ export default function AcademicoPage() {
             {mostrarCarga ? 'Cancelar carga' : '+ Cargar estudiantes'}
           </button>
           {estudiantesFiltrados.length > 0 && (
-            <button onClick={exportar} className="text-sm px-4 py-2 rounded-lg bg-surface2 border border-border">⬇ Exportar</button>
+            <>
+            <button onClick={exportarExcel} className="text-sm px-4 py-2 rounded-lg bg-surface2 border border-border">⬇ Excel</button>
+            <button onClick={exportarCSV} title="El CSV se importa perfecto en Google Sheets (Archivo > Importar)"
+              className="text-sm px-4 py-2 rounded-lg bg-surface2 border border-border">⬇ CSV (para Sheets)</button>
+            </>
           )}
         </div>
 
