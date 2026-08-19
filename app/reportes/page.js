@@ -658,9 +658,11 @@ export default function ReportesPage() {
                 {Object.values(filtros).every((v) => !v) && <span className="text-textMuted text-xs">Ningún filtro aplicado — clickeá un gráfico o ranking para filtrar.</span>}
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">
-                <input placeholder="Monto mínimo" type="number" value={filtros.montoMin} onChange={(e) => setFiltros((p) => ({ ...p, montoMin: e.target.value }))}
+                <input placeholder="Monto mínimo" type="text" inputMode="numeric" value={filtros.montoMin}
+                  onChange={(e) => setFiltros((p) => ({ ...p, montoMin: e.target.value.replace(/\./g, '') }))}
                   className="bg-bg border border-border rounded-lg px-2 py-1.5 text-xs" />
-                <input placeholder="Monto máximo" type="number" value={filtros.montoMax} onChange={(e) => setFiltros((p) => ({ ...p, montoMax: e.target.value }))}
+                <input placeholder="Monto máximo" type="text" inputMode="numeric" value={filtros.montoMax}
+                  onChange={(e) => setFiltros((p) => ({ ...p, montoMax: e.target.value.replace(/\./g, '') }))}
                   className="bg-bg border border-border rounded-lg px-2 py-1.5 text-xs" />
                 <select value={filtros.pais} onChange={(e) => setFiltro('pais', e.target.value)} className="bg-bg border border-border rounded-lg px-2 py-1.5 text-xs">
                   <option value="">País (todos)</option>

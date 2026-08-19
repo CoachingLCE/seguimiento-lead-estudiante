@@ -815,7 +815,8 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs text-textSec block mb-1">Monto</label>
-                  <input type="number" value={datosVenta.montoTotal} onChange={(e) => actualizarDatoVenta('montoTotal', e.target.value)}
+                  <input type="text" inputMode="numeric" value={datosVenta.montoTotal}
+                    onChange={(e) => actualizarDatoVenta('montoTotal', e.target.value.replace(/\./g, ''))}
                     className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
                 </div>
                 <div>

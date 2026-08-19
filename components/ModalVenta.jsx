@@ -2,6 +2,14 @@
 import { useState, useEffect } from 'react';
 import { MEDIOS_PAGO, EQUIPO_VENTAS } from '../lib/constants';
 
+// Si alguien escribe "40.400" (como se escribe en Argentina, con punto de miles), un <input
+// type="number"> lo interpreta SIEMPRE con el punto como separador DECIMAL (es un estándar de
+// HTML, no cambia por idioma) — "40.400" pasa a ser matemáticamente 40,4. Por eso estos campos
+// son de texto, y esta función sacar los puntos antes de guardar el valor como número.
+function limpiarMonto(texto) {
+  return texto.replace(/\./g, '');
+}
+
 export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) {
   const [medioPago, setMedioPago] = useState(MEDIOS_PAGO[0]);
   const [modalidad, setModalidad] = useState('cuotas');
@@ -148,7 +156,8 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
             </div>
             <div>
               <label className="text-xs text-textSec block mb-1">Valor de cada cuota <span className="text-dangerText">*</span></label>
-              <input type="number" value={valorCuota} onChange={(e) => setValorCuota(e.target.value)}
+              <input type="text" inputMode="numeric" value={valorCuota} onChange={(e) => setValorCuota(limpiarMonto(e.target.value))}
+                placeholder="Ej: 40400"
                 className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
             </div>
           </div>
@@ -173,7 +182,8 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
               </div>
               <div className="flex-1">
                 <span className="text-[10.5px] text-textMuted block mb-1">Valor de cada una</span>
-                <input type="number" value={rangoValor} onChange={(e) => setRangoValor(e.target.value)}
+                <input type="text" inputMode="numeric" value={rangoValor} onChange={(e) => setRangoValor(limpiarMonto(e.target.value))}
+                  placeholder="Ej: 42000"
                   className="w-full bg-bg border border-border rounded-lg px-2 py-1.5 text-sm" />
               </div>
               <button type="button" onClick={agregarRangoCuotas}
@@ -187,7 +197,7 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
               {cuotasVariables.map((valor, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <span className="text-xs text-textMuted w-14">Cuota {i + 1}</span>
-                  <input type="number" value={valor} onChange={(e) => actualizarCuotaVariable(i, e.target.value)}
+                  <input type="text" inputMode="numeric" value={valor} onChange={(e) => actualizarCuotaVariable(i, limpiarMonto(e.target.value))}
                     className="flex-1 bg-bg border border-border rounded-lg px-3 py-1.5 text-sm" />
                   {cuotasVariables.length > 1 && (
                     <button type="button" onClick={() => quitarCuotaVariable(i)} className="text-warningText text-xs">✕</button>
@@ -204,7 +214,8 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
         ) : (
           <div className="mb-3">
             <label className="text-xs text-textSec block mb-1">Monto total <span className="text-dangerText">*</span></label>
-            <input type="number" value={montoTotal} onChange={(e) => setMontoTotal(e.target.value)}
+            <input type="text" inputMode="numeric" value={montoTotal} onChange={(e) => setMontoTotal(limpiarMonto(e.target.value))}
+              placeholder="Ej: 350000"
               className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
           </div>
         )}
