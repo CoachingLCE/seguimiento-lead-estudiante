@@ -119,7 +119,7 @@ export async function PATCH(request) {
   // rol CoordinadorEstudiantes ("Coordinadora académica"), a pedido explícito de Diego.
   if (body.accion === 'omitir_bienvenida') {
     const solicitante = await findUsuario(body.solicitanteEmail);
-    if (!solicitante?.roles?.includes('CoordinadorEstudiantes')) {
+    if (!solicitante?.roles?.some((r) => ['CoordinadorEstudiantes', 'Admin'].includes(r))) {
       return NextResponse.json({ error: 'Solo la Coordinadora académica puede omitir la bienvenida' }, { status: 403 });
     }
     const ahora = new Date().toISOString();

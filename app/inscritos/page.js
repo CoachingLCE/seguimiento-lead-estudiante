@@ -407,7 +407,7 @@ export default function InscritosPage() {
                               >
                                 {enviandoBienvenidaId === i.ID ? 'Enviando…' : 'ENVIAR'}
                               </button>
-                              {usuario.roles?.includes('CoordinadorEstudiantes') && (
+                              {usuario.roles?.some((r) => ['CoordinadorEstudiantes', 'Admin'].includes(r)) && (
                                 <button
                                   onClick={() => omitirBienvenida(i)}
                                   title="Omitir el envío y su confirmación de recepción — solo vos podés hacer esto"
