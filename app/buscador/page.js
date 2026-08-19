@@ -749,6 +749,19 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
       {tab === 'Seguimiento' && (
         <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm">
           <p className="text-sm font-semibold mb-3">Seguimiento comercial</p>
+          {(() => {
+            const conFecha = seguimiento.filter((s) => s.FechaProgramada && s.Contactado !== 'TRUE');
+            if (conFecha.length === 0) return null;
+            const yaDisponible = conFecha.filter((s) => new Date(s.FechaProgramada) <= new Date());
+            const proximaFecha = [...conFecha].sort((a, b) => new Date(a.FechaProgramada) - new Date(b.FechaProgramada))[0];
+            return (
+              <div className={`rounded-lg px-3 py-2 mb-3 text-sm ${yaDisponible.length > 0 ? 'bg-warningBg text-warningText' : 'bg-infoBg text-infoText'}`}>
+                {yaDisponible.length > 0
+                  ? `📅 Ya está en el "LOTE PROGRAMADO" de Seguimiento desde el ${new Date(yaDisponible[0].FechaProgramada).toLocaleDateString('es-AR')}.`
+                  : `📅 Va a aparecer en el "LOTE PROGRAMADO" de Seguimiento el ${new Date(proximaFecha.FechaProgramada).toLocaleDateString('es-AR')}.`}
+              </div>
+            );
+          })()}
           {seguimiento.length === 0 ? <p className="text-textMuted text-sm">Sin seguimiento comercial.</p> : (
             seguimiento.map((s) => (
               <div key={s.Lote} className="flex items-center justify-between gap-3 mb-1.5 flex-wrap">
