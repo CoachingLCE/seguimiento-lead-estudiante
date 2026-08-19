@@ -59,6 +59,7 @@ export async function GET(request) {
         nombre: [l.Nombre, l.Apellido].filter(Boolean).join(' '),
         curso: l.Curso || 'sin curso',
         estado: l.Estado,
+        whatsapp: l.WhatsApp || '',
         responsable: conResponsable?.AsignadoANombre || '',
         ultimaGestion: conResultado ? `${conResultado.Resultado}` : '',
         motivo: motivo(l)

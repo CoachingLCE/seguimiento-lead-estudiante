@@ -619,6 +619,7 @@ export default function NuevoLeadPage() {
                           <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[12px] text-textSec mb-2.5">
                             <p><span className="text-textMuted">Nombre:</span> {duplicados[index][0].nombre}</p>
                             <p><span className="text-textMuted">Curso:</span> {duplicados[index][0].curso}</p>
+                            <p><span className="text-textMuted">WhatsApp:</span> {duplicados[index][0].whatsapp || '—'}</p>
                             <p><span className="text-textMuted">Estado:</span> {duplicados[index][0].estado}</p>
                             <p><span className="text-textMuted">Responsable:</span> {duplicados[index][0].responsable || '—'}</p>
                             {duplicados[index][0].ultimaGestion && (
