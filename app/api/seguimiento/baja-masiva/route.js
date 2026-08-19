@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { readSheet, appendRow } from '../../../../lib/sheets';
+import { readSheet, appendRow, deleteRows } from '../../../../lib/sheets';
 import { findUsuario, tienePermisoBajas } from '../../../../lib/auth';
 import { registrarAccion } from '../../../../lib/auditoria';
 
@@ -159,4 +159,38 @@ export async function POST(request) {
   }
 
   return NextResponse.json(resultado);
+}
+
+// DELETE /api/seguimiento/baja-masiva -> { leadIds: [...], solicitanteEmail, solicitanteNombre }
+// Borra solo la fila de "baja" en Seguimiento (deja de aparecer en esta lista y en el Lote Bajas),
+// sin tocar el lead ni su historial — por si se cargó por error o ya no corresponde.
+export async function DELETE(request) {
+  const body = await request.json();
+  const solicitante = await findUsuario(body.solicitanteEmail);
+  if (!tienePermisoBajas(solicitante)) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+  }
+
+  const leadIds = new Set(body.leadIds || []);
+  if (leadIds.size === 0) {
+    return NextResponse.json({ error: 'No se especificó qué eliminar' }, { status: 400 });
+  }
+
+  const [seguimiento, leads] = await Promise.all([readSheet('Seguimiento'), readSheet('Leads')]);
+  const filasABorrar = seguimiento.filter((s) => s.Lote === 'baja' && leadIds.has(s.LeadID));
+  if (filasABorrar.length === 0) {
+    return NextResponse.json({ error: 'No se encontró esa baja' }, { status: 404 });
+  }
+
+  await deleteRows('Seguimiento', filasABorrar.map((f) => f._rowIndex));
+
+  for (const fila of filasABorrar) {
+    const lead = leads.find((l) => l.ID === fila.LeadID);
+    await registrarAccion(
+      body.solicitanteEmail, body.solicitanteNombre,
+      'Eliminó una baja registrada', lead ? `${lead.Nombre} ${lead.Apellido}` : '', fila.LeadID
+    );
+  }
+
+  return NextResponse.json({ ok: true, eliminadas: filasABorrar.length });
 }

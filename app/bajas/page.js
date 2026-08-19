@@ -95,6 +95,20 @@ export default function BajasPage() {
   const [resultadoBajasMasivas, setResultadoBajasMasivas] = useState(null);
   const [mostrarListaBajas, setMostrarListaBajas] = useState(false);
   const [listaBajas, setListaBajas] = useState([]);
+  const [seleccionadas, setSeleccionadas] = useState(new Set());
+  const [eliminando, setEliminando] = useState(false);
+
+  async function eliminarBajas(leadIds) {
+    setEliminando(true);
+    await fetch('/api/seguimiento/baja-masiva', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ leadIds, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
+    });
+    setEliminando(false);
+    setSeleccionadas(new Set());
+    cargarListaBajas(true);
+  }
 
   if (usuario && !tienePermisoBajas(usuario)) {
     router.push('/dashboard');
@@ -202,6 +216,16 @@ export default function BajasPage() {
             {mostrarListaBajas ? '▲ Ocultar' : '▼ Ver'} todas las bajas registradas (incluye las que todavía están esperando)
           </button>
           {mostrarListaBajas && (
+            <>
+            {seleccionadas.size > 0 && (
+              <div className="flex items-center justify-between bg-warningBg border border-warningText/30 rounded-lg px-3 py-2 mb-2">
+                <p className="text-warningText text-xs font-semibold">{seleccionadas.size} seleccionada{seleccionadas.size !== 1 ? 's' : ''}</p>
+                <button onClick={() => eliminarBajas([...seleccionadas])} disabled={eliminando}
+                  className="text-xs px-3 py-1 rounded bg-dangerText text-white font-semibold disabled:opacity-60">
+                  {eliminando ? 'Eliminando…' : '🗑 Eliminar seleccionadas'}
+                </button>
+              </div>
+            )}
             <div className="bg-bg border border-border rounded-lg p-3 max-h-72 overflow-y-auto">
               {listaBajas.length === 0 ? (
                 <p className="text-textMuted text-xs">Sin bajas registradas todavía.</p>
@@ -209,13 +233,26 @@ export default function BajasPage() {
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="text-textSec text-left border-b border-border">
-                      <th className="py-1.5">Nombre</th><th>Curso</th><th>Fecha baja</th><th>Disponible</th><th>Estado</th>
+                      <th className="py-1.5 w-6">
+                        <input type="checkbox"
+                          checked={listaBajas.length > 0 && seleccionadas.size === listaBajas.length}
+                          onChange={(e) => setSeleccionadas(e.target.checked ? new Set(listaBajas.map((b) => b.leadId)) : new Set())} />
+                      </th>
+                      <th>Nombre</th><th>Curso</th><th>Fecha baja</th><th>Disponible</th><th>Estado</th><th></th>
                     </tr>
                   </thead>
                   <tbody>
                     {listaBajas.map((b) => (
                       <tr key={b.leadId} className="border-b border-border">
-                        <td className="py-1.5">{b.nombre}</td>
+                        <td className="py-1.5">
+                          <input type="checkbox" checked={seleccionadas.has(b.leadId)}
+                            onChange={() => setSeleccionadas((prev) => {
+                              const nuevo = new Set(prev);
+                              nuevo.has(b.leadId) ? nuevo.delete(b.leadId) : nuevo.add(b.leadId);
+                              return nuevo;
+                            })} />
+                        </td>
+                        <td>{b.nombre}</td>
                         <td>{b.curso}</td>
                         <td>{new Date(b.fechaBaja).toLocaleDateString('es-AR')}</td>
                         <td>{new Date(b.fechaDisponible).toLocaleDateString('es-AR')}</td>
@@ -224,12 +261,17 @@ export default function BajasPage() {
                             : b.disponibleAhora ? <span className="text-warningText">En Lote Bajas</span>
                             : <span className="text-textMuted">Faltan {b.diasFaltantes} días</span>}
                         </td>
+                        <td>
+                          <button onClick={() => eliminarBajas([b.leadId])} disabled={eliminando}
+                            className="text-dangerText text-xs disabled:opacity-60">🗑</button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               )}
             </div>
+            </>
           )}
         </div>
       </div>
