@@ -17,6 +17,22 @@ function esInscripcionCompleta(i) {
     && i.AltaPlataforma === 'TRUE' && i.GrupoWhatsApp === 'TRUE';
 }
 
+function contarTareasCompletas(i) {
+  return [i.BienvenidaEnviada, i.ConfirmoRecepcion, i.AltaPlataforma, i.GrupoWhatsApp].filter((v) => v === 'TRUE').length;
+}
+
+// Resumen rápido de toda la fila, para identificar el estado sin revisar columna por columna.
+function EstadoResumen({ inscrito }) {
+  const hechas = contarTareasCompletas(inscrito);
+  if (hechas === 4) {
+    return <span className="text-xs px-2 py-1 rounded-full bg-successBg text-successText font-medium whitespace-nowrap">🟢 Completo</span>;
+  }
+  if (hechas === 0) {
+    return <span className="text-xs px-2 py-1 rounded-full bg-dangerBg text-dangerText font-medium whitespace-nowrap">🔴 Pendiente</span>;
+  }
+  return <span className="text-xs px-2 py-1 rounded-full bg-warningBg text-warningText font-medium whitespace-nowrap">🟡 {hechas}/4 tareas</span>;
+}
+
 function antiguedad(fecha) {
   const dias = Math.floor((new Date() - new Date(fecha)) / (24 * 60 * 60 * 1000));
   if (dias <= 0) return 'Hoy';
@@ -356,6 +372,7 @@ export default function InscritosPage() {
                     <th className="pr-4 whitespace-normal max-w-[80px] cursor-help" title="Se marca solo cuando el estudiante toca el botón del mail — o se puede tildar a mano si confirma por otro medio.">Confirmó<br/>recepción</th>
                     <th className="pr-4 whitespace-normal max-w-[80px] cursor-help" title="Se manda un mail con el acceso a la plataforma y el contenido de la formación.">Alta<br/>plataforma</th>
                     <th className="pr-4 whitespace-normal max-w-[80px] cursor-help" title="Marcá cuando el estudiante ya fue agregado al grupo de estudio de WhatsApp.">Grupo<br/>WhatsApp</th>
+                    <th className="pr-4">Estado</th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
@@ -439,6 +456,9 @@ export default function InscritosPage() {
                             <CheckboxVisual marcado={i.GrupoWhatsApp === 'TRUE'} />
                           </button>
                         </td>
+                        <td className="py-3 pr-4">
+                          <EstadoResumen inscrito={i} />
+                        </td>
                         <td className="py-3">
                           <div className="flex items-center gap-2">
                             <button onClick={() => setFichaLeadId(i.LeadId)} className="text-accentTeal text-xs font-semibold whitespace-nowrap">Ver ficha</button>
@@ -448,14 +468,6 @@ export default function InscritosPage() {
                           </div>
                         </td>
                       </tr>
-                      {esInscripcionCompleta(i) && (
-                        <tr className="border-b border-border">
-                          <td colSpan={10} className="pt-0 pb-2 pl-4">
-                            <p className="text-successText text-[11px] font-semibold leading-tight">✓ TODO CARGADO</p>
-                            <p className="text-textMuted text-[10.5px] leading-tight">La inscripción está completa</p>
-                          </td>
-                        </tr>
-                      )}
                       </React.Fragment>
                     );
                   })}
