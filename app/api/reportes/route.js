@@ -27,13 +27,15 @@ function numeroValido(v) {
 // Actividad por persona del mes seleccionado: leads que cargó, contactos que hizo por cada
 // lote, y ventas que cerró — a diferencia de "Ventas por vendedor" (que solo mira ventas), esto
 // da una foto completa de la productividad comercial de cada persona.
-function calcularActividadPorPersona(mes, todosLosLeads, todoElSeguimiento, diaFiltro) {
+function calcularActividadPorPersona(mes, todosLosLeads, todoElSeguimiento, rangoDesde, rangoHasta) {
   let inicioMes, finMes;
-  if (diaFiltro) {
-    // Filtro por un día puntual (ej: "2026-08-13") en vez de todo el mes.
-    const [a, m, d] = diaFiltro.split('-').map(Number);
-    inicioMes = new Date(a, m - 1, d);
-    finMes = new Date(a, m - 1, d + 1);
+  if (rangoDesde && rangoHasta) {
+    // Filtro por un rango de fechas puntual (ej: "hoy", "ayer", "semana pasada", "mes pasado")
+    // en vez de todo el mes seleccionado arriba.
+    const [ai, mi, di] = rangoDesde.split('-').map(Number);
+    const [af, mf, df] = rangoHasta.split('-').map(Number);
+    inicioMes = new Date(ai, mi - 1, di);
+    finMes = new Date(af, mf - 1, df + 1); // +1 para incluir el día "hasta" completo
   } else {
     const [anio, mesNum] = mes.split('-').map(Number);
     inicioMes = new Date(anio, mesNum - 1, 1);
@@ -251,7 +253,9 @@ export async function GET(request) {
   const ingresosPorDia = calcularIngresosPorDia(mes, leads);
   const ingresosTotalesDelMes = ingresosPorDia.reduce((acc, d) => acc + d.monto, 0);
   const diaFiltroActividad = searchParams.get('dia') || '';
-  const actividadPorPersona = calcularActividadPorPersona(mes, leads, seguimiento, diaFiltroActividad);
+  const desdeActividad = searchParams.get('desde') || diaFiltroActividad || '';
+  const hastaActividad = searchParams.get('hasta') || diaFiltroActividad || '';
+  const actividadPorPersona = calcularActividadPorPersona(mes, leads, seguimiento, desdeActividad, hastaActividad);
 
   // Alertas automáticas
   const alertas = [];

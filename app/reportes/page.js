@@ -190,12 +190,51 @@ export default function ReportesPage() {
   const router = useRouter();
   const [mes, setMes] = useState('');
   const [mesesDisponibles, setMesesDisponibles] = useState([]);
-  const [diaActividad, setDiaActividad] = useState('');
+  const [rangoDesde, setRangoDesde] = useState('');
+  const [rangoHasta, setRangoHasta] = useState('');
 
-  function cambiarDiaActividad(nuevoDia) {
-    setDiaActividad(nuevoDia);
-    if (mes) cargarDatos(mes, nuevoDia);
+  function formatoFecha(f) {
+    return f.toISOString().slice(0, 10);
   }
+
+  function cambiarRango(desde, hasta) {
+    setRangoDesde(desde);
+    setRangoHasta(hasta);
+    if (mes) cargarDatos(mes, desde, hasta);
+  }
+
+  function filtrarHoy() {
+    const hoy = formatoFecha(new Date());
+    cambiarRango(hoy, hoy);
+  }
+  function filtrarAyer() {
+    const ayer = new Date();
+    ayer.setDate(ayer.getDate() - 1);
+    const f = formatoFecha(ayer);
+    cambiarRango(f, f);
+  }
+  function filtrarSemanaPasada() {
+    // Semana pasada completa: de lunes a domingo de la semana anterior a esta.
+    const hoy = new Date();
+    const diaSemana = hoy.getDay() === 0 ? 7 : hoy.getDay(); // 1=lunes ... 7=domingo
+    const lunesDeEstaSemana = new Date(hoy);
+    lunesDeEstaSemana.setDate(hoy.getDate() - diaSemana + 1);
+    const domingoPasado = new Date(lunesDeEstaSemana);
+    domingoPasado.setDate(lunesDeEstaSemana.getDate() - 1);
+    const lunesPasado = new Date(domingoPasado);
+    lunesPasado.setDate(domingoPasado.getDate() - 6);
+    cambiarRango(formatoFecha(lunesPasado), formatoFecha(domingoPasado));
+  }
+  function filtrarMesPasado() {
+    const hoy = new Date();
+    const primerDiaMesPasado = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+    const ultimoDiaMesPasado = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
+    cambiarRango(formatoFecha(primerDiaMesPasado), formatoFecha(ultimoDiaMesPasado));
+  }
+  function limpiarRango() {
+    cambiarRango('', '');
+  }
+
   const [datos, setDatos] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
@@ -225,13 +264,14 @@ export default function ReportesPage() {
     cargarDatos(lista[0]);
   }
 
-  async function cargarDatos(mesElegido, diaParametro) {
+  async function cargarDatos(mesElegido, desdeParametro, hastaParametro) {
     setCargando(true);
     setError('');
     try {
-      const dia = diaParametro !== undefined ? diaParametro : diaActividad;
-      const diaParam = dia ? `&dia=${dia}` : '';
-      const res = await fetch(`/api/reportes?mes=${mesElegido}&solicitanteEmail=${encodeURIComponent(usuario.email)}${diaParam}`);
+      const desde = desdeParametro !== undefined ? desdeParametro : rangoDesde;
+      const hasta = hastaParametro !== undefined ? hastaParametro : rangoHasta;
+      const rangoParam = desde && hasta ? `&desde=${desde}&hasta=${hasta}` : '';
+      const res = await fetch(`/api/reportes?mes=${mesElegido}&solicitanteEmail=${encodeURIComponent(usuario.email)}${rangoParam}`);
       const r = await res.json();
       if (!res.ok || r.error) {
         setError(r.error || 'No se pudieron cargar los datos.');
@@ -249,8 +289,9 @@ export default function ReportesPage() {
 
   function cambiarMes(m) {
     setMes(m);
-    setDiaActividad('');
-    cargarDatos(m, '');
+    setRangoDesde('');
+    setRangoHasta('');
+    cargarDatos(m, '', '');
   }
 
   function setFiltro(campo, valor) {
@@ -630,20 +671,29 @@ export default function ReportesPage() {
 
             {/* ACTIVIDAD POR PERSONA */}
             <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm mb-4">
-              <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
+              <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
                 <p className="text-sm font-semibold">👤 Actividad por persona</p>
-                <div className="flex items-center gap-2">
-                  <label className="text-textMuted text-xs">Filtrar por día:</label>
-                  <input type="date" value={diaActividad} onChange={(e) => cambiarDiaActividad(e.target.value)}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <button onClick={filtrarHoy} className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${rangoDesde === formatoFecha(new Date()) && rangoHasta === rangoDesde ? 'bg-accentPurple border-accentPurple text-white' : 'bg-surface2 border-border text-textSec hover:text-text'}`}>Hoy</button>
+                  <button onClick={filtrarAyer} className="text-xs px-2.5 py-1 rounded-full border bg-surface2 border-border text-textSec hover:text-text">Ayer</button>
+                  <button onClick={filtrarSemanaPasada} className="text-xs px-2.5 py-1 rounded-full border bg-surface2 border-border text-textSec hover:text-text">Semana pasada</button>
+                  <button onClick={filtrarMesPasado} className="text-xs px-2.5 py-1 rounded-full border bg-surface2 border-border text-textSec hover:text-text">Mes pasado</button>
+                  <span className="text-textMuted text-xs mx-1">o elegí:</span>
+                  <input type="date" value={rangoDesde} onChange={(e) => cambiarRango(e.target.value, rangoHasta || e.target.value)}
                     className="bg-bg border border-border rounded-lg px-2 py-1 text-xs" />
-                  {diaActividad && (
-                    <button onClick={() => cambiarDiaActividad('')} className="text-textMuted text-xs underline">Ver todo el mes</button>
+                  <span className="text-textMuted text-xs">a</span>
+                  <input type="date" value={rangoHasta} onChange={(e) => cambiarRango(rangoDesde || e.target.value, e.target.value)}
+                    className="bg-bg border border-border rounded-lg px-2 py-1 text-xs" />
+                  {rangoDesde && rangoHasta && (
+                    <button onClick={limpiarRango} className="text-textMuted text-xs underline ml-1">Ver todo el mes</button>
                   )}
                 </div>
               </div>
               <p className="text-textMuted text-xs mb-3">
-                {diaActividad
-                  ? `Día ${new Date(diaActividad + 'T00:00:00').toLocaleDateString('es-AR')} — leads cargados, contactos por lote y ventas cerradas.`
+                {rangoDesde && rangoHasta
+                  ? rangoDesde === rangoHasta
+                    ? `Día ${new Date(rangoDesde + 'T00:00:00').toLocaleDateString('es-AR')} — leads cargados, contactos por lote y ventas cerradas.`
+                    : `Del ${new Date(rangoDesde + 'T00:00:00').toLocaleDateString('es-AR')} al ${new Date(rangoHasta + 'T00:00:00').toLocaleDateString('es-AR')} — leads cargados, contactos por lote y ventas cerradas.`
                   : 'Mes seleccionado — leads cargados, contactos por lote y ventas cerradas.'}
                 {' '}Los contactos solo cuentan desde el 13/08/2026 (cuando se empezó a registrar quién contacta a cada uno de verdad).
               </p>
