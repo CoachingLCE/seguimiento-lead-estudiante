@@ -86,7 +86,7 @@ export default function AccesosPage() {
 
   function empezarEdicionRoles(u) {
     setEditandoRoles(u.Email);
-    setRolesEnEdicion((u.Roles || '').split(',').map((r) => r.trim()).filter(Boolean));
+    setRolesEnEdicion((u.Roles || '').split(/[,+]/).map((r) => r.trim()).filter(Boolean));
   }
 
   async function guardarRoles(email) {
@@ -215,7 +215,7 @@ export default function AccesosPage() {
                   ) : (
                     <button onClick={() => empezarEdicionRoles(u)}
                       className="text-xs px-2.5 py-1 rounded-full bg-infoBg text-infoText hover:opacity-80" title="Click para editar roles">
-                      {nombreVisibleRoles((u.Roles || '').split(',').map((r) => r.trim()).filter(Boolean))} ✏️
+                      {nombreVisibleRoles((u.Roles || '').split(/[,+]/).map((r) => r.trim()).filter(Boolean))} ✏️
                     </button>
                   )}
 
