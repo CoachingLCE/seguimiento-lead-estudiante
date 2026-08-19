@@ -166,13 +166,14 @@ export default function AccesosPage() {
             </thead>
             <tbody className="text-textSec">
               <tr className="border-b border-border"><td className="py-1.5 pr-3 font-semibold text-text">Admin</td><td className="pr-3">Todo el sistema, sin excepción</td></tr>
-              <tr className="border-b border-border"><td className="py-1.5 pr-3 font-semibold text-text">Coordinador</td><td className="pr-3">Nuevo lead, Dashboard, Seguimiento (reasigna), Reportes, Resumen diario, Estudiantes, Bajas, Buscador — no ve Resumen Estudiantes, Diplomas, Historial de acciones ni Accesos</td></tr>
-              <tr className="border-b border-border"><td className="py-1.5 pr-3 font-semibold text-text">Inscripciones</td><td className="pr-3">Nuevo lead, Dashboard, Seguimiento (marca ventas), Buscador — no ve Reportes, Estudiantes ni Bajas</td></tr>
-              <tr className="border-b border-border"><td className="py-1.5 pr-3 font-semibold text-text">Estudiantes</td><td className="pr-3">Nuevo lead, pantalla Estudiantes (altas, bienvenidas, confirmaciones), Buscador — no ve Dashboard, Seguimiento ni Reportes</td></tr>
-              <tr><td className="py-1.5 pr-3 font-semibold text-text">CoordinadorEstudiantes</td><td className="pr-3">Estudiantes + Resumen de Estudiantes + Buscador — nada del circuito comercial</td></tr>
+              <tr className="border-b border-border"><td className="py-1.5 pr-3 font-semibold text-text">Coordinador</td><td className="pr-3">Nuevo lead, Dashboard, Seguimiento (reasigna), Reportes, Resumen diario, Estudiantes, Bajas, Buscador — no ve Resumen Estudiantes, Diplomas, Académico, Historial de acciones ni Accesos</td></tr>
+              <tr className="border-b border-border"><td className="py-1.5 pr-3 font-semibold text-text">Inscripciones</td><td className="pr-3">Nuevo lead, Dashboard, Seguimiento (marca ventas), Buscador — no ve Reportes, Estudiantes, Bajas ni Académico</td></tr>
+              <tr className="border-b border-border"><td className="py-1.5 pr-3 font-semibold text-text">Estudiantes</td><td className="pr-3">Nuevo lead, pantalla Estudiantes (altas, bienvenidas, confirmaciones), Académico, Buscador — no ve Dashboard, Seguimiento, Reportes ni Bajas</td></tr>
+              <tr><td className="py-1.5 pr-3 font-semibold text-text">CoordinadorEstudiantes</td><td className="pr-3">Estudiantes + Resumen de Estudiantes + Académico + Buscador — nada del circuito comercial</td></tr>
             </tbody>
           </table>
           <p className="text-textMuted text-[11px] mt-3">⚡ Herramientas (accesos rápidos) está disponible para todos los roles, sin restricción.</p>
+          <p className="text-textMuted text-[11px] mt-1">🎓 Académico también accede Admin (Diego), y hoy en la práctica queda para Diego, Lourdes, Victoria y Sofía (roles Estudiantes/CoordinadorEstudiantes).</p>
         </div>
 
         <div className="bg-surface border border-border rounded-2xl p-6">
