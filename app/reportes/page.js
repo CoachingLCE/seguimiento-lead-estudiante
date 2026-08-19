@@ -190,6 +190,12 @@ export default function ReportesPage() {
   const router = useRouter();
   const [mes, setMes] = useState('');
   const [mesesDisponibles, setMesesDisponibles] = useState([]);
+  const [diaActividad, setDiaActividad] = useState('');
+
+  function cambiarDiaActividad(nuevoDia) {
+    setDiaActividad(nuevoDia);
+    if (mes) cargarDatos(mes, nuevoDia);
+  }
   const [datos, setDatos] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
@@ -219,11 +225,13 @@ export default function ReportesPage() {
     cargarDatos(lista[0]);
   }
 
-  async function cargarDatos(mesElegido) {
+  async function cargarDatos(mesElegido, diaParametro) {
     setCargando(true);
     setError('');
     try {
-      const res = await fetch(`/api/reportes?mes=${mesElegido}&solicitanteEmail=${encodeURIComponent(usuario.email)}`);
+      const dia = diaParametro !== undefined ? diaParametro : diaActividad;
+      const diaParam = dia ? `&dia=${dia}` : '';
+      const res = await fetch(`/api/reportes?mes=${mesElegido}&solicitanteEmail=${encodeURIComponent(usuario.email)}${diaParam}`);
       const r = await res.json();
       if (!res.ok || r.error) {
         setError(r.error || 'No se pudieron cargar los datos.');
@@ -241,7 +249,8 @@ export default function ReportesPage() {
 
   function cambiarMes(m) {
     setMes(m);
-    cargarDatos(m);
+    setDiaActividad('');
+    cargarDatos(m, '');
   }
 
   function setFiltro(campo, valor) {
@@ -621,10 +630,22 @@ export default function ReportesPage() {
 
             {/* ACTIVIDAD POR PERSONA */}
             <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm mb-4">
-              <p className="text-sm font-semibold mb-1">👤 Actividad por persona</p>
+              <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
+                <p className="text-sm font-semibold">👤 Actividad por persona</p>
+                <div className="flex items-center gap-2">
+                  <label className="text-textMuted text-xs">Filtrar por día:</label>
+                  <input type="date" value={diaActividad} onChange={(e) => cambiarDiaActividad(e.target.value)}
+                    className="bg-bg border border-border rounded-lg px-2 py-1 text-xs" />
+                  {diaActividad && (
+                    <button onClick={() => cambiarDiaActividad('')} className="text-textMuted text-xs underline">Ver todo el mes</button>
+                  )}
+                </div>
+              </div>
               <p className="text-textMuted text-xs mb-3">
-                Mes seleccionado — leads cargados, contactos por lote y ventas cerradas.
-                Los contactos solo cuentan desde el 13/08/2026 (cuando se empezó a registrar quién contacta a cada uno de verdad).
+                {diaActividad
+                  ? `Día ${new Date(diaActividad + 'T00:00:00').toLocaleDateString('es-AR')} — leads cargados, contactos por lote y ventas cerradas.`
+                  : 'Mes seleccionado — leads cargados, contactos por lote y ventas cerradas.'}
+                {' '}Los contactos solo cuentan desde el 13/08/2026 (cuando se empezó a registrar quién contacta a cada uno de verdad).
               </p>
               {datos.actividadPorPersona.length === 0 ? (
                 <p className="text-textMuted text-sm">Sin actividad registrada este mes.</p>
