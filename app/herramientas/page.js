@@ -23,7 +23,7 @@ const RECURSOS_INSTITUCIONALES = [
   { icono: HelpCircle, nombre: 'Preguntas frecuentes estudiantes', url: 'https://www.coachingeducativolider.com/preguntas-frecuentes-estudiantes' },
   { icono: BookOpen, nombre: 'Manual académico', url: 'https://www.coachingeducativolider.com/manualacad%C3%A9mico' },
   { icono: BookOpen, nombre: 'Manual inscripciones', url: 'https://www.coachingeducativolider.com/manual-inscripciones' },
-  { icono: DollarSign, nombre: 'Valores de los cursos', url: null }
+  { icono: DollarSign, nombre: 'Valores de los cursos', url: 'https://www.coachingeducativolider.com/productos-y-valores' }
 ];
 
 function TarjetaAcceso({ h }) {
