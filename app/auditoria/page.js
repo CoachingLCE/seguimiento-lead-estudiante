@@ -74,7 +74,7 @@ export default function AuditoriaPage() {
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
-      <div className="max-w-5xl mx-auto px-6 pb-16">
+      <div className="max-w-[1600px] w-[88%] mx-auto pb-16">
         <div className="flex items-end gap-3 mb-4 flex-wrap no-print">
           <div>
             <label className="text-xs text-textSec block mb-1">Usuario</label>
@@ -126,7 +126,13 @@ export default function AuditoriaPage() {
           ) : registrosFiltrados.length === 0 ? (
             <p className="text-textMuted text-sm">Sin registros para este filtro.</p>
           ) : (
-            <table className="w-full text-sm">
+            <table className="w-full text-sm table-fixed">
+              <colgroup>
+                <col className="w-[150px]" />
+                <col className="w-[160px]" />
+                <col className="w-[220px]" />
+                <col />
+              </colgroup>
               <thead>
                 <tr className="text-textSec text-left border-b border-border">
                   <th className="py-2">Fecha</th><th>Usuario</th><th>Acción</th><th>Detalle</th>
@@ -138,19 +144,21 @@ export default function AuditoriaPage() {
                   const esLead = r.Accion === 'Creó un lead';
                   const esLogin = r.Accion === 'Inició sesión';
                   const esLoginFallido = (r.Accion || '').toLowerCase().includes('login fallido') || (r.Accion || '').toLowerCase().includes('login rechazado');
+                  const esGrupoWhatsapp = (r.Accion || '').toLowerCase().includes('grupo de whatsapp') || (r.Accion || '').toLowerCase().includes('grupo whatsapp');
                   return (
                     <tr key={i} className="border-b border-border">
-                      <td className="py-2">{new Date(r.Fecha).toLocaleString('es-AR', { hour12: false })}</td>
-                      <td>{r.UsuarioNombre}</td>
-                      <td className={
+                      <td className="py-2 whitespace-nowrap">{new Date(r.Fecha).toLocaleString('es-AR', { hour12: false })}</td>
+                      <td className="whitespace-nowrap overflow-hidden text-ellipsis">{r.UsuarioNombre}</td>
+                      <td className={`whitespace-nowrap overflow-hidden text-ellipsis ${
                         esVenta ? 'text-successText font-semibold' :
                         esLead ? 'text-accentPurple font-medium' :
+                        esGrupoWhatsapp ? 'text-accentTeal font-medium' :
                         esLogin ? 'text-infoText font-medium' :
                         esLoginFallido ? 'text-dangerText font-medium' : ''
-                      }>
-                        {esVenta && '💰 '}{esLead && '📩 '}{esLogin && '🔑 '}{esLoginFallido && '⚠️ '}{r.Accion}
+                      }`}>
+                        {esVenta && '💰 '}{esLead && '📩 '}{esGrupoWhatsapp && '💬 '}{esLogin && '🔑 '}{esLoginFallido && '⚠️ '}{r.Accion}
                       </td>
-                      <td>{r.Detalle}</td>
+                      <td className="leading-snug">{r.Detalle}</td>
                     </tr>
                   );
                 })}
