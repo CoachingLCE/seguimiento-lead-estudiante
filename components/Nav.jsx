@@ -16,6 +16,7 @@ import {
   tienePermisoBajas,
   tienePermisoAcademico
 } from '../lib/permisos';
+import { nombreVisibleRoles } from '../lib/constants';
 
 // Reexport para no romper imports existentes en otras páginas (`import { puedeVerOperativo } from '.../Nav'`)
 export const puedeVerOperativo = tienePermisoOperativo;
@@ -115,7 +116,7 @@ export default function Nav({ usuario, onLogout }) {
           {usuario && (
             <div className="text-right text-sm ml-2">
               <p className="font-semibold">{usuario.nombre}</p>
-              <p className="text-textSec text-xs">{usuario.roles.join(' + ')}</p>
+              <p className="text-textSec text-xs">{nombreVisibleRoles(usuario.roles)}</p>
               <button onClick={onLogout} className="text-xs text-textMuted underline mt-1">
                 Salir
               </button>

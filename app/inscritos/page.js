@@ -138,6 +138,17 @@ export default function InscritosPage() {
     if (res.ok) { mostrarToast('Bienvenida enviada'); cargarInscritos(); }
   }
 
+  async function omitirBienvenida(inscrito) {
+    if (!confirm(`¿Omitir el envío de la bienvenida a ${inscrito.NombreEstudiante}? También se va a marcar como confirmada, sin necesitar respuesta.`)) return;
+    const res = await fetch('/api/inscritos', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion: 'omitir_bienvenida', id: inscrito.ID, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
+    });
+    if (res.ok) { mostrarToast('Bienvenida omitida'); cargarInscritos(); }
+    else { const r = await res.json(); mostrarToast(r.error || 'No se pudo omitir'); }
+  }
+
   function clickEnviarBienvenida(inscrito) {
     if (inscrito.EmailEstudiante) {
       enviarBienvenidaDesdeTabla(inscrito, inscrito.EmailEstudiante);
@@ -388,13 +399,24 @@ export default function InscritosPage() {
                               </button>
                             </div>
                           ) : (
-                            <button
-                              onClick={() => clickEnviarBienvenida(i)}
-                              disabled={enviandoBienvenidaId === i.ID}
-                              className="text-xs px-2.5 py-1 rounded-md bg-surface2 border border-border font-semibold disabled:opacity-60 whitespace-nowrap"
-                            >
-                              {enviandoBienvenidaId === i.ID ? 'Enviando…' : 'ENVIAR'}
-                            </button>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => clickEnviarBienvenida(i)}
+                                disabled={enviandoBienvenidaId === i.ID}
+                                className="text-xs px-2.5 py-1 rounded-md bg-surface2 border border-border font-semibold disabled:opacity-60 whitespace-nowrap"
+                              >
+                                {enviandoBienvenidaId === i.ID ? 'Enviando…' : 'ENVIAR'}
+                              </button>
+                              {usuario.roles?.includes('CoordinadorEstudiantes') && (
+                                <button
+                                  onClick={() => omitirBienvenida(i)}
+                                  title="Omitir el envío y su confirmación de recepción — solo vos podés hacer esto"
+                                  className="text-xs px-1.5 py-1 rounded-md text-textMuted hover:text-warningText"
+                                >
+                                  ⏭️
+                                </button>
+                              )}
+                            </div>
                           )}
                         </td>
                         <td className="py-3 pr-4">

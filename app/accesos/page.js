@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Nav from '../../components/Nav';
 import { useSession } from '../../lib/useSession';
-import { ROLES } from '../../lib/constants';
+import { ROLES, nombreVisibleRoles } from '../../lib/constants';
 
 export default function AccesosPage() {
   const { usuario, logout } = useSession();
@@ -166,14 +166,15 @@ export default function AccesosPage() {
             </thead>
             <tbody className="text-textSec">
               <tr className="border-b border-border"><td className="py-1.5 pr-3 font-semibold text-text">Admin</td><td className="pr-3">Todo el sistema, sin excepción</td></tr>
-              <tr className="border-b border-border"><td className="py-1.5 pr-3 font-semibold text-text">Coordinador</td><td className="pr-3">Nuevo lead, Dashboard, Seguimiento (reasigna), Reportes, Resumen diario, Estudiantes, Bajas, Buscador — no ve Resumen Estudiantes, Diplomas, Académico, Historial de acciones ni Accesos</td></tr>
+              <tr className="border-b border-border"><td className="py-1.5 pr-3 font-semibold text-text">Coordinador <span className="text-textMuted font-normal">("Coordinadora de inscripciones" — ej. Macarena)</span></td><td className="pr-3">Nuevo lead, Dashboard, Seguimiento (reasigna), Reportes, Resumen diario, Estudiantes, Bajas, Buscador — no ve Resumen Estudiantes, Diplomas, Académico, Historial de acciones ni Accesos</td></tr>
+              <tr className="border-b border-border"><td className="py-1.5 pr-3 font-semibold text-text">Coordinador + Academico <span className="text-textMuted font-normal">("Coordinadora de MKT" — ej. Jennifer)</span></td><td className="pr-3">Todo lo de Coordinador, más Académico</td></tr>
               <tr className="border-b border-border"><td className="py-1.5 pr-3 font-semibold text-text">Inscripciones</td><td className="pr-3">Nuevo lead, Dashboard, Seguimiento (marca ventas), Buscador — no ve Reportes, Estudiantes, Bajas ni Académico</td></tr>
               <tr className="border-b border-border"><td className="py-1.5 pr-3 font-semibold text-text">Estudiantes</td><td className="pr-3">Nuevo lead, pantalla Estudiantes (altas, bienvenidas, confirmaciones), Académico, Buscador — no ve Dashboard, Seguimiento, Reportes ni Bajas</td></tr>
-              <tr><td className="py-1.5 pr-3 font-semibold text-text">CoordinadorEstudiantes</td><td className="pr-3">Estudiantes + Resumen de Estudiantes + Académico + Buscador — nada del circuito comercial</td></tr>
+              <tr><td className="py-1.5 pr-3 font-semibold text-text">CoordinadorEstudiantes <span className="text-textMuted font-normal">("Coordinadora académica" — Sofía)</span></td><td className="pr-3">Estudiantes + Resumen de Estudiantes + Académico + Buscador + botón exclusivo para omitir Bienvenida/confirmación — nada del circuito comercial</td></tr>
             </tbody>
           </table>
           <p className="text-textMuted text-[11px] mt-3">⚡ Herramientas (accesos rápidos) está disponible para todos los roles, sin restricción.</p>
-          <p className="text-textMuted text-[11px] mt-1">🎓 Académico también accede Admin (Diego), y hoy en la práctica queda para Diego, Lourdes, Victoria y Sofía (roles Estudiantes/CoordinadorEstudiantes).</p>
+          <p className="text-textMuted text-[11px] mt-1">🎓 Académico: hoy en la práctica queda para Diego (Admin), Lourdes y Victoria (Estudiantes), Sofía (Coordinadora académica) y Jennifer (Coordinadora de MKT).</p>
         </div>
 
         <div className="bg-surface border border-border rounded-2xl p-6">
@@ -202,6 +203,8 @@ export default function AccesosPage() {
                               e.target.checked ? [...prev, rol] : prev.filter((r) => r !== rol)
                             )} />
                           {rol}
+                          {rol === 'CoordinadorEstudiantes' && <span className="text-textMuted">(Coordinadora académica)</span>}
+                          {rol === 'Academico' && <span className="text-textMuted">(solo Académico)</span>}
                         </label>
                       ))}
                       <button onClick={() => guardarRoles(u.Email)}
@@ -212,7 +215,7 @@ export default function AccesosPage() {
                   ) : (
                     <button onClick={() => empezarEdicionRoles(u)}
                       className="text-xs px-2.5 py-1 rounded-full bg-infoBg text-infoText hover:opacity-80" title="Click para editar roles">
-                      {u.Roles} ✏️
+                      {nombreVisibleRoles((u.Roles || '').split(',').map((r) => r.trim()).filter(Boolean))} ✏️
                     </button>
                   )}
 

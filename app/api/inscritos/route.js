@@ -114,6 +114,28 @@ export async function PATCH(request) {
     return NextResponse.json({ ok: true });
   }
 
+  // Omitir bienvenida: para casos puntuales donde no corresponde mandar el mail (ej: ya se avisó
+  // por otro medio) — salta directo el envío Y su confirmación de recepción. Solo puede usarlo el
+  // rol CoordinadorEstudiantes ("Coordinadora académica"), a pedido explícito de Diego.
+  if (body.accion === 'omitir_bienvenida') {
+    const solicitante = await findUsuario(body.solicitanteEmail);
+    if (!solicitante?.roles?.includes('CoordinadorEstudiantes')) {
+      return NextResponse.json({ error: 'Solo la Coordinadora académica puede omitir la bienvenida' }, { status: 403 });
+    }
+    const ahora = new Date().toISOString();
+    await updateRow('Inscritos', fila._rowIndex, [
+      fila.ID, fila.LeadId, fila.NombreEstudiante, fila.EmailEstudiante, fila.Curso, fila.Edicion,
+      fila.FechaInscripcion, fila.AltaPlataforma, fila.AltaPorEmail, fila.AltaPorNombre, fila.FechaAlta,
+      'TRUE', body.solicitanteEmail, `${body.solicitanteNombre} (omitida)`, ahora, fila.AbonoTotalidad,
+      fila.Docentes, 'TRUE', fila.GrupoWhatsApp
+    ]);
+    await registrarAccion(
+      body.solicitanteEmail, body.solicitanteNombre,
+      'Omitió el envío de la bienvenida (y su confirmación)', fila.NombreEstudiante, fila.LeadId
+    );
+    return NextResponse.json({ ok: true });
+  }
+
   return NextResponse.json({ error: 'Acción no reconocida' }, { status: 400 });
 }
 
