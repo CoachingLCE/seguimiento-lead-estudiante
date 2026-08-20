@@ -299,7 +299,19 @@ export default function NuevoLeadPage() {
 
   function manejarPegado(e, index) {
     const texto = e.clipboardData.getData('text');
-    const bloques = texto.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
+    let bloques = texto.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
+
+    // Si no hay ninguna línea en blanco entre contactos (ej: se pegaron varias filas de una
+    // planilla, una persona por línea, sin separación), pero hay más de una línea con pinta de
+    // WhatsApp, se separa por línea simple en vez de exigir la línea en blanco.
+    if (bloques.length === 1) {
+      const lineas = texto.split('\n').map((l) => l.trim()).filter(Boolean);
+      const pareceWhatsapp = (l) => /\+?\d[\d\s\-()]{7,}/.test(l);
+      if (lineas.length > 1 && lineas.filter(pareceWhatsapp).length > 1) {
+        bloques = lineas;
+      }
+    }
+
     if (bloques.length > 1) {
       e.preventDefault();
       setContactos((prev) => {
@@ -778,7 +790,7 @@ export default function NuevoLeadPage() {
           <div className="bg-surface2 border border-border rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <p className="text-sm font-bold mb-1">📋 Pegar lista completa</p>
             <p className="text-textMuted text-xs mb-3">
-              Pegá varios contactos separados por una línea en blanco entre cada uno. Se crea una tarjeta por cada uno.
+              Pegá varios contactos: separados por una línea en blanco, o directo una fila (con nombre y WhatsApp) por línea. Se crea una tarjeta por cada uno.
             </p>
             <textarea rows={10} value={textoPegarLista} onChange={(e) => setTextoPegarLista(e.target.value)}
               placeholder={'Juan Pérez\nArgentina\n+54 9 11 5555 5555\n\nMaría López\n+54 9 11 4444 4444\n\nPedro Ruiz\n+54 9 11 3333 3333'}
