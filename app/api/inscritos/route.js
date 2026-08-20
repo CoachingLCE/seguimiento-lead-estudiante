@@ -5,7 +5,7 @@ import { findUsuario, tienePermisoEstudiantes } from '../../../lib/auth';
 import { registrarAccion } from '../../../lib/auditoria';
 
 // GET /api/inscritos?solicitanteEmail=... -> lista completa de inscritos
-// (se generan solos 24hs después de la venta — ver /api/cron/generar-estudiantes)
+// (se generan solos al día siguiente de la venta, a las 7 AM — ver /api/cron/generar-estudiantes)
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const solicitante = await findUsuario(searchParams.get('solicitanteEmail'));

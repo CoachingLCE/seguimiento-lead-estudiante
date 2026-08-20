@@ -1,30 +1,30 @@
 import { NextResponse } from 'next/server';
 import { readSheet, appendRow } from '../../../../lib/sheets';
-import { HORAS_PARA_ALTA_ESTUDIANTE } from '../../../../lib/constants';
 import { registrarAccion } from '../../../../lib/auditoria';
 
 // GET /api/cron/generar-estudiantes
-// Corre 1 vez por día (ver vercel.json). Busca ventas confirmadas con 24hs+ de antigüedad
-// que todavía no tengan su fila en "Inscritos", y la crea.
+// Corre 1 vez por día (ver vercel.json). Busca ventas confirmadas del día de ayer o antes (por
+// fecha calendario, no por 24hs exactas — así una venta hecha a la tarde no tiene que esperar
+// un día extra solo porque no pasaron 24hs reales justo a la hora en que corre el proceso) que
+// todavía no tengan su fila en "Inscritos", y la crea.
 export async function GET(request) {
   const authHeader = request.headers.get('authorization');
   if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
 
-  const ahora = Date.now();
-  const UMBRAL_MS = HORAS_PARA_ALTA_ESTUDIANTE * 60 * 60 * 1000;
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
 
   const [leads, inscritos] = await Promise.all([readSheet('Leads'), readSheet('Inscritos')]);
   const idsYaGenerados = new Set(inscritos.map((i) => i.LeadId));
 
-  const ventasParaGenerar = leads.filter(
-    (l) =>
-      l.Estado === 'Comprado' &&
-      l.FechaVenta &&
-      ahora - new Date(l.FechaVenta).getTime() >= UMBRAL_MS &&
-      !idsYaGenerados.has(l.ID)
-  );
+  const ventasParaGenerar = leads.filter((l) => {
+    if (l.Estado !== 'Comprado' || !l.FechaVenta || idsYaGenerados.has(l.ID)) return false;
+    const fechaVenta = new Date(l.FechaVenta);
+    fechaVenta.setHours(0, 0, 0, 0);
+    return fechaVenta < hoy; // venta de ayer o antes (por día calendario, no por 24hs exactas)
+  });
 
   for (const venta of ventasParaGenerar) {
     const id = `EST-${venta.ID}`;
@@ -49,7 +49,7 @@ export async function GET(request) {
     await registrarAccion(
       'sistema', 'Sistema (automático)',
       'Alumno creado automáticamente',
-      `${venta.Nombre} ${venta.Apellido} — ${venta.Curso || 'sin curso'} (24hs después de la venta)`,
+      `${venta.Nombre} ${venta.Apellido} — ${venta.Curso || 'sin curso'} (venta de ayer o antes)`,
       venta.ID
     );
   }
