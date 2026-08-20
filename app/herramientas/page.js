@@ -2,7 +2,7 @@
 import { useRouter } from 'next/navigation';
 import {
   MessageSquare, Mail, Calendar, HardDrive, Sheet, Video, Archive,
-  GraduationCap, Settings, HelpCircle, DollarSign, BookOpen
+  GraduationCap, Settings, HelpCircle, DollarSign, BookOpen, ClipboardCheck, MessageCircle
 } from 'lucide-react';
 import Nav from '../../components/Nav';
 import { useSession } from '../../lib/useSession';
@@ -23,7 +23,9 @@ const RECURSOS_INSTITUCIONALES = [
   { icono: HelpCircle, nombre: 'Preguntas frecuentes estudiantes', url: 'https://www.coachingeducativolider.com/preguntas-frecuentes-estudiantes' },
   { icono: BookOpen, nombre: 'Manual académico', url: 'https://www.coachingeducativolider.com/manualacad%C3%A9mico' },
   { icono: BookOpen, nombre: 'Manual inscripciones', url: 'https://www.coachingeducativolider.com/manual-inscripciones' },
-  { icono: DollarSign, nombre: 'Valores de los cursos', url: 'https://www.coachingeducativolider.com/productos-y-valores' }
+  { icono: DollarSign, nombre: 'Valores de los cursos', url: 'https://www.coachingeducativolider.com/productos-y-valores' },
+  { icono: ClipboardCheck, nombre: 'Evaluación Coaching Deportivo', url: 'https://www.coachingeducativolider.com/evaluaci%C3%B3nfinal-coachingdeportivo' },
+  { icono: MessageCircle, nombre: 'Ver feedback de estudiantes', url: 'https://ilce-feedback.vercel.app/admin' }
 ];
 
 function TarjetaAcceso({ h }) {
