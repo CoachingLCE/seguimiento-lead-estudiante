@@ -512,7 +512,7 @@ export default function NuevoLeadPage() {
             <div className="grid grid-cols-2 gap-5 mb-4">
               <div>
                 <label className="text-[13px] font-medium text-textSec block mb-1">
-                  Curso (para toda la tanda)
+                  Producto (para toda la tanda)
                   {cursoAutocompletado && <span className="text-infoText font-normal ml-1.5">· recordado de la carga anterior</span>}
                 </label>
                 <select value={curso} onChange={(e) => { setCurso(e.target.value); setCursoAutocompletado(false); }} className={inputClsBg}>
