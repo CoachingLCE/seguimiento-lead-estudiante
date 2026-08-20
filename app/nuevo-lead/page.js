@@ -292,35 +292,35 @@ export default function NuevoLeadPage() {
   }
 
   function crearContactosDesdeTexto(texto, indexBase) {
-    const bloques = texto.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
-    if (bloques.length === 0) return null;
+    const bloques = detectarBloques(texto);
+    if (!bloques || bloques.length === 0) return null;
     return bloques.map((b) => ({ ...contactoVacio(), raw: b }));
   }
 
-  function manejarPegado(e, index) {
-    const texto = e.clipboardData.getData('text');
+  // Se usa tanto al pegar como mientras se escribe/edita — no depende de ningún evento en
+  // particular (pegado con Ctrl+V, clic derecho, o incluso tipeado a mano), sino de lo que hay
+  // escrito en el momento. Devuelve null si parece un solo contacto.
+  function detectarBloques(texto) {
     let bloques = texto.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
+    if (bloques.length > 1) return bloques;
 
-    // Si no hay ninguna línea en blanco entre contactos (ej: se pegaron varias filas de una
-    // planilla, una persona por línea, sin separación), pero hay más de una línea con pinta de
-    // WhatsApp, se separa por línea simple en vez de exigir la línea en blanco.
-    if (bloques.length === 1) {
-      const lineas = texto.split('\n').map((l) => l.trim()).filter(Boolean);
-      const pareceWhatsapp = (l) => /\+?\d[\d\s\-()]{7,}/.test(l);
-      if (lineas.length > 1 && lineas.filter(pareceWhatsapp).length > 1) {
-        bloques = lineas;
-      }
-    }
+    // Si no hay ninguna línea en blanco entre contactos (ej: varias filas de una planilla,
+    // una persona por línea, sin separación), pero hay más de una línea con pinta de WhatsApp,
+    // se separa por línea simple en vez de exigir la línea en blanco.
+    const lineas = texto.split('\n').map((l) => l.trim()).filter(Boolean);
+    const pareceWhatsapp = (l) => /\+?\d[\d\s\-()]{7,}/.test(l);
+    if (lineas.length > 1 && lineas.filter(pareceWhatsapp).length > 1) return lineas;
 
-    if (bloques.length > 1) {
-      e.preventDefault();
-      setContactos((prev) => {
-        const nuevos = [...prev];
-        nuevos[index] = { ...nuevos[index], raw: bloques[0] };
-        const extra = bloques.slice(1).map((b) => ({ ...contactoVacio(), raw: b }));
-        return [...nuevos.slice(0, index + 1), ...extra, ...nuevos.slice(index + 1)];
-      });
-    }
+    return null;
+  }
+
+  function separarEnTarjetas(index, bloques) {
+    setContactos((prev) => {
+      const nuevos = [...prev];
+      nuevos[index] = { ...nuevos[index], raw: bloques[0] };
+      const extra = bloques.slice(1).map((b) => ({ ...contactoVacio(), raw: b }));
+      return [...nuevos.slice(0, index + 1), ...extra, ...nuevos.slice(index + 1)];
+    });
   }
 
   function agregarContacto() {
@@ -653,8 +653,7 @@ export default function NuevoLeadPage() {
                         Pegá el contacto como lo recibiste
                       </label>
                       <textarea rows={3} value={contacto.raw}
-                        onPaste={(e) => manejarPegado(e, index)}
-                        placeholder={'Juan Pérez\nArgentina\n+54 9 11 5555 5555\n\nTambién podés pegar varios contactos juntos (separados por una línea en blanco).'}
+                        placeholder={'Juan Pérez\nArgentina\n+54 9 11 5555 5555\n\nTambién podés pegar/escribir varios contactos juntos.'}
                         onChange={(e) => actualizarContacto(index, 'raw', e.target.value)}
                         className={`w-full bg-surface2 border-2 rounded-xl px-4 py-3.5 text-[15px] leading-relaxed
                           focus:outline-none transition-colors ${
@@ -663,6 +662,23 @@ export default function NuevoLeadPage() {
                             estado === 'completo' ? 'border-successText/50 focus:border-successText' :
                             'border-border focus:border-accentTeal'
                           }`} />
+
+                      {/* Si el texto tiene pinta de ser varios contactos juntos (con o sin línea
+                          en blanco entre cada uno, tipeado o pegado), se ofrece separarlos —
+                          nunca se hace en automático para no sorprender. */}
+                      {(() => {
+                        const bloques = detectarBloques(contacto.raw);
+                        if (!bloques) return null;
+                        return (
+                          <div className="flex items-center justify-between gap-2 bg-infoBg border border-infoText/30 rounded-lg px-3 py-2 mt-2">
+                            <p className="text-infoText text-[12px]">👀 Parece que hay {bloques.length} contactos acá juntos.</p>
+                            <button type="button" onClick={() => separarEnTarjetas(index, bloques)}
+                              className="text-[12px] px-2.5 py-1 rounded bg-accentPurple text-white font-semibold whitespace-nowrap">
+                              Separar en {bloques.length} tarjetas
+                            </button>
+                          </div>
+                        );
+                      })()}
 
                       {/* "Detectamos:" */}
                       {contacto.raw.trim() && (
