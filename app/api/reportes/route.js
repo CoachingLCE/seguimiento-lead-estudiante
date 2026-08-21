@@ -271,7 +271,9 @@ export async function GET(request) {
   CURSOS.forEach((c) => {
     if (!actual.cursosConVenta.includes(c) && actual.totalCompras > 0) alertas.push(`"${c}" sin ventas este mes`);
   });
-  EQUIPO_VENTAS.forEach((v) => {
+  // Diego (Admin) queda afuera de esta alerta puntual — está para supervisar, no se espera que
+  // cierre ventas todos los meses. Sigue disponible igual en el desplegable "Quién cerró la venta".
+  EQUIPO_VENTAS.filter((v) => v !== 'Diego Lerner').forEach((v) => {
     if (!actual.vendedoresConVenta.includes(v) && actual.totalCompras > 0) alertas.push(`${v} sin ventas registradas este mes`);
   });
 
