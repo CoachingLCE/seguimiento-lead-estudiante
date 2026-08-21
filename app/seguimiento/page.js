@@ -373,6 +373,8 @@ export default function SeguimientoPage() {
   const lote4 = lote4Todas.filter(noContactada);
   const lote5Todas = seguimiento.filter((s) => s.Lote === '5' && vencido(s) && filaValida(s));
   const lote5 = lote5Todas.filter(noContactada);
+  const lote6Todas = seguimiento.filter((s) => s.Lote === '6' && vencido(s) && filaValida(s));
+  const lote6 = lote6Todas.filter(noContactada);
 
   const seAgreganManiana = (numeroLote) =>
     seguimiento.filter((s) => s.Lote === numeroLote && !vencido(s) && venceManiana(s) && filaValida(s) && noContactada(s)).length;
@@ -381,6 +383,7 @@ export default function SeguimientoPage() {
   const lote3Maniana = seAgreganManiana('3');
   const lote4Maniana = seAgreganManiana('4');
   const lote5Maniana = seAgreganManiana('5');
+  const lote6Maniana = seAgreganManiana('6');
 
   // LOTE PROGRAMADO: cualquier fila (de cualquier lote) donde alguien pidió "contactame el [fecha]"
   // y esa fecha ya llegó — aparece acá aunque técnicamente esté "esperando" en su lote numérico.
@@ -521,8 +524,13 @@ export default function SeguimientoPage() {
             />
             <SeccionLote
               titulo="LOTE 5 – Contactar a los 3 meses" subtitulo={<>{lote5.length} lead(s) sin resolver a los 3 meses de ingresados{lote5Maniana > 0 && <AvisoManiana cantidad={lote5Maniana} />}</>}
-              explicacion={<>Último lote de seguimiento automático. Si marcás la venta, desaparece de acá como cualquier otro lote.</>}
+              explicacion={<>Requiere asignación. Si sigue sin resolverse, pasa al Lote 6 (6 meses).</>}
               filas={lote5} filasTotales={lote5Todas} sinAsignarPorDefecto {...propsComunes}
+            />
+            <SeccionLote
+              titulo="LOTE 6 – Contactar a los 6 meses" subtitulo={<>{lote6.length} lead(s) sin resolver a los 6 meses de ingresados{lote6Maniana > 0 && <AvisoManiana cantidad={lote6Maniana} />}</>}
+              explicacion={<>Último lote de seguimiento automático. Si marcás la venta, desaparece de acá como cualquier otro lote.</>}
+              filas={lote6} filasTotales={lote6Todas} sinAsignarPorDefecto {...propsComunes}
             />
             <SeccionLote
               titulo="📅 LOTE PROGRAMADO" subtitulo={`${loteProgramado.length} lead(s) que pidieron ser contactados en una fecha puntual, y esa fecha ya llegó`}

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { readSheet, appendRow, updateRow, deleteRows } from '../../../lib/sheets';
 import { findUsuario, tienePermisoOperativo, tienePermisoCrearLeads, tienePermisoEditarLead, tienePermisoEditarVenta, tienePermisoEditarContactoEstudiante } from '../../../lib/auth';
 import { registrarAccion } from '../../../lib/auditoria';
-import { HORAS_LOTE_1, DIAS_LOTE_3, DIAS_LOTE_4, DIAS_LOTE_5 } from '../../../lib/constants';
+import { HORAS_LOTE_1, DIAS_LOTE_3, DIAS_LOTE_4, DIAS_LOTE_5, DIAS_LOTE_6 } from '../../../lib/constants';
 
 // Mapea el nombre de campo que manda el front al nombre real de columna en la hoja Leads,
 // más una etiqueta legible para el historial de auditoría.
@@ -91,6 +91,7 @@ export async function POST(request) {
   const vence3 = inicioDelDiaMasHoras(DIAS_LOTE_3 * 24);
   const vence4 = inicioDelDiaMasHoras(DIAS_LOTE_4 * 24);
   const vence5 = inicioDelDiaMasHoras(DIAS_LOTE_5 * 24);
+  const vence6 = inicioDelDiaMasHoras(DIAS_LOTE_6 * 24);
 
   await appendRow('Seguimiento', [
     leadId, '1', vence1, body.cargadoPorEmail, body.cargadoPorNombre, 'FALSE', '', '', '', '', '', ''
@@ -105,6 +106,9 @@ export async function POST(request) {
   ]);
   await appendRow('Seguimiento', [
     leadId, '5', vence5, '', '', 'FALSE', '', '', '', '', '', ''
+  ]);
+  await appendRow('Seguimiento', [
+    leadId, '6', vence6, '', '', 'FALSE', '', '', '', '', '', ''
   ]);
 
   await registrarAccion(

@@ -712,7 +712,8 @@ export default function ReportesPage() {
                         <th className="pr-3 text-center">L2</th>
                         <th className="pr-3 text-center">L3</th>
                         <th className="pr-3 text-center">L4</th>
-                        <th className="pr-4 text-center">L5</th>
+                        <th className="pr-3 text-center">L5</th>
+                        <th className="pr-4 text-center">L6</th>
                         <th className="pr-4">Total contactos</th>
                         <th>Ventas cerradas</th>
                       </tr>
@@ -726,7 +727,8 @@ export default function ReportesPage() {
                           <td className="pr-3 text-center text-textSec">{p.contactosLote2}</td>
                           <td className="pr-3 text-center text-textSec">{p.contactosLote3}</td>
                           <td className="pr-3 text-center text-textSec">{p.contactosLote4}</td>
-                          <td className="pr-4 text-center text-textSec">{p.contactosLote5}</td>
+                          <td className="pr-3 text-center text-textSec">{p.contactosLote5}</td>
+                          <td className="pr-4 text-center text-textSec">{p.contactosLote6}</td>
                           <td className="pr-4 font-semibold">{p.totalContactos}</td>
                           <td className="text-successText font-semibold">{p.ventasCerradas}</td>
                         </tr>

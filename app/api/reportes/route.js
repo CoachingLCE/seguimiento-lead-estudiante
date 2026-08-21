@@ -52,7 +52,7 @@ function calcularActividadPorPersona(mes, todosLosLeads, todoElSeguimiento, rang
     if (!porPersona[nombre]) {
       porPersona[nombre] = {
         nombre, leadsCargados: 0,
-        contactosLote1: 0, contactosLote2: 0, contactosLote3: 0, contactosLote4: 0, contactosLote5: 0,
+        contactosLote1: 0, contactosLote2: 0, contactosLote3: 0, contactosLote4: 0, contactosLote5: 0, contactosLote6: 0,
         ventasCerradas: 0
       };
     }
@@ -84,7 +84,7 @@ function calcularActividadPorPersona(mes, todosLosLeads, todoElSeguimiento, rang
   return Object.values(porPersona)
     .map((p) => ({
       ...p,
-      totalContactos: p.contactosLote1 + p.contactosLote2 + p.contactosLote3 + p.contactosLote4 + p.contactosLote5
+      totalContactos: p.contactosLote1 + p.contactosLote2 + p.contactosLote3 + p.contactosLote4 + p.contactosLote5 + p.contactosLote6
     }))
     .sort((a, b) => (b.leadsCargados + b.totalContactos + b.ventasCerradas) - (a.leadsCargados + a.totalContactos + a.ventasCerradas));
 }
