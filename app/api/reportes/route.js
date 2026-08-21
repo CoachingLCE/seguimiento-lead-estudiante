@@ -266,8 +266,20 @@ export async function GET(request) {
     const caida = Math.round((1 - actual.montoTotal / anterior.montoTotal) * 100);
     alertas.push(`Caída de facturación del ${caida}% respecto al mes anterior`);
   }
-  const diasSinVentas = actual.serieDiaria.filter((d) => new Date().getDate() > d.dia || mes < new Date().toISOString().slice(0, 7)).filter((d) => d.ventas === 0).length;
-  if (diasSinVentas >= 5) alertas.push(`${diasSinVentas} día(s) sin ventas este mes`);
+  // Racha actual de días consecutivos sin ventas, contando hacia atrás desde hoy (o desde el
+  // último día del mes, si es un mes ya cerrado) — se corta apenas se encuentra un día con
+  // ventas. Antes se sumaban todos los días sueltos sin venta del mes (aunque hubiera ventas
+  // después), lo que mostraba una racha vieja como si siguiera activa.
+  const esMesActual = mes === new Date().toISOString().slice(0, 7);
+  const diasDelMesHastaHoy = esMesActual
+    ? actual.serieDiaria.filter((d) => d.dia <= new Date().getDate())
+    : actual.serieDiaria;
+  let diasSinVentas = 0;
+  for (let i = diasDelMesHastaHoy.length - 1; i >= 0; i--) {
+    if (diasDelMesHastaHoy[i].ventas === 0) diasSinVentas++;
+    else break;
+  }
+  if (diasSinVentas >= 5) alertas.push(`${diasSinVentas} día(s) sin ventas (racha actual)`);
   CURSOS.forEach((c) => {
     if (!actual.cursosConVenta.includes(c) && actual.totalCompras > 0) alertas.push(`"${c}" sin ventas este mes`);
   });
