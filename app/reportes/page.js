@@ -607,6 +607,13 @@ export default function ReportesPage() {
                 <GraficoDona datos={datos.leadsPorOrigen} onClickItem={(n) => setFiltro('origen', n)} activo={filtros.origen} />
               </ChartCard>
 
+              <ChartCard titulo="Ventas por lote de conversión" subtitulo="Mes seleccionado — en qué lote de Seguimiento se cerró cada venta" alto={200}
+                tooltip="Muestra en qué etapa del seguimiento (Lote 0 a 6) se convenció finalmente a cada comprador"
+                valorGrande={`${datos.ventasPorLote.reduce((acc, l) => acc + l.cantidad, 0)} venta${datos.ventasPorLote.reduce((acc, l) => acc + l.cantidad, 0) !== 1 ? 's' : ''}`}
+                onExportar={() => exportarGrafico('ventas-por-lote', datos.ventasPorLote)}>
+                <GraficoDona datos={datos.ventasPorLote} />
+              </ChartCard>
+
               <ChartCard titulo="Ventas por vendedor" subtitulo="Mes seleccionado"
                 valorGrande={`${datos.rankingVendedores.length} vendedor${datos.rankingVendedores.length !== 1 ? 'es' : ''}`}
                 onExportar={() => exportarGrafico('ventas-por-vendedor', datos.rankingVendedores)}>

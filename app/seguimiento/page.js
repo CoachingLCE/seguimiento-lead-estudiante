@@ -7,7 +7,7 @@ import FichaDrawer from '../../components/FichaDrawer';
 import ModalVenta from '../../components/ModalVenta';
 import { useToast } from '../../components/Toast';
 import { useSession } from '../../lib/useSession';
-import { RESULTADOS_CONTACTO, RESULTADOS_FINALES, RESULTADOS_PROGRESO, enlaceGmail } from '../../lib/constants';
+import { RESULTADOS_CONTACTO, RESULTADOS_FINALES, RESULTADOS_PROGRESO, ACCIONES_POR_LOTE, enlaceGmail } from '../../lib/constants';
 
 const EMAILS_ASIGNABLES = [
   { email: 'jesabel.reigada@institutoilce.com', nombre: 'Jesabel Reigada' },
@@ -495,7 +495,7 @@ export default function SeguimientoPage() {
             </div>
 
             <SeccionLote
-              titulo="LOTE 0" subtitulo="Leads recién ingresados (últimos 30 días)"
+              numeroLote="0" titulo="LOTE 0" subtitulo="Leads recién ingresados (últimos 30 días)"
               explicacion={<>Si todavía no lo contactaste, en 48hs va a aparecer solo en el <b>Lote 1</b>. Si registrás
                 "No contestó" o "Va a pensarlo", sigue escalando de lote en lote (1 → 2 → 3 → 4 → 5) hasta
                 resolverse. Si registrás <b>"No le interesa"</b>, se saca del camino de seguimiento y no vuelve
@@ -503,32 +503,32 @@ export default function SeguimientoPage() {
               filas={lote0} filasTotales={lote0Todas} conObservaciones {...propsComunes}
             />
             <SeccionLote
-              titulo="LOTE 1 – Contactar a las 48 horas" subtitulo={<>{lote1.length} lead(s) por contactar{lote1Maniana > 0 && <AvisoManiana cantidad={lote1Maniana} />}</>}
+              numeroLote="1" titulo="LOTE 1 – Contactar a las 48 horas" subtitulo={<>{lote1.length} lead(s) por contactar{lote1Maniana > 0 && <AvisoManiana cantidad={lote1Maniana} />}</>}
               explicacion={<>Si registrás "No contestó" o "Va a pensarlo" pasa solo al Lote 2 (10 días). Si marcás la venta, desaparece de acá.</>}
               filas={lote1} filasTotales={lote1Todas} conObservaciones {...propsComunes}
             />
             <SeccionLote
-              titulo="LOTE 2 – Contactar a los 10 días" subtitulo={<>{lote2.length} lead(s) que no respondieron en el Lote 1{lote2Maniana > 0 && <AvisoManiana cantidad={lote2Maniana} />}</>}
+              numeroLote="2" titulo="LOTE 2 – Contactar a los 10 días" subtitulo={<>{lote2.length} lead(s) que no respondieron en el Lote 1{lote2Maniana > 0 && <AvisoManiana cantidad={lote2Maniana} />}</>}
               explicacion={<>Si sigue sin resolverse, pasa al Lote 3 (al mes). Si marcás la venta, desaparece de acá.</>}
               filas={lote2} filasTotales={lote2Todas} {...propsComunes}
             />
             <SeccionLote
-              titulo="LOTE 3 – Contactar al mes" subtitulo={<>{lote3.length} lead(s) sin resolver al mes de ingresados{lote3Maniana > 0 && <AvisoManiana cantidad={lote3Maniana} />}</>}
+              numeroLote="3" titulo="LOTE 3 – Contactar al mes" subtitulo={<>{lote3.length} lead(s) sin resolver al mes de ingresados{lote3Maniana > 0 && <AvisoManiana cantidad={lote3Maniana} />}</>}
               explicacion={<>Requiere que un Coordinador/Admin lo asigne. Si sigue sin resolverse, pasa al Lote 4 (2 meses).</>}
               filas={lote3} filasTotales={lote3Todas} sinAsignarPorDefecto {...propsComunes}
             />
             <SeccionLote
-              titulo="LOTE 4 – Contactar a los 2 meses" subtitulo={<>{lote4.length} lead(s) sin resolver a los 2 meses de ingresados{lote4Maniana > 0 && <AvisoManiana cantidad={lote4Maniana} />}</>}
+              numeroLote="4" titulo="LOTE 4 – Contactar a los 2 meses" subtitulo={<>{lote4.length} lead(s) sin resolver a los 2 meses de ingresados{lote4Maniana > 0 && <AvisoManiana cantidad={lote4Maniana} />}</>}
               explicacion={<>Requiere asignación. Si sigue sin resolverse, pasa al Lote 5 (3 meses).</>}
               filas={lote4} filasTotales={lote4Todas} sinAsignarPorDefecto {...propsComunes}
             />
             <SeccionLote
-              titulo="LOTE 5 – Contactar a los 3 meses" subtitulo={<>{lote5.length} lead(s) sin resolver a los 3 meses de ingresados{lote5Maniana > 0 && <AvisoManiana cantidad={lote5Maniana} />}</>}
+              numeroLote="5" titulo="LOTE 5 – Contactar a los 3 meses" subtitulo={<>{lote5.length} lead(s) sin resolver a los 3 meses de ingresados{lote5Maniana > 0 && <AvisoManiana cantidad={lote5Maniana} />}</>}
               explicacion={<>Requiere asignación. Si sigue sin resolverse, pasa al Lote 6 (6 meses).</>}
               filas={lote5} filasTotales={lote5Todas} sinAsignarPorDefecto {...propsComunes}
             />
             <SeccionLote
-              titulo="LOTE 6 – Contactar a los 6 meses" subtitulo={<>{lote6.length} lead(s) sin resolver a los 6 meses de ingresados{lote6Maniana > 0 && <AvisoManiana cantidad={lote6Maniana} />}</>}
+              numeroLote="6" titulo="LOTE 6 – Contactar a los 6 meses" subtitulo={<>{lote6.length} lead(s) sin resolver a los 6 meses de ingresados{lote6Maniana > 0 && <AvisoManiana cantidad={lote6Maniana} />}</>}
               explicacion={<>Último lote de seguimiento automático. Si marcás la venta, desaparece de acá como cualquier otro lote.</>}
               filas={lote6} filasTotales={lote6Todas} sinAsignarPorDefecto {...propsComunes}
             />
@@ -715,12 +715,42 @@ function SeccionSinLote({ sinLote, onVerFicha }) {
   );
 }
 
-function SeccionLote({ titulo, subtitulo, explicacion, filas, filasTotales, buscarLead, ultima, dimensionAgrupacion, ordenPor, ...propsFila }) {
+// Caja destacada con la acción recomendada para este lote — color propio para que resalte del
+// resto, y botón para copiar el mensaje sugerido tal cual (si el lote tiene uno).
+function AccionSugerida({ accion }) {
+  const [copiado, setCopiado] = useState(false);
+
+  function copiar() {
+    navigator.clipboard.writeText(accion.script);
+    setCopiado(true);
+    setTimeout(() => setCopiado(false), 2000);
+  }
+
+  return (
+    <div className="mt-3 bg-gradient-to-r from-accentPurple/15 to-accentMagenta/15 border border-accentPurple/30 rounded-xl px-4 py-3">
+      <p className="text-accentPurple text-xs font-bold uppercase tracking-wide mb-1">⚡ Acción</p>
+      <p className="text-sm font-medium mb-1">{accion.label}</p>
+      {accion.script && (
+        <div className="mt-2">
+          <p className="text-textSec text-[13px] italic bg-bg/50 rounded-lg px-3 py-2 whitespace-pre-line">
+            {accion.script}
+          </p>
+          <button onClick={copiar} className="text-accentPurple text-xs font-semibold mt-1.5">
+            {copiado ? '✓ Copiado' : '📋 Copiar mensaje'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SeccionLote({ titulo, subtitulo, explicacion, filas, filasTotales, buscarLead, ultima, dimensionAgrupacion, ordenPor, numeroLote, ...propsFila }) {
   const [abierta, setAbierta] = useState(false);
   const grupos = agruparYOrdenar(filas, buscarLead, dimensionAgrupacion, ordenPor);
   const total = (filasTotales || filas).length;
   const pendientes = filas.length;
   const contactadas = total - pendientes;
+  const accion = numeroLote ? ACCIONES_POR_LOTE[numeroLote] : null;
 
   return (
     <div className={`bg-surface border border-border rounded-2xl p-5 transition-all ${ultima ? '' : 'mb-4'}`}>
@@ -743,6 +773,7 @@ function SeccionLote({ titulo, subtitulo, explicacion, filas, filasTotales, busc
         </div>
         <span className="text-textMuted text-sm shrink-0 ml-3">{abierta ? '▲' : '▼'}</span>
       </button>
+      {accion && <AccionSugerida accion={accion} />}
       {abierta && (
         <>
           <p className="text-textMuted text-[11px] mt-1 mb-3">{explicacion}</p>

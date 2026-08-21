@@ -27,6 +27,41 @@ function numeroValido(v) {
 // Actividad por persona del mes seleccionado: leads que cargó, contactos que hizo por cada
 // lote, y ventas que cerró — a diferencia de "Ventas por vendedor" (que solo mira ventas), esto
 // da una foto completa de la productividad comercial de cada persona.
+// En qué LOTE estaba cada lead cuando finalmente compró — para entender en qué etapa del
+// seguimiento se cierran más ventas (la mayoría en Lote 1, o hace falta insistir hasta el 4-5-6).
+// Se identifica buscando la fila de Seguimiento con Resultado "Pago recibido" de ese lead: el
+// número de Lote de esa fila es el lote en el que se cerró.
+function calcularVentasPorLote(leadsDelMes, todoElSeguimiento) {
+  const compras = leadsDelMes.filter((l) => l.Estado === 'Comprado' && l.Origen !== 'Carga manual (baja)');
+  const conteoPorLote = {};
+  let sinDato = 0;
+
+  compras.forEach((l) => {
+    const filaVenta = todoElSeguimiento.find((s) => s.LeadID === l.ID && s.Resultado === 'Pago recibido');
+    if (filaVenta) {
+      conteoPorLote[filaVenta.Lote] = (conteoPorLote[filaVenta.Lote] || 0) + 1;
+    } else {
+      sinDato++;
+    }
+  });
+
+  const total = compras.length;
+  const nombreLote = { '0': 'Lote 0', '1': 'Lote 1', '2': 'Lote 2', '3': 'Lote 3', '4': 'Lote 4', '5': 'Lote 5', '6': 'Lote 6' };
+  const resultado = Object.entries(conteoPorLote)
+    .map(([lote, cantidad]) => ({
+      nombre: nombreLote[lote] || `Lote ${lote}`,
+      cantidad,
+      porcentaje: total ? (cantidad / total) * 100 : 0
+    }))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { numeric: true }));
+
+  if (sinDato > 0) {
+    resultado.push({ nombre: 'Sin dato (venta cargada manual)', cantidad: sinDato, porcentaje: total ? (sinDato / total) * 100 : 0 });
+  }
+
+  return resultado;
+}
+
 function calcularActividadPorPersona(mes, todosLosLeads, todoElSeguimiento, rangoDesde, rangoHasta) {
   let inicioMes, finMes;
   if (rangoDesde && rangoHasta) {
@@ -256,6 +291,7 @@ export async function GET(request) {
   const desdeActividad = searchParams.get('desde') || diaFiltroActividad || '';
   const hastaActividad = searchParams.get('hasta') || diaFiltroActividad || '';
   const actividadPorPersona = calcularActividadPorPersona(mes, leads, seguimiento, desdeActividad, hastaActividad);
+  const ventasPorLote = calcularVentasPorLote(leadsDelMes, seguimiento);
 
   // Alertas automáticas
   const alertas = [];
@@ -311,6 +347,7 @@ export async function GET(request) {
     ...actual,
     ingresosPorDia, ingresosTotalesDelMes,
     actividadPorPersona,
+    ventasPorLote,
     comparativa: {
       leads: { actual: actual.totalLeads, anterior: anterior.totalLeads },
       ventas: { actual: actual.totalCompras, anterior: anterior.totalCompras },
