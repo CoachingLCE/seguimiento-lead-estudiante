@@ -607,11 +607,20 @@ export default function ReportesPage() {
                 <GraficoDona datos={datos.leadsPorOrigen} onClickItem={(n) => setFiltro('origen', n)} activo={filtros.origen} />
               </ChartCard>
 
-              <ChartCard titulo="Ventas por lote de conversión" subtitulo="Mes seleccionado — en qué lote de Seguimiento se cerró cada venta" alto={200}
-                tooltip="Muestra en qué etapa del seguimiento (Lote 0 a 6) se convenció finalmente a cada comprador"
-                valorGrande={`${datos.ventasPorLote.reduce((acc, l) => acc + l.cantidad, 0)} venta${datos.ventasPorLote.reduce((acc, l) => acc + l.cantidad, 0) !== 1 ? 's' : ''}`}
-                onExportar={() => exportarGrafico('ventas-por-lote', datos.ventasPorLote)}>
-                <GraficoDona datos={datos.ventasPorLote} />
+              <ChartCard titulo="Días hasta la conversión" subtitulo="Mes seleccionado — cuánto tardó cada comprador desde que ingresó como lead" alto={200}
+                tooltip="Cuántas ventas se cerraron el mismo día, en la primera semana, al mes, etc. — para ver qué tan rápido convierte la mayoría"
+                valorGrande={`${datos.diasHastaConversion.reduce((acc, d) => acc + d.cantidad, 0)} venta${datos.diasHastaConversion.reduce((acc, d) => acc + d.cantidad, 0) !== 1 ? 's' : ''}`}
+                onExportar={() => exportarGrafico('dias-hasta-conversion', datos.diasHastaConversion)}>
+                <ResponsiveContainer>
+                  <BarChart data={datos.diasHastaConversion} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#262c4a" vertical={false} />
+                    <XAxis dataKey="nombre" stroke="#6b7299" fontSize={10} interval={0} angle={-15} textAnchor="end" height={40} />
+                    <YAxis stroke="#6b7299" fontSize={11} allowDecimals={false} />
+                    <Tooltip contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }}
+                      formatter={(v, n, p) => [`${v} venta${v !== 1 ? 's' : ''} (${p.payload.porcentaje.toFixed(1)}%)`, '']} />
+                    <Bar dataKey="cantidad" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
               </ChartCard>
 
               <ChartCard titulo="Ventas por vendedor" subtitulo="Mes seleccionado"
