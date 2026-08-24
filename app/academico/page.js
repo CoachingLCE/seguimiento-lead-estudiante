@@ -105,6 +105,7 @@ export default function AcademicoPage() {
 
   const [filtroRapido, setFiltroRapido] = useState('Todas');
   const [filtroDocente, setFiltroDocente] = useState('');
+  const [verTodosCursos, setVerTodosCursos] = useState(false);
   const [edicionAbierta, setEdicionAbierta] = useState(null);
 
   const puedeVer = tienePermisoAcademico(usuario);
@@ -257,9 +258,16 @@ export default function AcademicoPage() {
   const resumenGlobalCompleto = calcularResumenGlobal(todosLosEstudiantes, ediciones, cursosInfo);
   const docentesUnicos = [...new Set(cursosInfo.map((c) => c.Formador).filter(Boolean))].sort();
 
+  // Por defecto, el reporte muestra solo el curso elegido arriba (como el resto de la pantalla).
+  // Con "Ver todos los cursos" tildado, se ve la vista institucional completa (para comparar
+  // docentes entre sí, por ejemplo).
+  const resumenPorCurso = verTodosCursos
+    ? resumenGlobalCompleto
+    : resumenGlobalCompleto.filter((r) => r.curso === cursoActual);
+
   const resumenPorDocente = filtroDocente
-    ? resumenGlobalCompleto.filter((r) => r.formador === filtroDocente)
-    : resumenGlobalCompleto;
+    ? resumenPorCurso.filter((r) => r.formador === filtroDocente)
+    : resumenPorCurso;
 
   const resumenFiltrado = resumenPorDocente.filter((r) => {
     if (filtroRapido === 'Activas') return r.cursada === 'En curso';
@@ -379,12 +387,20 @@ export default function AcademicoPage() {
 
             <div className="bg-surface border border-border rounded-2xl p-5 mb-4">
               <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
-                <p className="text-sm font-semibold">📊 Reporte por edición <span className="text-textMuted font-normal">(todos los cursos)</span></p>
-                <select value={filtroDocente} onChange={(e) => setFiltroDocente(e.target.value)}
-                  className="bg-bg border border-border rounded-lg px-2 py-1.5 text-xs">
-                  <option value="">Docente: Todos</option>
-                  {docentesUnicos.map((d) => <option key={d} value={d}>{d}</option>)}
-                </select>
+                <p className="text-sm font-semibold">
+                  📊 Reporte por edición <span className="text-textMuted font-normal">({verTodosCursos ? 'todos los cursos' : cursoActual})</span>
+                </p>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-1.5 text-xs text-textSec cursor-pointer">
+                    <input type="checkbox" checked={verTodosCursos} onChange={(e) => setVerTodosCursos(e.target.checked)} />
+                    Ver todos los cursos
+                  </label>
+                  <select value={filtroDocente} onChange={(e) => setFiltroDocente(e.target.value)}
+                    className="bg-bg border border-border rounded-lg px-2 py-1.5 text-xs">
+                    <option value="">Docente: Todos</option>
+                    {docentesUnicos.map((d) => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
