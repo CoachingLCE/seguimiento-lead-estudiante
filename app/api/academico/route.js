@@ -13,14 +13,30 @@ export async function GET(request) {
 
   try {
     const curso = searchParams.get('curso') || '';
-    const [todos, cursos, todasEdiciones] = await Promise.all([
-      readSheet('Academico'), readSheet('AcademicoCursos'), readSheet('AcademicoEdiciones')
+    const [todos, cursos, todasEdiciones, leads] = await Promise.all([
+      readSheet('Academico'), readSheet('AcademicoCursos'), readSheet('AcademicoEdiciones'), readSheet('Leads')
     ]);
     const estudiantes = curso ? todos.filter((e) => e.Curso === curso) : todos;
     const cursosDisponibles = [...new Set(todos.map((e) => e.Curso).filter(Boolean))].sort();
-    const ediciones = curso ? todasEdiciones.filter((e) => e.Curso === curso) : todasEdiciones;
 
-    return NextResponse.json({ estudiantes, cursosDisponibles, cursos, ediciones });
+    // Vínculo best-effort con los pagos reales (Leads), buscando por email — para poder mostrar
+    // "Pagos" en la ficha detallada de cada edición sin duplicar esa info a mano en Académico.
+    const pagosPorEmail = {};
+    leads.forEach((l) => {
+      if (l.Estado === 'Comprado' && l.EmailEstudiante) {
+        pagosPorEmail[l.EmailEstudiante.trim().toLowerCase()] = {
+          montoTotal: l.MontoTotal || '', cantCuotas: l.CantCuotas || '',
+          fechaVenta: l.FechaVenta || '', medioPago: l.MedioPago || ''
+        };
+      }
+    });
+
+    return NextResponse.json({
+      estudiantes, cursosDisponibles, cursos,
+      ediciones: todasEdiciones, // TODAS, sin filtrar — el reporte institucional necesita verlas juntas
+      todosLosEstudiantes: todos, // idem, para el reporte por edición (todos los cursos a la vez)
+      pagosPorEmail
+    });
   } catch (err) {
     console.error('Error cargando academico:', err);
     return NextResponse.json({ error: 'Ocurrió un error cargando los datos académicos.' }, { status: 500 });
@@ -43,7 +59,7 @@ export async function POST(request) {
   for (const entrada of body.entradas || []) {
     if (!entrada.nombre) continue;
     await appendRow('Academico', [
-      curso, entrada.edicion || '', entrada.nombre.trim(), (entrada.email || '').trim(), entrada.situacion || ''
+      curso, entrada.edicion || '', entrada.nombre.trim(), (entrada.email || '').trim(), entrada.situacion || '', ''
     ]);
     cargados++;
   }
@@ -57,7 +73,7 @@ export async function POST(request) {
 }
 
 // PATCH /api/academico -> editar un estudiante puntual (por _rowIndex)
-// body: { rowIndex, nombre, email, situacion, edicion, solicitanteEmail, solicitanteNombre }
+// body: { rowIndex, nombre, email, situacion, edicion, observaciones, solicitanteEmail, solicitanteNombre }
 export async function PATCH(request) {
   const body = await request.json();
   const solicitante = await findUsuario(body.solicitanteEmail);
@@ -71,7 +87,8 @@ export async function PATCH(request) {
 
   await updateRow('Academico', fila._rowIndex, [
     fila.Curso, body.edicion ?? fila.Edicion, body.nombre ?? fila.NombreCompleto,
-    body.email ?? fila.Email, body.situacion ?? fila.SituacionAcademica
+    body.email ?? fila.Email, body.situacion ?? fila.SituacionAcademica,
+    body.observaciones ?? (fila.Observaciones || '')
   ]);
 
   await registrarAccion(

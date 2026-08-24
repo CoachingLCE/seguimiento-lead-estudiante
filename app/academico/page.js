@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
+import { ResponsiveContainer, LineChart, Line } from 'recharts';
 import Nav from '../../components/Nav';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoAcademico } from '../../lib/permisos';
@@ -15,9 +16,17 @@ const COLOR_SITUACION = {
   '': 'bg-surface2 text-textMuted'
 };
 
-// Pega una tabla (de Sheets/Excel, separada por tabs) con columnas:
-// Nombre completo | Email | Situación académica | Edición — se puede pegar con o sin el
-// encabezado, lo detecta y lo ignora solo.
+function colorCertificacion(pct) {
+  if (pct > 70) return 'text-successText';
+  if (pct >= 50) return 'text-warningText';
+  return 'text-dangerText';
+}
+function colorBajas(pct) {
+  if (pct < 10) return 'text-successText';
+  if (pct <= 20) return 'text-warningText';
+  return 'text-dangerText';
+}
+
 function parsearFilasAcademico(texto) {
   const lineas = texto.split('\n').map((l) => l.replace(/\r$/, '')).filter((l) => l.trim() !== '');
   return lineas
@@ -34,34 +43,39 @@ function parsearFilasAcademico(texto) {
     .filter((e) => e.nombre);
 }
 
-function calcularResumenEdiciones(estudiantes, ediciones, formador) {
-  const porEdicion = {};
-  estudiantes.forEach((e) => {
+function calcularResumenGlobal(todosLosEstudiantes, todasLasEdiciones, cursosInfo) {
+  const porClave = {};
+  todosLosEstudiantes.forEach((e) => {
     const ed = e.Edicion || 'Sin edición';
-    if (!porEdicion[ed]) porEdicion[ed] = { edicion: ed, inscritos: 0, certificados: 0, bajas: 0, cc: 0, noCertificaron: 0 };
-    porEdicion[ed].inscritos++;
-    if (e.SituacionAcademica === 'Certificado') porEdicion[ed].certificados++;
-    else if (e.SituacionAcademica === 'Baja') porEdicion[ed].bajas++;
-    else if (e.SituacionAcademica === 'Cambio de cursada') porEdicion[ed].cc++;
-    else if (e.SituacionAcademica === 'No se certificó') porEdicion[ed].noCertificaron++;
+    const clave = `${e.Curso}|||${ed}`;
+    if (!porClave[clave]) {
+      porClave[clave] = { curso: e.Curso, edicion: ed, inscritos: 0, certificados: 0, bajas: 0, cc: 0, noCertificaron: 0 };
+    }
+    porClave[clave].inscritos++;
+    if (e.SituacionAcademica === 'Certificado') porClave[clave].certificados++;
+    else if (e.SituacionAcademica === 'Baja') porClave[clave].bajas++;
+    else if (e.SituacionAcademica === 'Cambio de cursada') porClave[clave].cc++;
+    else if (e.SituacionAcademica === 'No se certificó') porClave[clave].noCertificaron++;
   });
-  return Object.values(porEdicion)
-    .map((r) => {
-      const edicionInfo = ediciones.find((x) => x.Edicion === r.edicion);
-      const fechaInicio = edicionInfo?.FechaInicio || '';
-      let cursada = 'Sin fecha de inicio';
-      if (fechaInicio) {
-        const dias = Math.floor((new Date() - new Date(fechaInicio)) / (1000 * 60 * 60 * 24));
-        cursada = dias > 30 ? 'Curso cerrado' : 'En curso';
-      }
-      return {
-        ...r, formador, fechaInicio, cursada,
-        porcentajeBajas: r.inscritos ? (r.bajas / r.inscritos) * 100 : 0,
-        porcentajeCertificados: r.inscritos ? (r.certificados / r.inscritos) * 100 : 0
-      };
-    })
-    .sort((a, b) => a.edicion.localeCompare(b.edicion, 'es', { numeric: true }));
+
+  return Object.values(porClave).map((r) => {
+    const edicionInfo = todasLasEdiciones.find((x) => x.Curso === r.curso && x.Edicion === r.edicion);
+    const fechaInicio = edicionInfo?.FechaInicio || '';
+    const formador = cursosInfo.find((c) => c.Curso === r.curso)?.Formador || '';
+    let cursada = 'Sin fecha de inicio';
+    if (fechaInicio) {
+      const dias = Math.floor((new Date() - new Date(fechaInicio)) / (1000 * 60 * 60 * 24));
+      cursada = dias > 30 ? 'Curso cerrado' : 'En curso';
+    }
+    return {
+      ...r, formador, fechaInicio, cursada,
+      porcentajeBajas: r.inscritos ? (r.bajas / r.inscritos) * 100 : 0,
+      porcentajeCertificados: r.inscritos ? (r.certificados / r.inscritos) * 100 : 0
+    };
+  });
 }
+
+const FILTROS_RAPIDOS = ['Todas', 'Activas', 'Finalizadas', 'Con altas bajas', 'Baja certificación'];
 
 export default function AcademicoPage() {
   const { usuario, logout } = useSession();
@@ -71,8 +85,10 @@ export default function AcademicoPage() {
   const [cursosDisponibles, setCursosDisponibles] = useState([]);
   const [nuevoCursoTexto, setNuevoCursoTexto] = useState('');
   const [estudiantes, setEstudiantes] = useState([]);
+  const [todosLosEstudiantes, setTodosLosEstudiantes] = useState([]);
   const [ediciones, setEdiciones] = useState([]);
   const [cursosInfo, setCursosInfo] = useState([]);
+  const [pagosPorEmail, setPagosPorEmail] = useState({});
   const [cargando, setCargando] = useState(true);
   const [errorCarga, setErrorCarga] = useState('');
 
@@ -86,6 +102,10 @@ export default function AcademicoPage() {
   const [editandoFormador, setEditandoFormador] = useState(false);
   const [formadorTemp, setFormadorTemp] = useState('');
   const [editandoFecha, setEditandoFecha] = useState(null);
+
+  const [filtroRapido, setFiltroRapido] = useState('Todas');
+  const [filtroDocente, setFiltroDocente] = useState('');
+  const [edicionAbierta, setEdicionAbierta] = useState(null);
 
   const puedeVer = tienePermisoAcademico(usuario);
 
@@ -111,9 +131,11 @@ export default function AcademicoPage() {
         setErrorCarga(r.error || 'No se pudo cargar.');
       } else {
         setEstudiantes(r.estudiantes || []);
+        setTodosLosEstudiantes(r.todosLosEstudiantes || []);
         setCursosDisponibles(r.cursosDisponibles || []);
         setCursosInfo(r.cursos || []);
         setEdiciones(r.ediciones || []);
+        setPagosPorEmail(r.pagosPorEmail || {});
         if (!cursoActual && r.cursosDisponibles?.length > 0) {
           setCursoActual(r.cursosDisponibles[0]);
           setCargando(false);
@@ -150,11 +172,13 @@ export default function AcademicoPage() {
 
   async function editarCampo(rowIndex, campo, valor) {
     setEstudiantes((prev) => prev.map((e) => (e._rowIndex === rowIndex ? { ...e, [campo]: valor } : e)));
+    setTodosLosEstudiantes((prev) => prev.map((e) => (e._rowIndex === rowIndex ? { ...e, [campo]: valor } : e)));
     const cuerpo = { rowIndex, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre };
     if (campo === 'SituacionAcademica') cuerpo.situacion = valor;
     if (campo === 'Edicion') cuerpo.edicion = valor;
     if (campo === 'Email') cuerpo.email = valor;
     if (campo === 'NombreCompleto') cuerpo.nombre = valor;
+    if (campo === 'Observaciones') cuerpo.observaciones = valor;
     await fetch('/api/academico', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -183,11 +207,11 @@ export default function AcademicoPage() {
     cargarTodo();
   }
 
-  async function guardarFechaInicio(edicion, fecha) {
+  async function guardarFechaInicio(curso, edicion, fecha) {
     await fetch('/api/academico/ediciones', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ curso: cursoActual, edicion, fechaInicio: fecha, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
+      body: JSON.stringify({ curso, edicion, fechaInicio: fecha, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
     });
     setEditandoFecha(null);
     cargarTodo();
@@ -207,8 +231,6 @@ export default function AcademicoPage() {
     XLSX.writeFile(libro, `academico-${cursoActual}-${new Date().toISOString().slice(0, 10)}.xlsx`);
   }
 
-  // CSV: es el formato que Google Sheets importa perfecto (Archivo > Importar > Subir), por eso
-  // sirve como "exportar a Sheets" sin necesitar conectarse a una cuenta de Google en particular.
   function exportarCSV() {
     const hoja = XLSX.utils.json_to_sheet(datosParaExportar());
     const csv = XLSX.utils.sheet_to_csv(hoja);
@@ -232,15 +254,54 @@ export default function AcademicoPage() {
     return true;
   });
 
-  const resumen = calcularResumenEdiciones(estudiantes, ediciones, formadorActual);
+  const resumenGlobalCompleto = calcularResumenGlobal(todosLosEstudiantes, ediciones, cursosInfo);
+  const docentesUnicos = [...new Set(cursosInfo.map((c) => c.Formador).filter(Boolean))].sort();
+
+  const resumenPorDocente = filtroDocente
+    ? resumenGlobalCompleto.filter((r) => r.formador === filtroDocente)
+    : resumenGlobalCompleto;
+
+  const resumenFiltrado = resumenPorDocente.filter((r) => {
+    if (filtroRapido === 'Activas') return r.cursada === 'En curso';
+    if (filtroRapido === 'Finalizadas') return r.cursada === 'Curso cerrado';
+    if (filtroRapido === 'Con altas bajas') return r.porcentajeBajas > 20;
+    if (filtroRapido === 'Baja certificación') return r.porcentajeCertificados < 50;
+    return true;
+  });
+
+  const resumenOrdenado = [...resumenFiltrado].sort((a, b) => {
+    if (!a.fechaInicio && !b.fechaInicio) return 0;
+    if (!a.fechaInicio) return 1;
+    if (!b.fechaInicio) return -1;
+    return new Date(b.fechaInicio) - new Date(a.fechaInicio);
+  });
+
+  const totInscritos = resumenFiltrado.reduce((acc, r) => acc + r.inscritos, 0);
+  const totCertificados = resumenFiltrado.reduce((acc, r) => acc + r.certificados, 0);
+  const totBajas = resumenFiltrado.reduce((acc, r) => acc + r.bajas, 0);
+  const pctCertificacionGlobal = totInscritos ? (totCertificados / totInscritos) * 100 : 0;
+  const pctBajasGlobal = totInscritos ? (totBajas / totInscritos) * 100 : 0;
+
+  const totInscritosInstitucional = resumenGlobalCompleto.reduce((acc, r) => acc + r.inscritos, 0);
+  const totCertificadosInstitucional = resumenGlobalCompleto.reduce((acc, r) => acc + r.certificados, 0);
+  const pctCertificacionInstitucional = totInscritosInstitucional ? (totCertificadosInstitucional / totInscritosInstitucional) * 100 : 0;
+
+  const serieCronologica = [...resumenPorDocente]
+    .filter((r) => r.fechaInicio)
+    .sort((a, b) => new Date(a.fechaInicio) - new Date(b.fechaInicio))
+    .map((r) => ({ inscritos: r.inscritos, pctCert: r.porcentajeCertificados, pctBajas: r.porcentajeBajas }));
+
+  const edicionParaModal = edicionAbierta
+    ? resumenGlobalCompleto.find((r) => r.curso === edicionAbierta.curso && r.edicion === edicionAbierta.edicion)
+    : null;
 
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
-      <div className="max-w-[1300px] mx-auto px-6 pb-16">
+      <div className="max-w-[1400px] mx-auto px-6 pb-16">
         <h3 className="text-lg font-bold mb-1">🎓 Académico</h3>
         <p className="text-textMuted text-xs mb-5">
-          Prototipo: listado de estudiantes con situación académica y reportes por edición. Se carga a mano — empezamos con un curso y vamos sumando más.
+          Listado de estudiantes con situación académica, y reporte institucional por edición (todos los cursos juntos). Se carga a mano.
         </p>
 
         <div className="flex items-center gap-3 flex-wrap mb-4">
@@ -317,39 +378,89 @@ export default function AcademicoPage() {
             </div>
 
             <div className="bg-surface border border-border rounded-2xl p-5 mb-4">
-              <p className="text-sm font-semibold mb-3">📊 Reporte por edición</p>
-              {resumen.length === 0 ? (
-                <p className="text-textMuted text-sm">Sin datos todavía.</p>
+              <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+                <p className="text-sm font-semibold">📊 Reporte por edición <span className="text-textMuted font-normal">(todos los cursos)</span></p>
+                <select value={filtroDocente} onChange={(e) => setFiltroDocente(e.target.value)}
+                  className="bg-bg border border-border rounded-lg px-2 py-1.5 text-xs">
+                  <option value="">Docente: Todos</option>
+                  {docentesUnicos.map((d) => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+                <TarjetaResumen label="Ediciones" valor={resumenFiltrado.length} />
+                <TarjetaResumen label="Inscriptos" valor={totInscritos} />
+                <TarjetaResumen label="Certificados" valor={totCertificados} colorClase="text-successText" />
+                <TarjetaResumen label="Bajas" valor={totBajas} colorClase="text-dangerText" />
+                <TarjetaResumen label="% Certificación" valor={`${pctCertificacionGlobal.toFixed(1)}%`} colorClase={colorCertificacion(pctCertificacionGlobal)} />
+                <TarjetaResumen label="% Bajas" valor={`${pctBajasGlobal.toFixed(1)}%`} colorClase={colorBajas(pctBajasGlobal)} />
+              </div>
+
+              {serieCronologica.length >= 2 && (
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  <Sparkline titulo="Evolución inscriptos" datos={serieCronologica} campo="inscritos" color="#a855f7" />
+                  <Sparkline titulo="Evolución % certificación" datos={serieCronologica} campo="pctCert" color="#22c55e" />
+                  <Sparkline titulo="Evolución % bajas" datos={serieCronologica} campo="pctBajas" color="#ef4444" />
+                </div>
+              )}
+
+              {filtroDocente && (
+                <div className="bg-bg border border-border rounded-lg px-3 py-2 mb-4 text-xs flex items-center gap-4 flex-wrap">
+                  <span className="text-textMuted">Promedio institucional: <span className="text-text font-semibold">{pctCertificacionInstitucional.toFixed(1)}% certificación</span></span>
+                  <span className={colorCertificacion(pctCertificacionGlobal)}>
+                    {filtroDocente}: <span className="font-semibold">{pctCertificacionGlobal.toFixed(1)}%</span>
+                    {' '}({pctCertificacionGlobal >= pctCertificacionInstitucional ? '+' : ''}{(pctCertificacionGlobal - pctCertificacionInstitucional).toFixed(1)})
+                  </span>
+                </div>
+              )}
+
+              <div className="flex items-center gap-1.5 flex-wrap mb-3">
+                {FILTROS_RAPIDOS.map((f) => (
+                  <button key={f} onClick={() => setFiltroRapido(f)}
+                    className={`text-xs px-3 py-1 rounded-full border transition-colors ${
+                      filtroRapido === f ? 'bg-accentPurple border-accentPurple text-white' : 'bg-surface2 border-border text-textSec hover:text-text'
+                    }`}>
+                    {f}
+                  </button>
+                ))}
+              </div>
+
+              {resumenOrdenado.length === 0 ? (
+                <p className="text-textMuted text-sm">Sin datos para este filtro.</p>
               ) : (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto max-h-[480px] overflow-y-auto relative">
                   <table className="w-full text-sm">
-                    <thead>
+                    <thead className="sticky top-0 bg-surface z-10">
                       <tr className="text-textSec text-left border-b border-border">
-                        <th className="py-2 pr-3">Edición</th>
+                        <th className="py-2 pr-3">Curso</th>
+                        <th className="pr-3">Edición</th>
                         <th className="pr-3">Formador</th>
                         <th className="pr-3">Inicio</th>
                         <th className="pr-3 text-center">Inscritos</th>
                         <th className="pr-3 text-center">Certificados</th>
                         <th className="pr-3 text-center">Bajas</th>
                         <th className="pr-3 text-center">CC</th>
-                        <th className="pr-3 text-center">No se certificaron</th>
+                        <th className="pr-3 text-center">No cert.</th>
                         <th className="pr-3">Cursada</th>
                         <th className="pr-3 text-center">% Bajas</th>
                         <th className="text-center">% Certificados</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {resumen.map((r) => (
-                        <tr key={r.edicion} className="border-b border-border">
-                          <td className="py-2 pr-3 font-medium">Edición {r.edicion}</td>
+                      {resumenOrdenado.map((r) => (
+                        <tr key={`${r.curso}|${r.edicion}`}
+                          onClick={() => setEdicionAbierta({ curso: r.curso, edicion: r.edicion })}
+                          className="border-b border-border hover:bg-bg/60 cursor-pointer transition-colors">
+                          <td className="py-2 pr-3 text-textSec">{r.curso}</td>
+                          <td className="pr-3 font-medium">Edición {r.edicion}</td>
                           <td className="pr-3 text-textSec">{r.formador || '—'}</td>
-                          <td className="pr-3">
-                            {editandoFecha === r.edicion ? (
+                          <td className="pr-3" onClick={(ev) => ev.stopPropagation()}>
+                            {editandoFecha === `${r.curso}|${r.edicion}` ? (
                               <input type="date" defaultValue={r.fechaInicio ? r.fechaInicio.slice(0, 10) : ''}
-                                onBlur={(e) => guardarFechaInicio(r.edicion, e.target.value)}
+                                onBlur={(e) => guardarFechaInicio(r.curso, r.edicion, e.target.value)}
                                 className="bg-bg border border-border rounded px-1.5 py-0.5 text-xs" autoFocus />
                             ) : (
-                              <button onClick={() => setEditandoFecha(r.edicion)} className="text-textSec text-xs hover:text-accentTeal">
+                              <button onClick={() => setEditandoFecha(`${r.curso}|${r.edicion}`)} className="text-textSec text-xs hover:text-accentTeal">
                                 {r.fechaInicio ? new Date(r.fechaInicio).toLocaleDateString('es-AR') : '📅 Definir'}
                               </button>
                             )}
@@ -364,19 +475,20 @@ export default function AcademicoPage() {
                               {r.cursada}
                             </span>
                           </td>
-                          <td className="pr-3 text-center">{r.porcentajeBajas.toFixed(1)}%</td>
-                          <td className="text-center">{r.porcentajeCertificados.toFixed(1)}%</td>
+                          <td className={`pr-3 text-center font-semibold ${colorBajas(r.porcentajeBajas)}`}>{r.porcentajeBajas.toFixed(1)}%</td>
+                          <td className={`text-center font-semibold ${colorCertificacion(r.porcentajeCertificados)}`}>{r.porcentajeCertificados.toFixed(1)}%</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               )}
+              <p className="text-textMuted text-[11px] mt-2">💡 Tocá una fila para ver la ficha detallada de esa edición.</p>
             </div>
 
             <div className="bg-surface border border-border rounded-2xl p-5">
               <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
-                <p className="text-sm font-semibold">Listado de estudiantes ({estudiantesFiltrados.length})</p>
+                <p className="text-sm font-semibold">Listado de estudiantes de {cursoActual} ({estudiantesFiltrados.length})</p>
                 <div className="flex items-center gap-2">
                   <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="🔍 Buscar…"
                     className="bg-bg border border-border rounded-lg px-2 py-1.5 text-xs w-40" />
@@ -392,9 +504,9 @@ export default function AcademicoPage() {
                   )}
                 </div>
               </div>
-              <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+              <div className="overflow-x-auto max-h-[500px] overflow-y-auto relative">
                 <table className="w-full text-sm">
-                  <thead>
+                  <thead className="sticky top-0 bg-surface z-10">
                     <tr className="text-textSec text-left border-b border-border">
                       <th className="py-2 w-6">
                         <input type="checkbox" checked={estudiantesFiltrados.length > 0 && seleccionadas.size === estudiantesFiltrados.length}
@@ -443,6 +555,115 @@ export default function AcademicoPage() {
             </div>
           </>
         )}
+      </div>
+
+      {edicionParaModal && (
+        <FichaEdicionModal
+          info={edicionParaModal}
+          estudiantes={todosLosEstudiantes.filter((e) => e.Curso === edicionParaModal.curso && (e.Edicion || 'Sin edición') === edicionParaModal.edicion)}
+          pagosPorEmail={pagosPorEmail}
+          onEditarCampo={editarCampo}
+          onClose={() => setEdicionAbierta(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function TarjetaResumen({ label, valor, colorClase }) {
+  return (
+    <div className="bg-bg border border-border rounded-xl px-3 py-2.5">
+      <p className="text-textMuted text-[11px] mb-0.5">{label}</p>
+      <p className={`text-xl font-bold ${colorClase || 'text-text'}`}>{valor}</p>
+    </div>
+  );
+}
+
+function Sparkline({ titulo, datos, campo, color }) {
+  return (
+    <div className="bg-bg border border-border rounded-lg px-3 py-2">
+      <p className="text-textMuted text-[10.5px] mb-1">{titulo}</p>
+      <div style={{ height: 36 }}>
+        <ResponsiveContainer>
+          <LineChart data={datos} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
+            <Line type="monotone" dataKey={campo} stroke={color} strokeWidth={2} dot={false} isAnimationActive={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+function FichaEdicionModal({ info, estudiantes, pagosPorEmail, onEditarCampo, onClose }) {
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4" onClick={onClose}>
+      <div className="bg-surface2 border border-border rounded-2xl p-6 w-full max-w-4xl max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start justify-between mb-1">
+          <div>
+            <p className="text-lg font-bold">{info.curso} — Edición {info.edicion}</p>
+            <p className="text-textMuted text-xs">
+              Formador/a: {info.formador || 'sin definir'} · Inicio: {info.fechaInicio ? new Date(info.fechaInicio).toLocaleDateString('es-AR') : 'sin definir'} ·{' '}
+              <span className={info.cursada === 'Curso cerrado' ? 'text-dangerText' : info.cursada === 'En curso' ? 'text-successText' : 'text-textMuted'}>{info.cursada}</span>
+            </p>
+          </div>
+          <button onClick={onClose} className="text-textMuted hover:text-text text-xl leading-none">✕</button>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 my-4">
+          <TarjetaResumen label="Inscritos" valor={info.inscritos} />
+          <TarjetaResumen label="Certificados" valor={info.certificados} colorClase="text-successText" />
+          <TarjetaResumen label="Bajas" valor={info.bajas} colorClase="text-dangerText" />
+          <TarjetaResumen label="% Certificados" valor={`${info.porcentajeCertificados.toFixed(1)}%`} colorClase={colorCertificacion(info.porcentajeCertificados)} />
+          <TarjetaResumen label="% Bajas" valor={`${info.porcentajeBajas.toFixed(1)}%`} colorClase={colorBajas(info.porcentajeBajas)} />
+        </div>
+
+        <p className="text-sm font-semibold mb-2">Alumnos ({estudiantes.length})</p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-textSec text-left border-b border-border">
+                <th className="py-1.5 pr-2">Nombre</th>
+                <th className="pr-2">Situación</th>
+                <th className="pr-2">Pagos</th>
+                <th>Observaciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {estudiantes.map((e) => {
+                const pago = e.Email ? pagosPorEmail[e.Email.trim().toLowerCase()] : null;
+                return (
+                  <tr key={e._rowIndex} className="border-b border-border align-top">
+                    <td className="py-1.5 pr-2">
+                      <p className="font-medium">{e.NombreCompleto}</p>
+                      <p className="text-textMuted">{e.Email || 'sin email'}</p>
+                    </td>
+                    <td className="pr-2">
+                      <select value={e.SituacionAcademica || ''} onChange={(ev) => onEditarCampo(e._rowIndex, 'SituacionAcademica', ev.target.value)}
+                        className={`text-[11px] px-1.5 py-1 rounded-md border-none ${COLOR_SITUACION[e.SituacionAcademica] || COLOR_SITUACION['']}`}>
+                        {SITUACIONES.map((s) => <option key={s} value={s}>{s || 'Sin definir'}</option>)}
+                      </select>
+                    </td>
+                    <td className="pr-2 text-textSec">
+                      {pago ? (
+                        <>
+                          <p>${Number(pago.montoTotal || 0).toLocaleString('es-AR')}{pago.cantCuotas ? ` (${pago.cantCuotas} cuotas)` : ''}</p>
+                          <p className="text-textMuted">{pago.fechaVenta ? new Date(pago.fechaVenta).toLocaleDateString('es-AR') : ''} {pago.medioPago}</p>
+                        </>
+                      ) : (
+                        <span className="text-textMuted">Sin datos vinculados</span>
+                      )}
+                    </td>
+                    <td>
+                      <input defaultValue={e.Observaciones || ''} placeholder="—"
+                        onBlur={(ev) => ev.target.value !== (e.Observaciones || '') && onEditarCampo(e._rowIndex, 'Observaciones', ev.target.value)}
+                        className="w-full bg-bg border border-border rounded px-1.5 py-1 text-[11px]" />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
