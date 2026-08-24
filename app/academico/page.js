@@ -16,6 +16,29 @@ const COLOR_SITUACION = {
   '': 'bg-surface2 text-textMuted'
 };
 
+// Google Sheets puede devolver la fecha como texto "20/01/2026" (día/mes/año, como se escribe en
+// Argentina) si se tipeó directo en la celda — el constructor de fechas de JS interpreta ese
+// formato como mes/día/año (inglés) y "20" no es un mes válido, rompe. Esto entiende ambos formatos.
+function parsearFechaFlexible(valor) {
+  if (!valor) return null;
+  const conBarras = String(valor).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (conBarras) {
+    const [, dd, mm, aaaa] = conBarras;
+    return new Date(Number(aaaa), Number(mm) - 1, Number(dd));
+  }
+  const f = new Date(valor); // ISO (AAAA-MM-DD, lo que guarda el <input type="date">) u otro formato reconocible
+  return isNaN(f.getTime()) ? null : f;
+}
+
+// A diferencia de .toISOString() (que convierte a UTC y puede correr la fecha un día para atrás
+// según el huso horario), esto arma el AAAA-MM-DD a partir de los componentes LOCALES de la fecha.
+function fechaAISO(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 function colorCertificacion(pct) {
   if (pct > 70) return 'text-successText';
   if (pct >= 50) return 'text-warningText';
@@ -62,9 +85,10 @@ function calcularResumenGlobal(todosLosEstudiantes, todasLasEdiciones, cursosInf
     const edicionInfo = todasLasEdiciones.find((x) => x.Curso === r.curso && x.Edicion === r.edicion);
     const fechaInicio = edicionInfo?.FechaInicio || '';
     const formador = cursosInfo.find((c) => c.Curso === r.curso)?.Formador || '';
+    const fechaInicioDate = parsearFechaFlexible(fechaInicio);
     let cursada = 'Sin fecha de inicio';
-    if (fechaInicio) {
-      const dias = Math.floor((new Date() - new Date(fechaInicio)) / (1000 * 60 * 60 * 24));
+    if (fechaInicioDate) {
+      const dias = Math.floor((new Date() - fechaInicioDate) / (1000 * 60 * 60 * 24));
       cursada = dias > 30 ? 'Curso cerrado' : 'En curso';
     }
     return {
@@ -472,12 +496,12 @@ export default function AcademicoPage() {
                           <td className="pr-3 text-textSec">{r.formador || '—'}</td>
                           <td className="pr-3" onClick={(ev) => ev.stopPropagation()}>
                             {editandoFecha === `${r.curso}|${r.edicion}` ? (
-                              <input type="date" defaultValue={r.fechaInicio ? r.fechaInicio.slice(0, 10) : ''}
+                              <input type="date" defaultValue={r.fechaInicio ? (() => { const f = parsearFechaFlexible(r.fechaInicio); return f ? fechaAISO(f) : ''; })() : ''}
                                 onBlur={(e) => guardarFechaInicio(r.curso, r.edicion, e.target.value)}
                                 className="bg-bg border border-border rounded px-1.5 py-0.5 text-xs" autoFocus />
                             ) : (
                               <button onClick={() => setEditandoFecha(`${r.curso}|${r.edicion}`)} className="text-textSec text-xs hover:text-accentTeal">
-                                {r.fechaInicio ? new Date(r.fechaInicio).toLocaleDateString('es-AR') : '📅 Definir'}
+                                {r.fechaInicio ? (parsearFechaFlexible(r.fechaInicio)?.toLocaleDateString('es-AR') || '⚠️ Fecha inválida') : '📅 Definir'}
                               </button>
                             )}
                           </td>
@@ -618,7 +642,7 @@ function FichaEdicionModal({ info, estudiantes, pagosPorEmail, onEditarCampo, on
           <div>
             <p className="text-lg font-bold">{info.curso} — Edición {info.edicion}</p>
             <p className="text-textMuted text-xs">
-              Formador/a: {info.formador || 'sin definir'} · Inicio: {info.fechaInicio ? new Date(info.fechaInicio).toLocaleDateString('es-AR') : 'sin definir'} ·{' '}
+              Formador/a: {info.formador || 'sin definir'} · Inicio: {info.fechaInicio ? (parsearFechaFlexible(info.fechaInicio)?.toLocaleDateString('es-AR') || '⚠️ Fecha inválida') : 'sin definir'} ·{' '}
               <span className={info.cursada === 'Curso cerrado' ? 'text-dangerText' : info.cursada === 'En curso' ? 'text-successText' : 'text-textMuted'}>{info.cursada}</span>
             </p>
           </div>
