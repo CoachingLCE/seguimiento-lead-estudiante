@@ -405,12 +405,15 @@ export default function SeguimientoPage() {
   const loteBajasTodas = seguimiento.filter((s) => s.Lote === 'baja' && vencido(s) && filaValida(s));
   const loteBajas = loteBajasTodas.filter(noContactada);
 
-  // SIN LOTE: leads que ya no aparecen en ningún lote activo, y por qué (venta confirmada,
-  // o un resultado final como "No le interesa"). Sirve como resumen/auditoría de a dónde fue cada uno.
+  // SIN LOTE: leads que ya no aparecen en ningún lote activo, y por qué (un resultado final como
+  // "No le interesa" o "Va a pensarlo"). Las ventas confirmadas NO se muestran acá — son un
+  // resultado positivo, no un "abandono" del seguimiento, así que no aportan como resumen de
+  // a dónde se fueron los leads que no compraron.
   const sinLote = [...leadsResueltos]
     .map((leadId) => {
       const lead = buscarLead(leadId);
       if (!lead) return null;
+      if (lead.Estado === 'Comprado') return null;
       if (!coincideBusquedaAmplia(lead, busqueda)) return null;
       if (!coincideFiltroRapido(lead)) return null;
       const filasLead = seguimiento.filter((s) => s.LeadID === leadId && RESULTADOS_FINALES.includes(s.Resultado));
