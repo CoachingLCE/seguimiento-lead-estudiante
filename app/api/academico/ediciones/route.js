@@ -3,8 +3,10 @@ import { readSheet, appendRow, updateRow } from '../../../../lib/sheets';
 import { findUsuario, tienePermisoAcademico } from '../../../../lib/auth';
 import { registrarAccion } from '../../../../lib/auditoria';
 
-// POST /api/academico/ediciones -> crea o actualiza la fecha de inicio de una edición
-// body: { curso, edicion, fechaInicio, solicitanteEmail, solicitanteNombre }
+// POST /api/academico/ediciones -> crea o actualiza la fecha de inicio y/o el formador de una
+// edición puntual. El formador se guarda por EDICIÓN (no por curso completo), porque hay cursos
+// como Oratoria donde distintas ediciones tienen distintos formadores.
+// body: { curso, edicion, fechaInicio?, formador?, solicitanteEmail, solicitanteNombre }
 export async function POST(request) {
   const body = await request.json();
   const solicitante = await findUsuario(body.solicitanteEmail);
@@ -19,21 +21,27 @@ export async function POST(request) {
   const ediciones = await readSheet('AcademicoEdiciones');
   const existente = ediciones.find((e) => e.Curso === curso && e.Edicion === edicion);
 
+  const fechaInicio = body.fechaInicio !== undefined ? body.fechaInicio : (existente?.FechaInicio || '');
+  const formador = body.formador !== undefined ? body.formador : (existente?.Formador || '');
+
   if (existente) {
-    await updateRow('AcademicoEdiciones', existente._rowIndex, [curso, edicion, body.fechaInicio || '']);
+    await updateRow('AcademicoEdiciones', existente._rowIndex, [curso, edicion, fechaInicio, formador]);
   } else {
-    await appendRow('AcademicoEdiciones', [curso, edicion, body.fechaInicio || '']);
+    await appendRow('AcademicoEdiciones', [curso, edicion, fechaInicio, formador]);
   }
 
   await registrarAccion(
     body.solicitanteEmail, body.solicitanteNombre,
-    'Actualizó la fecha de inicio de una edición', `${curso} — Edición ${edicion}`, ''
+    body.formador !== undefined ? 'Actualizó el formador de una edición' : 'Actualizó la fecha de inicio de una edición',
+    `${curso} — Edición ${edicion}`, ''
   );
 
   return NextResponse.json({ ok: true });
 }
 
-// PUT /api/academico/ediciones -> actualiza el formador de un curso completo
+// PUT /api/academico/ediciones -> actualiza el formador POR DEFECTO de un curso completo (se usa
+// solo cuando una edición puntual no tiene su propio formador definido — para cursos como
+// Oratoria, que sí varían por edición, conviene dejar esto vacío y definir cada una a mano).
 // body: { curso, formador, solicitanteEmail, solicitanteNombre }
 export async function PUT(request) {
   const body = await request.json();
@@ -56,7 +64,7 @@ export async function PUT(request) {
 
   await registrarAccion(
     body.solicitanteEmail, body.solicitanteNombre,
-    'Actualizó el formador de un curso', `${curso} — ${body.formador || ''}`, ''
+    'Actualizó el formador por defecto de un curso', `${curso} — ${body.formador || ''}`, ''
   );
 
   return NextResponse.json({ ok: true });

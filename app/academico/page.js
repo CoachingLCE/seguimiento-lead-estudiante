@@ -84,7 +84,9 @@ function calcularResumenGlobal(todosLosEstudiantes, todasLasEdiciones, cursosInf
   return Object.values(porClave).map((r) => {
     const edicionInfo = todasLasEdiciones.find((x) => x.Curso === r.curso && x.Edicion === r.edicion);
     const fechaInicio = edicionInfo?.FechaInicio || '';
-    const formador = cursosInfo.find((c) => c.Curso === r.curso)?.Formador || '';
+    // El formador de la edición puntual tiene prioridad; si no está definido, se usa el del
+    // curso como respaldo (compatibilidad con cursos donde todas las ediciones comparten uno solo).
+    const formador = edicionInfo?.Formador || cursosInfo.find((c) => c.Curso === r.curso)?.Formador || '';
     const fechaInicioDate = parsearFechaFlexible(fechaInicio);
     let cursada = 'Sin fecha de inicio';
     if (fechaInicioDate) {
@@ -100,6 +102,7 @@ function calcularResumenGlobal(todosLosEstudiantes, todasLasEdiciones, cursosInf
 }
 
 const FILTROS_RAPIDOS = ['Todas', 'Activas', 'Finalizadas', 'Con altas bajas', 'Baja certificación'];
+const TODOS = '__TODOS_LOS_CURSOS__';
 
 export default function AcademicoPage() {
   const { usuario, logout } = useSession();
@@ -126,10 +129,10 @@ export default function AcademicoPage() {
   const [editandoFormador, setEditandoFormador] = useState(false);
   const [formadorTemp, setFormadorTemp] = useState('');
   const [editandoFecha, setEditandoFecha] = useState(null);
+  const [editandoFormadorEdicion, setEditandoFormadorEdicion] = useState(null);
 
   const [filtroRapido, setFiltroRapido] = useState('Todas');
   const [filtroDocente, setFiltroDocente] = useState('');
-  const [verTodosCursos, setVerTodosCursos] = useState(false);
   const [edicionAbierta, setEdicionAbierta] = useState(null);
 
   const puedeVer = tienePermisoAcademico(usuario);
@@ -149,7 +152,7 @@ export default function AcademicoPage() {
     setErrorCarga('');
     try {
       const params = new URLSearchParams({ solicitanteEmail: usuario.email });
-      if (cursoActual) params.set('curso', cursoActual);
+      if (cursoActual && cursoActual !== TODOS) params.set('curso', cursoActual);
       const res = await fetch(`/api/academico?${params.toString()}`);
       const r = await res.json();
       if (!res.ok || r.error) {
@@ -176,7 +179,7 @@ export default function AcademicoPage() {
   const previewCarga = useMemo(() => parsearFilasAcademico(textoCarga), [textoCarga]);
 
   async function confirmarCarga() {
-    const cursoDestino = cursoActual || nuevoCursoTexto.trim();
+    const cursoDestino = (cursoActual && cursoActual !== TODOS) ? cursoActual : nuevoCursoTexto.trim();
     if (!cursoDestino) return;
     setCargandoImport(true);
     await fetch('/api/academico', {
@@ -232,6 +235,16 @@ export default function AcademicoPage() {
     cargarTodo();
   }
 
+  async function guardarFormadorEdicion(curso, edicion, formador) {
+    await fetch('/api/academico/ediciones', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ curso, edicion, formador, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
+    });
+    setEditandoFormadorEdicion(null);
+    cargarTodo();
+  }
+
   async function guardarFechaInicio(curso, edicion, fecha) {
     await fetch('/api/academico/ediciones', {
       method: 'POST',
@@ -280,12 +293,15 @@ export default function AcademicoPage() {
   });
 
   const resumenGlobalCompleto = calcularResumenGlobal(todosLosEstudiantes, ediciones, cursosInfo);
-  const docentesUnicos = [...new Set(cursosInfo.map((c) => c.Formador).filter(Boolean))].sort();
+  const docentesUnicos = [...new Set([
+    ...cursosInfo.map((c) => c.Formador),
+    ...resumenGlobalCompleto.map((r) => r.formador)
+  ].filter(Boolean))].sort();
 
   // Por defecto, el reporte muestra solo el curso elegido arriba (como el resto de la pantalla).
   // Con "Ver todos los cursos" tildado, se ve la vista institucional completa (para comparar
   // docentes entre sí, por ejemplo).
-  const resumenPorCurso = verTodosCursos
+  const resumenPorCurso = cursoActual === TODOS
     ? resumenGlobalCompleto
     : resumenGlobalCompleto.filter((r) => r.curso === cursoActual);
 
@@ -340,6 +356,7 @@ export default function AcademicoPage() {
           <select value={cursoActual} onChange={(e) => setCursoActual(e.target.value)}
             className="bg-bg border border-border rounded-lg px-3 py-2 text-sm">
             {cursosDisponibles.length === 0 && <option value="">Sin cursos todavía</option>}
+            {cursosDisponibles.length > 0 && <option value={TODOS}>— Todos los cursos —</option>}
             {cursosDisponibles.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
           <button onClick={() => setMostrarCarga((v) => !v)} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">
@@ -356,7 +373,7 @@ export default function AcademicoPage() {
 
         {mostrarCarga && (
           <div className="bg-surface border border-border rounded-2xl p-5 mb-4">
-            {!cursoActual && (
+            {(!cursoActual || cursoActual === TODOS) && (
               <div className="mb-3">
                 <label className="text-xs text-textSec block mb-1">Nombre del curso (nuevo)</label>
                 <input value={nuevoCursoTexto} onChange={(e) => setNuevoCursoTexto(e.target.value)}
@@ -374,7 +391,7 @@ export default function AcademicoPage() {
             {textoCarga.trim() && (
               <p className="text-textMuted text-xs mb-2">👀 Se van a cargar {previewCarga.length} estudiante(s).</p>
             )}
-            <button onClick={confirmarCarga} disabled={cargandoImport || previewCarga.length === 0 || (!cursoActual && !nuevoCursoTexto.trim())}
+            <button onClick={confirmarCarga} disabled={cargandoImport || previewCarga.length === 0 || ((!cursoActual || cursoActual === TODOS) && !nuevoCursoTexto.trim())}
               className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-50">
               {cargandoImport ? 'Cargando…' : `Confirmar carga de ${previewCarga.length}`}
             </button>
@@ -392,8 +409,9 @@ export default function AcademicoPage() {
           <p className="text-textMuted text-sm">Todavía no hay ningún curso cargado — usá "+ Cargar estudiantes" para arrancar.</p>
         ) : (
           <>
-            <div className="bg-surface border border-border rounded-2xl p-4 mb-4 flex items-center gap-3">
-              <p className="text-sm font-semibold">👩‍🏫 Formador/a de {cursoActual}:</p>
+            {cursoActual !== TODOS && (
+            <div className="bg-surface border border-border rounded-2xl p-4 mb-4 flex items-center gap-3 flex-wrap">
+              <p className="text-sm font-semibold">👩‍🏫 Formador/a por defecto de {cursoActual}:</p>
               {editandoFormador ? (
                 <>
                   <input value={formadorTemp} onChange={(e) => setFormadorTemp(e.target.value)}
@@ -407,24 +425,22 @@ export default function AcademicoPage() {
                   <button onClick={() => { setFormadorTemp(formadorActual); setEditandoFormador(true); }} className="text-xs text-accentTeal font-semibold">✏️ Editar</button>
                 </>
               )}
+              <p className="text-textMuted text-[11px] w-full">
+                Se usa solo si una edición puntual no tiene su propio formador definido. Para cursos con varios formadores (ej: Oratoria), definilo edición por edición en la tabla de abajo, columna "Formador".
+              </p>
             </div>
+            )}
 
             <div className="bg-surface border border-border rounded-2xl p-5 mb-4">
               <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
                 <p className="text-sm font-semibold">
-                  📊 Reporte por edición <span className="text-textMuted font-normal">({verTodosCursos ? 'todos los cursos' : cursoActual})</span>
+                  📊 Reporte por edición <span className="text-textMuted font-normal">({cursoActual === TODOS ? 'todos los cursos' : cursoActual})</span>
                 </p>
-                <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-1.5 text-xs text-textSec cursor-pointer">
-                    <input type="checkbox" checked={verTodosCursos} onChange={(e) => setVerTodosCursos(e.target.checked)} />
-                    Ver todos los cursos
-                  </label>
-                  <select value={filtroDocente} onChange={(e) => setFiltroDocente(e.target.value)}
-                    className="bg-bg border border-border rounded-lg px-2 py-1.5 text-xs">
-                    <option value="">Docente: Todos</option>
-                    {docentesUnicos.map((d) => <option key={d} value={d}>{d}</option>)}
-                  </select>
-                </div>
+                <select value={filtroDocente} onChange={(e) => setFiltroDocente(e.target.value)}
+                  className="bg-bg border border-border rounded-lg px-2 py-1.5 text-xs">
+                  <option value="">Docente: Todos</option>
+                  {docentesUnicos.map((d) => <option key={d} value={d}>{d}</option>)}
+                </select>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
@@ -493,7 +509,17 @@ export default function AcademicoPage() {
                           className="border-b border-border hover:bg-bg/60 cursor-pointer transition-colors">
                           <td className="py-2 pr-3 text-textSec">{r.curso}</td>
                           <td className="pr-3 font-medium">Edición {r.edicion}</td>
-                          <td className="pr-3 text-textSec">{r.formador || '—'}</td>
+                          <td className="pr-3" onClick={(ev) => ev.stopPropagation()}>
+                            {editandoFormadorEdicion === `${r.curso}|${r.edicion}` ? (
+                              <input type="text" defaultValue={r.formador} placeholder="Nombre del formador"
+                                onBlur={(e) => guardarFormadorEdicion(r.curso, r.edicion, e.target.value)}
+                                className="bg-bg border border-border rounded px-1.5 py-0.5 text-xs w-32" autoFocus />
+                            ) : (
+                              <button onClick={() => setEditandoFormadorEdicion(`${r.curso}|${r.edicion}`)} className="text-textSec text-xs hover:text-accentTeal">
+                                {r.formador || '✏️ Definir'}
+                              </button>
+                            )}
+                          </td>
                           <td className="pr-3" onClick={(ev) => ev.stopPropagation()}>
                             {editandoFecha === `${r.curso}|${r.edicion}` ? (
                               <input type="date" defaultValue={r.fechaInicio ? (() => { const f = parsearFechaFlexible(r.fechaInicio); return f ? fechaAISO(f) : ''; })() : ''}
@@ -526,6 +552,11 @@ export default function AcademicoPage() {
               <p className="text-textMuted text-[11px] mt-2">💡 Tocá una fila para ver la ficha detallada de esa edición.</p>
             </div>
 
+            {cursoActual === TODOS ? (
+              <div className="bg-surface border border-border rounded-2xl p-5 text-center">
+                <p className="text-textMuted text-sm">Elegí un curso puntual arriba para ver o cargar su listado de estudiantes.</p>
+              </div>
+            ) : (
             <div className="bg-surface border border-border rounded-2xl p-5">
               <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
                 <p className="text-sm font-semibold">Listado de estudiantes de {cursoActual} ({estudiantesFiltrados.length})</p>
@@ -593,6 +624,7 @@ export default function AcademicoPage() {
                 </table>
               </div>
             </div>
+            )}
           </>
         )}
       </div>
