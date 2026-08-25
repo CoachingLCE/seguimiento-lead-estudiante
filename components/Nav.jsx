@@ -13,6 +13,7 @@ import {
   tienePermisoAuditoria,
   tienePermisoDiplomas,
   tienePermisoBuscador,
+  tienePermisoMensajesVer,
   tienePermisoBajas,
   tienePermisoAcademico
 } from '../lib/permisos';
@@ -103,6 +104,16 @@ export default function Nav({ usuario, onLogout }) {
                   : 'bg-surface2 border border-border text-textSec hover:text-text hover:border-accentTeal'
               }`}>
               🔍
+            </Link>
+          )}
+          {tienePermisoMensajesVer(usuario) && (
+            <Link href="/mensajes" title="Mensajes frecuentes"
+              className={`w-9 h-9 flex items-center justify-center rounded-lg text-base transition-colors ${
+                pathname === '/mensajes'
+                  ? 'bg-accentPurple text-white'
+                  : 'bg-surface2 border border-border text-textSec hover:text-text hover:border-accentTeal'
+              }`}>
+              💬
             </Link>
           )}
           <Link href="/herramientas" title="Herramientas"
