@@ -145,6 +145,7 @@ export default function AuditoriaPage() {
                   const esLogin = r.Accion === 'Inició sesión';
                   const esLoginFallido = (r.Accion || '').toLowerCase().includes('login fallido') || (r.Accion || '').toLowerCase().includes('login rechazado');
                   const esGrupoWhatsapp = (r.Accion || '').toLowerCase().includes('grupo de whatsapp') || (r.Accion || '').toLowerCase().includes('grupo whatsapp');
+                  const esMensajeFrecuente = (r.Accion || '').toLowerCase().includes('mensaje frecuente');
                   return (
                     <tr key={i} className="border-b border-border">
                       <td className="py-2 whitespace-nowrap">{new Date(r.Fecha).toLocaleString('es-AR', { hour12: false })}</td>
@@ -153,10 +154,11 @@ export default function AuditoriaPage() {
                         esVenta ? 'text-successText font-semibold' :
                         esLead ? 'text-accentPurple font-medium' :
                         esGrupoWhatsapp ? 'text-accentTeal font-medium' :
+                        esMensajeFrecuente ? 'text-accentMagenta font-medium' :
                         esLogin ? 'text-infoText font-medium' :
                         esLoginFallido ? 'text-dangerText font-medium' : ''
                       }`}>
-                        {esVenta && '💰 '}{esLead && '📩 '}{esGrupoWhatsapp && '💬 '}{esLogin && '🔑 '}{esLoginFallido && '⚠️ '}{r.Accion}
+                        {esVenta && '💰 '}{esLead && '📩 '}{esGrupoWhatsapp && '💬 '}{esMensajeFrecuente && '📝 '}{esLogin && '🔑 '}{esLoginFallido && '⚠️ '}{r.Accion}
                       </td>
                       <td className="leading-snug">{r.Detalle}</td>
                     </tr>
