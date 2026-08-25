@@ -58,7 +58,6 @@ export default function InscritosPage() {
   const [busqueda, setBusqueda] = useState('');
   const [filtroCurso, setFiltroCurso] = useState('');
   const [filtroEdicion, setFiltroEdicion] = useState('');
-  const [filtroDocente, setFiltroDocente] = useState('');
   const [ordenPor, setOrdenPor] = useState('FechaInscripcion');
   const [ordenDir, setOrdenDir] = useState('desc');
 
@@ -193,15 +192,11 @@ export default function InscritosPage() {
 
   const cursosUnicos = [...new Set(inscritos.map((i) => i.Curso).filter(Boolean))].sort();
   const edicionesUnicas = [...new Set(inscritos.map((i) => normalizarEdicion(i.Edicion)).filter(Boolean))].sort();
-  const docentesUnicos = [...new Set(
-    inscritos.flatMap((i) => (i.Docentes || '').split(',').map((d) => d.trim()).filter(Boolean))
-  )].sort();
 
   const inscritosFiltrados = inscritos
     .filter((i) => !busqueda.trim() || (i.NombreEstudiante || '').toLowerCase().includes(busqueda.trim().toLowerCase()))
     .filter((i) => !filtroCurso || i.Curso === filtroCurso)
-    .filter((i) => !filtroEdicion || normalizarEdicion(i.Edicion) === filtroEdicion)
-    .filter((i) => !filtroDocente || (i.Docentes || '').split(',').map((d) => d.trim()).includes(filtroDocente));
+    .filter((i) => !filtroEdicion || normalizarEdicion(i.Edicion) === filtroEdicion);
 
   const inscritosOrdenados = [...inscritosFiltrados].sort((a, b) => {
     let va = a[ordenPor] || '';
@@ -321,11 +316,6 @@ export default function InscritosPage() {
               className="bg-bg border border-border rounded-lg px-3 py-2 text-sm">
               <option value="">Todas las ediciones</option>
               {edicionesUnicas.map((e) => <option key={e} value={e}>{e}</option>)}
-            </select>
-            <select value={filtroDocente} onChange={(e) => setFiltroDocente(e.target.value)}
-              className="bg-bg border border-border rounded-lg px-3 py-2 text-sm">
-              <option value="">Todos los docentes</option>
-              {docentesUnicos.map((d) => <option key={d} value={d}>{d}</option>)}
             </select>
             <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
               placeholder="🔍 Buscar…" className="bg-bg border border-border rounded-lg px-3 py-2 text-sm w-40" />
