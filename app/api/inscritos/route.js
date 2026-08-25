@@ -123,15 +123,18 @@ export async function PATCH(request) {
       return NextResponse.json({ error: 'Solo la Coordinadora académica puede omitir la bienvenida' }, { status: 403 });
     }
     const ahora = new Date().toISOString();
+    // Se omite el ENVÍO del mail, pero no se marca "Confirmó recepción" como si fuera automático —
+    // eso solo debe quedar tildado si el estudiante confirma de verdad (por el botón del mail,
+    // que en este caso no se manda, o a mano si confirma por otro medio).
     await updateRow('Inscritos', fila._rowIndex, [
       fila.ID, fila.LeadId, fila.NombreEstudiante, fila.EmailEstudiante, fila.Curso, fila.Edicion,
       fila.FechaInscripcion, fila.AltaPlataforma, fila.AltaPorEmail, fila.AltaPorNombre, fila.FechaAlta,
       'TRUE', body.solicitanteEmail, `${body.solicitanteNombre} (omitida)`, ahora, fila.AbonoTotalidad,
-      fila.Docentes, 'TRUE', fila.GrupoWhatsApp
+      fila.Docentes, fila.ConfirmoRecepcion, fila.GrupoWhatsApp
     ]);
     await registrarAccion(
       body.solicitanteEmail, body.solicitanteNombre,
-      'Omitió el envío de la bienvenida (y su confirmación)', fila.NombreEstudiante, fila.LeadId
+      'Omitió el envío de la bienvenida', fila.NombreEstudiante, fila.LeadId
     );
     return NextResponse.json({ ok: true });
   }

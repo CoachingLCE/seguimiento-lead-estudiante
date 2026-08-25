@@ -154,7 +154,7 @@ export default function InscritosPage() {
   }
 
   async function omitirBienvenida(inscrito) {
-    if (!confirm(`¿Omitir el envío de la bienvenida a ${inscrito.NombreEstudiante}? También se va a marcar como confirmada, sin necesitar respuesta.`)) return;
+    if (!confirm(`¿Omitir el envío de la bienvenida a ${inscrito.NombreEstudiante}? "Confirmó recepción" queda como está — solo se marca si el estudiante confirma de verdad.`)) return;
     const res = await fetch('/api/inscritos', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -417,7 +417,7 @@ export default function InscritosPage() {
                               {usuario.roles?.some((r) => ['CoordinadorEstudiantes', 'Admin'].includes(r)) && (
                                 <button
                                   onClick={() => omitirBienvenida(i)}
-                                  title="Omitir el envío y su confirmación de recepción — solo vos podés hacer esto"
+                                  title="Omitir el envío de la bienvenida (no marca la confirmación de recepción) — solo vos podés hacer esto"
                                   className="text-xs px-1.5 py-1 rounded-md text-textMuted hover:text-warningText"
                                 >
                                   ⏭️
