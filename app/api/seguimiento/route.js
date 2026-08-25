@@ -60,7 +60,9 @@ export async function PATCH(request) {
     ]);
     await registrarAccion(
       body.solicitanteEmail, body.solicitanteNombre,
-      `Programó contacto para el ${body.fechaProgramada}`, `Lote ${fila.Lote}`, fila.LeadID
+      `Programó contacto para el ${body.fechaProgramada}`,
+      `Lote ${fila.Lote}${body.nombreLead ? ` — ${body.nombreLead}` : ''}${body.cursoLead ? ` (${body.cursoLead})` : ''}`,
+      fila.LeadID
     );
     return NextResponse.json({ ok: true });
   }
@@ -79,7 +81,9 @@ export async function PATCH(request) {
     ]);
     await registrarAccion(
       body.solicitanteEmail, body.solicitanteNombre,
-      `Reasignó Lote ${fila.Lote}`, `A ${body.nuevoNombre}`, fila.LeadID
+      `Reasignó Lote ${fila.Lote}`,
+      `A ${body.nuevoNombre}${body.nombreLead ? ` — ${body.nombreLead}` : ''}${body.cursoLead ? ` (${body.cursoLead})` : ''}`,
+      fila.LeadID
     );
     return NextResponse.json({ ok: true });
   }
@@ -98,7 +102,9 @@ export async function PATCH(request) {
     ]);
     await registrarAccion(
       body.solicitanteEmail, body.solicitanteNombre,
-      `Deshizo un resultado en Lote ${fila.Lote}`, `Resultado anterior: "${resultadoAnterior}"`, fila.LeadID
+      `Deshizo un resultado en Lote ${fila.Lote}`,
+      `Resultado anterior: "${resultadoAnterior}"${body.nombreLead ? ` — ${body.nombreLead}` : ''}${body.cursoLead ? ` (${body.cursoLead})` : ''}`,
+      fila.LeadID
     );
     return NextResponse.json({ ok: true });
   }
@@ -114,7 +120,9 @@ export async function PATCH(request) {
 
     await registrarAccion(
       body.solicitanteEmail, body.solicitanteNombre,
-      `Registró contacto en Lote ${fila.Lote}`, body.resultado, fila.LeadID
+      `Registró contacto en Lote ${fila.Lote}`,
+      `${body.resultado}${body.nombreLead ? ` — ${body.nombreLead}` : ''}${body.cursoLead ? ` (${body.cursoLead})` : ''}`,
+      fila.LeadID
     );
 
     // Si fue el Lote 1 y el resultado no es definitivo, se genera el Lote 2 dinámicamente

@@ -166,11 +166,13 @@ export default function SeguimientoPage() {
   }
 
   async function registrarContacto(leadId, lote, resultado, observaciones, proximaAccion, fechaProgramada) {
+    const lead = leads.find((l) => l.ID === leadId);
     await fetch('/api/seguimiento', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         accion: 'contactar', leadId, lote, resultado, observaciones, proximaAccion, fechaProgramada,
+        nombreLead: lead ? `${lead.Nombre} ${lead.Apellido}` : '', cursoLead: lead?.Curso || '',
         solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
       })
     });
@@ -179,11 +181,13 @@ export default function SeguimientoPage() {
   }
 
   async function reasignar(leadId, lote, nuevoEmail, nuevoNombre) {
+    const lead = leads.find((l) => l.ID === leadId);
     await fetch('/api/seguimiento', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         accion: 'reasignar', leadId, lote, nuevoEmail, nuevoNombre,
+        nombreLead: lead ? `${lead.Nombre} ${lead.Apellido}` : '', cursoLead: lead?.Curso || '',
         solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
       })
     });
@@ -197,11 +201,13 @@ export default function SeguimientoPage() {
       return { leadId, lote };
     });
     for (const f of filas) {
+      const lead = leads.find((l) => l.ID === f.leadId);
       await fetch('/api/seguimiento', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           accion: 'reasignar', leadId: f.leadId, lote: f.lote, nuevoEmail, nuevoNombre,
+          nombreLead: lead ? `${lead.Nombre} ${lead.Apellido}` : '', cursoLead: lead?.Curso || '',
           solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
         })
       });
@@ -226,11 +232,13 @@ export default function SeguimientoPage() {
   }
 
   async function registrarContactoSilencioso(leadId, lote, resultado) {
+    const lead = leads.find((l) => l.ID === leadId);
     await fetch('/api/seguimiento', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         accion: 'contactar', leadId, lote, resultado, observaciones: '', proximaAccion: '',
+        nombreLead: lead ? `${lead.Nombre} ${lead.Apellido}` : '', cursoLead: lead?.Curso || '',
         solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
       })
     });

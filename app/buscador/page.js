@@ -386,6 +386,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         accion: 'programar', leadId: lead.ID, lote, fechaProgramada: fechaAProgramar,
+        nombreLead: `${lead.Nombre} ${lead.Apellido}`, cursoLead: lead.Curso || '',
         solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
       })
     });
@@ -400,6 +401,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         accion: 'deshacer', leadId: lead.ID, lote,
+        nombreLead: `${lead.Nombre} ${lead.Apellido}`, cursoLead: lead.Curso || '',
         solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
       })
     });
