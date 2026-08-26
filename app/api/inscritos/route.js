@@ -139,6 +139,29 @@ export async function PATCH(request) {
     return NextResponse.json({ ok: true });
   }
 
+  // Corregir el curso de un estudiante ya cargado — por si hubo un error al marcar la venta con
+  // el curso equivocado (ej: el lead tenía interés en varios y se eligió mal). Solo Admin.
+  if (body.accion === 'editar_curso') {
+    const solicitante = await findUsuario(body.solicitanteEmail);
+    if (!solicitante?.roles?.includes('Admin')) {
+      return NextResponse.json({ error: 'Solo Admin puede corregir el curso' }, { status: 403 });
+    }
+    const cursoNuevo = (body.curso || '').trim();
+    if (!cursoNuevo) return NextResponse.json({ error: 'Falta el curso' }, { status: 400 });
+
+    await updateRow('Inscritos', fila._rowIndex, [
+      fila.ID, fila.LeadId, fila.NombreEstudiante, fila.EmailEstudiante, cursoNuevo, fila.Edicion,
+      fila.FechaInscripcion, fila.AltaPlataforma, fila.AltaPorEmail, fila.AltaPorNombre, fila.FechaAlta,
+      fila.BienvenidaEnviada, fila.BienvenidaPorEmail, fila.BienvenidaPorNombre, fila.FechaBienvenida,
+      fila.AbonoTotalidad, fila.Docentes, fila.ConfirmoRecepcion, fila.GrupoWhatsApp
+    ]);
+    await registrarAccion(
+      body.solicitanteEmail, body.solicitanteNombre,
+      'Corrigió el curso de un estudiante', `${fila.NombreEstudiante}: "${fila.Curso}" → "${cursoNuevo}"`, fila.LeadId
+    );
+    return NextResponse.json({ ok: true });
+  }
+
   return NextResponse.json({ error: 'Acción no reconocida' }, { status: 400 });
 }
 

@@ -27,13 +27,17 @@ export async function POST(request) {
       ? `${body.cantCuotas} cuotas de $${body.valorCuota}`
       : 'Totalidad';
 
+  // Si el lead tenía interés en varios cursos, se pudo elegir cuál es el de esta venta —
+  // si no se especificó (leads con un solo curso), se usa el que ya tenía.
+  const cursoFinal = body.cursoVenta || lead.Curso;
+
   // Mismo orden de columnas que en app/api/leads/route.js
   await updateRow('Leads', lead._rowIndex, [
     lead.ID,
     lead.Nombre,
     lead.Apellido,
     lead.WhatsApp,
-    lead.Curso,
+    cursoFinal,
     lead.CursosAdicionales,
     lead.Origen,
     lead.FechaIngreso,

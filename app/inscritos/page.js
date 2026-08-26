@@ -8,7 +8,7 @@ import CheckboxVisual from '../../components/CheckboxVisual';
 import { useToast } from '../../components/Toast';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoEstudiantes } from '../../lib/permisos';
-import { colorParaCurso, normalizarEdicion, horasHabilesTranscurridas } from '../../lib/constants';
+import { colorParaCurso, normalizarEdicion, horasHabilesTranscurridas, CURSOS } from '../../lib/constants';
 
 // Los 4 pasos que definen una inscripción "completa": Bienvenida, Confirmó recepción,
 // Alta en plataforma y Grupo de WhatsApp.
@@ -54,6 +54,7 @@ export default function InscritosPage() {
   const [enviandoBienvenidaId, setEnviandoBienvenidaId] = useState(null);
   const [fichaLeadId, setFichaLeadId] = useState(null);
   const [confirmarEliminar, setConfirmarEliminar] = useState(null);
+  const [editandoCursoId, setEditandoCursoId] = useState(null);
   const [tab, setTab] = useState('lista');
   const [busqueda, setBusqueda] = useState('');
   const [filtroCurso, setFiltroCurso] = useState('');
@@ -162,6 +163,18 @@ export default function InscritosPage() {
     });
     if (res.ok) { mostrarToast('Bienvenida omitida'); cargarInscritos(); }
     else { const r = await res.json(); mostrarToast(r.error || 'No se pudo omitir'); }
+  }
+
+  async function editarCurso(inscrito, cursoNuevo) {
+    if (cursoNuevo === inscrito.Curso) { setEditandoCursoId(null); return; }
+    const res = await fetch('/api/inscritos', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion: 'editar_curso', id: inscrito.ID, curso: cursoNuevo, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
+    });
+    setEditandoCursoId(null);
+    if (res.ok) { mostrarToast('Curso corregido'); cargarInscritos(); }
+    else { const r = await res.json(); mostrarToast(r.error || 'No se pudo corregir el curso'); }
   }
 
   function clickEnviarBienvenida(inscrito) {
@@ -376,11 +389,24 @@ export default function InscritosPage() {
                         <td className="py-3 pr-4 text-textMuted text-xs whitespace-nowrap">{antiguedad(i.FechaInscripcion)}</td>
                         <td className="py-3 pr-4 font-medium">{i.NombreEstudiante}</td>
                         <td className="py-3 pr-4">
-                          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md font-medium whitespace-nowrap"
-                            style={{ background: `${color}1A`, color }}>
-                            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color }} />
-                            {i.Curso || 'Sin curso'}
-                          </span>
+                          {esAdmin && editandoCursoId === i.ID ? (
+                            <select defaultValue={i.Curso} autoFocus
+                              onChange={(e) => editarCurso(i, e.target.value)}
+                              onBlur={() => setEditandoCursoId(null)}
+                              className="bg-bg border border-border rounded-lg px-2 py-1 text-xs">
+                              <option value="">Sin curso</option>
+                              {CURSOS.map((c) => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                          ) : (
+                            <span onClick={() => esAdmin && setEditandoCursoId(i.ID)}
+                              className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md font-medium whitespace-nowrap ${esAdmin ? 'cursor-pointer hover:opacity-80' : ''}`}
+                              style={{ background: `${color}1A`, color }}
+                              title={esAdmin ? 'Click para corregir el curso' : undefined}>
+                              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color }} />
+                              {i.Curso || 'Sin curso'}
+                              {esAdmin && ' ✏️'}
+                            </span>
+                          )}
                         </td>
                         <td className="py-3 pr-4 text-textSec">{normalizarEdicion(i.Edicion) || '—'}</td>
                         <td className="py-3 pr-4">

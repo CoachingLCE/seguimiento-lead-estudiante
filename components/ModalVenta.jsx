@@ -11,6 +11,10 @@ function limpiarMonto(texto) {
 }
 
 export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) {
+  const opcionesCurso = lead
+    ? [lead.Curso, ...(lead.CursosAdicionales || '').split(',').map((c) => c.trim())].filter(Boolean)
+    : [];
+  const [cursoVenta, setCursoVenta] = useState(lead?.Curso || '');
   const [medioPago, setMedioPago] = useState(MEDIOS_PAGO[0]);
   const [modalidad, setModalidad] = useState('cuotas');
   const [cantCuotas, setCantCuotas] = useState('');
@@ -31,6 +35,7 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
   // (si no, quedarían pegados los valores del lead anterior).
   useEffect(() => {
     if (!lead) return;
+    setCursoVenta(lead.Curso || '');
     setMedioPago(MEDIOS_PAGO[0]);
     setModalidad('cuotas');
     setCantCuotas('');
@@ -98,6 +103,7 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
 
       await onConfirm({
         leadId: lead.ID,
+        cursoVenta,
         medioPago,
         modalidad: esVariable ? 'cuotas' : modalidad,
         cantCuotas: esVariable ? listaCuotas.length : cantCuotas,
@@ -118,6 +124,18 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
       <div className="w-full max-w-sm bg-surface2 border border-border rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
         <h3 className="text-base font-semibold">Marcar como venta</h3>
         <p className="text-textSec text-sm mb-4">{lead.Nombre} {lead.Apellido} · {lead.Curso}</p>
+
+        {opcionesCurso.length > 1 && (
+          <div className="mb-3">
+            <label className="text-xs text-textSec block mb-1">
+              Este lead marcó interés en varios cursos — ¿cuál es el de esta venta? <span className="text-dangerText">*</span>
+            </label>
+            <select value={cursoVenta} onChange={(e) => setCursoVenta(e.target.value)}
+              className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm">
+              {opcionesCurso.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+        )}
 
         <label className="text-xs text-textSec block mb-1">Medio de pago</label>
         <select value={medioPago} onChange={(e) => setMedioPago(e.target.value)}
