@@ -12,6 +12,7 @@ const AYUDA_POR_RUTA = {
       <>
         <p>El curso es opcional — se puede dejar "sin definir" y completarlo después desde Seguimiento. También se puede marcar interés en varios cursos a la vez.</p>
         <p className="mt-2">Podés cargar varios contactos de una tanda con "+ Agregar otro contacto" — todos comparten el mismo curso y origen.</p>
+        <p className="mt-2">💡 Si el primer mensaje dice algo como <span className="font-mono text-xs bg-bg px-1.5 py-0.5 rounded">🚀 Hola, quiero más información sobre...</span>, es el mensaje automático de un anuncio de Instagram — marcá el Origen como <b>Instagram</b>.</p>
       </>
     )
   },
