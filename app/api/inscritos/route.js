@@ -40,7 +40,11 @@ export async function PATCH(request) {
   }
 
   if (body.accion === 'toggle') {
-    const CAMPOS_PERMITIDOS = { ConfirmoRecepcion: 'Confirmó recepción del mail de bienvenida', GrupoWhatsApp: 'Incorporación al grupo de WhatsApp' };
+    const CAMPOS_PERMITIDOS = {
+      ConfirmoRecepcion: 'Confirmó recepción del mail de bienvenida',
+      ConfirmoAlta: 'Confirmó recepción del mail de alta en plataforma',
+      GrupoWhatsApp: 'Incorporación al grupo de WhatsApp'
+    };
     if (!CAMPOS_PERMITIDOS[body.campo]) {
       return NextResponse.json({ error: 'Campo no permitido' }, { status: 400 });
     }
@@ -51,7 +55,8 @@ export async function PATCH(request) {
       actualizado.Curso, actualizado.Edicion, actualizado.FechaInscripcion,
       actualizado.AltaPlataforma, actualizado.AltaPorEmail, actualizado.AltaPorNombre, actualizado.FechaAlta,
       actualizado.BienvenidaEnviada, actualizado.BienvenidaPorEmail, actualizado.BienvenidaPorNombre, actualizado.FechaBienvenida,
-      actualizado.AbonoTotalidad, actualizado.Docentes, actualizado.ConfirmoRecepcion, actualizado.GrupoWhatsApp
+      actualizado.AbonoTotalidad, actualizado.Docentes, actualizado.ConfirmoRecepcion, actualizado.GrupoWhatsApp,
+      actualizado.ConfirmoAlta || ''
     ]);
     await registrarAccion(
       body.solicitanteEmail, body.solicitanteNombre,
@@ -72,7 +77,7 @@ export async function PATCH(request) {
       nuevoValor ? ahora : '',
       fila.BienvenidaEnviada, fila.BienvenidaPorEmail, fila.BienvenidaPorNombre, fila.FechaBienvenida,
       fila.AbonoTotalidad,
-      fila.Docentes, fila.ConfirmoRecepcion, fila.GrupoWhatsApp
+      fila.Docentes, fila.ConfirmoRecepcion, fila.GrupoWhatsApp, fila.ConfirmoAlta || ''
     ]);
     if (nuevoValor && fila.EmailEstudiante) {
       try {
@@ -96,7 +101,7 @@ export async function PATCH(request) {
       return NextResponse.json({ error: 'Falta el email del estudiante' }, { status: 400 });
     }
     try {
-      await enviarMailBienvenidaEstudiante(email, fila.NombreEstudiante, fila.ID);
+      await enviarMailBienvenidaEstudiante(email, fila.NombreEstudiante, fila.ID, fila.Curso);
     } catch (err) {
       return NextResponse.json({ error: 'No se pudo enviar el mail' }, { status: 500 });
     }
@@ -105,7 +110,7 @@ export async function PATCH(request) {
       fila.ID, fila.LeadId, fila.NombreEstudiante, email, fila.Curso, fila.Edicion,
       fila.FechaInscripcion, fila.AltaPlataforma, fila.AltaPorEmail, fila.AltaPorNombre, fila.FechaAlta,
       'TRUE', body.solicitanteEmail, body.solicitanteNombre, ahora, fila.AbonoTotalidad,
-      fila.Docentes, fila.ConfirmoRecepcion, fila.GrupoWhatsApp
+      fila.Docentes, fila.ConfirmoRecepcion, fila.GrupoWhatsApp, fila.ConfirmoAlta || ''
     ]);
     await registrarAccion(
       body.solicitanteEmail, body.solicitanteNombre,
@@ -130,7 +135,7 @@ export async function PATCH(request) {
       fila.ID, fila.LeadId, fila.NombreEstudiante, fila.EmailEstudiante, fila.Curso, fila.Edicion,
       fila.FechaInscripcion, fila.AltaPlataforma, fila.AltaPorEmail, fila.AltaPorNombre, fila.FechaAlta,
       'TRUE', body.solicitanteEmail, `${body.solicitanteNombre} (omitida)`, ahora, fila.AbonoTotalidad,
-      fila.Docentes, fila.ConfirmoRecepcion, fila.GrupoWhatsApp
+      fila.Docentes, fila.ConfirmoRecepcion, fila.GrupoWhatsApp, fila.ConfirmoAlta || ''
     ]);
     await registrarAccion(
       body.solicitanteEmail, body.solicitanteNombre,
@@ -153,7 +158,7 @@ export async function PATCH(request) {
       fila.ID, fila.LeadId, fila.NombreEstudiante, fila.EmailEstudiante, cursoNuevo, fila.Edicion,
       fila.FechaInscripcion, fila.AltaPlataforma, fila.AltaPorEmail, fila.AltaPorNombre, fila.FechaAlta,
       fila.BienvenidaEnviada, fila.BienvenidaPorEmail, fila.BienvenidaPorNombre, fila.FechaBienvenida,
-      fila.AbonoTotalidad, fila.Docentes, fila.ConfirmoRecepcion, fila.GrupoWhatsApp
+      fila.AbonoTotalidad, fila.Docentes, fila.ConfirmoRecepcion, fila.GrupoWhatsApp, fila.ConfirmoAlta || ''
     ]);
     await registrarAccion(
       body.solicitanteEmail, body.solicitanteNombre,

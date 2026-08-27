@@ -10,27 +10,27 @@ import { useSession } from '../../lib/useSession';
 import { tienePermisoEstudiantes } from '../../lib/permisos';
 import { colorParaCurso, normalizarEdicion, horasHabilesTranscurridas, CURSOS } from '../../lib/constants';
 
-// Los 4 pasos que definen una inscripción "completa": Bienvenida, Confirmó recepción,
-// Alta en plataforma y Grupo de WhatsApp.
+// Los 5 pasos que definen una inscripción "completa": Bienvenida, Confirmó recepción,
+// Alta en plataforma, Confirmó Alta y Grupo de WhatsApp.
 function esInscripcionCompleta(i) {
   return i.BienvenidaEnviada === 'TRUE' && i.ConfirmoRecepcion === 'TRUE'
-    && i.AltaPlataforma === 'TRUE' && i.GrupoWhatsApp === 'TRUE';
+    && i.AltaPlataforma === 'TRUE' && i.ConfirmoAlta === 'TRUE' && i.GrupoWhatsApp === 'TRUE';
 }
 
 function contarTareasCompletas(i) {
-  return [i.BienvenidaEnviada, i.ConfirmoRecepcion, i.AltaPlataforma, i.GrupoWhatsApp].filter((v) => v === 'TRUE').length;
+  return [i.BienvenidaEnviada, i.ConfirmoRecepcion, i.AltaPlataforma, i.ConfirmoAlta, i.GrupoWhatsApp].filter((v) => v === 'TRUE').length;
 }
 
 // Resumen rápido de toda la fila, para identificar el estado sin revisar columna por columna.
 function EstadoResumen({ inscrito }) {
   const hechas = contarTareasCompletas(inscrito);
-  if (hechas === 4) {
+  if (hechas === 5) {
     return <span className="text-xs px-2 py-1 rounded-full bg-successBg text-successText font-medium whitespace-nowrap">🟢 Completo</span>;
   }
   if (hechas === 0) {
     return <span className="text-xs px-2 py-1 rounded-full bg-dangerBg text-dangerText font-medium whitespace-nowrap">🔴 Pendiente</span>;
   }
-  return <span className="text-xs px-2 py-1 rounded-full bg-warningBg text-warningText font-medium whitespace-nowrap">🟡 {hechas}/4 tareas</span>;
+  return <span className="text-xs px-2 py-1 rounded-full bg-warningBg text-warningText font-medium whitespace-nowrap">🟡 {hechas}/5 tareas</span>;
 }
 
 function antiguedad(fecha) {
@@ -187,13 +187,15 @@ export default function InscritosPage() {
 
   if (!usuario || !puedeVer) return null;
 
-  // Alerta 1: se envió Bienvenida o se hizo el Alta, pero no confirmó recepción, y ya pasaron
-  // 48hs hábiles desde ese envío — momento de reforzar con el estudiante.
+  // Alerta 1: se envió Bienvenida y no se confirmó (ConfirmoRecepcion), o se hizo el Alta y no se
+  // confirmó (ConfirmoAlta) — cada una con su propio campo — y ya pasaron 48hs hábiles desde el
+  // envío correspondiente. Momento de reforzar con el estudiante.
   const alertasConfirmacion = inscritos.filter((i) => {
-    if (i.ConfirmoRecepcion === 'TRUE') return false;
-    const fechaEnvio = i.FechaBienvenida || i.FechaAlta;
-    if (!fechaEnvio) return false;
-    return horasHabilesTranscurridas(fechaEnvio) >= 48;
+    const bienvenidaPendiente = i.BienvenidaEnviada === 'TRUE' && i.ConfirmoRecepcion !== 'TRUE'
+      && i.FechaBienvenida && horasHabilesTranscurridas(i.FechaBienvenida) >= 48;
+    const altaPendiente = i.AltaPlataforma === 'TRUE' && i.ConfirmoAlta !== 'TRUE'
+      && i.FechaAlta && horasHabilesTranscurridas(i.FechaAlta) >= 48;
+    return bienvenidaPendiente || altaPendiente;
   });
 
   // Alerta 2: el estudiante ingresó hace 48hs hábiles y todavía no se le envió la Bienvenida.
@@ -277,11 +279,13 @@ export default function InscritosPage() {
               ) : (
                 <div className="space-y-2">
                   {alertasConfirmacion.map((i) => {
-                    const fechaEnvio = i.FechaBienvenida || i.FechaAlta;
+                    const bienvenidaPendiente = i.BienvenidaEnviada === 'TRUE' && i.ConfirmoRecepcion !== 'TRUE' && i.FechaBienvenida;
+                    const fechaEnvio = bienvenidaPendiente ? i.FechaBienvenida : i.FechaAlta;
                     return (
                       <div key={i.ID} className="flex items-center justify-between gap-3 border-t border-border first:border-t-0 pt-2 first:pt-0">
                         <p className="text-sm">
                           <span className="font-medium">{i.NombreEstudiante}</span> — {i.Curso || 'sin curso'}
+                          <span className="text-textMuted"> ({bienvenidaPendiente ? 'Bienvenida' : 'Alta'} sin confirmar)</span>
                           <span className="text-warningText"> · Hace {Math.floor(horasHabilesTranscurridas(fechaEnvio))}hs hábiles</span>
                         </p>
                         <button onClick={() => setFichaLeadId(i.LeadId)} className="text-accentTeal text-xs font-semibold shrink-0">Ver ficha</button>
@@ -374,6 +378,7 @@ export default function InscritosPage() {
                     <th className="pr-4 cursor-help" title="Se manda un mail de bienvenida al estudiante, con info de la formación.">Bienvenida</th>
                     <th className="pr-4 whitespace-normal max-w-[80px] cursor-help" title="Se marca solo cuando el estudiante toca el botón del mail — o se puede tildar a mano si confirma por otro medio.">Confirmó<br/>recepción</th>
                     <th className="pr-4 whitespace-normal max-w-[80px] cursor-help" title="Se manda un mail con el acceso a la plataforma y el contenido de la formación.">Alta<br/>plataforma</th>
+                    <th className="pr-4 whitespace-normal max-w-[80px] cursor-help" title="Se marca solo cuando el estudiante toca el botón del mail de Alta en plataforma — o se puede tildar a mano si confirma por otro medio.">Confirmó<br/>Alta</th>
                     <th className="pr-4 whitespace-normal max-w-[80px] cursor-help" title="Marcá cuando el estudiante ya fue agregado al grupo de estudio de WhatsApp.">Grupo<br/>WhatsApp</th>
                     <th className="pr-4">Estado</th>
                     <th>Acciones</th>
@@ -466,6 +471,11 @@ export default function InscritosPage() {
                               {i.AltaPorNombre}<br/>{new Date(i.FechaAlta).toLocaleDateString('es-AR')}
                             </p>
                           )}
+                        </td>
+                        <td className="py-3 pr-4">
+                          <button onClick={() => toggleCampoSimple(i, 'ConfirmoAlta', 'Confirmó Alta')}>
+                            <CheckboxVisual marcado={i.ConfirmoAlta === 'TRUE'} />
+                          </button>
                         </td>
                         <td className="py-3 pr-4">
                           <button onClick={() => toggleCampoSimple(i, 'GrupoWhatsApp', 'Grupo WhatsApp')}>

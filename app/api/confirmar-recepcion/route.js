@@ -14,12 +14,16 @@ export async function POST(request) {
     return NextResponse.json({ error: 'No encontramos ese registro' }, { status: 404 });
   }
 
-  if (fila.ConfirmoRecepcion !== 'TRUE') {
+  const campoSegunTipo = body.tipo === 'alta' ? 'ConfirmoAlta' : 'ConfirmoRecepcion';
+  if (fila[campoSegunTipo] !== 'TRUE') {
     await updateRow('Inscritos', fila._rowIndex, [
       fila.ID, fila.LeadId, fila.NombreEstudiante, fila.EmailEstudiante, fila.Curso, fila.Edicion,
       fila.FechaInscripcion, fila.AltaPlataforma, fila.AltaPorEmail, fila.AltaPorNombre, fila.FechaAlta,
       fila.BienvenidaEnviada, fila.BienvenidaPorEmail, fila.BienvenidaPorNombre, fila.FechaBienvenida,
-      fila.AbonoTotalidad, fila.Docentes, 'TRUE', fila.GrupoWhatsApp
+      fila.AbonoTotalidad, fila.Docentes,
+      campoSegunTipo === 'ConfirmoRecepcion' ? 'TRUE' : fila.ConfirmoRecepcion,
+      fila.GrupoWhatsApp,
+      campoSegunTipo === 'ConfirmoAlta' ? 'TRUE' : (fila.ConfirmoAlta || '')
     ]);
 
     await registrarAccion(
