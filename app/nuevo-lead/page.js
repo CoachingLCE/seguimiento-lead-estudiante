@@ -168,6 +168,9 @@ export default function NuevoLeadPage() {
   const [fichaLeadId, setFichaLeadId] = useState(null);
   const [colapsadas, setColapsadas] = useState({});
   const [arrastrando, setArrastrando] = useState(null);
+  // El arrastre solo debe activarse tocando el ícono ⠿, no cualquier parte de la tarjeta —
+  // si no, arrastrar el mouse para seleccionar texto dispara el drag por accidente.
+  const handleActivoRef = useRef(false);
 
   const [borradorDisponible, setBorradorDisponible] = useState(false);
   const [mostrarPegarLista, setMostrarPegarLista] = useState(false);
@@ -360,7 +363,17 @@ export default function NuevoLeadPage() {
   }
 
   // Drag & drop simple para reordenar
-  function onDragStart(index) { setArrastrando(index); }
+  function onDragStart(index, e) {
+    if (!handleActivoRef.current) { e.preventDefault(); return; }
+    handleActivoRef.current = false; // ya se usó para esta vez; el próximo arrastre necesita su propio mousedown en el ícono
+    setArrastrando(index);
+  }
+  function onDragEnd() {
+    // Se ejecuta siempre al terminar el arrastre, se haya soltado en un lugar válido o no —
+    // así la tarjeta nunca queda "pegada" en opacidad baja si el drop no llegó a completarse.
+    setArrastrando(null);
+    handleActivoRef.current = false;
+  }
   function onDragOver(e) { e.preventDefault(); }
   function onDrop(index) {
     if (arrastrando === null || arrastrando === index) return;
@@ -592,14 +605,18 @@ export default function NuevoLeadPage() {
                 <div key={contacto.key}
                   ref={(el) => { refsCards.current[index] = el; }}
                   draggable={contactos.length > 1}
-                  onDragStart={() => onDragStart(index)}
+                  onDragStart={(e) => onDragStart(index, e)}
+                  onDragEnd={onDragEnd}
                   onDragOver={onDragOver}
                   onDrop={() => onDrop(index)}
                   className={`bg-bg border-2 rounded-xl p-4 mb-3 transition-all ${estilo.borde} ${arrastrando === index ? 'opacity-40' : 'opacity-100'}`}>
 
                   <div className="flex items-center justify-between mb-2.5">
                     <div className="flex items-center gap-2">
-                      {contactos.length > 1 && <span className="text-textMuted cursor-grab select-none" title="Arrastrar para reordenar">⠿</span>}
+                      {contactos.length > 1 && (
+                        <span onMouseDown={() => { handleActivoRef.current = true; }}
+                          className="text-textMuted cursor-grab select-none" title="Arrastrar para reordenar">⠿</span>
+                      )}
                       <span className="text-[14px]">👤</span>
                       <span className="text-[14px] font-semibold text-text">Contacto {index + 1}</span>
                       <span className={`text-[11px] font-medium ${estilo.texto}`}>
