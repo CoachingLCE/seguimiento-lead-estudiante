@@ -114,6 +114,81 @@ function ChartCard({ titulo, subtitulo, valorGrande, comparacion, tooltip, onExp
 }
 
 // Dona con % principal + total en el centro, y leyenda a la derecha (en vez de abajo).
+const ESTILO_PRIORIDAD = {
+  critica: { icono: '🔴', label: 'Crítica', clase: 'border-dangerText/40 bg-dangerBg' },
+  atencion: { icono: '🟡', label: 'Atención', clase: 'border-warningText/40 bg-warningBg' },
+  informativa: { icono: '⚪', label: 'Informativa', clase: 'border-border bg-surface2' }
+};
+
+function SeccionAlertas({ alertasGenerales, alertasCursos, mes, setFiltro }) {
+  const router = useRouter();
+  const [expandido, setExpandido] = useState(false);
+  const totalAlertas = alertasGenerales.length + alertasCursos.length;
+  if (totalAlertas === 0) return null;
+
+  const LIMITE_INICIAL = 3;
+  const cursosAMostrar = expandido ? alertasCursos : alertasCursos.slice(0, LIMITE_INICIAL);
+  const hayMasParaVer = alertasCursos.length > LIMITE_INICIAL;
+
+  return (
+    <div className="bg-surface border border-warningText/20 rounded-2xl p-4">
+      <p className="text-warningText text-sm font-semibold mb-3">
+        ⚠ Alertas de {labelDeMes(mes).split(' ')[0]} — {totalAlertas}
+      </p>
+
+      {alertasGenerales.length > 0 && (
+        <ul className="text-warningText text-xs space-y-1 mb-3">
+          {alertasGenerales.map((a, i) => <li key={i}>• {a}</li>)}
+        </ul>
+      )}
+
+      {cursosAMostrar.length > 0 && (
+        <div className="space-y-2">
+          {cursosAMostrar.map((a) => {
+            const estilo = ESTILO_PRIORIDAD[a.prioridad];
+            return (
+              <div key={a.curso} className={`border rounded-xl p-3 ${estilo.clase}`}>
+                <div className="flex items-start justify-between gap-2 flex-wrap">
+                  <div>
+                    <p className="text-sm font-semibold">
+                      {estilo.icono} {a.curso} <span className="text-textMuted font-normal text-xs">— {estilo.label}</span>
+                    </p>
+                    <p className="text-textMuted text-[11px] mt-0.5">
+                      Ventas este mes: <b className="text-text">{a.ventasActual}</b>
+                      {' · '}Mes anterior: <b className="text-text">{a.ventasMesAnterior}</b>
+                      {' · '}Leads activos: <b className="text-text">{a.leadsActivos}</b>
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button onClick={() => setFiltro('curso', a.curso)}
+                      className="text-[11px] px-2.5 py-1 rounded-lg bg-surface2 border border-border hover:border-accentTeal">
+                      Ver ventas
+                    </button>
+                    <button onClick={() => router.push(`/buscador?q=${encodeURIComponent(a.curso)}`)}
+                      className="text-[11px] px-2.5 py-1 rounded-lg bg-surface2 border border-border hover:border-accentTeal">
+                      Ver leads
+                    </button>
+                    <button onClick={() => setFiltro('curso', a.curso)}
+                      className="text-[11px] px-2.5 py-1 rounded-lg bg-accentPurple text-white font-semibold">
+                      Analizar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {hayMasParaVer && (
+        <button onClick={() => setExpandido((v) => !v)} className="text-accentTeal text-xs font-semibold mt-3">
+          {expandido ? '▲ Ver menos' : `▼ Ver todas las alertas (${alertasCursos.length})`}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function GraficoDona({ datos, onClickItem, activo }) {
   const total = datos.reduce((acc, d) => acc + d.cantidad, 0);
   const principal = datos[0];
@@ -457,14 +532,7 @@ export default function ReportesPage() {
             )}
 
             {/* ALERTAS */}
-            {datos.alertas.length > 0 && (
-              <div className="bg-warningBg border border-warningText/30 rounded-2xl p-4">
-                <p className="text-warningText text-sm font-semibold mb-1.5">⚠ Alertas de este mes</p>
-                <ul className="text-warningText text-xs space-y-0.5">
-                  {datos.alertas.map((a, i) => <li key={i}>• {a}</li>)}
-                </ul>
-              </div>
-            )}
+            <SeccionAlertas alertasGenerales={datos.alertas} alertasCursos={datos.alertasCursos} mes={mes} setFiltro={setFiltro} />
 
             {/* KPIs */}
             <div className="grid grid-cols-3 md:grid-cols-7 gap-3">

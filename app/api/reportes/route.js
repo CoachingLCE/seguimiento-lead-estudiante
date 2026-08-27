@@ -250,7 +250,8 @@ function calcularBloque(mes, leadsDelMes, seguimientoDeEsosLeads) {
     rankingVendedores, rankingCursos, rankingOrigenes, rankingDocentes, rankingEdiciones, rankingMedioPago, rankingModalidad,
     leadsPorCurso,
     leadsPorOrigen,
-    embudo, vendedoresConVenta: [...vendedoresConVenta], cursosConVenta: [...cursosConVenta]
+    embudo, vendedoresConVenta: [...vendedoresConVenta], cursosConVenta: [...cursosConVenta],
+    compras
   };
 }
 
@@ -308,9 +309,34 @@ export async function GET(request) {
     else break;
   }
   if (diasSinVentas >= 5) alertas.push(`${diasSinVentas} día(s) sin ventas (racha actual)`);
-  CURSOS.forEach((c) => {
-    if (!actual.cursosConVenta.includes(c) && actual.totalCompras > 0) alertas.push(`"${c}" sin ventas este mes`);
-  });
+
+  // Alertas de cursos sin venta este mes — versión enriquecida: para cada curso sin ventas, se
+  // suma ventas del mes anterior y leads activos, y con eso se clasifica una prioridad. Se
+  // descartan los cursos realmente inactivos (sin ventas el mes pasado NI leads activos ahora),
+  // para no llenar la lista de ruido.
+  const idsLeadsResueltos = new Set(
+    seguimiento.filter((s) => RESULTADOS_FINALES.includes(s.Resultado)).map((s) => s.LeadID)
+  );
+  const alertasCursos = CURSOS
+    .filter((c) => !actual.cursosConVenta.includes(c) && actual.totalCompras > 0)
+    .map((c) => {
+      const ventasMesAnterior = anterior.compras?.filter((l) => l.Curso === c).length || 0;
+      const leadsActivos = leads.filter((l) =>
+        l.Curso === c && l.Estado !== 'Comprado' && l.Origen !== 'Carga manual (baja)' && !idsLeadsResueltos.has(l.ID)
+      ).length;
+
+      let prioridad = 'informativa';
+      if (ventasMesAnterior > 0 || leadsActivos >= 3) prioridad = 'critica';
+      else if (leadsActivos > 0) prioridad = 'atencion';
+
+      return { curso: c, ventasActual: 0, ventasMesAnterior, leadsActivos, prioridad };
+    })
+    .filter((a) => a.prioridad !== 'informativa' || a.leadsActivos > 0 || a.ventasMesAnterior > 0)
+    .sort((a, b) => {
+      const orden = { critica: 0, atencion: 1, informativa: 2 };
+      return orden[a.prioridad] - orden[b.prioridad] || b.leadsActivos - a.leadsActivos;
+    });
+
   // Diego (Admin) queda afuera de esta alerta puntual — está para supervisar, no se espera que
   // cierre ventas todos los meses. Sigue disponible igual en el desplegable "Quién cerró la venta".
   EQUIPO_VENTAS.filter((v) => v !== 'Diego Lerner').forEach((v) => {
@@ -348,6 +374,7 @@ export async function GET(request) {
       ticketPromedio: { actual: actual.ticketPromedio, anterior: anterior.ticketPromedio }
     },
     alertas,
+    alertasCursos,
     compras
   });
   } catch (err) {

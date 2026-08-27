@@ -253,7 +253,7 @@ export default function InscritosPage() {
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
-      <div className="max-w-[1400px] mx-auto px-4 pb-16">
+      <div className="max-w-[1600px] mx-auto px-4 pb-16">
         <div className="flex items-center gap-2 mb-4 no-print">
           <button onClick={() => setTab('lista')}
             className={`text-sm px-4 py-2 rounded-lg font-semibold transition-colors ${
@@ -370,16 +370,16 @@ export default function InscritosPage() {
               <table className="w-full text-sm min-w-[1200px]">
                 <thead>
                   <tr className="text-textSec text-left border-b border-border">
-                    <th className="py-3 pr-4 cursor-pointer select-none whitespace-normal max-w-[90px]" onClick={() => ordenarPor('FechaInscripcion')}>Fecha de<br/>inscripción{flecha('FechaInscripcion')}</th>
-                    <th className="pr-4 whitespace-normal max-w-[90px]">Estudiante<br/>desde</th>
+                    <th className="py-3 pr-4 cursor-pointer select-none whitespace-nowrap" onClick={() => ordenarPor('FechaInscripcion')}>Fecha de inscripción{flecha('FechaInscripcion')}</th>
+                    <th className="pr-4 whitespace-nowrap">Estudiante desde</th>
                     <th className="pr-4 cursor-pointer select-none" onClick={() => ordenarPor('NombreEstudiante')}>Estudiante{flecha('NombreEstudiante')}</th>
                     <th className="pr-4 cursor-pointer select-none" onClick={() => ordenarPor('Curso')}>Curso{flecha('Curso')}</th>
                     <th className="pr-4 cursor-pointer select-none" onClick={() => ordenarPor('Edicion')}>Edición{flecha('Edicion')}</th>
                     <th className="pr-4 cursor-help" title="Se manda un mail de bienvenida al estudiante, con info de la formación.">Bienvenida</th>
-                    <th className="pr-4 whitespace-normal max-w-[80px] cursor-help" title="Se marca solo cuando el estudiante toca el botón del mail — o se puede tildar a mano si confirma por otro medio.">Confirmó<br/>recepción</th>
-                    <th className="pr-4 whitespace-normal max-w-[80px] cursor-help" title="Se manda un mail con el acceso a la plataforma y el contenido de la formación.">Alta<br/>plataforma</th>
-                    <th className="pr-4 whitespace-normal max-w-[80px] cursor-help" title="Se marca solo cuando el estudiante toca el botón del mail de Alta en plataforma — o se puede tildar a mano si confirma por otro medio.">Confirmó<br/>Alta</th>
-                    <th className="pr-4 whitespace-normal max-w-[80px] cursor-help" title="Marcá cuando el estudiante ya fue agregado al grupo de estudio de WhatsApp.">Grupo<br/>WhatsApp</th>
+                    <th className="pr-4 whitespace-nowrap cursor-help" title="Se marca solo cuando el estudiante toca el botón del mail — o se puede tildar a mano si confirma por otro medio.">Confirmó recepción</th>
+                    <th className="pr-4 whitespace-nowrap cursor-help" title="Se manda un mail con el acceso a la plataforma y el contenido de la formación.">Alta plataforma</th>
+                    <th className="pr-4 whitespace-nowrap cursor-help" title="Se marca solo cuando el estudiante toca el botón del mail de Alta en plataforma — o se puede tildar a mano si confirma por otro medio.">Confirmó Alta</th>
+                    <th className="pr-4 whitespace-nowrap cursor-help" title="Marcá cuando el estudiante ya fue agregado al grupo de estudio de WhatsApp.">Grupo WhatsApp</th>
                     <th className="pr-4">Estado</th>
                     <th>Acciones</th>
                   </tr>
