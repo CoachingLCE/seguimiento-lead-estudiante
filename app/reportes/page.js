@@ -464,7 +464,7 @@ export default function ReportesPage() {
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
-      <div className="max-w-[1400px] mx-auto px-4 pb-24 space-y-5">
+      <div className="max-w-[1600px] mx-auto px-4 pb-24 space-y-5">
 
         {/* FILTROS SUPERIORES */}
         <div className="flex items-end gap-3 flex-wrap">
@@ -830,18 +830,18 @@ export default function ReportesPage() {
                 <table className="w-full text-sm">
                   <thead className="sticky top-0 bg-surface z-10">
                     <tr className="text-textSec text-left border-b border-border">
-                      <th className="py-2">Lead</th><th>Curso</th><th>Origen</th><th>Medio de pago</th>
-                      <th>Modalidad</th>
-                      <th className="cursor-pointer select-none" onClick={() => setOrdenFecha(ordenFecha === 'desc' ? 'asc' : 'desc')}>
+                      <th className="py-2 whitespace-nowrap">Lead</th><th className="whitespace-nowrap">Curso</th><th className="whitespace-nowrap">Origen</th><th className="whitespace-nowrap">Medio de pago</th>
+                      <th className="whitespace-nowrap">Modalidad</th>
+                      <th className="cursor-pointer select-none whitespace-nowrap" onClick={() => setOrdenFecha(ordenFecha === 'desc' ? 'asc' : 'desc')}>
                         Fecha de compra {ordenFecha === 'desc' ? '▼' : '▲'}
                       </th>
-                      <th>Monto</th><th>Vendedor</th><th></th>
+                      <th className="whitespace-nowrap">Monto</th><th className="whitespace-nowrap">Vendedor</th><th></th>
                     </tr>
                   </thead>
                   <tbody>
                     {comprasFiltradas.map((c) => (
                       <tr key={c.id} className="border-b border-border hover:bg-bg transition-colors">
-                        <td className="py-2.5">{c.lead}</td>
+                        <td className="py-2.5 whitespace-nowrap">{c.lead}</td>
                         <td><Badge color={colorParaTexto(c.curso)}>{c.curso}</Badge></td>
                         <td><Badge color={colorParaTexto(c.origen)}>{c.origen}</Badge></td>
                         <td><Badge color={colorParaTexto(c.medioPago)}>{c.medioPago}</Badge></td>
@@ -849,9 +849,9 @@ export default function ReportesPage() {
                         <td className="text-textSec whitespace-nowrap">
                           {c.fechaVenta ? new Date(c.fechaVenta).toLocaleDateString('es-AR') : '—'}
                         </td>
-                        <td className="font-bold text-successText">{money(c.montoTotal)}</td>
-                        <td>{c.vendidoPor}</td>
-                        <td><button onClick={() => setFichaLeadId(c.id)} className="text-accentTeal text-xs font-semibold">Ver ficha</button></td>
+                        <td className="font-bold text-successText whitespace-nowrap">{money(c.montoTotal)}</td>
+                        <td className="whitespace-nowrap">{c.vendidoPor}</td>
+                        <td><button onClick={() => setFichaLeadId(c.id)} className="text-accentTeal text-xs font-semibold whitespace-nowrap">Ver ficha</button></td>
                       </tr>
                     ))}
                   </tbody>
