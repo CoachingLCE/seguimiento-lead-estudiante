@@ -1257,7 +1257,7 @@ export default function ReportesPage() {
                 {/* TABLA */}
                 <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm">
                   <p className="text-sm font-semibold mb-3">Detalle de compras <span className="text-textMuted font-normal">({comprasFiltradas.length} de {datos.compras.length})</span></p>
-                  <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+                  <div className="overflow-x-auto max-h-[800px] overflow-y-auto">
                     <table className="w-full text-sm">
                       <thead className="sticky top-0 bg-surface z-10">
                         <tr className="text-textSec text-left border-b border-border">
