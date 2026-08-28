@@ -21,6 +21,7 @@ export async function GET(request) {
       const vence = new Date(s.FechaVence);
       const fechaBajaAprox = new Date(vence.getTime() - 90 * 24 * 60 * 60 * 1000);
       const diasFaltantes = Math.ceil((vence - new Date()) / (24 * 60 * 60 * 1000));
+      const diasDesdeLaBaja = Math.floor((new Date() - fechaBajaAprox) / (24 * 60 * 60 * 1000));
       return {
         leadId: s.LeadID,
         nombre: lead ? `${lead.Nombre} ${lead.Apellido}` : '(lead no encontrado)',
@@ -31,7 +32,13 @@ export async function GET(request) {
         diasFaltantes,
         disponibleAhora: diasFaltantes <= 0,
         contactado: s.Contactado === 'TRUE',
-        observaciones: s.Observaciones || ''
+        observaciones: s.Observaciones || '',
+        // Reactivación por mail: se habilita a los 85 días de la baja (un poco antes de los 90,
+        // que es cuando aparece en el Lote Bajas de Seguimiento para contacto directo).
+        listaParaReactivacion: diasDesdeLaBaja >= 85,
+        mensajeEnviado: !!s.MensajeReactivacionEnviado,
+        fechaMensajeEnviado: s.MensajeReactivacionEnviado || '',
+        confirmoRecepcionBaja: s.ConfirmoRecepcionBaja === 'TRUE'
       };
     })
     .sort((a, b) => new Date(a.fechaDisponible) - new Date(b.fechaDisponible));
@@ -143,7 +150,7 @@ export async function POST(request) {
       await appendRow('Seguimiento', [
         lead.ID, 'baja', vence.toISOString(), '', '', 'FALSE', '',
         '', `Baja registrada el ${fechaBaja.toLocaleDateString('es-AR')}${entrada.motivo ? ` — Motivo: ${entrada.motivo}` : ''}`,
-        '', '', ''
+        '', '', '', '', ''
       ]);
       yaTieneBaja.add(lead.ID);
       await registrarAccion(

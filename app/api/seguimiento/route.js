@@ -37,7 +37,7 @@ export async function PATCH(request) {
     await appendRow('Seguimiento', [
       body.leadId, 'baja', vence.toISOString(), '', '', 'FALSE', '',
       '', `Baja registrada el ${fechaBaja.toLocaleDateString('es-AR')}${body.motivo ? ` — Motivo: ${body.motivo}` : ''}`,
-      '', '', ''
+      '', '', '', '', ''
     ]);
     await registrarAccion(
       body.solicitanteEmail, body.solicitanteNombre,
@@ -56,7 +56,7 @@ export async function PATCH(request) {
     await updateRow('Seguimiento', fila._rowIndex, [
       fila.LeadID, fila.Lote, fila.FechaVence, fila.AsignadoAEmail, fila.AsignadoANombre,
       fila.Contactado, fila.Resultado, fila.FechaContacto, fila.Observaciones, fila.ProximaAccion,
-      body.fechaProgramada || '', fila.ContactadoPorNombre
+      body.fechaProgramada || '', fila.ContactadoPorNombre, fila.MensajeReactivacionEnviado || '', fila.ConfirmoRecepcionBaja || ''
     ]);
     await registrarAccion(
       body.solicitanteEmail, body.solicitanteNombre,
@@ -77,7 +77,7 @@ export async function PATCH(request) {
     await updateRow('Seguimiento', fila._rowIndex, [
       fila.LeadID, fila.Lote, fila.FechaVence, body.nuevoEmail, body.nuevoNombre,
       fila.Contactado, fila.Resultado, fila.FechaContacto, fila.Observaciones, fila.ProximaAccion, fila.FechaProgramada,
-      fila.ContactadoPorNombre
+      fila.ContactadoPorNombre, fila.MensajeReactivacionEnviado || '', fila.ConfirmoRecepcionBaja || ''
     ]);
     await registrarAccion(
       body.solicitanteEmail, body.solicitanteNombre,
@@ -98,7 +98,7 @@ export async function PATCH(request) {
     const resultadoAnterior = fila.Resultado;
     await updateRow('Seguimiento', fila._rowIndex, [
       fila.LeadID, fila.Lote, fila.FechaVence, fila.AsignadoAEmail, fila.AsignadoANombre,
-      'FALSE', '', '', '', '', '', ''
+      'FALSE', '', '', '', '', '', fila.ContactadoPorNombre, fila.MensajeReactivacionEnviado || '', fila.ConfirmoRecepcionBaja || ''
     ]);
     await registrarAccion(
       body.solicitanteEmail, body.solicitanteNombre,
@@ -115,7 +115,7 @@ export async function PATCH(request) {
       fila.LeadID, fila.Lote, fila.FechaVence, fila.AsignadoAEmail, fila.AsignadoANombre,
       'TRUE', body.resultado, ahora.toISOString(),
       body.observaciones || '', body.proximaAccion || '', body.fechaProgramada || '',
-      body.solicitanteNombre || fila.AsignadoANombre
+      body.solicitanteNombre || fila.AsignadoANombre, fila.MensajeReactivacionEnviado || '', fila.ConfirmoRecepcionBaja || ''
     ]);
 
     await registrarAccion(
@@ -134,7 +134,7 @@ export async function PATCH(request) {
         vence2Fecha.setHours(0, 0, 0, 0);
         const vence2 = vence2Fecha.toISOString();
         await appendRow('Seguimiento', [
-          fila.LeadID, '2', vence2, fila.AsignadoAEmail, fila.AsignadoANombre, 'FALSE', '', '', '', '', '', ''
+          fila.LeadID, '2', vence2, fila.AsignadoAEmail, fila.AsignadoANombre, 'FALSE', '', '', '', '', '', '', '', ''
         ]);
       }
     }

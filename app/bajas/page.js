@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Nav from '../../components/Nav';
 import { useSession } from '../../lib/useSession';
@@ -95,6 +95,7 @@ export default function BajasPage() {
   const [resultadoBajasMasivas, setResultadoBajasMasivas] = useState(null);
   const [mostrarListaBajas, setMostrarListaBajas] = useState(false);
   const [listaBajas, setListaBajas] = useState([]);
+  const [enviandoMensajeId, setEnviandoMensajeId] = useState(null);
   const [seleccionadas, setSeleccionadas] = useState(new Set());
   const [eliminando, setEliminando] = useState(false);
 
@@ -138,11 +139,31 @@ export default function BajasPage() {
     setCargandoBajasMasivas(false);
   }
 
-  async function cargarListaBajas(forzarAbrir) {
-    if (!forzarAbrir && mostrarListaBajas) { setMostrarListaBajas(false); return; }
+  useEffect(() => {
+    if (usuario) cargarDatosBajas();
+  }, [usuario]);
+
+  async function cargarDatosBajas() {
     const r = await fetch(`/api/seguimiento/baja-masiva?solicitanteEmail=${encodeURIComponent(usuario.email)}`).then((res) => res.json());
     setListaBajas(r.bajas || []);
+  }
+
+  async function cargarListaBajas(forzarAbrir) {
+    if (!forzarAbrir && mostrarListaBajas) { setMostrarListaBajas(false); return; }
+    await cargarDatosBajas();
     setMostrarListaBajas(true);
+  }
+
+  async function enviarMensaje1(baja) {
+    setEnviandoMensajeId(baja.leadId);
+    const res = await fetch('/api/bajas/enviar-mensaje', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ leadId: baja.leadId, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
+    });
+    setEnviandoMensajeId(null);
+    if (res.ok) { cargarDatosBajas(); }
+    else { const r = await res.json(); alert(r.error || 'No se pudo enviar el mensaje'); }
   }
 
   if (!usuario) return null;
@@ -156,6 +177,11 @@ export default function BajasPage() {
           Registrá cuando un estudiante se da de baja de la cursada. A los 90 días, reaparece en el
           "LOTE BAJAS" de Seguimiento para ofrecerle volver a información y ver si se reincorpora.
         </p>
+
+        {/* LISTAS PARA RECONTACTAR: a los 85 días de la baja, se habilita mandar un mail de
+            reactivación con un botón que lleva a WhatsApp — antes de que a los 90 días aparezca
+            en el Lote Bajas de Seguimiento para contacto directo. */}
+        <SeccionRecontactar listaBajas={listaBajas} enviandoMensajeId={enviandoMensajeId} onEnviar={enviarMensaje1} />
 
         <div className="bg-surface border border-border rounded-2xl p-5">
           <p className="text-sm font-semibold mb-1">Cargar bajas</p>
@@ -238,7 +264,10 @@ export default function BajasPage() {
                           checked={listaBajas.length > 0 && seleccionadas.size === listaBajas.length}
                           onChange={(e) => setSeleccionadas(e.target.checked ? new Set(listaBajas.map((b) => b.leadId)) : new Set())} />
                       </th>
-                      <th>Nombre</th><th>Curso</th><th>Fecha baja</th><th>Disponible</th><th>Estado</th><th></th>
+                      <th>Nombre</th><th>Curso</th><th>Fecha baja</th>
+                      <th>Acción 1 — Día 85: envío de mail</th>
+                      <th>Acción 2 — Día 90: WhatsApp por lote</th>
+                      <th></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -255,7 +284,17 @@ export default function BajasPage() {
                         <td>{b.nombre}</td>
                         <td>{b.curso}</td>
                         <td>{new Date(b.fechaBaja).toLocaleDateString('es-AR')}</td>
-                        <td>{new Date(b.fechaDisponible).toLocaleDateString('es-AR')}</td>
+                        <td>
+                          {b.confirmoRecepcionBaja ? (
+                            <span className="text-successText">✅ Confirmó recepción</span>
+                          ) : b.mensajeEnviado ? (
+                            <span className="text-textMuted">Enviado el {new Date(b.fechaMensajeEnviado).toLocaleDateString('es-AR')}</span>
+                          ) : b.listaParaReactivacion ? (
+                            <span className="text-warningText">Listo para enviar</span>
+                          ) : (
+                            <span className="text-textMuted">Faltan {85 - Math.floor((new Date() - new Date(b.fechaBaja)) / 86400000)} días</span>
+                          )}
+                        </td>
                         <td>
                           {b.contactado ? <span className="text-successText">Contactado</span>
                             : b.disponibleAhora ? <span className="text-warningText">En Lote Bajas</span>
@@ -274,6 +313,57 @@ export default function BajasPage() {
             </>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function SeccionRecontactar({ listaBajas, enviandoMensajeId, onEnviar }) {
+  const paraRecontactar = listaBajas.filter((b) => b.listaParaReactivacion);
+  if (paraRecontactar.length === 0) return null;
+
+  return (
+    <div className="bg-surface border border-border rounded-2xl p-5 mb-4">
+      <p className="text-sm font-semibold mb-1">📬 Listas para recontactar ({paraRecontactar.length})</p>
+      <p className="text-textMuted text-xs mb-3">
+        Ya pasaron 85 días desde la baja — se puede mandar un mail de reactivación con un botón que lleva a WhatsApp.
+      </p>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-textSec text-left border-b border-border">
+              <th className="py-2 pr-3">Fecha de baja</th>
+              <th className="pr-3">Estudiante</th>
+              <th className="pr-3">Curso</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {paraRecontactar.map((b) => (
+              <tr key={b.leadId} className="border-b border-border">
+                <td className="py-2 pr-3 whitespace-nowrap">{new Date(b.fechaBaja).toLocaleDateString('es-AR')}</td>
+                <td className="pr-3">{b.nombre}</td>
+                <td className="pr-3 text-textSec">{b.curso}</td>
+                <td>
+                  {b.confirmoRecepcionBaja ? (
+                    <span className="text-successText text-xs font-semibold">✅ Confirmó recepción y solicitó info</span>
+                  ) : b.mensajeEnviado ? (
+                    <span className="text-textMuted text-xs">
+                      Mensaje enviado el {new Date(b.fechaMensajeEnviado).toLocaleDateString('es-AR')} — esperando respuesta
+                    </span>
+                  ) : !b.email ? (
+                    <span className="text-warningText text-xs">Sin email cargado</span>
+                  ) : (
+                    <button onClick={() => onEnviar(b)} disabled={enviandoMensajeId === b.leadId}
+                      className="text-xs px-3 py-1.5 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-60">
+                      {enviandoMensajeId === b.leadId ? 'Enviando…' : 'Enviar mensaje 1'}
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
