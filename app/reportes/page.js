@@ -560,7 +560,7 @@ function SeccionObjetivos({ datos, mes, usuario }) {
       {/* OBJETIVOS POR VENDEDOR */}
       {objetivosPorVendedor.filter((o) => !EXCLUIDOS_METAS_VENDEDOR.includes(o.vendedor)).length > 0 && !editando && (
         <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm">
-          <p className="text-sm font-semibold mb-3">Objetivos por vendedor</p>
+          <p className="text-sm font-semibold mb-3">Metas de ventas por vendedor</p>
           <div className="space-y-2.5">
             {objetivosPorVendedor.filter((o) => !EXCLUIDOS_METAS_VENDEDOR.includes(o.vendedor)).map((o) => {
               const ventasActuales = datos.rankingVendedores.find((r) => r.nombre === o.vendedor)?.cantidad || 0;
@@ -657,7 +657,7 @@ function SeccionObjetivos({ datos, mes, usuario }) {
                 ))}
               </div>
 
-              <p className="text-xs font-semibold text-textSec mb-2">Metas por vendedor (opcional)</p>
+              <p className="text-xs font-semibold text-textSec mb-2">Metas de ventas por vendedor (opcional)</p>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
                 {personasActivas.map((nombre) => (
                   <div key={nombre} className="flex items-center gap-2">
