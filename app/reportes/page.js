@@ -429,7 +429,13 @@ function SeccionObjetivos({ datos, mes, usuario }) {
 
   // Misma lista de personas que ya se ve en la pestaña Actividad (quien cargó leads, contactó
   // o vendió este mes) — así no hace falta escribir nombres a mano ni adivinar apellidos.
-  const personasActivas = datos.actividadPorPersona.map((p) => p.nombre).sort((a, b) => a.localeCompare(b, 'es'));
+  // Se excluyen quienes coordinan/administran, no venden directo — la meta individual es para
+  // el equipo comercial (ej: Alexander, Lucila), no para todo el que aparece en Actividad.
+  const EXCLUIDOS_METAS_VENDEDOR = ['Diego Lerner', 'Jennifer Rebasti', 'Macarena Juncos'];
+  const personasActivas = datos.actividadPorPersona
+    .map((p) => p.nombre)
+    .filter((n) => !EXCLUIDOS_METAS_VENDEDOR.includes(n))
+    .sort((a, b) => a.localeCompare(b, 'es'));
 
   const METRICAS = objetivos ? [
     { id: 'facturacion', label: 'Facturación', actual: datos.montoTotal, meta: objetivos.metaFacturacion, unidad: '$', formatear: money },
@@ -552,11 +558,11 @@ function SeccionObjetivos({ datos, mes, usuario }) {
       )}
 
       {/* OBJETIVOS POR VENDEDOR */}
-      {objetivosPorVendedor.length > 0 && !editando && (
+      {objetivosPorVendedor.filter((o) => !EXCLUIDOS_METAS_VENDEDOR.includes(o.vendedor)).length > 0 && !editando && (
         <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm">
           <p className="text-sm font-semibold mb-3">Objetivos por vendedor</p>
           <div className="space-y-2.5">
-            {objetivosPorVendedor.map((o) => {
+            {objetivosPorVendedor.filter((o) => !EXCLUIDOS_METAS_VENDEDOR.includes(o.vendedor)).map((o) => {
               const ventasActuales = datos.rankingVendedores.find((r) => r.nombre === o.vendedor)?.cantidad || 0;
               const pct = o.meta ? (ventasActuales / o.meta) * 100 : 0;
               const estado = estadoObjetivo(pct);
@@ -574,8 +580,26 @@ function SeccionObjetivos({ datos, mes, usuario }) {
               );
             })}
           </div>
+
+          <p className="text-xs font-semibold text-textSec mt-5 mb-2.5">📊 Comparación con el mes anterior</p>
+          <div className="space-y-2">
+            {objetivosPorVendedor.filter((o) => !EXCLUIDOS_METAS_VENDEDOR.includes(o.vendedor)).map((o) => {
+              const ventasActuales = datos.rankingVendedores.find((r) => r.nombre === o.vendedor)?.cantidad || 0;
+              const ventasMesAnterior = (datos.rankingVendedoresMesAnterior || []).find((r) => r.nombre === o.vendedor)?.cantidad || 0;
+              return (
+                <div key={o.vendedor} className="flex items-center justify-between bg-bg border border-border rounded-lg px-3 py-2 text-xs">
+                  <span className="font-medium">{o.vendedor}</span>
+                  <span className="text-textSec">
+                    Mes anterior: <b className="text-text">{ventasMesAnterior}</b> · Este mes: <b className="text-text">{ventasActuales}</b>
+                  </span>
+                  <Flecha actual={ventasActuales} anterior={ventasMesAnterior} />
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
+
 
       {/* CONFIGURACIÓN — ADMIN Y COORDINADOR */}
       {puedeEditar && (

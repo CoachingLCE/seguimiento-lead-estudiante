@@ -382,7 +382,8 @@ export async function GET(request) {
     },
     alertas,
     alertasCursos,
-    compras
+    compras,
+    rankingVendedoresMesAnterior: anterior.rankingVendedores
   });
   } catch (err) {
     console.error('Error generando reportes:', err);
