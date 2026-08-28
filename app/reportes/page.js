@@ -416,13 +416,15 @@ function SeccionObjetivos({ datos, mes, usuario }) {
         solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
       })
     });
-    setGuardando(false);
-    setEditando(false);
-    // Recarga para reflejar lo guardado con la fecha/autor correctos.
+    // Recarga para reflejar lo guardado con la fecha/autor correctos, ANTES de cerrar el
+    // formulario — si no, hay un instante en el medio donde "objetivos" todavía es el valor
+    // viejo (null la primera vez) y aparece el mensaje de "Todavía no hay objetivos definidos".
     const r = await fetch(`/api/objetivos?mes=${mes}&solicitanteEmail=${encodeURIComponent(usuario.email)}`).then((res) => res.json());
     setObjetivos(r.objetivos || null);
     setObjetivosPorCurso(r.objetivosPorCurso || []);
     setObjetivosPorVendedor(r.objetivosPorVendedor || []);
+    setGuardando(false);
+    setEditando(false);
   }
 
   if (cargando) return <Skeleton h="h-40" />;
