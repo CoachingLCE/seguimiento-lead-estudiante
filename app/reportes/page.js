@@ -355,13 +355,16 @@ function TarjetaObjetivo({ label, actual, meta, unidad, formatear }) {
 }
 
 function SeccionObjetivos({ datos, mes, usuario }) {
-  const esAdmin = usuario?.roles?.includes('Admin');
+  const puedeEditar = usuario?.roles?.some((r) => ['Admin', 'Coordinador'].includes(r));
   const [cargando, setCargando] = useState(true);
   const [objetivos, setObjetivos] = useState(null);
   const [objetivosPorCurso, setObjetivosPorCurso] = useState([]);
+  const [objetivosPorVendedor, setObjetivosPorVendedor] = useState([]);
   const [editando, setEditando] = useState(false);
   const [form, setForm] = useState({ metaFacturacion: '', metaVentas: '', metaLeads: '', metaConversion: '', metaTicketPromedio: '' });
   const [formPorCurso, setFormPorCurso] = useState({});
+  const [formPorVendedor, setFormPorVendedor] = useState({});
+  const [nuevoVendedorNombre, setNuevoVendedorNombre] = useState('');
   const [guardando, setGuardando] = useState(false);
 
   useEffect(() => {
@@ -372,6 +375,7 @@ function SeccionObjetivos({ datos, mes, usuario }) {
       if (cancelado) return;
       setObjetivos(r.objetivos || null);
       setObjetivosPorCurso(r.objetivosPorCurso || []);
+      setObjetivosPorVendedor(r.objetivosPorVendedor || []);
       setForm(r.objetivos ? {
         metaFacturacion: r.objetivos.metaFacturacion || '', metaVentas: r.objetivos.metaVentas || '',
         metaLeads: r.objetivos.metaLeads || '', metaConversion: r.objetivos.metaConversion || '',
@@ -380,6 +384,9 @@ function SeccionObjetivos({ datos, mes, usuario }) {
       const porCurso = {};
       (r.objetivosPorCurso || []).forEach((o) => { porCurso[o.curso] = o.meta; });
       setFormPorCurso(porCurso);
+      const porVendedor = {};
+      (r.objetivosPorVendedor || []).forEach((o) => { porVendedor[o.vendedor] = o.meta; });
+      setFormPorVendedor(porVendedor);
       setEditando(!r.objetivos);
       setCargando(false);
     }
@@ -387,11 +394,29 @@ function SeccionObjetivos({ datos, mes, usuario }) {
     return () => { cancelado = true; };
   }, [mes, usuario]);
 
+  function agregarVendedor() {
+    const nombre = nuevoVendedorNombre.trim();
+    if (!nombre || formPorVendedor[nombre] !== undefined) return;
+    setFormPorVendedor((f) => ({ ...f, [nombre]: '' }));
+    setNuevoVendedorNombre('');
+  }
+
+  function quitarVendedor(nombre) {
+    setFormPorVendedor((f) => {
+      const copia = { ...f };
+      delete copia[nombre];
+      return copia;
+    });
+  }
+
   async function guardar() {
     setGuardando(true);
     const metasPorCurso = Object.entries(formPorCurso)
       .filter(([, v]) => v !== '' && v !== undefined)
       .map(([curso, meta]) => ({ curso, meta: Number(meta) }));
+    const metasPorVendedor = Object.entries(formPorVendedor)
+      .filter(([, v]) => v !== '' && v !== undefined)
+      .map(([vendedor, meta]) => ({ vendedor, meta: Number(meta) }));
     await fetch('/api/objetivos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -403,6 +428,7 @@ function SeccionObjetivos({ datos, mes, usuario }) {
         metaConversion: Number(form.metaConversion) || 0,
         metaTicketPromedio: Number(form.metaTicketPromedio) || 0,
         metasPorCurso,
+        metasPorVendedor,
         solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
       })
     });
@@ -412,6 +438,7 @@ function SeccionObjetivos({ datos, mes, usuario }) {
     const r = await fetch(`/api/objetivos?mes=${mes}&solicitanteEmail=${encodeURIComponent(usuario.email)}`).then((res) => res.json());
     setObjetivos(r.objetivos || null);
     setObjetivosPorCurso(r.objetivosPorCurso || []);
+    setObjetivosPorVendedor(r.objetivosPorVendedor || []);
   }
 
   if (cargando) return <Skeleton h="h-40" />;
@@ -443,7 +470,7 @@ function SeccionObjetivos({ datos, mes, usuario }) {
       {!objetivos && !editando && (
         <div className="bg-surface border border-border rounded-2xl p-6 text-center">
           <p className="text-textMuted text-sm">Todavía no hay objetivos definidos para {labelDeMes(mes)}.</p>
-          {esAdmin && (
+          {puedeEditar && (
             <button onClick={() => setEditando(true)} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold mt-3">
               Definir objetivos
             </button>
@@ -533,8 +560,31 @@ function SeccionObjetivos({ datos, mes, usuario }) {
         </div>
       )}
 
-      {/* CONFIGURACIÓN — SOLO ADMIN */}
-      {esAdmin && (
+      {/* OBJETIVOS POR VENDEDOR */}
+      {objetivosPorVendedor.length > 0 && !editando && (
+        <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm">
+          <p className="text-sm font-semibold mb-3">Objetivos por vendedor</p>
+          <div className="space-y-2.5">
+            {objetivosPorVendedor.map((o) => {
+              const ventasActuales = datos.rankingVendedores.find((r) => r.nombre === o.vendedor)?.cantidad || 0;
+              const pct = o.meta ? (ventasActuales / o.meta) * 100 : 0;
+              const estado = estadoObjetivo(pct);
+              return (
+                <div key={o.vendedor}>
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="font-medium">{o.vendedor}</span>
+                    <span className={`font-bold ${estado.clase}`}>{ventasActuales} / {o.meta} · {pct.toFixed(0)}%</span>
+                  </div>
+                  <BarraObjetivo pct={pct} colorClase={estado.barra} />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* CONFIGURACIÓN — ADMIN Y COORDINADOR */}
+      {puedeEditar && (
         <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-semibold">⚙️ Configurar objetivos de {labelDeMes(mes)}</p>
@@ -587,6 +637,25 @@ function SeccionObjetivos({ datos, mes, usuario }) {
                       placeholder="—" className="w-16 bg-bg border border-border rounded-lg px-2 py-1 text-xs" />
                   </div>
                 ))}
+              </div>
+
+              <p className="text-xs font-semibold text-textSec mb-2">Metas por vendedor (opcional)</p>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-2">
+                {Object.keys(formPorVendedor).map((nombre) => (
+                  <div key={nombre} className="flex items-center gap-2">
+                    <label className="text-[11px] text-textSec flex-1 truncate" title={nombre}>{nombre}</label>
+                    <input type="text" inputMode="numeric" value={formPorVendedor[nombre] ?? ''}
+                      onChange={(e) => setFormPorVendedor((f) => ({ ...f, [nombre]: e.target.value }))}
+                      placeholder="—" className="w-16 bg-bg border border-border rounded-lg px-2 py-1 text-xs" />
+                    <button onClick={() => quitarVendedor(nombre)} className="text-dangerText text-xs shrink-0">✕</button>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center gap-2 mb-4">
+                <input type="text" value={nuevoVendedorNombre} onChange={(e) => setNuevoVendedorNombre(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && agregarVendedor()}
+                  placeholder="Nombre del vendedor" className="flex-1 max-w-[220px] bg-bg border border-border rounded-lg px-2 py-1.5 text-xs" />
+                <button onClick={agregarVendedor} className="text-xs px-3 py-1.5 rounded-lg bg-surface2 border border-border font-semibold">+ Agregar</button>
               </div>
 
               <div className="flex gap-2">

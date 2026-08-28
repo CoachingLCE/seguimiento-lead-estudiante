@@ -16,8 +16,8 @@ export async function GET(request) {
   if (!mes) return NextResponse.json({ error: 'Falta el mes' }, { status: 400 });
 
   try {
-    const [todos, todosPorCurso] = await Promise.all([
-      readSheet('Objetivos'), readSheet('ObjetivosPorCurso')
+    const [todos, todosPorCurso, todosPorVendedor] = await Promise.all([
+      readSheet('Objetivos'), readSheet('ObjetivosPorCurso'), readSheet('ObjetivosPorVendedor')
     ]);
     const fila = todos.find((o) => o.Mes === mes);
     const objetivos = fila ? {
@@ -34,7 +34,11 @@ export async function GET(request) {
       .filter((o) => o.Mes === mes)
       .map((o) => ({ curso: o.Curso, meta: Number(o.Meta) || 0 }));
 
-    return NextResponse.json({ objetivos, objetivosPorCurso });
+    const objetivosPorVendedor = todosPorVendedor
+      .filter((o) => o.Mes === mes)
+      .map((o) => ({ vendedor: o.Vendedor, meta: Number(o.Meta) || 0 }));
+
+    return NextResponse.json({ objetivos, objetivosPorCurso, objetivosPorVendedor });
   } catch (err) {
     console.error('Error cargando objetivos:', err);
     return NextResponse.json({ error: 'Ocurrió un error cargando los objetivos.' }, { status: 500 });
@@ -47,8 +51,8 @@ export async function GET(request) {
 export async function POST(request) {
   const body = await request.json();
   const solicitante = await findUsuario(body.solicitanteEmail);
-  if (!solicitante?.roles?.includes('Admin')) {
-    return NextResponse.json({ error: 'Solo Admin puede definir objetivos' }, { status: 403 });
+  if (!solicitante?.roles?.some((r) => ['Admin', 'Coordinador'].includes(r))) {
+    return NextResponse.json({ error: 'Solo Admin o Coordinador pueden definir objetivos' }, { status: 403 });
   }
   if (!body.mes) return NextResponse.json({ error: 'Falta el mes' }, { status: 400 });
 
@@ -80,6 +84,21 @@ export async function POST(request) {
         await updateRow('ObjetivosPorCurso', existentePorCurso._rowIndex, filaPorCurso);
       } else {
         await appendRow('ObjetivosPorCurso', filaPorCurso);
+      }
+    }
+  }
+
+  // Objetivos por vendedor: mismo criterio que por curso (upsert por mes+vendedor).
+  if (Array.isArray(body.metasPorVendedor) && body.metasPorVendedor.length > 0) {
+    const todosPorVendedor = await readSheet('ObjetivosPorVendedor');
+    for (const entrada of body.metasPorVendedor) {
+      if (!entrada.vendedor) continue;
+      const existentePorVendedor = todosPorVendedor.find((o) => o.Mes === body.mes && o.Vendedor === entrada.vendedor);
+      const filaPorVendedor = [body.mes, entrada.vendedor, entrada.meta || 0];
+      if (existentePorVendedor) {
+        await updateRow('ObjetivosPorVendedor', existentePorVendedor._rowIndex, filaPorVendedor);
+      } else {
+        await appendRow('ObjetivosPorVendedor', filaPorVendedor);
       }
     }
   }
