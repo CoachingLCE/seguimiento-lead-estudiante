@@ -98,6 +98,7 @@ export default function BajasPage() {
   const [enviandoMensajeId, setEnviandoMensajeId] = useState(null);
   const [seleccionadas, setSeleccionadas] = useState(new Set());
   const [eliminando, setEliminando] = useState(false);
+  const [filtroHistorial, setFiltroHistorial] = useState('todas');
 
   async function eliminarBajas(leadIds) {
     setEliminando(true);
@@ -168,148 +169,209 @@ export default function BajasPage() {
 
   if (!usuario) return null;
 
+  // Solo cálculos visuales sobre listaBajas ya cargada — no toca la API ni la lógica existente.
+  const totalBajas = listaBajas.length;
+  const listasParaRecontactar = listaBajas.filter((b) => b.listaParaReactivacion).length;
+  const proximasAlDia90 = listaBajas.filter((b) => !b.disponibleAhora && b.diasFaltantes <= 5).length;
+
+  const FILTROS_HISTORIAL = [
+    { id: 'todas', label: 'Todas' },
+    { id: 'recontactar', label: 'Recontactar' },
+    { id: 'proximas90', label: 'Próximas al día 90' },
+    { id: 'lote', label: 'En Lote Bajas' },
+    { id: 'contactadas', label: 'Contactadas' }
+  ];
+  const listaFiltrada = listaBajas.filter((b) => {
+    if (filtroHistorial === 'recontactar') return b.listaParaReactivacion;
+    if (filtroHistorial === 'proximas90') return !b.disponibleAhora && b.diasFaltantes <= 5;
+    if (filtroHistorial === 'lote') return b.disponibleAhora && !b.contactado;
+    if (filtroHistorial === 'contactadas') return b.contactado;
+    return true;
+  });
+
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
-      <div className="max-w-[900px] mx-auto px-6 pb-16">
-        <h3 className="text-lg font-bold mb-1">🔴 Bajas</h3>
-        <p className="text-textMuted text-xs mb-5">
-          Registrá cuando un estudiante se da de baja de la cursada. A los 90 días, reaparece en el
-          "LOTE BAJAS" de Seguimiento para ofrecerle volver a información y ver si se reincorpora.
-        </p>
+      <div className="max-w-[1400px] mx-auto px-6 pb-16">
 
-        {/* LISTAS PARA RECONTACTAR: a los 85 días de la baja, se habilita mandar un mail de
-            reactivación con un botón que lleva a WhatsApp — antes de que a los 90 días aparezca
-            en el Lote Bajas de Seguimiento para contacto directo. */}
+        {/* ENCABEZADO */}
+        <div className="flex items-start justify-between flex-wrap gap-4 mb-6">
+          <div>
+            <h3 className="text-xl font-bold mb-1">Bajas</h3>
+            <p className="text-textMuted text-sm">Seguimiento y reactivación de estudiantes dados de baja.</p>
+          </div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <IndicadorResumen valor={totalBajas} label="Bajas registradas" />
+            <IndicadorResumen valor={listasParaRecontactar} label="Listas para recontactar" colorClase="text-warningText" />
+            <IndicadorResumen valor={proximasAlDia90} label="Próximas al día 90" colorClase="text-infoText" />
+          </div>
+        </div>
+
+        {/* ACCIONES PENDIENTES */}
         <SeccionRecontactar listaBajas={listaBajas} enviandoMensajeId={enviandoMensajeId} onEnviar={enviarMensaje1} />
 
-        <div className="bg-surface border border-border rounded-2xl p-5">
-          <p className="text-sm font-semibold mb-1">Cargar bajas</p>
-          <p className="text-textMuted text-xs mb-3">
-            Un bloque por persona, separados por una línea en blanco. Poné lo que tengas (todo opcional, con al
-            menos un dato para identificarla): Nombre, Curso, Email, WhatsApp, Fecha, Motivo.
-            Se busca primero por Email, si no hay por WhatsApp, si no hay por Nombre (+Curso si hay más de una
-            persona con ese nombre). Si no existe todavía en el sistema, se crea un registro mínimo (con lo que
-            hayas puesto) y se le registra la baja igual.
+        {/* CARGAR BAJAS */}
+        <div className="bg-surface border border-border rounded-2xl p-5 sm:p-6 mb-4">
+          <p className="text-base font-semibold mb-0.5">Cargar bajas</p>
+          <p className="text-textMuted text-xs mb-3">Pegá un bloque por persona, separados por una línea en blanco.</p>
+          <p className="text-textMuted text-[11px] mb-3 bg-bg border border-border rounded-lg px-3 py-2 inline-block">
+            Nombre · Curso · Email · WhatsApp · Fecha · Motivo
           </p>
           <textarea rows={8} value={textoBajasMasivas} onChange={(e) => setTextoBajasMasivas(e.target.value)}
             placeholder={'Nombre: María Agustina Roldán\nCurso: Coaching de Equipos\nEmail: ag.roldan.est@gmail.com\nWhatsApp: +54 9 11 1234-5678\nFecha: 12/08/2026\n\nNombre: Otra Persona\nEmail: otra@mail.com'}
-            className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm font-mono mb-2" />
+            className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-sm font-mono mb-3 focus:outline-none focus:border-accentTeal transition-colors" />
 
           {textoBajasMasivas.trim() && (
-            <div className="mb-3 space-y-2">
-              <p className="text-textMuted text-[11px]">👀 Se van a cargar {previewBajas.length} persona{previewBajas.length !== 1 ? 's' : ''}:</p>
+            <div className="mb-4 space-y-2">
+              <p className="text-textMuted text-[11px]">👀 Se van a cargar {previewBajas.length} persona{previewBajas.length !== 1 ? 's' : ''}</p>
               {previewBajas.map((p, i) => (
-                <div key={i} className="bg-bg border border-border rounded-lg p-2.5 text-[12px] flex flex-wrap gap-x-4 gap-y-1">
-                  <span className={p.nombre ? 'text-successText' : 'text-dangerText'}>{p.nombre ? '✓' : '✗'} Nombre{p.nombre ? `: ${p.nombre}` : ' (falta)'}</span>
-                  <span className={p.curso ? 'text-successText' : 'text-textMuted'}>{p.curso ? '✓' : '○'} Curso{p.curso ? `: ${p.curso}` : ''}</span>
-                  <span className={p.email ? 'text-successText' : 'text-textMuted'}>{p.email ? '✓' : '○'} Email{p.email ? `: ${p.email}` : ''}</span>
-                  <span className={p.whatsapp ? 'text-successText' : 'text-textMuted'}>{p.whatsapp ? '✓' : '○'} WhatsApp{p.whatsapp ? `: ${p.whatsapp}` : ''}</span>
+                <div key={i} className="bg-bg border border-border rounded-xl p-3 text-[12px] flex flex-wrap gap-x-4 gap-y-1.5">
+                  <span className={p.nombre ? 'text-successText' : 'text-dangerText'}>{p.nombre ? '✓' : '✗'} {p.nombre || 'Nombre (falta)'}</span>
+                  {p.curso && <span className="text-successText">✓ {p.curso}</span>}
+                  {p.email && <span className="text-successText">✓ {p.email}</span>}
+                  {p.whatsapp && <span className="text-successText">✓ {p.whatsapp}</span>}
                   <span className="text-infoText">📅 {new Date(p.fecha).toLocaleDateString('es-AR')}</span>
                 </div>
               ))}
             </div>
           )}
+
           <button onClick={cargarBajasMasivas} disabled={cargandoBajasMasivas || !textoBajasMasivas.trim()}
-            className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-50 mb-3">
-            {cargandoBajasMasivas ? 'Cargando…' : 'Cargar bajas'}
+            className="text-sm px-5 py-2.5 rounded-xl bg-dangerText text-white font-semibold disabled:opacity-50 mb-1 shadow-sm">
+            {cargandoBajasMasivas
+              ? 'Cargando…'
+              : `🔴 Registrar ${previewBajas.length > 0 ? previewBajas.length : ''} baja${previewBajas.length !== 1 ? 's' : ''}`.replace('  ', ' ')}
           </button>
 
           {resultadoBajasMasivas && (
-            <div className="bg-bg border border-border rounded-lg p-3 mb-3 text-sm space-y-1">
+            <div className="mt-3 flex flex-col gap-1.5">
               {resultadoBajasMasivas.procesados.length > 0 && (
-                <p className="text-successText">✓ Registradas: {resultadoBajasMasivas.procesados.join(', ')}</p>
+                <ChipResultado color="success" icono="✓" texto={`Registradas: ${resultadoBajasMasivas.procesados.join(', ')}`} />
               )}
               {resultadoBajasMasivas.creados?.length > 0 && (
-                <p className="text-infoText">🆕 No existían en el sistema, se crearon y se les registró la baja: {resultadoBajasMasivas.creados.join(', ')}</p>
+                <ChipResultado color="info" icono="🆕" texto={`Creadas: ${resultadoBajasMasivas.creados.join(', ')}`} />
               )}
               {resultadoBajasMasivas.yaExistentes.length > 0 && (
-                <p className="text-warningText">⚠️ Ya tenían una baja registrada: {resultadoBajasMasivas.yaExistentes.join(', ')}</p>
+                <ChipResultado color="warning" icono="⚠️" texto={`Ya existentes: ${resultadoBajasMasivas.yaExistentes.join(', ')}`} />
               )}
               {resultadoBajasMasivas.ambiguos?.length > 0 && (
-                <p className="text-warningText">⚠️ Ambiguos, precisá más datos: {resultadoBajasMasivas.ambiguos.join(' · ')}</p>
+                <ChipResultado color="warning" icono="⚠️" texto={`Ambiguas: ${resultadoBajasMasivas.ambiguos.join(' · ')}`} />
               )}
               {resultadoBajasMasivas.errores?.length > 0 && (
-                <p className="text-dangerText">🛑 Error al procesar: {resultadoBajasMasivas.errores.join(' · ')}</p>
+                <ChipResultado color="danger" icono="🛑" texto={`Errores: ${resultadoBajasMasivas.errores.join(' · ')}`} />
               )}
               {resultadoBajasMasivas.noEncontrados.length > 0 && (
-                <p className="text-dangerText">✗ No encontrados (o no son estudiantes con venta confirmada): {resultadoBajasMasivas.noEncontrados.join(', ')}</p>
+                <ChipResultado color="danger" icono="✗" texto={`No encontradas: ${resultadoBajasMasivas.noEncontrados.join(', ')}`} />
               )}
             </div>
           )}
+        </div>
 
-          <button onClick={() => cargarListaBajas()} className="text-xs text-accentTeal font-semibold mb-2">
-            {mostrarListaBajas ? '▲ Ocultar' : '▼ Ver'} todas las bajas registradas (incluye las que todavía están esperando)
-          </button>
+        {/* HISTORIAL DE BAJAS */}
+        <div className="bg-surface border border-border rounded-2xl p-5 sm:p-6">
+          <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+            <p className="text-base font-semibold">Historial de bajas</p>
+            <button onClick={() => cargarListaBajas()} className="text-xs text-accentTeal font-semibold">
+              {mostrarListaBajas ? '▲ Ocultar' : '▼ Ver historial'}
+            </button>
+          </div>
+
           {mostrarListaBajas && (
             <>
-            {seleccionadas.size > 0 && (
-              <div className="flex items-center justify-between bg-warningBg border border-warningText/30 rounded-lg px-3 py-2 mb-2">
-                <p className="text-warningText text-xs font-semibold">{seleccionadas.size} seleccionada{seleccionadas.size !== 1 ? 's' : ''}</p>
-                <button onClick={() => eliminarBajas([...seleccionadas])} disabled={eliminando}
-                  className="text-xs px-3 py-1 rounded bg-dangerText text-white font-semibold disabled:opacity-60">
-                  {eliminando ? 'Eliminando…' : '🗑 Eliminar seleccionadas'}
-                </button>
+              <div className="flex items-center gap-1.5 flex-wrap mb-3">
+                {FILTROS_HISTORIAL.map((f) => (
+                  <button key={f.id} onClick={() => setFiltroHistorial(f.id)}
+                    className={`text-xs px-3 py-1 rounded-full border transition-colors ${
+                      filtroHistorial === f.id ? 'bg-accentPurple border-accentPurple text-white' : 'bg-surface2 border-border text-textSec hover:text-text'
+                    }`}>
+                    {f.label}
+                  </button>
+                ))}
               </div>
-            )}
-            <div className="bg-bg border border-border rounded-lg p-3 max-h-72 overflow-y-auto">
-              {listaBajas.length === 0 ? (
-                <p className="text-textMuted text-xs">Sin bajas registradas todavía.</p>
-              ) : (
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="text-textSec text-left border-b border-border">
-                      <th className="py-1.5 w-6">
-                        <input type="checkbox"
-                          checked={listaBajas.length > 0 && seleccionadas.size === listaBajas.length}
-                          onChange={(e) => setSeleccionadas(e.target.checked ? new Set(listaBajas.map((b) => b.leadId)) : new Set())} />
-                      </th>
-                      <th>Nombre</th><th>Curso</th><th>Fecha baja</th>
-                      <th>Acción 1 — Día 85: envío de mail</th>
-                      <th>Acción 2 — Día 90: WhatsApp por lote</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {listaBajas.map((b) => (
-                      <tr key={b.leadId} className="border-b border-border">
-                        <td className="py-1.5">
-                          <input type="checkbox" checked={seleccionadas.has(b.leadId)}
-                            onChange={() => setSeleccionadas((prev) => {
-                              const nuevo = new Set(prev);
-                              nuevo.has(b.leadId) ? nuevo.delete(b.leadId) : nuevo.add(b.leadId);
-                              return nuevo;
-                            })} />
-                        </td>
-                        <td>{b.nombre}</td>
-                        <td>{b.curso}</td>
-                        <td>{new Date(b.fechaBaja).toLocaleDateString('es-AR')}</td>
-                        <td>
-                          {b.confirmoRecepcionBaja ? (
-                            <span className="text-successText">✅ Confirmó recepción</span>
-                          ) : b.mensajeEnviado ? (
-                            <span className="text-textMuted">Enviado el {new Date(b.fechaMensajeEnviado).toLocaleDateString('es-AR')}</span>
-                          ) : b.listaParaReactivacion ? (
-                            <span className="text-warningText">Listo para enviar</span>
-                          ) : (
-                            <span className="text-textMuted">Faltan {85 - Math.floor((new Date() - new Date(b.fechaBaja)) / 86400000)} días</span>
-                          )}
-                        </td>
-                        <td>
-                          {b.contactado ? <span className="text-successText">Contactado</span>
-                            : b.disponibleAhora ? <span className="text-warningText">En Lote Bajas</span>
-                            : <span className="text-textMuted">Faltan {b.diasFaltantes} días</span>}
-                        </td>
-                        <td>
-                          <button onClick={() => eliminarBajas([b.leadId])} disabled={eliminando}
-                            className="text-dangerText text-xs disabled:opacity-60">🗑</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+
+              {seleccionadas.size > 0 && (
+                <div className="flex items-center justify-between bg-warningBg border border-warningText/30 rounded-xl px-4 py-2.5 mb-3">
+                  <p className="text-warningText text-xs font-semibold">{seleccionadas.size} seleccionada{seleccionadas.size !== 1 ? 's' : ''}</p>
+                  <button onClick={() => eliminarBajas([...seleccionadas])} disabled={eliminando}
+                    className="text-xs px-3 py-1.5 rounded-lg bg-dangerText text-white font-semibold disabled:opacity-60">
+                    {eliminando ? 'Eliminando…' : '🗑 Eliminar seleccionadas'}
+                  </button>
+                </div>
               )}
-            </div>
+
+              {listaFiltrada.length === 0 ? (
+                <p className="text-textMuted text-xs py-4 text-center">Sin bajas para este filtro.</p>
+              ) : (
+                <>
+                  {/* Tabla — visible desde tablet para arriba */}
+                  <div className="hidden sm:block overflow-x-auto max-h-96 overflow-y-auto rounded-xl border border-border">
+                    <table className="w-full text-xs">
+                      <thead className="sticky top-0 bg-surface z-10">
+                        <tr className="text-textSec text-left border-b border-border">
+                          <th className="py-2.5 px-3 w-6">
+                            <input type="checkbox"
+                              checked={listaFiltrada.length > 0 && listaFiltrada.every((b) => seleccionadas.has(b.leadId))}
+                              onChange={(e) => setSeleccionadas(e.target.checked ? new Set(listaFiltrada.map((b) => b.leadId)) : new Set())} />
+                          </th>
+                          <th className="px-2">Nombre</th><th className="px-2">Curso</th><th className="px-2">Fecha baja</th>
+                          <th className="px-2">Reactivación</th>
+                          <th className="px-2">Seguimiento</th>
+                          <th className="px-2"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {listaFiltrada.map((b) => (
+                          <tr key={b.leadId} className="border-b border-border last:border-b-0 hover:bg-bg/40">
+                            <td className="py-2 px-3">
+                              <input type="checkbox" checked={seleccionadas.has(b.leadId)}
+                                onChange={() => setSeleccionadas((prev) => {
+                                  const nuevo = new Set(prev);
+                                  nuevo.has(b.leadId) ? nuevo.delete(b.leadId) : nuevo.add(b.leadId);
+                                  return nuevo;
+                                })} />
+                            </td>
+                            <td className="px-2 font-medium">{b.nombre}</td>
+                            <td className="px-2 text-textSec">{b.curso}</td>
+                            <td className="px-2 whitespace-nowrap">{new Date(b.fechaBaja).toLocaleDateString('es-AR')}</td>
+                            <td className="px-2"><BadgeReactivacion b={b} /></td>
+                            <td className="px-2"><BadgeSeguimiento b={b} /></td>
+                            <td className="px-2">
+                              <button onClick={() => eliminarBajas([b.leadId])} disabled={eliminando}
+                                className="text-dangerText text-xs disabled:opacity-60">🗑</button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Cards — mobile */}
+                  <div className="sm:hidden space-y-2 max-h-96 overflow-y-auto">
+                    {listaFiltrada.map((b) => (
+                      <div key={b.leadId} className="bg-bg border border-border rounded-xl p-3">
+                        <div className="flex items-start justify-between gap-2 mb-1.5">
+                          <div className="flex items-center gap-2">
+                            <input type="checkbox" checked={seleccionadas.has(b.leadId)}
+                              onChange={() => setSeleccionadas((prev) => {
+                                const nuevo = new Set(prev);
+                                nuevo.has(b.leadId) ? nuevo.delete(b.leadId) : nuevo.add(b.leadId);
+                                return nuevo;
+                              })} />
+                            <p className="text-sm font-medium">{b.nombre}</p>
+                          </div>
+                          <button onClick={() => eliminarBajas([b.leadId])} disabled={eliminando}
+                            className="text-dangerText text-xs disabled:opacity-60 shrink-0">🗑</button>
+                        </div>
+                        <p className="text-textSec text-xs mb-2">{b.curso} · {new Date(b.fechaBaja).toLocaleDateString('es-AR')}</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          <BadgeReactivacion b={b} />
+                          <BadgeSeguimiento b={b} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </>
           )}
         </div>
@@ -318,52 +380,79 @@ export default function BajasPage() {
   );
 }
 
+function IndicadorResumen({ valor, label, colorClase }) {
+  return (
+    <div className="bg-surface border border-border rounded-xl px-4 py-2.5 text-center min-w-[110px]">
+      <p className={`text-xl font-bold ${colorClase || 'text-text'}`}>{valor}</p>
+      <p className="text-textMuted text-[11px] whitespace-nowrap">{label}</p>
+    </div>
+  );
+}
+
+function ChipResultado({ color, icono, texto }) {
+  const clases = {
+    success: 'bg-successBg text-successText',
+    info: 'bg-infoBg text-infoText',
+    warning: 'bg-warningBg text-warningText',
+    danger: 'bg-dangerBg text-dangerText'
+  };
+  return (
+    <div className={`text-xs px-3 py-2 rounded-lg ${clases[color]}`}>
+      {icono} {texto}
+    </div>
+  );
+}
+
+// Mismos estados y condiciones que antes — solo cambia la presentación (badge en vez de texto).
+function BadgeReactivacion({ b }) {
+  if (b.confirmoRecepcionBaja) return <span className="text-[11px] px-2 py-0.5 rounded-full bg-successBg text-successText whitespace-nowrap">🟢 Confirmó</span>;
+  if (b.mensajeEnviado) return <span className="text-[11px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted whitespace-nowrap">⚪ Enviado</span>;
+  if (b.listaParaReactivacion) return <span className="text-[11px] px-2 py-0.5 rounded-full bg-warningBg text-warningText whitespace-nowrap">🟡 Listo para enviar</span>;
+  const faltan = 85 - Math.floor((new Date() - new Date(b.fechaBaja)) / 86400000);
+  return <span className="text-[11px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted whitespace-nowrap">Faltan {faltan} días</span>;
+}
+
+function BadgeSeguimiento({ b }) {
+  if (b.contactado) return <span className="text-[11px] px-2 py-0.5 rounded-full bg-infoBg text-infoText whitespace-nowrap">🔵 Contactado</span>;
+  if (b.disponibleAhora) return <span className="text-[11px] px-2 py-0.5 rounded-full bg-warningBg text-warningText whitespace-nowrap">🟠 En Lote Bajas</span>;
+  return <span className="text-[11px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted whitespace-nowrap">Faltan {b.diasFaltantes} días</span>;
+}
+
 function SeccionRecontactar({ listaBajas, enviandoMensajeId, onEnviar }) {
   const paraRecontactar = listaBajas.filter((b) => b.listaParaReactivacion);
   if (paraRecontactar.length === 0) return null;
 
   return (
-    <div className="bg-surface border border-border rounded-2xl p-5 mb-4">
-      <p className="text-sm font-semibold mb-1">📬 Listas para recontactar ({paraRecontactar.length})</p>
-      <p className="text-textMuted text-xs mb-3">
+    <div className="bg-surface border-2 border-warningText/30 rounded-2xl p-5 sm:p-6 mb-4">
+      <p className="text-base font-semibold mb-1">📬 Acciones pendientes <span className="text-warningText">({paraRecontactar.length})</span></p>
+      <p className="text-textMuted text-xs mb-4">
         Ya pasaron 85 días desde la baja — se puede mandar un mail de reactivación con un botón que lleva a WhatsApp.
       </p>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-textSec text-left border-b border-border">
-              <th className="py-2 pr-3">Fecha de baja</th>
-              <th className="pr-3">Estudiante</th>
-              <th className="pr-3">Curso</th>
-              <th>Acción</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paraRecontactar.map((b) => (
-              <tr key={b.leadId} className="border-b border-border">
-                <td className="py-2 pr-3 whitespace-nowrap">{new Date(b.fechaBaja).toLocaleDateString('es-AR')}</td>
-                <td className="pr-3">{b.nombre}</td>
-                <td className="pr-3 text-textSec">{b.curso}</td>
-                <td>
-                  {b.confirmoRecepcionBaja ? (
-                    <span className="text-successText text-xs font-semibold">✅ Confirmó recepción y solicitó info</span>
-                  ) : b.mensajeEnviado ? (
-                    <span className="text-textMuted text-xs">
-                      Mensaje enviado el {new Date(b.fechaMensajeEnviado).toLocaleDateString('es-AR')} — esperando respuesta
-                    </span>
-                  ) : !b.email ? (
-                    <span className="text-warningText text-xs">Sin email cargado</span>
-                  ) : (
-                    <button onClick={() => onEnviar(b)} disabled={enviandoMensajeId === b.leadId}
-                      className="text-xs px-3 py-1.5 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-60">
-                      {enviandoMensajeId === b.leadId ? 'Enviando…' : 'Enviar mensaje 1'}
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="space-y-2">
+        {paraRecontactar.map((b) => (
+          <div key={b.leadId} className="bg-bg border border-border rounded-xl p-3.5 flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <p className="text-sm font-medium">{b.nombre}</p>
+              <p className="text-textMuted text-xs">{b.curso} · Baja: {new Date(b.fechaBaja).toLocaleDateString('es-AR')}</p>
+            </div>
+            <div className="shrink-0">
+              {b.confirmoRecepcionBaja ? (
+                <span className="text-successText text-xs font-semibold whitespace-nowrap">✅ Confirmó recepción y solicitó info</span>
+              ) : b.mensajeEnviado ? (
+                <span className="text-textMuted text-xs whitespace-nowrap">
+                  Mensaje enviado el {new Date(b.fechaMensajeEnviado).toLocaleDateString('es-AR')}
+                </span>
+              ) : !b.email ? (
+                <span className="text-warningText text-xs whitespace-nowrap">Sin email cargado</span>
+              ) : (
+                <button onClick={() => onEnviar(b)} disabled={enviandoMensajeId === b.leadId}
+                  className="text-xs px-3.5 py-2 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-60 whitespace-nowrap">
+                  {enviandoMensajeId === b.leadId ? 'Enviando…' : 'Enviar mensaje 1'}
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
