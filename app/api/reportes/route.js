@@ -41,13 +41,15 @@ function calcularDiasHastaConversion(leadsDelMes) {
     { nombre: '31-90 días', max: 90 },
     { nombre: '+90 días', max: Infinity }
   ];
-  const conteo = RANGOS.map((r) => ({ nombre: r.nombre, cantidad: 0 }));
+  const conteo = RANGOS.map((r) => ({ nombre: r.nombre, cantidad: 0, compradores: [] }));
 
   compras.forEach((l) => {
     const dias = Math.round((new Date(l.FechaVenta) - new Date(l.FechaIngreso)) / (1000 * 60 * 60 * 24));
     const diasClamp = Math.max(0, dias); // por si algún dato viejo tiene fechas invertidas
     const idx = RANGOS.findIndex((r) => diasClamp <= r.max);
-    conteo[idx === -1 ? RANGOS.length - 1 : idx].cantidad += 1;
+    const bucket = conteo[idx === -1 ? RANGOS.length - 1 : idx];
+    bucket.cantidad += 1;
+    bucket.compradores.push(`${l.Nombre} ${l.Apellido}`.trim());
   });
 
   const total = compras.length;

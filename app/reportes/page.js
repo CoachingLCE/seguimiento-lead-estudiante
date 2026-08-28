@@ -86,6 +86,30 @@ function TickCursoDosLineas({ x, y, payload }) {
   );
 }
 
+// Tooltip del gráfico "Días hasta la conversión": además de la cantidad, lista de quiénes
+// fueron esas ventas — si son muchas, corta la lista y avisa cuántas más hay.
+function TooltipDiasConversion({ active, payload }) {
+  if (!active || !payload || payload.length === 0) return null;
+  const d = payload[0].payload;
+  const MAX_NOMBRES = 8;
+  const compradores = d.compradores || [];
+  const mostrados = compradores.slice(0, MAX_NOMBRES);
+  const restantes = compradores.length - mostrados.length;
+
+  return (
+    <div style={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} className="px-3 py-2.5 max-w-[220px]">
+      <p className="text-text text-xs font-semibold mb-1">{d.nombre}</p>
+      <p className="text-textSec text-xs mb-1.5">{d.cantidad} venta{d.cantidad !== 1 ? 's' : ''} ({d.porcentaje.toFixed(1)}%)</p>
+      {mostrados.length > 0 && (
+        <div className="text-textMuted text-[11px] leading-relaxed border-t border-border pt-1.5">
+          {mostrados.map((nombre, i) => <div key={i}>{nombre}</div>)}
+          {restantes > 0 && <div className="text-textMuted/70 italic">+{restantes} más</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ChartCard({ titulo, subtitulo, valorGrande, comparacion, tooltip, onExportar, alto = 300, children }) {
   return (
     <div className="group bg-surface border border-border rounded-2xl p-5 shadow-sm transition-all duration-200
@@ -684,8 +708,7 @@ export default function ReportesPage() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#262c4a" vertical={false} />
                     <XAxis dataKey="nombre" stroke="#6b7299" fontSize={10} interval={0} angle={-15} textAnchor="end" height={40} />
                     <YAxis stroke="#6b7299" fontSize={11} allowDecimals={false} />
-                    <Tooltip contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }}
-                      formatter={(v, n, p) => [`${v} venta${v !== 1 ? 's' : ''} (${p.payload.porcentaje.toFixed(1)}%)`, '']} />
+                    <Tooltip content={<TooltipDiasConversion />} />
                     <Bar dataKey="cantidad" fill="#22c55e" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
