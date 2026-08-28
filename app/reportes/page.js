@@ -658,15 +658,26 @@ function SeccionObjetivos({ datos, mes, usuario }) {
               </div>
 
               <p className="text-xs font-semibold text-textSec mb-2">Metas de ventas por vendedor (opcional)</p>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
-                {personasActivas.map((nombre) => (
-                  <div key={nombre} className="flex items-center gap-2">
-                    <label className="text-[11px] text-textSec flex-1 truncate" title={nombre}>{nombre}</label>
-                    <input type="text" inputMode="numeric" value={formPorVendedor[nombre] ?? ''}
-                      onChange={(e) => setFormPorVendedor((f) => ({ ...f, [nombre]: e.target.value }))}
-                      placeholder="—" className="w-16 bg-bg border border-border rounded-lg px-2 py-1 text-xs" />
-                  </div>
-                ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
+                {personasActivas.map((nombre) => {
+                  const ventasActuales = datos.rankingVendedores.find((r) => r.nombre === nombre)?.cantidad || 0;
+                  const metaIngresada = Number(formPorVendedor[nombre]) || 0;
+                  const pct = metaIngresada > 0 ? (ventasActuales / metaIngresada) * 100 : null;
+                  const estado = pct !== null ? estadoObjetivo(pct) : null;
+                  return (
+                    <div key={nombre} className="flex items-center gap-2 bg-bg border border-border rounded-lg px-2.5 py-1.5">
+                      <label className="text-[11px] text-textSec flex-1 truncate" title={nombre}>{nombre}</label>
+                      <input type="text" inputMode="numeric" value={formPorVendedor[nombre] ?? ''}
+                        onChange={(e) => setFormPorVendedor((f) => ({ ...f, [nombre]: e.target.value }))}
+                        placeholder="Meta" className="w-16 bg-surface border border-border rounded-lg px-2 py-1 text-xs shrink-0" />
+                      <span className="text-[11px] text-textMuted shrink-0 w-24 text-right">
+                        {pct !== null
+                          ? <span className={`font-semibold ${estado.clase}`}>{ventasActuales} ventas · {pct.toFixed(0)}%</span>
+                          : `${ventasActuales} ventas`}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="flex gap-2">
