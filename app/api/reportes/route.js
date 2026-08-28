@@ -41,7 +41,7 @@ function calcularDiasHastaConversion(leadsDelMes) {
     { nombre: '31-90 días', max: 90 },
     { nombre: '+90 días', max: Infinity }
   ];
-  const conteo = RANGOS.map((r) => ({ nombre: r.nombre, cantidad: 0, compradores: [] }));
+  const conteo = RANGOS.map((r) => ({ nombre: r.nombre, cantidad: 0, porVendedor: {} }));
 
   compras.forEach((l) => {
     const dias = Math.round((new Date(l.FechaVenta) - new Date(l.FechaIngreso)) / (1000 * 60 * 60 * 24));
@@ -49,11 +49,16 @@ function calcularDiasHastaConversion(leadsDelMes) {
     const idx = RANGOS.findIndex((r) => diasClamp <= r.max);
     const bucket = conteo[idx === -1 ? RANGOS.length - 1 : idx];
     bucket.cantidad += 1;
-    bucket.compradores.push(`${l.Nombre} ${l.Apellido}`.trim());
+    const vendedor = l.VendidoPorNombre || 'Sin dato';
+    bucket.porVendedor[vendedor] = (bucket.porVendedor[vendedor] || 0) + 1;
   });
 
   const total = compras.length;
-  return conteo.map((c) => ({ ...c, porcentaje: total ? (c.cantidad / total) * 100 : 0 }));
+  return conteo.map((c) => ({
+    ...c,
+    porcentaje: total ? (c.cantidad / total) * 100 : 0,
+    porVendedor: Object.entries(c.porVendedor).map(([nombre, cantidad]) => ({ nombre, cantidad })).sort((a, b) => b.cantidad - a.cantidad)
+  }));
 }
 
 function calcularActividadPorPersona(mes, todosLosLeads, todoElSeguimiento, rangoDesde, rangoHasta) {

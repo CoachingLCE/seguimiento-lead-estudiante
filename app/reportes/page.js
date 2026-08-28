@@ -91,19 +91,20 @@ function TickCursoDosLineas({ x, y, payload }) {
 function TooltipDiasConversion({ active, payload }) {
   if (!active || !payload || payload.length === 0) return null;
   const d = payload[0].payload;
-  const MAX_NOMBRES = 8;
-  const compradores = d.compradores || [];
-  const mostrados = compradores.slice(0, MAX_NOMBRES);
-  const restantes = compradores.length - mostrados.length;
+  const porVendedor = d.porVendedor || [];
 
   return (
     <div style={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} className="px-3 py-2.5 max-w-[220px]">
       <p className="text-text text-xs font-semibold mb-1">{d.nombre}</p>
       <p className="text-textSec text-xs mb-1.5">{d.cantidad} venta{d.cantidad !== 1 ? 's' : ''} ({d.porcentaje.toFixed(1)}%)</p>
-      {mostrados.length > 0 && (
-        <div className="text-textMuted text-[11px] leading-relaxed border-t border-border pt-1.5">
-          {mostrados.map((nombre, i) => <div key={i}>{nombre}</div>)}
-          {restantes > 0 && <div className="text-textMuted/70 italic">+{restantes} más</div>}
+      {porVendedor.length > 0 && (
+        <div className="text-textMuted text-[11px] leading-relaxed border-t border-border pt-1.5 space-y-0.5">
+          {porVendedor.map((v) => (
+            <div key={v.nombre} className="flex justify-between gap-3">
+              <span>{v.nombre}</span>
+              <span className="text-text font-medium">{v.cantidad}</span>
+            </div>
+          ))}
         </div>
       )}
     </div>
