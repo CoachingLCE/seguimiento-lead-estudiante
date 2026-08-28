@@ -894,7 +894,7 @@ export default function ReportesPage() {
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
-      <div className="max-w-[1600px] mx-auto px-4 pb-24 space-y-5">
+      <div className="max-w-[1900px] mx-auto px-4 pb-24 space-y-5">
 
         {/* FILTROS SUPERIORES */}
         <div className="flex items-end gap-3 flex-wrap">
