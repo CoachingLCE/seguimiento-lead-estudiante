@@ -364,7 +364,6 @@ function SeccionObjetivos({ datos, mes, usuario }) {
   const [form, setForm] = useState({ metaFacturacion: '', metaVentas: '', metaLeads: '', metaConversion: '', metaTicketPromedio: '' });
   const [formPorCurso, setFormPorCurso] = useState({});
   const [formPorVendedor, setFormPorVendedor] = useState({});
-  const [nuevoVendedorNombre, setNuevoVendedorNombre] = useState('');
   const [guardando, setGuardando] = useState(false);
 
   useEffect(() => {
@@ -393,21 +392,6 @@ function SeccionObjetivos({ datos, mes, usuario }) {
     if (mes && usuario) cargar();
     return () => { cancelado = true; };
   }, [mes, usuario]);
-
-  function agregarVendedor() {
-    const nombre = nuevoVendedorNombre.trim();
-    if (!nombre || formPorVendedor[nombre] !== undefined) return;
-    setFormPorVendedor((f) => ({ ...f, [nombre]: '' }));
-    setNuevoVendedorNombre('');
-  }
-
-  function quitarVendedor(nombre) {
-    setFormPorVendedor((f) => {
-      const copia = { ...f };
-      delete copia[nombre];
-      return copia;
-    });
-  }
 
   async function guardar() {
     setGuardando(true);
@@ -442,6 +426,10 @@ function SeccionObjetivos({ datos, mes, usuario }) {
   }
 
   if (cargando) return <Skeleton h="h-40" />;
+
+  // Misma lista de personas que ya se ve en la pestaña Actividad (quien cargó leads, contactó
+  // o vendió este mes) — así no hace falta escribir nombres a mano ni adivinar apellidos.
+  const personasActivas = datos.actividadPorPersona.map((p) => p.nombre).sort((a, b) => a.localeCompare(b, 'es'));
 
   const METRICAS = objetivos ? [
     { id: 'facturacion', label: 'Facturación', actual: datos.montoTotal, meta: objetivos.metaFacturacion, unidad: '$', formatear: money },
@@ -550,7 +538,10 @@ function SeccionObjetivos({ datos, mes, usuario }) {
                 <div key={o.curso}>
                   <div className="flex items-center justify-between text-xs mb-1">
                     <span className="font-medium">{o.curso}</span>
-                    <span className={`font-bold ${estado.clase}`}>{ventasActuales} / {o.meta} · {pct.toFixed(0)}%</span>
+                    <span className={`font-bold ${estado.clase}`}>
+                      {ventasActuales} / {o.meta} · {pct.toFixed(0)}%
+                      {' — '}{pct >= 100 ? '✅ Cumplido' : `faltan ${Math.ceil(o.meta - ventasActuales)}`}
+                    </span>
                   </div>
                   <BarraObjetivo pct={pct} colorClase={estado.barra} />
                 </div>
@@ -573,7 +564,10 @@ function SeccionObjetivos({ datos, mes, usuario }) {
                 <div key={o.vendedor}>
                   <div className="flex items-center justify-between text-xs mb-1">
                     <span className="font-medium">{o.vendedor}</span>
-                    <span className={`font-bold ${estado.clase}`}>{ventasActuales} / {o.meta} · {pct.toFixed(0)}%</span>
+                    <span className={`font-bold ${estado.clase}`}>
+                      {ventasActuales} / {o.meta} · {pct.toFixed(0)}%
+                      {' — '}{pct >= 100 ? '✅ Cumplido' : `faltan ${Math.ceil(o.meta - ventasActuales)}`}
+                    </span>
                   </div>
                   <BarraObjetivo pct={pct} colorClase={estado.barra} />
                 </div>
@@ -640,22 +634,15 @@ function SeccionObjetivos({ datos, mes, usuario }) {
               </div>
 
               <p className="text-xs font-semibold text-textSec mb-2">Metas por vendedor (opcional)</p>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-2">
-                {Object.keys(formPorVendedor).map((nombre) => (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
+                {personasActivas.map((nombre) => (
                   <div key={nombre} className="flex items-center gap-2">
                     <label className="text-[11px] text-textSec flex-1 truncate" title={nombre}>{nombre}</label>
                     <input type="text" inputMode="numeric" value={formPorVendedor[nombre] ?? ''}
                       onChange={(e) => setFormPorVendedor((f) => ({ ...f, [nombre]: e.target.value }))}
                       placeholder="—" className="w-16 bg-bg border border-border rounded-lg px-2 py-1 text-xs" />
-                    <button onClick={() => quitarVendedor(nombre)} className="text-dangerText text-xs shrink-0">✕</button>
                   </div>
                 ))}
-              </div>
-              <div className="flex items-center gap-2 mb-4">
-                <input type="text" value={nuevoVendedorNombre} onChange={(e) => setNuevoVendedorNombre(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && agregarVendedor()}
-                  placeholder="Nombre del vendedor" className="flex-1 max-w-[220px] bg-bg border border-border rounded-lg px-2 py-1.5 text-xs" />
-                <button onClick={agregarVendedor} className="text-xs px-3 py-1.5 rounded-lg bg-surface2 border border-border font-semibold">+ Agregar</button>
               </div>
 
               <div className="flex gap-2">
