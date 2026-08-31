@@ -20,6 +20,7 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
   const [cantCuotas, setCantCuotas] = useState('');
   const [valorCuota, setValorCuota] = useState('');
   const [montoTotal, setMontoTotal] = useState('');
+  const [becado, setBecado] = useState(false);
   const [cuotasVariables, setCuotasVariables] = useState(['', '']);
   const [emailEstudiante, setEmailEstudiante] = useState('');
   const [edicion, setEdicion] = useState('');
@@ -41,6 +42,7 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
     setCantCuotas('');
     setValorCuota('');
     setMontoTotal('');
+    setBecado(false);
     setCuotasVariables(['', '']);
     setEmailEstudiante(lead.EmailEstudiante || '');
     setEdicion('');
@@ -82,34 +84,38 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
     const esVariable = modalidad === 'cuotas-variables';
     const listaCuotas = esVariable ? cuotasVariables.filter((v) => v !== '' && Number(v) > 0) : [];
 
-    if (modalidad === 'totalidad' && (!montoTotal || Number(montoTotal) <= 0)) {
-      setError('El Monto total es obligatorio.');
-      return;
-    }
-    if (modalidad === 'cuotas' && (!cantCuotas || Number(cantCuotas) <= 0 || !valorCuota || Number(valorCuota) <= 0)) {
-      setError('La Cantidad de cuotas y el Valor de cada cuota son obligatorios.');
-      return;
-    }
-    if (esVariable && listaCuotas.length === 0) {
-      setError('Ingresá al menos el valor de una cuota.');
-      return;
+    // Venta 100% becada: no se cobra nada, así que se saltan todas las validaciones de monto
+    // y se manda todo en cero, sin importar qué modalidad haya quedado seleccionada.
+    if (!becado) {
+      if (modalidad === 'totalidad' && (!montoTotal || Number(montoTotal) <= 0)) {
+        setError('El Monto total es obligatorio.');
+        return;
+      }
+      if (modalidad === 'cuotas' && (!cantCuotas || Number(cantCuotas) <= 0 || !valorCuota || Number(valorCuota) <= 0)) {
+        setError('La Cantidad de cuotas y el Valor de cada cuota son obligatorios.');
+        return;
+      }
+      if (esVariable && listaCuotas.length === 0) {
+        setError('Ingresá al menos el valor de una cuota.');
+        return;
+      }
     }
 
     setEnviando(true);
     try {
-      const montoTotalFinal = esVariable
+      const montoTotalFinal = becado ? '0' : (esVariable
         ? listaCuotas.reduce((acc, v) => acc + Number(v), 0)
-        : montoTotal;
+        : montoTotal);
 
       await onConfirm({
         leadId: lead.ID,
         cursoVenta,
         medioPago,
-        modalidad: esVariable ? 'cuotas' : modalidad,
-        cantCuotas: esVariable ? listaCuotas.length : cantCuotas,
-        valorCuota: esVariable ? '' : valorCuota,
-        detalleCuotas: esVariable ? listaCuotas.join(', ') : '',
-        montoTotal: esVariable ? montoTotalFinal : montoTotal,
+        modalidad: becado ? 'totalidad' : (esVariable ? 'cuotas' : modalidad),
+        cantCuotas: becado ? '' : (esVariable ? listaCuotas.length : cantCuotas),
+        valorCuota: becado ? '' : (esVariable ? '' : valorCuota),
+        detalleCuotas: becado ? '' : (esVariable ? listaCuotas.join(', ') : ''),
+        montoTotal: montoTotalFinal,
         emailEstudiante,
         edicion,
         vendidoPor: vendidoPor === 'Otro' ? vendidoPorOtro.trim() : vendidoPor
@@ -143,6 +149,16 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
           {MEDIOS_PAGO.map((m) => <option key={m}>{m}</option>)}
         </select>
 
+        <label className="flex items-center gap-2 text-xs text-textSec mb-1 cursor-pointer bg-bg border border-border rounded-lg px-3 py-2">
+          <input type="checkbox" checked={becado} onChange={(e) => setBecado(e.target.checked)} />
+          🎓 Venta 100% becada (sin costo)
+        </label>
+        <p className="text-textMuted text-[11px] mb-3">
+          {becado ? 'Se va a registrar con Monto total = $0, sin cuotas.' : '\u00A0'}
+        </p>
+
+        {!becado && (
+          <>
         <label className="text-xs text-textSec block mb-1">Modalidad</label>
         <div className="flex gap-2 mb-3">
           <button type="button" onClick={() => setModalidad('totalidad')}
@@ -236,6 +252,8 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
               placeholder="Ej: 350000"
               className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
           </div>
+        )}
+          </>
         )}
 
         <label className="text-xs text-textSec block mb-1">Email del estudiante (para la bienvenida)</label>
