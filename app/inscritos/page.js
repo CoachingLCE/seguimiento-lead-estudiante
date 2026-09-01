@@ -273,7 +273,8 @@ export default function InscritosPage() {
           <div className="space-y-4">
             <div className="bg-surface border border-border rounded-2xl p-5">
               <p className="text-sm font-semibold mb-1">📩 Sin confirmar recepción — hace 48hs hábiles o más</p>
-              <p className="text-textMuted text-xs mb-3">Se les envió Bienvenida o Alta en plataforma, pero todavía no confirmaron que lo recibieron. Convendría reforzar con ellos.</p>
+              <p className="text-textMuted text-xs mb-1">Se les envió Bienvenida o Alta en plataforma, pero todavía no confirmaron que lo recibieron. Convendría reforzar con ellos.</p>
+              <p className="text-textMuted text-[11px] mb-3 italic">Los días viernes a las 8 AM se manda un mail con este resumen.</p>
               {alertasConfirmacion.length === 0 ? (
                 <p className="text-textMuted text-sm">Sin alertas — todos confirmaron o todavía no pasaron las 48hs hábiles.</p>
               ) : (
