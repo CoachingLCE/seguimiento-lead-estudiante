@@ -369,7 +369,7 @@ export default function InscritosPage() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm min-w-[1200px]">
-                <thead>
+                <thead className="sticky top-0 bg-surface z-10">
                   <tr className="text-textSec text-left border-b border-border">
                     <th className="py-3 pr-4 cursor-pointer select-none whitespace-nowrap" onClick={() => ordenarPor('FechaInscripcion')}>Fecha de inscripción{flecha('FechaInscripcion')}</th>
                     <th className="pr-4 whitespace-nowrap">Estudiante desde</th>
