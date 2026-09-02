@@ -367,7 +367,7 @@ export default function InscritosPage() {
           ) : inscritosFiltrados.length === 0 ? (
             <p className="text-textMuted text-sm">Ningún estudiante coincide con los filtros.</p>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-h-[650px] overflow-y-auto">
               <table className="w-full text-sm min-w-[1200px]">
                 <thead className="sticky top-0 bg-surface z-10">
                   <tr className="text-textSec text-left border-b border-border">
