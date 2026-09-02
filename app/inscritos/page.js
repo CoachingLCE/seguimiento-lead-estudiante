@@ -253,7 +253,7 @@ export default function InscritosPage() {
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
-      <div className="max-w-[1600px] mx-auto px-4 pb-16">
+      <div className="max-w-[1900px] mx-auto px-4 pb-16">
         <div className="flex items-center gap-2 mb-4 no-print">
           <button onClick={() => setTab('lista')}
             className={`text-sm px-4 py-2 rounded-lg font-semibold transition-colors ${
@@ -367,7 +367,7 @@ export default function InscritosPage() {
           ) : inscritosFiltrados.length === 0 ? (
             <p className="text-textMuted text-sm">Ningún estudiante coincide con los filtros.</p>
           ) : (
-            <div className="overflow-x-auto max-h-[850px] overflow-y-auto">
+            <div className="overflow-x-auto max-h-[1050px] overflow-y-auto">
               <table className="w-full text-sm min-w-[1200px]">
                 <thead className="sticky top-0 bg-surface z-10">
                   <tr className="text-textSec text-left border-b border-border">
