@@ -59,6 +59,7 @@ export default function InscritosPage() {
   const [busqueda, setBusqueda] = useState('');
   const [filtroCurso, setFiltroCurso] = useState('');
   const [filtroEdicion, setFiltroEdicion] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState('');
   const [ordenPor, setOrdenPor] = useState('FechaInscripcion');
   const [ordenDir, setOrdenDir] = useState('desc');
 
@@ -211,7 +212,17 @@ export default function InscritosPage() {
   const inscritosFiltrados = inscritos
     .filter((i) => !busqueda.trim() || (i.NombreEstudiante || '').toLowerCase().includes(busqueda.trim().toLowerCase()))
     .filter((i) => !filtroCurso || i.Curso === filtroCurso)
-    .filter((i) => !filtroEdicion || normalizarEdicion(i.Edicion) === filtroEdicion);
+    .filter((i) => !filtroEdicion || normalizarEdicion(i.Edicion) === filtroEdicion)
+    .filter((i) => {
+      if (!filtroEstado) return true;
+      if (filtroEstado === 'bienvenida') return i.BienvenidaEnviada !== 'TRUE';
+      if (filtroEstado === 'confirmoRecepcion') return i.ConfirmoRecepcion !== 'TRUE';
+      if (filtroEstado === 'alta') return i.AltaPlataforma !== 'TRUE';
+      if (filtroEstado === 'confirmoAlta') return i.ConfirmoAlta !== 'TRUE';
+      if (filtroEstado === 'whatsapp') return i.GrupoWhatsApp !== 'TRUE';
+      if (filtroEstado === 'completo') return esInscripcionCompleta(i);
+      return true;
+    });
 
   const inscritosOrdenados = [...inscritosFiltrados].sort((a, b) => {
     let va = a[ordenPor] || '';
@@ -334,6 +345,16 @@ export default function InscritosPage() {
               className="bg-bg border border-border rounded-lg px-3 py-2 text-sm">
               <option value="">Todas las ediciones</option>
               {edicionesUnicas.map((e) => <option key={e} value={e}>{e}</option>)}
+            </select>
+            <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}
+              className="bg-bg border border-border rounded-lg px-3 py-2 text-sm">
+              <option value="">Cualquier estado</option>
+              <option value="bienvenida">Falta enviar bienvenida</option>
+              <option value="confirmoRecepcion">Falta confirmar recepción</option>
+              <option value="alta">Falta alta en plataforma</option>
+              <option value="confirmoAlta">Falta confirmar alta</option>
+              <option value="whatsapp">Falta grupo de WhatsApp</option>
+              <option value="completo">Completo</option>
             </select>
             <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
               placeholder="🔍 Buscar…" className="bg-bg border border-border rounded-lg px-3 py-2 text-sm w-40" />

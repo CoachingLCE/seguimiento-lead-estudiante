@@ -6,7 +6,7 @@ import ModalVenta from '../../components/ModalVenta';
 import CheckboxVisual from '../../components/CheckboxVisual';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoBuscador, tienePermisoEditarLead, tienePermisoEditarVenta, tienePermisoEditarContactoEstudiante } from '../../lib/permisos';
-import { ORIGENES, ORIGEN_OTRO, CURSOS, CURSO_OTROS, CURSO_SIN_DEFINIR, PAISES, enlaceGmail } from '../../lib/constants';
+import { ORIGENES, ORIGEN_OTRO, CURSOS, CURSO_OTROS, CURSO_SIN_DEFINIR, PAISES, RESULTADOS_CONTACTO, enlaceGmail } from '../../lib/constants';
 
 const SEP_NOTAS = '\n@@\n';
 
@@ -332,6 +332,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
   const [soloContacto, setSoloContacto] = useState(false);
   const puedeDeshacer = usuario?.roles?.includes('Admin') || usuario?.roles?.includes('Coordinador');
   const [deshaciendo, setDeshaciendo] = useState(null);
+  const [registrandoResultadoLote, setRegistrandoResultadoLote] = useState(null);
   const [programandoLote, setProgramandoLote] = useState(null);
   const [fechaAProgramar, setFechaAProgramar] = useState('');
   const [mostrarModalVenta, setMostrarModalVenta] = useState(false);
@@ -406,6 +407,23 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
       })
     });
     setDeshaciendo(null);
+    onActualizar?.();
+  }
+
+  // Registra un resultado (ej: "Ficha enviada") directo desde la ficha, sin tener que ir a
+  // Seguimiento — misma acción 'contactar' que ya usa el listado de lotes.
+  async function registrarResultadoRapido(lote, resultado) {
+    setRegistrandoResultadoLote(lote);
+    await fetch('/api/seguimiento', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        accion: 'contactar', leadId: lead.ID, lote, resultado, observaciones: '', proximaAccion: '',
+        nombreLead: `${lead.Nombre} ${lead.Apellido}`, cursoLead: lead.Curso || '',
+        solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
+      })
+    });
+    setRegistrandoResultadoLote(null);
     onActualizar?.();
   }
   const whatsappLimpio = (lead.WhatsApp || '').replace(/[^\d]/g, '');
@@ -776,6 +794,21 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
                   )}
                 </p>
                 <div className="flex items-center gap-2 shrink-0">
+                  {s.Contactado !== 'TRUE' && (
+                    <>
+                    <button onClick={() => registrarResultadoRapido(s.Lote, 'Ficha enviada')}
+                      disabled={registrandoResultadoLote === s.Lote}
+                      className="text-xs px-2.5 py-1 rounded-md bg-accentPurple text-white font-semibold disabled:opacity-60">
+                      {registrandoResultadoLote === s.Lote ? '…' : '📄 Ficha enviada'}
+                    </button>
+                    <select value="" disabled={registrandoResultadoLote === s.Lote}
+                      onChange={(e) => e.target.value && registrarResultadoRapido(s.Lote, e.target.value)}
+                      className="bg-surface2 border border-border rounded-md px-2 py-1 text-xs">
+                      <option value="" disabled>Otro resultado…</option>
+                      {RESULTADOS_CONTACTO.map((r) => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                    </>
+                  )}
                   {s.Contactado !== 'TRUE' && (
                     programandoLote === s.Lote ? (
                       <>

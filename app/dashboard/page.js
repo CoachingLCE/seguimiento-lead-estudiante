@@ -54,6 +54,10 @@ export default function DashboardPage() {
   const mesActual = new Date().toISOString().slice(0, 7);
   const leadsMes = leads.filter((l) => (l.FechaIngreso || '').slice(0, 7) === mesActual).length;
   const comprados = leads.filter((l) => l.Estado === 'Comprado').length;
+  const ventasRecientes = leads
+    .filter((l) => l.Estado === 'Comprado' && l.Origen !== 'Carga manual (baja)')
+    .sort((a, b) => new Date(b.FechaVenta || 0) - new Date(a.FechaVenta || 0))
+    .slice(0, 30);
 
   const porCurso = useMemo(() => {
     const conteo = {};
@@ -285,6 +289,42 @@ export default function DashboardPage() {
                   <span className="w-8 text-right text-textSec">{cant}</span>
                 </div>
               ))}
+            </div>
+
+            <div className="bg-surface border border-border rounded-2xl p-5 mb-4">
+              <p className="text-sm font-semibold mb-3">💰 Listado de ventas</p>
+              {ventasRecientes.length === 0 ? (
+                <p className="text-textMuted text-sm">Sin ventas registradas todavía.</p>
+              ) : (
+                <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+                  <table className="w-full text-sm">
+                    <thead className="sticky top-0 bg-surface z-10">
+                      <tr className="text-textSec text-left border-b border-border">
+                        <th className="py-2 pr-3 whitespace-nowrap">Estudiante</th>
+                        <th className="pr-3 whitespace-nowrap">Curso</th>
+                        <th className="pr-3 whitespace-nowrap">Vendedor</th>
+                        <th className="pr-3 whitespace-nowrap">Monto</th>
+                        <th className="whitespace-nowrap">Fecha</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ventasRecientes.map((l) => (
+                        <tr key={l.ID} className="border-b border-border">
+                          <td className="py-2 pr-3 whitespace-nowrap">{l.Nombre} {l.Apellido}</td>
+                          <td className="pr-3 text-textSec whitespace-nowrap">{l.Curso || '—'}</td>
+                          <td className="pr-3 text-textSec whitespace-nowrap">{l.VendidoPorNombre || '—'}</td>
+                          <td className="pr-3 font-semibold text-successText whitespace-nowrap">
+                            ${Number(l.MontoTotal || 0).toLocaleString('es-AR')}
+                          </td>
+                          <td className="whitespace-nowrap">
+                            {l.FechaVenta ? new Date(l.FechaVenta).toLocaleDateString('es-AR') : '—'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
 
             <div className="bg-surface border border-border rounded-2xl p-5">

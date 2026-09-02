@@ -31,8 +31,8 @@ function numeroValido(v) {
 // FechaIngreso y FechaVenta, que siempre están completas (a diferencia de intentar reconstruir
 // en qué Lote se cerró, que no queda registrado si la venta se marca directo sin pasar por
 // "Pago recibido" en el flujo de contacto).
-function calcularDiasHastaConversion(leadsDelMes) {
-  const compras = leadsDelMes.filter((l) => l.Estado === 'Comprado' && l.Origen !== 'Carga manual (baja)' && l.FechaVenta);
+function calcularDiasHastaConversion(ventasDelMes) {
+  const compras = ventasDelMes.filter((l) => l.FechaIngreso);
   const RANGOS = [
     { nombre: 'Mismo día', max: 0 },
     { nombre: '1-2 días', max: 2 },
@@ -160,15 +160,19 @@ function calcularIngresosPorDia(mes, todosLosLeads) {
 
 // Calcula el bloque de métricas para un mes puntual: KPIs, series por día, rankings, embudo.
 // Recibe los leads/seguimiento YA filtrados a ese mes para no leer el Sheet de nuevo por cada mes.
-function calcularBloque(mes, leadsDelMes, seguimientoDeEsosLeads) {
-  // Los registros creados automáticamente al cargar una baja de alguien que no existía en el
-  // sistema (Origen "Carga manual (baja)") no son ventas reales — no deben contarse como compra
-  // en ningún cálculo comercial (ni en el detalle, ni en los totales/rankings).
-  const compras = leadsDelMes.filter((l) => l.Estado === 'Comprado' && l.Origen !== 'Carga manual (baja)');
+function calcularBloque(mes, leadsDelMes, ventasDelMes, seguimientoDeEsosLeads) {
+  // "compras" son las VENTAS REALES de este mes (por FechaVenta, sin importar cuándo entró el
+  // lead como tal) — esto es lo que se usa para Total ventas, Facturación, rankings y series por
+  // día: reflejan qué pasó de verdad en el mes, no una cohorte.
+  const compras = ventasDelMes;
+  // "compradosCohorte" sí mira los leads que ENTRARON este mes y en algún momento llegaron a
+  // comprar (sea cuando sea) — se usa solo para Conversión y el Embudo, que describen el
+  // recorrido de la cohorte de leads de este mes, no las ventas cerradas en el mes calendario.
+  const compradosCohorte = leadsDelMes.filter((l) => l.Estado === 'Comprado' && l.Origen !== 'Carga manual (baja)').length;
   // Un solo registro con MontoTotal invalido (ej: guardado como texto "NaN" por un bug viejo)
   // no debe arruinar la suma de TODO el mes — se lo trata como $0 para ese registro puntual.
   const montoTotal = compras.reduce((acc, c) => acc + numeroValido(c.MontoTotal), 0);
-  const conversion = leadsDelMes.length ? (compras.length / leadsDelMes.length) * 100 : 0;
+  const conversion = leadsDelMes.length ? (compradosCohorte / leadsDelMes.length) * 100 : 0;
   const ticketPromedio = compras.length ? montoTotal / compras.length : 0;
 
   const totalDias = diasDelMes(mes);
@@ -244,7 +248,7 @@ function calcularBloque(mes, leadsDelMes, seguimientoDeEsosLeads) {
     { etapa: 'Lead', cantidad: idsConLead.size },
     { etapa: 'Contactado', cantidad: idsContactados.size },
     { etapa: 'Interesado', cantidad: idsInteresados.size },
-    { etapa: 'Venta', cantidad: compras.length }
+    { etapa: 'Venta', cantidad: compradosCohorte }
   ];
 
   // Vendedores sin ventas / cursos sin ventas (para alertas, se resuelve en el llamador con el mes actual)
@@ -278,20 +282,29 @@ export async function GET(request) {
   const leadsDelMes = leads.filter((l) => (l.FechaIngreso || '').slice(0, 7) === mes);
   const leadsMesAnterior = leads.filter((l) => (l.FechaIngreso || '').slice(0, 7) === mesAnterior);
 
+  // Ventas REALES de cada mes — por FechaVenta, no por cuándo entró el lead. Así, alguien que
+  // entró en julio y compró en agosto sí se cuenta en las ventas/facturación de agosto.
+  const ventasDelMes = leads.filter((l) =>
+    l.Estado === 'Comprado' && l.Origen !== 'Carga manual (baja)' && (l.FechaVenta || '').slice(0, 7) === mes
+  );
+  const ventasMesAnterior = leads.filter((l) =>
+    l.Estado === 'Comprado' && l.Origen !== 'Carga manual (baja)' && (l.FechaVenta || '').slice(0, 7) === mesAnterior
+  );
+
   const idsDelMes = new Set(leadsDelMes.map((l) => l.ID));
   const idsMesAnterior = new Set(leadsMesAnterior.map((l) => l.ID));
   const seguimientoDelMes = seguimiento.filter((s) => idsDelMes.has(s.LeadID));
   const seguimientoMesAnterior = seguimiento.filter((s) => idsMesAnterior.has(s.LeadID));
 
-  const actual = calcularBloque(mes, leadsDelMes, seguimientoDelMes);
-  const anterior = calcularBloque(mesAnterior, leadsMesAnterior, seguimientoMesAnterior);
+  const actual = calcularBloque(mes, leadsDelMes, ventasDelMes, seguimientoDelMes);
+  const anterior = calcularBloque(mesAnterior, leadsMesAnterior, ventasMesAnterior, seguimientoMesAnterior);
   const ingresosPorDia = calcularIngresosPorDia(mes, leads);
   const ingresosTotalesDelMes = ingresosPorDia.reduce((acc, d) => acc + d.monto, 0);
   const diaFiltroActividad = searchParams.get('dia') || '';
   const desdeActividad = searchParams.get('desde') || diaFiltroActividad || '';
   const hastaActividad = searchParams.get('hasta') || diaFiltroActividad || '';
   const actividadPorPersona = calcularActividadPorPersona(mes, leads, seguimiento, desdeActividad, hastaActividad);
-  const diasHastaConversion = calcularDiasHastaConversion(leadsDelMes);
+  const diasHastaConversion = calcularDiasHastaConversion(ventasDelMes);
 
   // Alertas automáticas
   const alertas = [];
@@ -350,7 +363,7 @@ export async function GET(request) {
     if (!actual.vendedoresConVenta.includes(v) && actual.totalCompras > 0) alertas.push(`${v} sin ventas registradas este mes`);
   });
 
-  const compras = leadsDelMes.filter((l) => l.Estado === 'Comprado' && l.Origen !== 'Carga manual (baja)').map((c) => ({
+  const compras = ventasDelMes.map((c) => ({
     id: c.ID,
     lead: `${c.Nombre} ${c.Apellido}`,
     curso: c.Curso || 'sin curso',
