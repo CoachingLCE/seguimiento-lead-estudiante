@@ -116,6 +116,16 @@ export default function Nav({ usuario, onLogout }) {
               💬
             </Link>
           )}
+          {tienePermisoOperativo(usuario) && (
+            <Link href="/fichas-enviadas" title="Fichas enviadas"
+              className={`w-9 h-9 flex items-center justify-center rounded-lg text-base transition-colors ${
+                pathname === '/fichas-enviadas'
+                  ? 'bg-accentPurple text-white'
+                  : 'bg-surface2 border border-border text-textSec hover:text-text hover:border-accentTeal'
+              }`}>
+              📄
+            </Link>
+          )}
           <Link href="/herramientas" title="Herramientas"
             className={`w-9 h-9 flex items-center justify-center rounded-lg text-base transition-colors ${
               pathname === '/herramientas'

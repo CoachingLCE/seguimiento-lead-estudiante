@@ -124,22 +124,21 @@ export async function PATCH(request) {
   // rol CoordinadorEstudiantes ("Coordinadora académica"), a pedido explícito de Diego.
   if (body.accion === 'omitir_bienvenida') {
     const solicitante = await findUsuario(body.solicitanteEmail);
-    if (!solicitante?.roles?.some((r) => ['CoordinadorEstudiantes', 'Admin'].includes(r))) {
-      return NextResponse.json({ error: 'Solo la Coordinadora académica puede omitir la bienvenida' }, { status: 403 });
+    if (!solicitante?.roles?.some((r) => ['CoordinadorEstudiantes', 'Estudiantes', 'Admin'].includes(r))) {
+      return NextResponse.json({ error: 'No autorizado para omitir la bienvenida' }, { status: 403 });
     }
     const ahora = new Date().toISOString();
-    // Se omite el ENVÍO del mail, pero no se marca "Confirmó recepción" como si fuera automático —
-    // eso solo debe quedar tildado si el estudiante confirma de verdad (por el botón del mail,
-    // que en este caso no se manda, o a mano si confirma por otro medio).
+    // Se omite el ENVÍO del mail, y esta vez sí se marca "Confirmó recepción" como completado
+    // automáticamente (a pedido de Diego) — omitir implica dar por hecha esa parte del circuito.
     await updateRow('Inscritos', fila._rowIndex, [
       fila.ID, fila.LeadId, fila.NombreEstudiante, fila.EmailEstudiante, fila.Curso, fila.Edicion,
       fila.FechaInscripcion, fila.AltaPlataforma, fila.AltaPorEmail, fila.AltaPorNombre, fila.FechaAlta,
       'TRUE', body.solicitanteEmail, `${body.solicitanteNombre} (omitida)`, ahora, fila.AbonoTotalidad,
-      fila.Docentes, fila.ConfirmoRecepcion, fila.GrupoWhatsApp, fila.ConfirmoAlta || ''
+      fila.Docentes, 'TRUE', fila.GrupoWhatsApp, fila.ConfirmoAlta || ''
     ]);
     await registrarAccion(
       body.solicitanteEmail, body.solicitanteNombre,
-      'Omitió el envío de la bienvenida', fila.NombreEstudiante, fila.LeadId
+      'Omitió el envío de la bienvenida (y su confirmación)', fila.NombreEstudiante, fila.LeadId
     );
     return NextResponse.json({ ok: true });
   }

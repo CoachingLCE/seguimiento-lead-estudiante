@@ -85,8 +85,8 @@ export default function InscritosPage() {
     cargarInscritos();
   }, [usuario]);
 
-  async function cargarInscritos() {
-    setCargando(true);
+  async function cargarInscritos(silencioso) {
+    if (!silencioso) setCargando(true);
     setErrorCarga('');
     try {
       const res = await fetch(`/api/inscritos?solicitanteEmail=${encodeURIComponent(usuario.email)}`);
@@ -101,7 +101,7 @@ export default function InscritosPage() {
       setErrorCarga('No se pudo conectar con el servidor. Probá de nuevo.');
       setInscritos([]);
     }
-    setCargando(false);
+    if (!silencioso) setCargando(false);
   }
 
   async function toggleAlta(inscrito) {
@@ -118,7 +118,7 @@ export default function InscritosPage() {
       })
     });
     mostrarToast(nuevoValor ? 'Alta registrada' : 'Alta desmarcada');
-    cargarInscritos();
+    cargarInscritos(true);
   }
 
   async function toggleCampoSimple(inscrito, campo, etiqueta) {
@@ -135,7 +135,7 @@ export default function InscritosPage() {
       })
     });
     mostrarToast(`${etiqueta} ${nuevoValor ? 'marcado' : 'desmarcado'}`);
-    cargarInscritos();
+    cargarInscritos(true);
   }
 
   async function enviarBienvenidaDesdeTabla(inscrito, email) {
@@ -151,17 +151,17 @@ export default function InscritosPage() {
     setEnviandoBienvenidaId(null);
     setPidiendoEmailPara(null);
     setEmailTemporal('');
-    if (res.ok) { mostrarToast('Bienvenida enviada'); cargarInscritos(); }
+    if (res.ok) { mostrarToast('Bienvenida enviada'); cargarInscritos(true); }
   }
 
   async function omitirBienvenida(inscrito) {
-    if (!confirm(`¿Omitir el envío de la bienvenida a ${inscrito.NombreEstudiante}? "Confirmó recepción" queda como está — solo se marca si el estudiante confirma de verdad.`)) return;
+    if (!confirm(`¿Omitir el envío de la bienvenida a ${inscrito.NombreEstudiante}? Se va a marcar "Confirmó recepción" como completado.`)) return;
     const res = await fetch('/api/inscritos', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ accion: 'omitir_bienvenida', id: inscrito.ID, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
     });
-    if (res.ok) { mostrarToast('Bienvenida omitida'); cargarInscritos(); }
+    if (res.ok) { mostrarToast('Bienvenida omitida'); cargarInscritos(true); }
     else { const r = await res.json(); mostrarToast(r.error || 'No se pudo omitir'); }
   }
 
@@ -173,7 +173,7 @@ export default function InscritosPage() {
       body: JSON.stringify({ accion: 'editar_curso', id: inscrito.ID, curso: cursoNuevo, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
     });
     setEditandoCursoId(null);
-    if (res.ok) { mostrarToast('Curso corregido'); cargarInscritos(); }
+    if (res.ok) { mostrarToast('Curso corregido'); cargarInscritos(true); }
     else { const r = await res.json(); mostrarToast(r.error || 'No se pudo corregir el curso'); }
   }
 
@@ -446,10 +446,10 @@ export default function InscritosPage() {
                               >
                                 {enviandoBienvenidaId === i.ID ? 'Enviando…' : 'ENVIAR'}
                               </button>
-                              {usuario.roles?.some((r) => ['CoordinadorEstudiantes', 'Admin'].includes(r)) && (
+                              {usuario.roles?.some((r) => ['CoordinadorEstudiantes', 'Estudiantes', 'Admin'].includes(r)) && (
                                 <button
                                   onClick={() => omitirBienvenida(i)}
-                                  title="Omitir el envío de la bienvenida (no marca la confirmación de recepción) — solo vos podés hacer esto"
+                                  title="Omitir el envío de la bienvenida y marcar la confirmación de recepción"
                                   className="text-xs px-1.5 py-1 rounded-md text-textMuted hover:text-warningText"
                                 >
                                   ⏭️
