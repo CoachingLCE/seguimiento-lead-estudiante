@@ -51,7 +51,8 @@ export default function ResumenEstudiantesPage() {
           <p className="text-textSec text-sm">Cargando…</p>
         ) : (
           <>
-            <div className="flex justify-end mb-3">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-bold">Reportes Estudiantes</h3>
               <button onClick={exportarExcel} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm">
                 ⬇ Exportar a Excel
               </button>

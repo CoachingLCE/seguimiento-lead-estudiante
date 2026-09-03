@@ -994,17 +994,23 @@ export default function ReportesPage() {
 
                 {/* GRÁFICOS PRINCIPALES */}
                 <div className="grid md:grid-cols-2 gap-4">
-                  <ChartCard titulo="Evolución de ventas por día" subtitulo="Mes seleccionado" tooltip="Cantidad de ventas confirmadas por día del mes"
+                  <ChartCard titulo="Evolución de ventas por día" subtitulo="Mes seleccionado — comparado con el mes anterior" tooltip="Cantidad de ventas confirmadas por día del mes, superpuesto con el mismo día del mes anterior"
                     valorGrande={`${datos.totalCompras} ventas`}
                     comparacion={<Flecha actual={datos.comparativa.ventas.actual} anterior={datos.comparativa.ventas.anterior} />}
-                    onExportar={() => exportarGrafico('ventas-por-dia', datos.serieDiaria)}>
+                    onExportar={() => exportarGrafico('ventas-por-dia', datos.serieDiaria.map((d, i) => ({
+                      dia: d.dia, ventas: d.ventas, ventasMesAnterior: datos.serieDiariaMesAnterior?.[i]?.ventas ?? 0
+                    })))}>
                     <ResponsiveContainer>
-                      <LineChart data={datos.serieDiaria}>
+                      <LineChart data={datos.serieDiaria.map((d, i) => ({
+                        dia: d.dia, ventas: d.ventas, ventasMesAnterior: datos.serieDiariaMesAnterior?.[i]?.ventas ?? 0
+                      }))}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#262c4a" />
                         <XAxis dataKey="dia" stroke="#6b7299" fontSize={11} />
                         <YAxis stroke="#6b7299" fontSize={11} allowDecimals={false} />
                         <Tooltip contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} />
+                        <Legend wrapperStyle={{ fontSize: 11 }} formatter={(v) => (v === 'ventas' ? 'Este mes' : 'Mes anterior')} />
                         <Line type="monotone" dataKey="ventas" stroke="#22d3ee" strokeWidth={2} dot={false} />
+                        <Line type="monotone" dataKey="ventasMesAnterior" stroke="#6b7299" strokeWidth={2} dot={false} strokeDasharray="4 3" />
                       </LineChart>
                     </ResponsiveContainer>
                   </ChartCard>

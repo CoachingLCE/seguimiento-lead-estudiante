@@ -72,7 +72,7 @@ export default function Nav({ usuario, onLogout }) {
   const analisis = [
     tienePermisoReportes(usuario) && itemNav('/reportes', 'Reportes', pathname),
     tienePermisoEstudiantes(usuario) && itemNav('/inscritos', 'Estudiantes', pathname),
-    tienePermisoResumenEstudiantes(usuario) && itemNav('/resumen-estudiantes', 'Resumen Estudiantes', pathname),
+    tienePermisoResumenEstudiantes(usuario) && itemNav('/resumen-estudiantes', 'Reportes Estudiantes', pathname),
     tienePermisoResumenDiario(usuario) && itemNav('/resumen-diario', 'Resumen diario', pathname),
     tienePermisoDiplomas(usuario) && itemNav('/diplomas', 'Diplomas', pathname),
     tienePermisoAcademico(usuario) && itemNav('/academico', '🎓 Académico', pathname)
