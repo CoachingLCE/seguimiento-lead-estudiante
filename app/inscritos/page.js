@@ -52,6 +52,7 @@ export default function InscritosPage() {
   const [pidiendoEmailPara, setPidiendoEmailPara] = useState(null);
   const [emailTemporal, setEmailTemporal] = useState('');
   const [enviandoBienvenidaId, setEnviandoBienvenidaId] = useState(null);
+  const [enviandoAltaId, setEnviandoAltaId] = useState(null);
   const [fichaLeadId, setFichaLeadId] = useState(null);
   const [confirmarEliminar, setConfirmarEliminar] = useState(null);
   const [editandoCursoId, setEditandoCursoId] = useState(null);
@@ -119,6 +120,23 @@ export default function InscritosPage() {
       })
     });
     mostrarToast(nuevoValor ? 'Alta registrada' : 'Alta desmarcada');
+    cargarInscritos(true);
+  }
+
+  // Reenviar el mail de Alta en plataforma sin desmarcar el check (a diferencia de toggleAlta,
+  // que alterna el valor actual) — pensado para el botón de la alerta "Sin confirmar recepción".
+  async function reenviarAlta(inscrito) {
+    setEnviandoAltaId(inscrito.ID);
+    await fetch('/api/inscritos', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        accion: 'alta', id: inscrito.ID, nuevoValor: true,
+        solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
+      })
+    });
+    setEnviandoAltaId(null);
+    mostrarToast('Alta reenviada');
     cargarInscritos(true);
   }
 
@@ -300,7 +318,28 @@ export default function InscritosPage() {
                           <span className="text-textMuted"> ({bienvenidaPendiente ? 'Bienvenida' : 'Alta'} sin confirmar)</span>
                           <span className="text-warningText"> · Hace {Math.floor(horasHabilesTranscurridas(fechaEnvio))}hs hábiles</span>
                         </p>
-                        <button onClick={() => setFichaLeadId(i.LeadId)} className="text-accentTeal text-xs font-semibold shrink-0">Ver ficha</button>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {bienvenidaPendiente ? (
+                            !i.EmailEstudiante ? (
+                              <span className="text-warningText text-xs">Sin email cargado</span>
+                            ) : (
+                              <button onClick={() => clickEnviarBienvenida(i)} disabled={enviandoBienvenidaId === i.ID}
+                                className="text-xs px-2.5 py-1 rounded-md bg-accentPurple text-white font-semibold disabled:opacity-60">
+                                {enviandoBienvenidaId === i.ID ? 'Enviando…' : '🔄 Reenviar bienvenida'}
+                              </button>
+                            )
+                          ) : (
+                            !i.EmailEstudiante ? (
+                              <span className="text-warningText text-xs">Sin email cargado</span>
+                            ) : (
+                              <button onClick={() => reenviarAlta(i)} disabled={enviandoAltaId === i.ID}
+                                className="text-xs px-2.5 py-1 rounded-md bg-accentPurple text-white font-semibold disabled:opacity-60">
+                                {enviandoAltaId === i.ID ? 'Enviando…' : '🔄 Reenviar alta'}
+                              </button>
+                            )
+                          )}
+                          <button onClick={() => setFichaLeadId(i.LeadId)} className="text-accentTeal text-xs font-semibold">Ver ficha</button>
+                        </div>
                       </div>
                     );
                   })}
@@ -321,7 +360,17 @@ export default function InscritosPage() {
                         <span className="font-medium">{i.NombreEstudiante}</span> — {i.Curso || 'sin curso'}
                         <span className="text-warningText"> · Hace {Math.floor(horasHabilesTranscurridas(i.FechaInscripcion))}hs hábiles</span>
                       </p>
-                      <button onClick={() => setFichaLeadId(i.LeadId)} className="text-accentTeal text-xs font-semibold shrink-0">Ver ficha</button>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {!i.EmailEstudiante ? (
+                          <span className="text-warningText text-xs">Sin email cargado</span>
+                        ) : (
+                          <button onClick={() => clickEnviarBienvenida(i)} disabled={enviandoBienvenidaId === i.ID}
+                            className="text-xs px-2.5 py-1 rounded-md bg-accentPurple text-white font-semibold disabled:opacity-60">
+                            {enviandoBienvenidaId === i.ID ? 'Enviando…' : '📩 Enviar bienvenida'}
+                          </button>
+                        )}
+                        <button onClick={() => setFichaLeadId(i.LeadId)} className="text-accentTeal text-xs font-semibold">Ver ficha</button>
+                      </div>
                     </div>
                   ))}
                 </div>
