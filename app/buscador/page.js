@@ -30,7 +30,9 @@ function tiempoRelativo(fecha) {
 }
 function fechaLarga(fecha) {
   if (!fecha) return '';
-  return new Date(fecha).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
+  const fechaTexto = new Date(fecha).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
+  const horaTexto = new Date(fecha).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+  return `${fechaTexto}, ${horaTexto}hs`;
 }
 
 function iconoAccion(accion) {
