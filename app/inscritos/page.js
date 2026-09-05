@@ -12,6 +12,16 @@ import { colorParaCurso, normalizarEdicion, horasHabilesTranscurridas, CURSOS } 
 
 // Los 5 pasos que definen una inscripción "completa": Bienvenida, Confirmó recepción,
 // Alta en plataforma, Confirmó Alta y Grupo de WhatsApp.
+const FILTROS_ESTADO = [
+  { id: '', label: 'Todas' },
+  { id: 'bienvenida', label: 'Falta bienvenida' },
+  { id: 'confirmoRecepcion', label: 'Falta confirmar recepción' },
+  { id: 'alta', label: 'Falta alta en plataforma' },
+  { id: 'confirmoAlta', label: 'Falta confirmar alta' },
+  { id: 'whatsapp', label: 'Falta grupo de WhatsApp' },
+  { id: 'completo', label: 'Completo' }
+];
+
 function esInscripcionCompleta(i) {
   return i.BienvenidaEnviada === 'TRUE' && i.ConfirmoRecepcion === 'TRUE'
     && i.AltaPlataforma === 'TRUE' && i.ConfirmoAlta === 'TRUE' && i.GrupoWhatsApp === 'TRUE';
@@ -395,16 +405,6 @@ export default function InscritosPage() {
               <option value="">Todas las ediciones</option>
               {edicionesUnicas.map((e) => <option key={e} value={e}>{e}</option>)}
             </select>
-            <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}
-              className="bg-bg border border-border rounded-lg px-3 py-2 text-sm">
-              <option value="">Cualquier estado</option>
-              <option value="bienvenida">Falta enviar bienvenida</option>
-              <option value="confirmoRecepcion">Falta confirmar recepción</option>
-              <option value="alta">Falta alta en plataforma</option>
-              <option value="confirmoAlta">Falta confirmar alta</option>
-              <option value="whatsapp">Falta grupo de WhatsApp</option>
-              <option value="completo">Completo</option>
-            </select>
             <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
               placeholder="🔍 Buscar…" className="bg-bg border border-border rounded-lg px-3 py-2 text-sm w-40" />
             <button onClick={exportarExcel} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm">
@@ -412,6 +412,18 @@ export default function InscritosPage() {
             </button>
           </div>
         </div>
+
+        <div className="flex items-center gap-1.5 flex-wrap mb-3">
+          {FILTROS_ESTADO.map((f) => (
+            <button key={f.id} onClick={() => setFiltroEstado(f.id)}
+              className={`text-xs px-3 py-1 rounded-full border transition-colors ${
+                filtroEstado === f.id ? 'bg-accentPurple border-accentPurple text-white' : 'bg-surface2 border-border text-textSec hover:text-text'
+              }`}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+
         <div className="bg-surface border border-border rounded-2xl p-5">
           <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
             <p className="text-sm font-semibold">Inscritos cargados</p>
