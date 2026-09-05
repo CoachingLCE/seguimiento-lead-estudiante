@@ -1293,16 +1293,17 @@ export default function ReportesPage() {
                     <button onClick={limpiarFiltros} className="text-xs text-accentTeal font-semibold">Limpiar todos los filtros</button>
                   </div>
                   <div className="flex items-center gap-1.5 flex-wrap mb-2">
-                    {['Lucila', 'Alexander'].map((nombreCorto) => {
-                      const nombreCompleto = [...new Set(datos.compras.map((c) => c.vendidoPor))].find((v) => v?.startsWith(nombreCorto));
+                    {[{ label: 'Lucila', buscar: 'Jesabel' }, { label: 'Alexander', buscar: 'Alexander' }].map(({ label, buscar }) => {
+                      const nombreCompleto = [...new Set(datos.compras.map((c) => c.vendidoPor))].find((v) => v?.startsWith(buscar));
                       const cantidad = nombreCompleto ? datos.compras.filter((c) => c.vendidoPor === nombreCompleto).length : 0;
-                      if (!nombreCompleto || cantidad === 0) return null;
+                      // Siempre visible aunque no haya ventas este mes — así no parece un error, solo dice (0).
                       return (
-                        <button key={nombreCorto} onClick={() => setFiltro('vendedor', nombreCompleto)}
-                          className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-                            filtros.vendedor === nombreCompleto ? 'bg-accentPurple border-accentPurple text-white' : 'bg-surface2 border-border text-textSec hover:text-text'
+                        <button key={label} onClick={() => nombreCompleto && setFiltro('vendedor', nombreCompleto)}
+                          disabled={!nombreCompleto}
+                          className={`text-xs px-3 py-1 rounded-full border transition-colors disabled:opacity-50 ${
+                            nombreCompleto && filtros.vendedor === nombreCompleto ? 'bg-accentPurple border-accentPurple text-white' : 'bg-surface2 border-border text-textSec hover:text-text'
                           }`}>
-                          {nombreCorto} ({cantidad})
+                          {label} ({cantidad})
                         </button>
                       );
                     })}
