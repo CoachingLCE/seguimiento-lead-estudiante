@@ -26,6 +26,8 @@ export async function GET(request) {
       metaLeads: Number(fila.MetaLeads) || 0,
       metaConversion: Number(fila.MetaConversion) || 0,
       metaTicketPromedio: Number(fila.MetaTicketPromedio) || 0,
+      metaVentasDebito: Number(fila.MetaVentasDebito) || 0,
+      metaContactosBajas: Number(fila.MetaContactosBajas) || 0,
       actualizadoPorNombre: fila.ActualizadoPorNombre || '',
       fechaActualizacion: fila.FechaActualizacion || ''
     } : null;
@@ -45,9 +47,11 @@ export async function GET(request) {
   }
 }
 
-// POST /api/objetivos -> crea o actualiza los objetivos de un mes. Solo Admin.
+// POST /api/objetivos -> crea o actualiza los objetivos de un mes. Solo Admin o Coordinador.
 // body: { mes, metaFacturacion, metaVentas, metaLeads, metaConversion, metaTicketPromedio,
-//         metasPorCurso: [{curso, meta}], solicitanteEmail, solicitanteNombre }
+//         metaVentasDebito, metaContactosBajas,
+//         metasPorCurso: [{curso, meta}], metasPorVendedor: [{vendedor, meta}],
+//         solicitanteEmail, solicitanteNombre }
 export async function POST(request) {
   const body = await request.json();
   const solicitante = await findUsuario(body.solicitanteEmail);
@@ -60,7 +64,8 @@ export async function POST(request) {
   const fila = [
     body.mes, body.metaFacturacion || 0, body.metaVentas || 0, body.metaLeads || 0,
     body.metaConversion || 0, body.metaTicketPromedio || 0,
-    body.solicitanteEmail, body.solicitanteNombre, ahora
+    body.solicitanteEmail, body.solicitanteNombre, ahora,
+    body.metaVentasDebito || 0, body.metaContactosBajas || 0
   ];
 
   const todos = await readSheet('Objetivos');

@@ -291,6 +291,13 @@ export async function GET(request) {
     l.Estado === 'Comprado' && l.Origen !== 'Carga manual (baja)' && (l.FechaVenta || '').slice(0, 7) === mesAnterior
   );
 
+  // Objetivos adicionales: ventas por Débito automático (mismo criterio que ventasDelMes, filtrado
+  // por medio de pago) y contactos de bajas (Lote "baja" marcado como Contactado, por FechaContacto).
+  const ventasDebitoAutomatico = ventasDelMes.filter((l) => l.MedioPago === 'Débito automático').length;
+  const contactosBajasDelMes = seguimiento.filter((s) =>
+    s.Lote === 'baja' && s.Contactado === 'TRUE' && (s.FechaContacto || '').slice(0, 7) === mes
+  ).length;
+
   const idsDelMes = new Set(leadsDelMes.map((l) => l.ID));
   const idsMesAnterior = new Set(leadsMesAnterior.map((l) => l.ID));
   const seguimientoDelMes = seguimiento.filter((s) => idsDelMes.has(s.LeadID));
@@ -397,6 +404,8 @@ export async function GET(request) {
     alertasCursos,
     compras,
     rankingVendedoresMesAnterior: anterior.rankingVendedores,
+    ventasDebitoAutomatico,
+    contactosBajasDelMes,
     serieDiariaMesAnterior: anterior.serieDiaria
   });
   } catch (err) {

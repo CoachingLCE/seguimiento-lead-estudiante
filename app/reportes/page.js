@@ -361,7 +361,7 @@ function SeccionObjetivos({ datos, mes, usuario }) {
   const [objetivosPorCurso, setObjetivosPorCurso] = useState([]);
   const [objetivosPorVendedor, setObjetivosPorVendedor] = useState([]);
   const [editando, setEditando] = useState(false);
-  const [form, setForm] = useState({ metaFacturacion: '', metaVentas: '', metaLeads: '', metaConversion: '', metaTicketPromedio: '' });
+  const [form, setForm] = useState({ metaFacturacion: '', metaVentas: '', metaLeads: '', metaConversion: '', metaTicketPromedio: '', metaVentasDebito: '', metaContactosBajas: '' });
   const [formPorCurso, setFormPorCurso] = useState({});
   const [formPorVendedor, setFormPorVendedor] = useState({});
   const [guardando, setGuardando] = useState(false);
@@ -378,8 +378,9 @@ function SeccionObjetivos({ datos, mes, usuario }) {
       setForm(r.objetivos ? {
         metaFacturacion: r.objetivos.metaFacturacion || '', metaVentas: r.objetivos.metaVentas || '',
         metaLeads: r.objetivos.metaLeads || '', metaConversion: r.objetivos.metaConversion || '',
-        metaTicketPromedio: r.objetivos.metaTicketPromedio || ''
-      } : { metaFacturacion: '', metaVentas: '', metaLeads: '', metaConversion: '', metaTicketPromedio: '' });
+        metaTicketPromedio: r.objetivos.metaTicketPromedio || '',
+        metaVentasDebito: r.objetivos.metaVentasDebito || '', metaContactosBajas: r.objetivos.metaContactosBajas || ''
+      } : { metaFacturacion: '', metaVentas: '', metaLeads: '', metaConversion: '', metaTicketPromedio: '', metaVentasDebito: '', metaContactosBajas: '' });
       const porCurso = {};
       (r.objetivosPorCurso || []).forEach((o) => { porCurso[o.curso] = o.meta; });
       setFormPorCurso(porCurso);
@@ -411,6 +412,8 @@ function SeccionObjetivos({ datos, mes, usuario }) {
         metaLeads: Number(form.metaLeads) || 0,
         metaConversion: Number(form.metaConversion) || 0,
         metaTicketPromedio: Number(form.metaTicketPromedio) || 0,
+        metaVentasDebito: Number(form.metaVentasDebito) || 0,
+        metaContactosBajas: Number(form.metaContactosBajas) || 0,
         metasPorCurso,
         metasPorVendedor,
         solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
@@ -444,7 +447,9 @@ function SeccionObjetivos({ datos, mes, usuario }) {
     { id: 'ventas', label: 'Ventas', actual: datos.totalCompras, meta: objetivos.metaVentas, unidad: '', formatear: (v) => Math.round(v) },
     { id: 'leads', label: 'Leads', actual: datos.totalLeads, meta: objetivos.metaLeads, unidad: '', formatear: (v) => Math.round(v) },
     { id: 'conversion', label: 'Conversión', actual: datos.conversion, meta: objetivos.metaConversion, unidad: '%', formatear: (v) => `${v.toFixed(1)}%` },
-    { id: 'ticket', label: 'Ticket promedio', actual: datos.ticketPromedio, meta: objetivos.metaTicketPromedio, unidad: '$', formatear: money }
+    { id: 'ticket', label: 'Ticket promedio', actual: datos.ticketPromedio, meta: objetivos.metaTicketPromedio, unidad: '$', formatear: money },
+    { id: 'ventasDebito', label: 'Ventas débito automático', actual: datos.ventasDebitoAutomatico, meta: objetivos.metaVentasDebito, unidad: '', formatear: (v) => Math.round(v) },
+    { id: 'contactosBajas', label: 'Contactos de bajas', actual: datos.contactosBajasDelMes, meta: objetivos.metaContactosBajas, unidad: '', formatear: (v) => Math.round(v) }
   ].filter((m) => m.meta > 0) : [];
 
   // Proyección: solo tiene sentido para el mes EN CURSO (un mes ya cerrado no se "proyecta").
@@ -643,6 +648,18 @@ function SeccionObjetivos({ datos, mes, usuario }) {
                   <label className="text-[11px] text-textSec block mb-1">Meta ticket promedio ($)</label>
                   <input type="text" inputMode="numeric" value={form.metaTicketPromedio}
                     onChange={(e) => setForm((f) => ({ ...f, metaTicketPromedio: e.target.value.replace(/\./g, '') }))}
+                    className="w-full bg-bg border border-border rounded-lg px-2 py-1.5 text-sm" />
+                </div>
+                <div>
+                  <label className="text-[11px] text-textSec block mb-1">Meta ventas débito automático</label>
+                  <input type="text" inputMode="numeric" value={form.metaVentasDebito}
+                    onChange={(e) => setForm((f) => ({ ...f, metaVentasDebito: e.target.value }))}
+                    className="w-full bg-bg border border-border rounded-lg px-2 py-1.5 text-sm" />
+                </div>
+                <div>
+                  <label className="text-[11px] text-textSec block mb-1">Meta contactos de bajas</label>
+                  <input type="text" inputMode="numeric" value={form.metaContactosBajas}
+                    onChange={(e) => setForm((f) => ({ ...f, metaContactosBajas: e.target.value }))}
                     className="w-full bg-bg border border-border rounded-lg px-2 py-1.5 text-sm" />
                 </div>
               </div>
