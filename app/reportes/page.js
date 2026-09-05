@@ -1275,6 +1275,21 @@ export default function ReportesPage() {
                     <p className="text-xs font-semibold text-textSec">Filtros de la tabla</p>
                     <button onClick={limpiarFiltros} className="text-xs text-accentTeal font-semibold">Limpiar todos los filtros</button>
                   </div>
+                  <div className="flex items-center gap-1.5 flex-wrap mb-2">
+                    {['Lucila', 'Alexander'].map((nombreCorto) => {
+                      const nombreCompleto = [...new Set(datos.compras.map((c) => c.vendidoPor))].find((v) => v?.startsWith(nombreCorto));
+                      const cantidad = nombreCompleto ? datos.compras.filter((c) => c.vendidoPor === nombreCompleto).length : 0;
+                      if (!nombreCompleto || cantidad === 0) return null;
+                      return (
+                        <button key={nombreCorto} onClick={() => setFiltro('vendedor', nombreCompleto)}
+                          className={`text-xs px-3 py-1 rounded-full border transition-colors ${
+                            filtros.vendedor === nombreCompleto ? 'bg-accentPurple border-accentPurple text-white' : 'bg-surface2 border-border text-textSec hover:text-text'
+                          }`}>
+                          {nombreCorto} ({cantidad})
+                        </button>
+                      );
+                    })}
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     {Object.entries(filtros).filter(([, v]) => v).map(([k, v]) => (
                       <span key={k} className="text-[11px] px-2.5 py-1 rounded-full bg-infoBg text-infoText flex items-center gap-1.5">
