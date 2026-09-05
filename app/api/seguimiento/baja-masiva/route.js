@@ -3,6 +3,10 @@ import { readSheet, appendRow, deleteRows } from '../../../../lib/sheets';
 import { findUsuario, tienePermisoBajas } from '../../../../lib/auth';
 import { registrarAccion } from '../../../../lib/auditoria';
 
+// Con muchas personas en una carga masiva, los reintentos automáticos por cuota (ver lib/sheets.js)
+// pueden alargar bastante la ejecución — se le da más margen de lo normal.
+export const maxDuration = 300;
+
 function esperar(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
