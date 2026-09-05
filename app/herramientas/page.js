@@ -24,6 +24,8 @@ const RECURSOS_INSTITUCIONALES = [
   { icono: BookOpen, nombre: 'Manual académico', url: 'https://www.coachingeducativolider.com/manualacad%C3%A9mico' },
   { icono: BookOpen, nombre: 'Manual inscripciones', url: 'https://www.coachingeducativolider.com/manual-inscripciones' },
   { icono: DollarSign, nombre: 'Valores de los cursos', url: 'https://www.coachingeducativolider.com/productos-y-valores' },
+  { icono: DollarSign, nombre: 'Valores de los cursos (alternativo)', url: 'https://ilce-productos-valores.vercel.app/' },
+  { icono: BookOpen, nombre: 'Cronograma ILCE', url: 'https://ilce-productos-valores.vercel.app/' },
   { icono: ClipboardCheck, nombre: 'Evaluación Coaching Deportivo', url: 'https://www.coachingeducativolider.com/evaluaci%C3%B3nfinal-coachingdeportivo' },
   { icono: MessageCircle, nombre: 'Ver feedback de estudiantes', url: 'https://ilce-feedback.vercel.app/admin' }
 ];
