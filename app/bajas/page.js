@@ -40,6 +40,37 @@ function heuristicaSinEtiquetas(bloque) {
   return entrada;
 }
 
+// Variante de heuristicaSinEtiquetas para una fila de planilla (una persona por línea, con los
+// datos separados por tabulaciones) — se usa cuando se pega una tabla sin líneas en blanco entre
+// personas, en vez de "bloques" de varias líneas por persona.
+function heuristicaPorFila(linea) {
+  const entrada = { nombre: '', curso: '', email: '', whatsapp: '', fecha: '', motivo: '' };
+  const partes = linea.split('\t').map((p) => p.trim()).filter(Boolean);
+  const restantes = [];
+  partes.forEach((parte) => {
+    const mFecha = parte.match(/^(\d{1,2})[/\-](\d{1,2})[/\-](\d{4})$/);
+    const mEmail = parte.match(/[^\s]+@[^\s]+\.[^\s]+/);
+    const mWpp = parte.match(/^[+]?[\d\s\-()]{8,}$/);
+    const mSinDato = /^\(?sin\s*(fecha|dato)s?\)?$/i.test(parte);
+    if (mSinDato) {
+      // "(sin fecha)" explícito — no se toma como nombre ni como dato real, se ignora.
+    } else if (mFecha && !entrada.fecha) {
+      entrada.fecha = new Date(Number(mFecha[3]), Number(mFecha[2]) - 1, Number(mFecha[1])).toISOString();
+    } else if (mEmail && !entrada.email) {
+      entrada.email = mEmail[0];
+    } else if (mWpp && !entrada.whatsapp) {
+      entrada.whatsapp = parte;
+    } else if (!entrada.nombre) {
+      entrada.nombre = parte.replace(/^[(\-•]+|[)\-]+$/g, '').trim();
+    } else if (!/^\d+$/.test(parte)) {
+      // Un número suelto (ej: una columna extra sin usar) se ignora en vez de mezclarse con el curso.
+      restantes.push(parte);
+    }
+  });
+  if (restantes.length > 0) entrada.curso = restantes.join(' ');
+  return entrada;
+}
+
 function parsearBloquesBajas(texto) {
   const patron = /(nombre|curso|e[-\s]?mail|whatsapp|wpp|tel[eé]?fono?|fecha|motivo)\s*:\s*([\s\S]*?)(?=(?:nombre|curso|e[-\s]?mail|whatsapp|wpp|tel[eé]?fono?|fecha|motivo)\s*:|$)/gi;
   const entradas = [];
@@ -71,11 +102,20 @@ function parsearBloquesBajas(texto) {
   }
   if (actual) entradas.push(actual);
 
-  // Si no se detectó NINGUNA etiqueta en todo el texto, se cae a la heurística por bloque
-  // (separado por línea en blanco), igual que si no hubiera escrito "Nombre:", "Fecha:", etc.
+  // Si no se detectó NINGUNA etiqueta en todo el texto, se cae a una heurística sin etiquetas.
+  // Primero se prueba por bloques (separados por línea en blanco); si eso da UN solo bloque pero
+  // el texto tiene varias líneas con tabulaciones (una fila de planilla por persona, pegada sin
+  // línea en blanco entre cada una), se interpreta cada línea como una persona distinta.
   if (entradas.length === 0) {
     const bloques = texto.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
-    bloques.forEach((bloque) => entradas.push(heuristicaSinEtiquetas(bloque)));
+    const lineas = texto.split('\n').map((l) => l.trim()).filter(Boolean);
+    const pareceFilaDeTabla = lineas.length > 1 && lineas.filter((l) => l.includes('\t')).length > 1;
+
+    if (bloques.length === 1 && pareceFilaDeTabla) {
+      lineas.forEach((linea) => entradas.push(heuristicaPorFila(linea)));
+    } else {
+      bloques.forEach((bloque) => entradas.push(heuristicaSinEtiquetas(bloque)));
+    }
   }
 
   entradas.forEach((e) => { if (!e.fecha) e.fecha = new Date().toISOString(); });
