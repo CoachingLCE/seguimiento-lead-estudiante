@@ -299,7 +299,8 @@ const TABS = [
   { id: 'embudo', label: '🔻 Embudo' },
   { id: 'actividad', label: '👤 Actividad' },
   { id: 'analisis', label: '📈 Análisis' },
-  { id: 'compras', label: '🧾 Compras' }
+  { id: 'compras', label: '🧾 Compras' },
+  { id: 'escala', label: '📐 Escala Inscripciones' }
 ];
 
 function TabBar({ tab, setTab }) {
@@ -713,6 +714,117 @@ function SeccionObjetivos({ datos, mes, usuario }) {
               Última actualización: {objetivos.actualizadoPorNombre} — {new Date(objetivos.fechaActualizacion).toLocaleDateString('es-AR')}
             </p>
           )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SeccionEscalaInscripciones({ usuario }) {
+  const esAdmin = usuario?.roles?.includes('Admin');
+  const [cargando, setCargando] = useState(true);
+  const [escalones, setEscalones] = useState([]);
+  const [fechaActualizacion, setFechaActualizacion] = useState('');
+  const [editando, setEditando] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+
+  useEffect(() => {
+    cargar();
+  }, []);
+
+  async function cargar() {
+    setCargando(true);
+    const r = await fetch(`/api/escala-inscripciones?solicitanteEmail=${encodeURIComponent(usuario.email)}`).then((res) => res.json());
+    setEscalones(r.escalones?.length > 0 ? r.escalones : [{ orden: 1, rangoInscripciones: '', rango: '', valor: '' }]);
+    setFechaActualizacion(r.fechaActualizacion || '');
+    setCargando(false);
+  }
+
+  function actualizarEscalon(idx, campo, valor) {
+    setEscalones((prev) => prev.map((e, i) => (i === idx ? { ...e, [campo]: valor } : e)));
+  }
+
+  function agregarFila() {
+    setEscalones((prev) => [...prev, { orden: (prev[prev.length - 1]?.orden || 0) + 1, rangoInscripciones: '', rango: '', valor: '' }]);
+  }
+
+  async function guardar() {
+    setGuardando(true);
+    await fetch('/api/escala-inscripciones', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ escalones, fechaActualizacion, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
+    });
+    setGuardando(false);
+    setEditando(false);
+    cargar();
+  }
+
+  if (cargando) return <Skeleton h="h-40" />;
+
+  return (
+    <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm">
+      <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
+        <p className="text-sm font-semibold">📐 Escala de Inscripciones</p>
+        {esAdmin && !editando && (
+          <button onClick={() => setEditando(true)} className="text-xs text-accentTeal font-semibold">✏️ Editar</button>
+        )}
+      </div>
+      <p className="text-textMuted text-xs mb-4">
+        Última actualización: {fechaActualizacion || 'sin definir'}
+        {esAdmin && editando && (
+          <input value={fechaActualizacion} onChange={(e) => setFechaActualizacion(e.target.value)}
+            placeholder="Ej: Abril" className="ml-2 bg-bg border border-border rounded px-2 py-0.5 text-xs w-28" />
+        )}
+      </p>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-textSec text-left border-b border-border">
+              <th className="py-2 pr-4">Rango de inscripciones</th>
+              <th className="pr-4">Rango</th>
+              <th>Valor</th>
+            </tr>
+          </thead>
+          <tbody>
+            {escalones.map((e, idx) => (
+              <tr key={idx} className="border-b border-border">
+                {editando ? (
+                  <>
+                    <td className="py-1.5 pr-4">
+                      <input value={e.rangoInscripciones} onChange={(ev) => actualizarEscalon(idx, 'rangoInscripciones', ev.target.value)}
+                        placeholder="Ej: 1 - 10" className="w-28 bg-bg border border-border rounded px-2 py-1 text-xs" />
+                    </td>
+                    <td className="pr-4">
+                      <input value={e.rango} onChange={(ev) => actualizarEscalon(idx, 'rango', ev.target.value)}
+                        placeholder="Ej: 1-20" className="w-24 bg-bg border border-border rounded px-2 py-1 text-xs" />
+                    </td>
+                    <td>
+                      <input value={e.valor} onChange={(ev) => actualizarEscalon(idx, 'valor', ev.target.value)}
+                        placeholder="Ej: 9.000" className="w-28 bg-bg border border-border rounded px-2 py-1 text-xs" />
+                    </td>
+                  </>
+                ) : (
+                  <>
+                    <td className="py-2 pr-4">{e.rangoInscripciones || '—'}</td>
+                    <td className="pr-4 text-textSec">{e.rango || '—'}</td>
+                    <td className="font-semibold text-successText">{e.valor ? `$${e.valor}` : '—'}</td>
+                  </>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {editando && (
+        <div className="flex items-center gap-2 mt-4">
+          <button onClick={agregarFila} className="text-xs px-3 py-1.5 rounded-lg bg-surface2 border border-border">+ Agregar escalón</button>
+          <button onClick={() => setEditando(false)} className="text-xs px-3 py-1.5 rounded-lg bg-surface2 border border-border">Cancelar</button>
+          <button onClick={guardar} disabled={guardando} className="text-xs px-3 py-1.5 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-60">
+            {guardando ? 'Guardando…' : 'Guardar escala'}
+          </button>
         </div>
       )}
     </div>
@@ -1367,6 +1479,10 @@ export default function ReportesPage() {
                   </div>
                 </div>
               </>
+            )}
+
+            {tab === 'escala' && (
+              <SeccionEscalaInscripciones usuario={usuario} />
             )}
           </>
         )}
