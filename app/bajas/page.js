@@ -133,7 +133,6 @@ export default function BajasPage() {
   );
   const [cargandoBajasMasivas, setCargandoBajasMasivas] = useState(false);
   const [resultadoBajasMasivas, setResultadoBajasMasivas] = useState(null);
-  const [mostrarListaBajas, setMostrarListaBajas] = useState(false);
   const [listaBajas, setListaBajas] = useState([]);
   const [enviandoMensajeId, setEnviandoMensajeId] = useState(null);
   const [seleccionadas, setSeleccionadas] = useState(new Set());
@@ -149,7 +148,7 @@ export default function BajasPage() {
     });
     setEliminando(false);
     setSeleccionadas(new Set());
-    cargarListaBajas(true);
+    cargarDatosBajas();
   }
 
   if (usuario && !tienePermisoBajas(usuario)) {
@@ -172,7 +171,7 @@ export default function BajasPage() {
       } else {
         setResultadoBajasMasivas(r);
         setTextoBajasMasivas('');
-        if (mostrarListaBajas) cargarListaBajas(true);
+        cargarDatosBajas();
       }
     } catch (err) {
       setResultadoBajasMasivas({ procesados: [], creados: [], noEncontrados: [], yaExistentes: [], ambiguos: [], errores: ['No se pudo conectar con el servidor. Probá de nuevo.'] });
@@ -187,12 +186,6 @@ export default function BajasPage() {
   async function cargarDatosBajas() {
     const r = await fetch(`/api/seguimiento/baja-masiva?solicitanteEmail=${encodeURIComponent(usuario.email)}`).then((res) => res.json());
     setListaBajas(r.bajas || []);
-  }
-
-  async function cargarListaBajas(forzarAbrir) {
-    if (!forzarAbrir && mostrarListaBajas) { setMostrarListaBajas(false); return; }
-    await cargarDatosBajas();
-    setMostrarListaBajas(true);
   }
 
   async function enviarMensaje1(baja) {
@@ -232,7 +225,7 @@ export default function BajasPage() {
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
-      <div className="max-w-[1400px] mx-auto px-6 pb-16">
+      <div className="max-w-[1700px] mx-auto px-6 pb-16">
 
         {/* ENCABEZADO */}
         <div className="flex items-start justify-between flex-wrap gap-4 mb-6">
@@ -246,9 +239,6 @@ export default function BajasPage() {
             <IndicadorResumen valor={proximasAlDia90} label="Próximas al día 90" colorClase="text-infoText" />
           </div>
         </div>
-
-        {/* ACCIONES PENDIENTES */}
-        <SeccionRecontactar listaBajas={listaBajas} enviandoMensajeId={enviandoMensajeId} onEnviar={enviarMensaje1} />
 
         {/* CARGAR BAJAS */}
         <div className="bg-surface border border-border rounded-2xl p-5 sm:p-6 mb-4">
@@ -309,15 +299,9 @@ export default function BajasPage() {
 
         {/* HISTORIAL DE BAJAS */}
         <div className="bg-surface border border-border rounded-2xl p-5 sm:p-6">
-          <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
-            <p className="text-base font-semibold">Historial de bajas</p>
-            <button onClick={() => cargarListaBajas()} className="text-xs text-accentTeal font-semibold">
-              {mostrarListaBajas ? '▲ Ocultar' : '▼ Ver historial'}
-            </button>
-          </div>
+          <p className="text-base font-semibold mb-3">Historial de bajas</p>
 
-          {mostrarListaBajas && (
-            <>
+          <>
               <div className="flex items-center gap-1.5 flex-wrap mb-3">
                 {FILTROS_HISTORIAL.map((f) => (
                   <button key={f.id} onClick={() => setFiltroHistorial(f.id)}
@@ -344,7 +328,7 @@ export default function BajasPage() {
               ) : (
                 <>
                   {/* Tabla — visible desde tablet para arriba */}
-                  <div className="hidden sm:block overflow-x-auto max-h-96 overflow-y-auto rounded-xl border border-border">
+                  <div className="hidden sm:block overflow-x-auto max-h-[750px] overflow-y-auto rounded-xl border border-border">
                     <table className="w-full text-xs">
                       <thead className="sticky top-0 bg-surface z-10">
                         <tr className="text-textSec text-left border-b border-border">
@@ -373,7 +357,7 @@ export default function BajasPage() {
                             <td className="px-2 font-medium">{b.nombre}</td>
                             <td className="px-2 text-textSec">{b.curso}</td>
                             <td className="px-2 whitespace-nowrap">{new Date(b.fechaBaja).toLocaleDateString('es-AR')}</td>
-                            <td className="px-2"><BadgeReactivacion b={b} /></td>
+                            <td className="px-2"><BadgeReactivacion b={b} enviandoMensajeId={enviandoMensajeId} onEnviar={enviarMensaje1} /></td>
                             <td className="px-2"><BadgeSeguimiento b={b} /></td>
                             <td className="px-2">
                               <button onClick={() => eliminarBajas([b.leadId])} disabled={eliminando}
@@ -404,7 +388,7 @@ export default function BajasPage() {
                         </div>
                         <p className="text-textSec text-xs mb-2">{b.curso} · {new Date(b.fechaBaja).toLocaleDateString('es-AR')}</p>
                         <div className="flex flex-wrap gap-1.5">
-                          <BadgeReactivacion b={b} />
+                          <BadgeReactivacion b={b} enviandoMensajeId={enviandoMensajeId} onEnviar={enviarMensaje1} />
                           <BadgeSeguimiento b={b} />
                         </div>
                       </div>
@@ -412,8 +396,7 @@ export default function BajasPage() {
                   </div>
                 </>
               )}
-            </>
-          )}
+          </>
         </div>
       </div>
     </div>
@@ -443,11 +426,20 @@ function ChipResultado({ color, icono, texto }) {
   );
 }
 
-// Mismos estados y condiciones que antes — solo cambia la presentación (badge en vez de texto).
-function BadgeReactivacion({ b }) {
+// Mismos estados y condiciones que antes — la diferencia es que "Listo para enviar" ahora es
+// directamente un botón que dispara la misma acción que antes vivía en "Acciones pendientes".
+function BadgeReactivacion({ b, enviandoMensajeId, onEnviar }) {
   if (b.confirmoRecepcionBaja) return <span className="text-[11px] px-2 py-0.5 rounded-full bg-successBg text-successText whitespace-nowrap">🟢 Confirmó</span>;
   if (b.mensajeEnviado) return <span className="text-[11px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted whitespace-nowrap">⚪ Enviado</span>;
-  if (b.listaParaReactivacion) return <span className="text-[11px] px-2 py-0.5 rounded-full bg-warningBg text-warningText whitespace-nowrap">🟡 Listo para enviar</span>;
+  if (b.listaParaReactivacion) {
+    if (!b.email) return <span className="text-[11px] px-2 py-0.5 rounded-full bg-warningBg text-warningText whitespace-nowrap">Sin email cargado</span>;
+    return (
+      <button onClick={() => onEnviar(b)} disabled={enviandoMensajeId === b.leadId}
+        className="text-[11px] px-2.5 py-1 rounded-full bg-accentPurple text-white font-semibold disabled:opacity-60 whitespace-nowrap">
+        {enviandoMensajeId === b.leadId ? 'Enviando…' : '📩 Enviar mail'}
+      </button>
+    );
+  }
   const faltan = 85 - Math.floor((new Date() - new Date(b.fechaBaja)) / 86400000);
   return <span className="text-[11px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted whitespace-nowrap">Faltan {faltan} días</span>;
 }
@@ -456,44 +448,4 @@ function BadgeSeguimiento({ b }) {
   if (b.contactado) return <span className="text-[11px] px-2 py-0.5 rounded-full bg-infoBg text-infoText whitespace-nowrap">🔵 Contactado</span>;
   if (b.disponibleAhora) return <span className="text-[11px] px-2 py-0.5 rounded-full bg-warningBg text-warningText whitespace-nowrap">🟠 En Lote Bajas</span>;
   return <span className="text-[11px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted whitespace-nowrap">Faltan {b.diasFaltantes} días</span>;
-}
-
-function SeccionRecontactar({ listaBajas, enviandoMensajeId, onEnviar }) {
-  const paraRecontactar = listaBajas.filter((b) => b.listaParaReactivacion);
-  if (paraRecontactar.length === 0) return null;
-
-  return (
-    <div className="bg-surface border-2 border-warningText/30 rounded-2xl p-5 sm:p-6 mb-4">
-      <p className="text-base font-semibold mb-1">📬 Acciones pendientes <span className="text-warningText">({paraRecontactar.length})</span></p>
-      <p className="text-textMuted text-xs mb-4">
-        Ya pasaron 85 días desde la baja — se puede mandar un mail de reactivación con un botón que lleva a WhatsApp.
-      </p>
-      <div className="space-y-2">
-        {paraRecontactar.map((b) => (
-          <div key={b.leadId} className="bg-bg border border-border rounded-xl p-3.5 flex items-center justify-between gap-3 flex-wrap">
-            <div>
-              <p className="text-sm font-medium">{b.nombre}</p>
-              <p className="text-textMuted text-xs">{b.curso} · Baja: {new Date(b.fechaBaja).toLocaleDateString('es-AR')}</p>
-            </div>
-            <div className="shrink-0">
-              {b.confirmoRecepcionBaja ? (
-                <span className="text-successText text-xs font-semibold whitespace-nowrap">✅ Confirmó recepción y solicitó info</span>
-              ) : b.mensajeEnviado ? (
-                <span className="text-textMuted text-xs whitespace-nowrap">
-                  Mensaje enviado el {new Date(b.fechaMensajeEnviado).toLocaleDateString('es-AR')}
-                </span>
-              ) : !b.email ? (
-                <span className="text-warningText text-xs whitespace-nowrap">Sin email cargado</span>
-              ) : (
-                <button onClick={() => onEnviar(b)} disabled={enviandoMensajeId === b.leadId}
-                  className="text-xs px-3.5 py-2 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-60 whitespace-nowrap">
-                  {enviandoMensajeId === b.leadId ? 'Enviando…' : 'Enviar mensaje 1'}
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
 }
