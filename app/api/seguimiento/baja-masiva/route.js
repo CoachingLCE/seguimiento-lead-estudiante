@@ -3,6 +3,10 @@ import { readSheet, appendRow, deleteRows } from '../../../../lib/sheets';
 import { findUsuario, tienePermisoBajas } from '../../../../lib/auth';
 import { registrarAccion } from '../../../../lib/auditoria';
 
+function esperar(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 // GET /api/seguimiento/baja-masiva?solicitanteEmail=... -> TODAS las bajas registradas
 // (a diferencia del "LOTE BAJAS" en Seguimiento, que solo muestra las que ya cumplieron 90 días,
 // esto sirve como vista de referencia de todo lo que está en camino).
@@ -163,6 +167,10 @@ export async function POST(request) {
       console.error(`Error procesando entrada de baja (${etiqueta}):`, err);
       resultado.errores.push(`${etiqueta}: ${err.message || 'error desconocido'}`);
     }
+    // Cada persona hace varias escrituras seguidas a Google Sheets (Leads, Inscritos, Seguimiento,
+    // Auditoría) — en una carga masiva grande, hacerlas todas sin pausa dispara el límite de
+    // "escrituras por minuto" de la API de Google y el resto de la tanda falla con timeout.
+    await esperar(400);
   }
 
   return NextResponse.json(resultado);
