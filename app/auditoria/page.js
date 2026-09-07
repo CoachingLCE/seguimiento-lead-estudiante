@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import Nav from '../../components/Nav';
@@ -174,7 +175,13 @@ export default function AuditoriaPage() {
                         {esVenta && '💰 '}{esLead && '📩 '}{esGrupoWhatsapp && '💬 '}{esMensajeFrecuente && '📝 '}{esLogin && '🔑 '}{esLoginFallido && '⚠️ '}{esEliminar && '🗑️ '}{r.Accion}
                       </td>
                       <td className="leading-snug">
-                        {r.Detalle}
+                        {r.LeadIdRelacionado ? (
+                          <Link href={`/buscador?leadId=${r.LeadIdRelacionado}`} className="hover:text-accentTeal hover:underline">
+                            {r.Detalle}
+                          </Link>
+                        ) : (
+                          r.Detalle
+                        )}
                         {lead && (
                           <p className="text-textMuted text-[11px] mt-0.5">
                             {lead.Email && `✉️ ${lead.Email}`}{lead.Email && lead.WhatsApp && ' · '}{lead.WhatsApp && `📱 ${lead.WhatsApp}`}
