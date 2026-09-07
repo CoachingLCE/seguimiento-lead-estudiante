@@ -20,6 +20,9 @@ export default function MensajesFrecuentesPage() {
   const [mensajeForm, setMensajeForm] = useState('');
   const [guardando, setGuardando] = useState(false);
   const [confirmarBorrar, setConfirmarBorrar] = useState(null);
+  const [vistaCompacta, setVistaCompacta] = useState(false);
+  const [expandidoId, setExpandidoId] = useState(null);
+  const [arrastrandoId, setArrastrandoId] = useState(null);
 
   const puedeVer = tienePermisoMensajesVer(usuario);
   const puedeEscribir = tienePermisoMensajesEscribir(usuario);
@@ -102,6 +105,35 @@ export default function MensajesFrecuentesPage() {
     cargarMensajes();
   }
 
+  // Arrastrar y soltar para reordenar — solo disponible para quien puede escribir (Macarena/Admin).
+  // Se reordena visualmente al toque (para que se sienta inmediato) y se guarda en el Sheet apenas
+  // se suelta, mandando el orden completo actualizado.
+  function onDragStart(id) {
+    setArrastrandoId(id);
+  }
+  function onDragOver(ev, idSobreElQueEsta) {
+    ev.preventDefault();
+    if (arrastrandoId === null || arrastrandoId === idSobreElQueEsta) return;
+    setMensajes((prev) => {
+      const desde = prev.findIndex((m) => m._rowIndex === arrastrandoId);
+      const hasta = prev.findIndex((m) => m._rowIndex === idSobreElQueEsta);
+      if (desde === -1 || hasta === -1) return prev;
+      const copia = [...prev];
+      const [movido] = copia.splice(desde, 1);
+      copia.splice(hasta, 0, movido);
+      return copia;
+    });
+  }
+  async function onDrop() {
+    setArrastrandoId(null);
+    const ordenes = mensajes.map((m, i) => ({ rowIndex: m._rowIndex, orden: i + 1 }));
+    await fetch('/api/mensajes-frecuentes', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion: 'reordenar', ordenes, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
+    });
+  }
+
   if (!usuario || !puedeVer) return null;
 
   return (
@@ -110,14 +142,21 @@ export default function MensajesFrecuentesPage() {
       <div className="max-w-[900px] mx-auto px-6 pb-16">
         <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
           <h3 className="text-lg font-bold">💬 Mensajes frecuentes</h3>
-          {puedeEscribir && (
-            <button onClick={abrirNuevo} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">
-              + Nuevo mensaje
+          <div className="flex items-center gap-2">
+            <button onClick={() => setVistaCompacta((v) => !v)}
+              className="text-xs px-3 py-2 rounded-lg bg-surface2 border border-border text-textSec">
+              {vistaCompacta ? '▤ Vista completa' : '☰ Vista compacta'}
             </button>
-          )}
+            {puedeEscribir && (
+              <button onClick={abrirNuevo} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">
+                + Nuevo mensaje
+              </button>
+            )}
+          </div>
         </div>
         <p className="text-textMuted text-xs mb-5">
           Plantillas de mensajes listas para copiar y pegar en WhatsApp — promos, seguimientos, lo que uses seguido.
+          {puedeEscribir && ' Arrastrá desde ⠿ para cambiar el orden.'}
         </p>
 
         {mostrarForm && (
@@ -152,29 +191,48 @@ export default function MensajesFrecuentesPage() {
           <p className="text-textMuted text-sm">Todavía no hay mensajes guardados{puedeEscribir ? ' — usá "+ Nuevo mensaje" para arrancar.' : '.'}</p>
         ) : (
           <div className="space-y-3">
-            {mensajes.map((m) => (
-              <div key={m._rowIndex} className="bg-surface border border-border rounded-2xl p-4">
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <p className="text-sm font-semibold">{m.Titulo}</p>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button onClick={() => copiar(m.Mensaje, m._rowIndex)}
-                      className="text-xs px-3 py-1.5 rounded-lg bg-accentPurple text-white font-semibold whitespace-nowrap">
-                      {copiadoId === m._rowIndex ? '✓ Copiado' : '📋 Copiar'}
-                    </button>
-                    {puedeEscribir && (
-                      <>
-                        <button onClick={() => abrirEdicion(m)} className="text-xs text-accentTeal font-semibold">✏️</button>
-                        <button onClick={() => setConfirmarBorrar(m)} className="text-xs text-dangerText font-semibold">🗑</button>
-                      </>
-                    )}
+            {mensajes.map((m) => {
+              const estaExpandido = !vistaCompacta || expandidoId === m._rowIndex;
+              return (
+                <div key={m._rowIndex}
+                  draggable={puedeEscribir}
+                  onDragStart={() => onDragStart(m._rowIndex)}
+                  onDragOver={(ev) => onDragOver(ev, m._rowIndex)}
+                  onDrop={onDrop}
+                  className={`bg-surface border border-border rounded-2xl p-4 transition-opacity ${arrastrandoId === m._rowIndex ? 'opacity-40' : ''}`}>
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {puedeEscribir && <span className="text-textMuted cursor-grab shrink-0" title="Arrastrar para reordenar">⠿</span>}
+                      {vistaCompacta && (
+                        <button onClick={() => setExpandidoId(expandidoId === m._rowIndex ? null : m._rowIndex)}
+                          className="text-textMuted text-xs shrink-0">{estaExpandido ? '▼' : '▶'}</button>
+                      )}
+                      <p className="text-sm font-semibold truncate">{m.Titulo}</p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button onClick={() => copiar(m.Mensaje, m._rowIndex)}
+                        className="text-xs px-3 py-1.5 rounded-lg bg-accentPurple text-white font-semibold whitespace-nowrap">
+                        {copiadoId === m._rowIndex ? '✓ Copiado' : '📋 Copiar'}
+                      </button>
+                      {puedeEscribir && (
+                        <>
+                          <button onClick={() => abrirEdicion(m)} className="text-xs text-accentTeal font-semibold">✏️</button>
+                          <button onClick={() => setConfirmarBorrar(m)} className="text-xs text-dangerText font-semibold">🗑</button>
+                        </>
+                      )}
+                    </div>
                   </div>
+                  {estaExpandido && (
+                    <>
+                      <p className="text-textSec text-[13px] whitespace-pre-wrap bg-bg/50 rounded-lg px-3 py-2.5">{m.Mensaje}</p>
+                      <p className="text-textMuted text-[10.5px] mt-2">
+                        {m.CreadoPorNombre} · {new Date(m.FechaCreacion).toLocaleDateString('es-AR')}
+                      </p>
+                    </>
+                  )}
                 </div>
-                <p className="text-textSec text-[13px] whitespace-pre-wrap bg-bg/50 rounded-lg px-3 py-2.5">{m.Mensaje}</p>
-                <p className="text-textMuted text-[10.5px] mt-2">
-                  {m.CreadoPorNombre} · {new Date(m.FechaCreacion).toLocaleDateString('es-AR')}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

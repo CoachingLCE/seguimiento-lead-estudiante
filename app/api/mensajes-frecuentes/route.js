@@ -13,8 +13,16 @@ export async function GET(request) {
 
   try {
     const mensajes = await readSheet('MensajesFrecuentes');
-    // Más nuevo primero
-    mensajes.sort((a, b) => new Date(b.FechaCreacion) - new Date(a.FechaCreacion));
+    // Se ordena por "Orden" (lo que Macarena definió arrastrando) — los que todavía no tienen
+    // un Orden asignado (mensajes viejos, antes de esta función) quedan al final, más nuevo primero.
+    mensajes.sort((a, b) => {
+      const ordenA = a.Orden !== '' && a.Orden != null ? Number(a.Orden) : null;
+      const ordenB = b.Orden !== '' && b.Orden != null ? Number(b.Orden) : null;
+      if (ordenA !== null && ordenB !== null) return ordenA - ordenB;
+      if (ordenA !== null) return -1;
+      if (ordenB !== null) return 1;
+      return new Date(b.FechaCreacion) - new Date(a.FechaCreacion);
+    });
     return NextResponse.json({ mensajes });
   } catch (err) {
     console.error('Error cargando mensajes frecuentes:', err);
@@ -35,8 +43,11 @@ export async function POST(request) {
   const mensaje = (body.mensaje || '').trim();
   if (!titulo || !mensaje) return NextResponse.json({ error: 'Falta el título o el mensaje' }, { status: 400 });
 
+  const existentes = await readSheet('MensajesFrecuentes');
+  const maxOrden = existentes.reduce((acc, m) => Math.max(acc, Number(m.Orden) || 0), 0);
+
   await appendRow('MensajesFrecuentes', [
-    titulo, mensaje, body.solicitanteEmail, body.solicitanteNombre, new Date().toISOString()
+    titulo, mensaje, body.solicitanteEmail, body.solicitanteNombre, new Date().toISOString(), maxOrden + 1
   ]);
 
   await registrarAccion(
@@ -47,13 +58,27 @@ export async function POST(request) {
   return NextResponse.json({ ok: true });
 }
 
-// PATCH /api/mensajes-frecuentes -> editar un mensaje existente (por _rowIndex)
-// body: { rowIndex, titulo, mensaje, solicitanteEmail, solicitanteNombre }
+// PATCH /api/mensajes-frecuentes -> dos usos:
+// 1) Editar un mensaje existente: { rowIndex, titulo, mensaje, solicitanteEmail, solicitanteNombre }
+// 2) Reordenar (arrastrar y soltar): { accion: 'reordenar', ordenes: [{rowIndex, orden}], solicitanteEmail, solicitanteNombre }
 export async function PATCH(request) {
   const body = await request.json();
   const solicitante = await findUsuario(body.solicitanteEmail);
   if (!tienePermisoMensajesEscribir(solicitante)) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+  }
+
+  if (body.accion === 'reordenar') {
+    if (!Array.isArray(body.ordenes)) return NextResponse.json({ error: 'Falta el nuevo orden' }, { status: 400 });
+    const mensajes = await readSheet('MensajesFrecuentes');
+    for (const { rowIndex, orden } of body.ordenes) {
+      const fila = mensajes.find((m) => m._rowIndex === rowIndex);
+      if (!fila) continue;
+      await updateRow('MensajesFrecuentes', fila._rowIndex, [
+        fila.Titulo, fila.Mensaje, fila.CreadoPorEmail, fila.CreadoPorNombre, fila.FechaCreacion, orden
+      ]);
+    }
+    return NextResponse.json({ ok: true });
   }
 
   const mensajes = await readSheet('MensajesFrecuentes');
@@ -62,7 +87,7 @@ export async function PATCH(request) {
 
   await updateRow('MensajesFrecuentes', fila._rowIndex, [
     body.titulo ?? fila.Titulo, body.mensaje ?? fila.Mensaje,
-    fila.CreadoPorEmail, fila.CreadoPorNombre, fila.FechaCreacion
+    fila.CreadoPorEmail, fila.CreadoPorNombre, fila.FechaCreacion, fila.Orden
   ]);
 
   await registrarAccion(
