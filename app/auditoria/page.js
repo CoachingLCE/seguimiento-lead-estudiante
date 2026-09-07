@@ -25,6 +25,23 @@ function colorPorUsuario(nombre) {
   return PALETA_USUARIOS[hash % PALETA_USUARIOS.length];
 }
 
+// Categoriza cada acción del historial — se usa tanto para los chips de filtro como para el
+// color/ícono de cada fila, así ambos quedan siempre coherentes entre sí.
+const CATEGORIAS_ACCION = [
+  { id: 'venta', label: '💰 Venta', icono: '💰 ', clase: 'text-successText font-semibold', test: (a) => a === 'Registró una venta' },
+  { id: 'lead', label: '📩 Lead', icono: '📩 ', clase: 'text-accentPurple font-medium', test: (a) => a === 'Creó un lead' },
+  { id: 'grupoWhatsapp', label: '💬 Grupo WhatsApp', icono: '💬 ', clase: 'text-accentTeal font-medium', test: (a) => a.toLowerCase().includes('grupo de whatsapp') || a.toLowerCase().includes('grupo whatsapp') },
+  { id: 'mensajeFrecuente', label: '📝 Mensaje frecuente', icono: '📝 ', clase: 'text-accentMagenta font-medium', test: (a) => a.toLowerCase().includes('mensaje frecuente') },
+  { id: 'login', label: '🔑 Login', icono: '🔑 ', clase: 'text-infoText font-medium', test: (a) => a === 'Inició sesión' },
+  { id: 'loginFallido', label: '⚠️ Login fallido', icono: '⚠️ ', clase: 'text-dangerText font-medium', test: (a) => a.toLowerCase().includes('login fallido') || a.toLowerCase().includes('login rechazado') },
+  { id: 'eliminar', label: '🗑️ Eliminó', icono: '🗑️ ', clase: 'text-dangerText font-semibold', test: (a) => a.toLowerCase().includes('eliminó') || a.toLowerCase().includes('eliminado') },
+  { id: 'editar', label: '✏️ Editó', icono: '✏️ ', clase: 'text-warningText font-medium', test: (a) => a.toLowerCase().includes('editó') || a.toLowerCase().includes('corrigió') }
+];
+function categoriaAccion(accion) {
+  const a = accion || '';
+  return CATEGORIAS_ACCION.find((c) => c.test(a)) || null;
+}
+
 export default function AuditoriaPage() {
   const { usuario, logout } = useSession();
   const router = useRouter();
@@ -35,6 +52,7 @@ export default function AuditoriaPage() {
   const [desde, setDesde] = useState('');
   const [hasta, setHasta] = useState('');
   const [busqueda, setBusqueda] = useState('');
+  const [filtroCategoria, setFiltroCategoria] = useState('');
   const [leadsPorId, setLeadsPorId] = useState({});
 
   const puedeVer = tienePermisoAuditoria(usuario);
@@ -94,6 +112,7 @@ export default function AuditoriaPage() {
 
   const usuariosUnicos = [...new Set(registros.map((r) => r.UsuarioNombre))].sort();
   const registrosFiltrados = registros.filter((r) => {
+    if (filtroCategoria && categoriaAccion(r.Accion)?.id !== filtroCategoria) return false;
     if (!busqueda.trim()) return true;
     const lead = r.LeadIdRelacionado ? leadsPorId[r.LeadIdRelacionado] : null;
     const textoBuscable = `${r.Accion} ${r.Detalle} ${lead?.Email || ''} ${lead?.WhatsApp || ''}`.toLowerCase();
@@ -137,6 +156,23 @@ export default function AuditoriaPage() {
           </button>
         </div>
 
+        <div className="flex items-center gap-1.5 flex-wrap mb-4">
+          <button onClick={() => setFiltroCategoria('')}
+            className={`text-xs px-3 py-1 rounded-full border transition-colors ${
+              filtroCategoria === '' ? 'bg-accentPurple border-accentPurple text-white' : 'bg-surface2 border-border text-textSec hover:text-text'
+            }`}>
+            Todas
+          </button>
+          {CATEGORIAS_ACCION.map((c) => (
+            <button key={c.id} onClick={() => setFiltroCategoria(c.id)}
+              className={`text-xs px-3 py-1 rounded-full border transition-colors ${
+                filtroCategoria === c.id ? 'bg-accentPurple border-accentPurple text-white' : 'bg-surface2 border-border text-textSec hover:text-text'
+              }`}>
+              {c.label}
+            </button>
+          ))}
+        </div>
+
         <div className="print-header">
           <p className="text-xs text-textMuted uppercase tracking-widest mb-1">Instituto ILCE</p>
           <h2 className="text-lg font-bold mb-4">Historial de acciones</h2>
@@ -169,13 +205,7 @@ export default function AuditoriaPage() {
               </thead>
               <tbody>
                 {registrosFiltrados.map((r, i) => {
-                  const esVenta = r.Accion === 'Registró una venta';
-                  const esLead = r.Accion === 'Creó un lead';
-                  const esLogin = r.Accion === 'Inició sesión';
-                  const esLoginFallido = (r.Accion || '').toLowerCase().includes('login fallido') || (r.Accion || '').toLowerCase().includes('login rechazado');
-                  const esGrupoWhatsapp = (r.Accion || '').toLowerCase().includes('grupo de whatsapp') || (r.Accion || '').toLowerCase().includes('grupo whatsapp');
-                  const esMensajeFrecuente = (r.Accion || '').toLowerCase().includes('mensaje frecuente');
-                  const esEliminar = (r.Accion || '').toLowerCase().includes('eliminó') || (r.Accion || '').toLowerCase().includes('eliminado');
+                  const cat = categoriaAccion(r.Accion);
                   const lead = r.LeadIdRelacionado ? leadsPorId[r.LeadIdRelacionado] : null;
                   return (
                     <tr key={i} className="border-b border-border">
@@ -185,16 +215,8 @@ export default function AuditoriaPage() {
                           {r.UsuarioNombre}
                         </span>
                       </td>
-                      <td className={`whitespace-nowrap overflow-hidden text-ellipsis ${
-                        esVenta ? 'text-successText font-semibold' :
-                        esLead ? 'text-accentPurple font-medium' :
-                        esGrupoWhatsapp ? 'text-accentTeal font-medium' :
-                        esMensajeFrecuente ? 'text-accentMagenta font-medium' :
-                        esLogin ? 'text-infoText font-medium' :
-                        esLoginFallido ? 'text-dangerText font-medium' :
-                        esEliminar ? 'text-dangerText font-semibold' : ''
-                      }`}>
-                        {esVenta && '💰 '}{esLead && '📩 '}{esGrupoWhatsapp && '💬 '}{esMensajeFrecuente && '📝 '}{esLogin && '🔑 '}{esLoginFallido && '⚠️ '}{esEliminar && '🗑️ '}{r.Accion}
+                      <td className={`whitespace-nowrap overflow-hidden text-ellipsis ${cat?.clase || ''}`}>
+                        {cat?.icono}{r.Accion}
                       </td>
                       <td className="leading-snug">
                         {r.LeadIdRelacionado ? (

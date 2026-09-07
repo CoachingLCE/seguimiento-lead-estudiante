@@ -101,12 +101,12 @@ function TooltipVentasPorDia({ active, payload, label }) {
   if (!active || !payload || payload.length === 0) return null;
   const d = payload[0].payload;
   return (
-    <div style={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} className="px-3 py-2.5">
-      <p className="text-text text-xs font-semibold mb-1">Día {label}</p>
-      <p className="text-textSec text-xs">Ventas ese día: <b className="text-accentTeal">{d.ventas}</b></p>
-      <p className="text-textSec text-xs">Acumulado del mes: <b className="text-text">{d.acumulado}</b></p>
-      <p className="text-textMuted text-xs mt-1.5 pt-1.5 border-t border-border">Mes anterior (mismo día): {d.ventasMesAnterior}</p>
-      <p className="text-textMuted text-xs">Acumulado mes anterior: <b className="text-textSec">{d.acumuladoMesAnterior}</b></p>
+    <div style={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8, color: '#e5e7eb' }} className="px-3 py-2.5">
+      <p style={{ color: '#f9fafb' }} className="text-xs font-semibold mb-1">Día {label}</p>
+      <p style={{ color: '#cbd5e1' }} className="text-xs">Ventas ese día: <b style={{ color: '#2dd4bf' }}>{d.ventas}</b></p>
+      <p style={{ color: '#cbd5e1' }} className="text-xs">Acumulado del mes: <b style={{ color: '#f9fafb' }}>{d.acumulado}</b></p>
+      <p style={{ color: '#94a3b8', borderColor: '#262c4a' }} className="text-xs mt-1.5 pt-1.5 border-t">Mes anterior (mismo día): {d.ventasMesAnterior}</p>
+      <p style={{ color: '#94a3b8' }} className="text-xs">Acumulado mes anterior: <b style={{ color: '#cbd5e1' }}>{d.acumuladoMesAnterior}</b></p>
     </div>
   );
 }
@@ -117,15 +117,15 @@ function TooltipDiasConversion({ active, payload }) {
   const porVendedor = d.porVendedor || [];
 
   return (
-    <div style={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} className="px-3 py-2.5 max-w-[220px]">
-      <p className="text-text text-xs font-semibold mb-1">{d.nombre}</p>
-      <p className="text-textSec text-xs mb-1.5">{d.cantidad} venta{d.cantidad !== 1 ? 's' : ''} ({d.porcentaje.toFixed(1)}%)</p>
+    <div style={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8, color: '#e5e7eb' }} className="px-3 py-2.5 max-w-[220px]">
+      <p style={{ color: '#f9fafb' }} className="text-xs font-semibold mb-1">{d.nombre}</p>
+      <p style={{ color: '#cbd5e1' }} className="text-xs mb-1.5">{d.cantidad} venta{d.cantidad !== 1 ? 's' : ''} ({d.porcentaje.toFixed(1)}%)</p>
       {porVendedor.length > 0 && (
-        <div className="text-textMuted text-[11px] leading-relaxed border-t border-border pt-1.5 space-y-0.5">
+        <div style={{ color: '#94a3b8', borderColor: '#262c4a' }} className="text-[11px] leading-relaxed border-t pt-1.5 space-y-0.5">
           {porVendedor.map((v) => (
             <div key={v.nombre} className="flex justify-between gap-3">
               <span>{v.nombre}</span>
-              <span className="text-text font-medium">{v.cantidad}</span>
+              <span style={{ color: '#f9fafb' }} className="font-medium">{v.cantidad}</span>
             </div>
           ))}
         </div>
@@ -249,7 +249,7 @@ function GraficoDona({ datos, onClickItem, activo }) {
               onClick={(d) => onClickItem?.(d.nombre)} cursor="pointer">
               {datos.map((_, i) => <Cell key={i} fill={PALETA[i % PALETA.length]} />)}
             </Pie>
-            <Tooltip contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} />
+            <Tooltip contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} itemStyle={{ color: '#e5e7eb' }} labelStyle={{ color: '#e5e7eb' }} />
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
@@ -1188,7 +1188,7 @@ export default function ReportesPage() {
                         <CartesianGrid strokeDasharray="3 3" stroke="#262c4a" />
                         <XAxis dataKey="dia" stroke="#6b7299" fontSize={11} />
                         <YAxis stroke="#6b7299" fontSize={11} tickFormatter={(v) => `$${v / 1000}k`} />
-                        <Tooltip formatter={(v) => money(v)} contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} />
+                        <Tooltip formatter={(v) => money(v)} contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} itemStyle={{ color: '#e5e7eb' }} labelStyle={{ color: '#e5e7eb' }} />
                         <Legend wrapperStyle={{ fontSize: 11 }} formatter={(v) => (v === 'facturacion' ? 'Facturación' : 'Ingresos (estimado)')} />
                         <Line type="monotone" dataKey="facturacion" stroke="#7c3aed" strokeWidth={2} dot={false} />
                         <Line type="monotone" dataKey="ingresos" stroke="#4ade80" strokeWidth={2} dot={false} strokeDasharray="4 3" />
@@ -1207,7 +1207,7 @@ export default function ReportesPage() {
                         <CartesianGrid strokeDasharray="3 3" stroke="#262c4a" />
                         <XAxis type="number" stroke="#6b7299" fontSize={11} allowDecimals={false} />
                         <YAxis type="category" dataKey="nombre" stroke="#6b7299" fontSize={10} width={110} />
-                        <Tooltip contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} />
+                        <Tooltip contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} itemStyle={{ color: '#e5e7eb' }} labelStyle={{ color: '#e5e7eb' }} />
                         <Bar dataKey="cantidad" fill="#22d3ee" radius={[0, 4, 4, 0]} onClick={(d) => setFiltro('curso', d.nombre)} cursor="pointer" />
                       </BarChart>
                     </ResponsiveContainer>
@@ -1225,7 +1225,7 @@ export default function ReportesPage() {
                         <XAxis type="number" stroke="#6b7299" fontSize={11} allowDecimals={false} />
                         <YAxis type="category" dataKey="nombre" stroke="#6b7299" width={140}
                           tick={<TickCursoDosLineas />} interval={0} />
-                        <Tooltip contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} />
+                        <Tooltip contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} itemStyle={{ color: '#e5e7eb' }} labelStyle={{ color: '#e5e7eb' }} />
                         <Bar dataKey="cantidad" fill="#a855f7" radius={[0, 4, 4, 0]} onClick={(d) => setFiltro('curso', d.nombre)} cursor="pointer" />
                       </BarChart>
                     </ResponsiveContainer>
@@ -1239,7 +1239,7 @@ export default function ReportesPage() {
                         <CartesianGrid strokeDasharray="3 3" stroke="#262c4a" />
                         <XAxis dataKey="nombre" stroke="#6b7299" fontSize={10} />
                         <YAxis stroke="#6b7299" fontSize={11} allowDecimals={false} />
-                        <Tooltip contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} />
+                        <Tooltip contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} itemStyle={{ color: '#e5e7eb' }} labelStyle={{ color: '#e5e7eb' }} />
                         <Bar dataKey="cantidad" fill="#4ade80" radius={[4, 4, 0, 0]} onClick={(d) => setFiltro('vendedor', d.nombre)} cursor="pointer" />
                       </BarChart>
                     </ResponsiveContainer>
@@ -1299,6 +1299,7 @@ export default function ReportesPage() {
             )}
 
             {tab === 'actividad' && (
+              <>
               <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm">
                 <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
                   <p className="text-sm font-semibold">👤 Actividad por persona</p>
@@ -1365,6 +1366,26 @@ export default function ReportesPage() {
                   </div>
                 )}
               </div>
+
+              {Object.keys(datos.movimientosPorPersona || {}).length > 0 && (
+                <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm mt-4">
+                  <p className="text-sm font-semibold mb-1">📋 Resumen de movimientos</p>
+                  <p className="text-textMuted text-xs mb-3">Mensajes frecuentes editados/eliminados y contactos reprogramados este mes, por persona.</p>
+                  <div className="space-y-2">
+                    {Object.entries(datos.movimientosPorPersona).map(([nombre, m]) => (
+                      <div key={nombre} className="flex items-center justify-between bg-bg border border-border rounded-lg px-3 py-2 text-xs flex-wrap gap-1.5">
+                        <span className="font-medium">{nombre}</span>
+                        <span className="text-textSec">
+                          {m.editoMensajes > 0 && <>✏️ Editó {m.editoMensajes} mensaje{m.editoMensajes !== 1 ? 's' : ''}{(m.eliminoMensajes > 0 || m.postergoContactos > 0) && ' · '}</>}
+                          {m.eliminoMensajes > 0 && <>🗑️ Eliminó {m.eliminoMensajes} mensaje{m.eliminoMensajes !== 1 ? 's' : ''}{m.postergoContactos > 0 && ' · '}</>}
+                          {m.postergoContactos > 0 && <>📅 Postergó {m.postergoContactos} contacto{m.postergoContactos !== 1 ? 's' : ''}</>}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              </>
             )}
 
             {tab === 'analisis' && (
@@ -1378,7 +1399,7 @@ export default function ReportesPage() {
                         <CartesianGrid strokeDasharray="3 3" stroke="#262c4a" />
                         <XAxis type="number" stroke="#6b7299" fontSize={11} tickFormatter={(v) => `$${v / 1000}k`} />
                         <YAxis type="category" dataKey="nombre" stroke="#6b7299" fontSize={10} width={110} />
-                        <Tooltip formatter={(v) => money(v)} contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} />
+                        <Tooltip formatter={(v) => money(v)} contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} itemStyle={{ color: '#e5e7eb' }} labelStyle={{ color: '#e5e7eb' }} />
                         <Bar dataKey="monto" fill="#7c3aed" radius={[0, 4, 4, 0]} onClick={(d) => setFiltro('curso', d.nombre)} cursor="pointer" />
                       </BarChart>
                     </ResponsiveContainer>

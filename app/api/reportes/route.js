@@ -277,7 +277,7 @@ export async function GET(request) {
   const mesAnterior = mesAnteriorDe(mes);
 
   try {
-    const [leads, seguimiento] = await Promise.all([readSheet('Leads'), readSheet('Seguimiento')]);
+    const [leads, seguimiento, auditoria] = await Promise.all([readSheet('Leads'), readSheet('Seguimiento'), readSheet('Auditoria')]);
 
   const leadsDelMes = leads.filter((l) => (l.FechaIngreso || '').slice(0, 7) === mes);
   const leadsMesAnterior = leads.filter((l) => (l.FechaIngreso || '').slice(0, 7) === mesAnterior);
@@ -311,6 +311,19 @@ export async function GET(request) {
   const desdeActividad = searchParams.get('desde') || diaFiltroActividad || '';
   const hastaActividad = searchParams.get('hasta') || diaFiltroActividad || '';
   const actividadPorPersona = calcularActividadPorPersona(mes, leads, seguimiento, desdeActividad, hastaActividad);
+
+  // Resumen de movimientos del mes por persona: mensajes frecuentes editados/eliminados y
+  // contactos reprogramados — mismo texto exacto que registra cada acción (ver lib/auditoria.js).
+  const auditoriaDelMes = auditoria.filter((a) => (a.Fecha || '').slice(0, 7) === mes);
+  const movimientosPorPersona = {};
+  auditoriaDelMes.forEach((a) => {
+    const nombre = a.UsuarioNombre;
+    if (!nombre) return;
+    if (!movimientosPorPersona[nombre]) movimientosPorPersona[nombre] = { editoMensajes: 0, eliminoMensajes: 0, postergoContactos: 0 };
+    if (a.Accion === 'Editó un mensaje frecuente') movimientosPorPersona[nombre].editoMensajes++;
+    else if (a.Accion === 'Eliminó un mensaje frecuente') movimientosPorPersona[nombre].eliminoMensajes++;
+    else if ((a.Accion || '').startsWith('Programó contacto')) movimientosPorPersona[nombre].postergoContactos++;
+  });
   const diasHastaConversion = calcularDiasHastaConversion(ventasDelMes);
 
   // Alertas automáticas
@@ -336,6 +349,16 @@ export async function GET(request) {
     else break;
   }
   if (diasSinVentas >= 5) alertas.push(`${diasSinVentas} día(s) sin ventas (racha actual)`);
+
+  // Tareas sin completar: alguien pidió "contactame el [fecha]" y esa fecha ya pasó, pero
+  // todavía nadie lo contactó — no se acota al mes del reporte, es una alerta "viva" en general.
+  const ahoraParaProgramados = new Date();
+  const programadosSinContactar = seguimiento.filter((s) =>
+    s.FechaProgramada && new Date(s.FechaProgramada) <= ahoraParaProgramados && s.Contactado !== 'TRUE'
+  ).length;
+  if (programadosSinContactar > 0) {
+    alertas.push(`${programadosSinContactar} contacto${programadosSinContactar !== 1 ? 's' : ''} programado${programadosSinContactar !== 1 ? 's' : ''} sin resolver — ya pasó la fecha pedida y nadie lo contactó`);
+  }
 
   // Alertas de cursos sin venta este mes — versión enriquecida: para cada curso sin ventas, se
   // suma ventas del mes anterior y leads activos, y con eso se clasifica una prioridad. Se
@@ -406,6 +429,7 @@ export async function GET(request) {
     rankingVendedoresMesAnterior: anterior.rankingVendedores,
     ventasDebitoAutomatico,
     contactosBajasDelMes,
+    movimientosPorPersona,
     serieDiariaMesAnterior: anterior.serieDiaria
   });
   } catch (err) {
