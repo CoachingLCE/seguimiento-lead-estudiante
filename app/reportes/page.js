@@ -105,7 +105,8 @@ function TooltipVentasPorDia({ active, payload, label }) {
       <p className="text-text text-xs font-semibold mb-1">Día {label}</p>
       <p className="text-textSec text-xs">Ventas ese día: <b className="text-accentTeal">{d.ventas}</b></p>
       <p className="text-textSec text-xs">Acumulado del mes: <b className="text-text">{d.acumulado}</b></p>
-      <p className="text-textMuted text-xs mt-1">Mes anterior (mismo día): {d.ventasMesAnterior}</p>
+      <p className="text-textMuted text-xs mt-1.5 pt-1.5 border-t border-border">Mes anterior (mismo día): {d.ventasMesAnterior}</p>
+      <p className="text-textMuted text-xs">Acumulado mes anterior: <b className="text-textSec">{d.acumuladoMesAnterior}</b></p>
     </div>
   );
 }
@@ -1143,17 +1144,23 @@ export default function ReportesPage() {
                     comparacion={<Flecha actual={datos.comparativa.ventas.actual} anterior={datos.comparativa.ventas.anterior} />}
                     onExportar={() => exportarGrafico('ventas-por-dia', (() => {
                       let acumulado = 0;
+                      let acumuladoAnterior = 0;
                       return datos.serieDiaria.map((d, i) => {
                         acumulado += d.ventas;
-                        return { dia: d.dia, ventas: d.ventas, acumulado, ventasMesAnterior: datos.serieDiariaMesAnterior?.[i]?.ventas ?? 0 };
+                        const ventasMesAnterior = datos.serieDiariaMesAnterior?.[i]?.ventas ?? 0;
+                        acumuladoAnterior += ventasMesAnterior;
+                        return { dia: d.dia, ventas: d.ventas, acumulado, ventasMesAnterior, acumuladoMesAnterior: acumuladoAnterior };
                       });
                     })())}>
                     <ResponsiveContainer>
                       <LineChart data={(() => {
                         let acumulado = 0;
+                        let acumuladoAnterior = 0;
                         return datos.serieDiaria.map((d, i) => {
                           acumulado += d.ventas;
-                          return { dia: d.dia, ventas: d.ventas, acumulado, ventasMesAnterior: datos.serieDiariaMesAnterior?.[i]?.ventas ?? 0 };
+                          const ventasMesAnterior = datos.serieDiariaMesAnterior?.[i]?.ventas ?? 0;
+                          acumuladoAnterior += ventasMesAnterior;
+                          return { dia: d.dia, ventas: d.ventas, acumulado, ventasMesAnterior, acumuladoMesAnterior: acumuladoAnterior };
                         });
                       })()}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#262c4a" />
