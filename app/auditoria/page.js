@@ -7,6 +7,24 @@ import Nav from '../../components/Nav';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoAuditoria } from '../../lib/permisos';
 
+// Colores distintos por persona, para reconocerla rápido en la lista sin leer el nombre —
+// el mismo nombre siempre cae en el mismo color (hash simple sobre una paleta fija).
+const PALETA_USUARIOS = [
+  { bg: 'bg-accentPurple/20', text: 'text-accentPurple' },
+  { bg: 'bg-accentTeal/20', text: 'text-accentTeal' },
+  { bg: 'bg-successBg', text: 'text-successText' },
+  { bg: 'bg-warningBg', text: 'text-warningText' },
+  { bg: 'bg-infoBg', text: 'text-infoText' },
+  { bg: 'bg-dangerBg', text: 'text-dangerText' },
+  { bg: 'bg-accentMagenta/20', text: 'text-accentMagenta' }
+];
+function colorPorUsuario(nombre) {
+  if (!nombre) return PALETA_USUARIOS[0];
+  let hash = 0;
+  for (let i = 0; i < nombre.length; i++) hash = (hash * 31 + nombre.charCodeAt(i)) % 997;
+  return PALETA_USUARIOS[hash % PALETA_USUARIOS.length];
+}
+
 export default function AuditoriaPage() {
   const { usuario, logout } = useSession();
   const router = useRouter();
@@ -162,7 +180,11 @@ export default function AuditoriaPage() {
                   return (
                     <tr key={i} className="border-b border-border">
                       <td className="py-2 whitespace-nowrap">{new Date(r.Fecha).toLocaleString('es-AR', { hour12: false })}</td>
-                      <td className="whitespace-nowrap overflow-hidden text-ellipsis">{r.UsuarioNombre}</td>
+                      <td className="whitespace-nowrap">
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${colorPorUsuario(r.UsuarioNombre).bg} ${colorPorUsuario(r.UsuarioNombre).text}`}>
+                          {r.UsuarioNombre}
+                        </span>
+                      </td>
                       <td className={`whitespace-nowrap overflow-hidden text-ellipsis ${
                         esVenta ? 'text-successText font-semibold' :
                         esLead ? 'text-accentPurple font-medium' :
