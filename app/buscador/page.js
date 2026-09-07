@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState, Suspense } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Nav from '../../components/Nav';
 import ModalVenta from '../../components/ModalVenta';
@@ -110,10 +111,10 @@ function TarjetaResultado({ r, q, router }) {
         <p className="text-infoText text-[10.5px] mb-2">🔎 Encontrado en: {r.coincidencias.join(', ')}</p>
       )}
       <div className="flex items-center gap-2 flex-wrap mt-2">
-        <button onClick={() => router.push(`/buscador?leadId=${r.id}`)}
-          className="text-xs px-2.5 py-1 rounded-md bg-accentPurple text-white font-semibold">Ver ficha</button>
-        <button onClick={() => router.push(`/buscador?leadId=${r.id}&editar=1`)}
-          className="text-xs px-2.5 py-1 rounded-md bg-surface2 border border-border">Editar</button>
+        <Link href={`/buscador?leadId=${r.id}`}
+          className="text-xs px-2.5 py-1 rounded-md bg-accentPurple text-white font-semibold">Ver ficha</Link>
+        <Link href={`/buscador?leadId=${r.id}&editar=1`}
+          className="text-xs px-2.5 py-1 rounded-md bg-surface2 border border-border">Editar</Link>
         <button onClick={() => router.push('/seguimiento')}
           className="text-xs px-2.5 py-1 rounded-md bg-surface2 border border-border">Ir al seguimiento</button>
       </div>
@@ -271,11 +272,11 @@ function BuscadorContent() {
               ) : (
                 <div className="grid md:grid-cols-2 gap-2">
                   {vistosRecientes.map((v) => (
-                    <button key={v.id} onClick={() => router.push(`/buscador?leadId=${v.id}`)}
-                      className="text-left bg-surface border border-border rounded-xl p-3 hover:border-accentTeal transition-colors">
+                    <Link key={v.id} href={`/buscador?leadId=${v.id}`}
+                      className="text-left bg-surface border border-border rounded-xl p-3 hover:border-accentTeal transition-colors block">
                       <p className="text-sm font-semibold">{v.nombre}</p>
                       <p className="text-textMuted text-[11px]">{v.curso} · {tiempoRelativo(v.fecha)}</p>
-                    </button>
+                    </Link>
                   ))}
                 </div>
               )}
