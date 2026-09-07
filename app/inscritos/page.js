@@ -13,13 +13,13 @@ import { colorParaCurso, normalizarEdicion, horasHabilesTranscurridas, CURSOS } 
 // Los 5 pasos que definen una inscripción "completa": Bienvenida, Confirmó recepción,
 // Alta en plataforma, Confirmó Alta y Grupo de WhatsApp.
 const FILTROS_ESTADO = [
-  { id: '', label: 'Todas' },
-  { id: 'bienvenida', label: 'Falta bienvenida' },
-  { id: 'confirmoRecepcion', label: 'Falta confirmar recepción' },
-  { id: 'alta', label: 'Falta alta en plataforma' },
-  { id: 'confirmoAlta', label: 'Falta confirmar alta' },
-  { id: 'whatsapp', label: 'Falta grupo de WhatsApp' },
-  { id: 'completo', label: 'Completo' }
+  { id: '', label: 'Todas', test: () => true },
+  { id: 'bienvenida', label: 'Falta bienvenida', test: (i) => i.BienvenidaEnviada !== 'TRUE' },
+  { id: 'confirmoRecepcion', label: 'Falta confirmar recepción', test: (i) => i.ConfirmoRecepcion !== 'TRUE' },
+  { id: 'alta', label: 'Falta alta en plataforma', test: (i) => i.AltaPlataforma !== 'TRUE' },
+  { id: 'confirmoAlta', label: 'Falta confirmar alta', test: (i) => i.ConfirmoAlta !== 'TRUE' },
+  { id: 'whatsapp', label: 'Falta grupo de WhatsApp', test: (i) => i.GrupoWhatsApp !== 'TRUE' },
+  { id: 'completo', label: 'Completo', test: (i) => esInscripcionCompleta(i) }
 ];
 
 function esInscripcionCompleta(i) {
@@ -242,14 +242,8 @@ export default function InscritosPage() {
     .filter((i) => !filtroCurso || i.Curso === filtroCurso)
     .filter((i) => !filtroEdicion || normalizarEdicion(i.Edicion) === filtroEdicion)
     .filter((i) => {
-      if (!filtroEstado) return true;
-      if (filtroEstado === 'bienvenida') return i.BienvenidaEnviada !== 'TRUE';
-      if (filtroEstado === 'confirmoRecepcion') return i.ConfirmoRecepcion !== 'TRUE';
-      if (filtroEstado === 'alta') return i.AltaPlataforma !== 'TRUE';
-      if (filtroEstado === 'confirmoAlta') return i.ConfirmoAlta !== 'TRUE';
-      if (filtroEstado === 'whatsapp') return i.GrupoWhatsApp !== 'TRUE';
-      if (filtroEstado === 'completo') return esInscripcionCompleta(i);
-      return true;
+      const filtro = FILTROS_ESTADO.find((f) => f.id === filtroEstado);
+      return !filtro || filtro.test(i);
     });
 
   const inscritosOrdenados = [...inscritosFiltrados].sort((a, b) => {
@@ -293,6 +287,22 @@ export default function InscritosPage() {
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
       <div className="max-w-[1900px] mx-auto px-4 pb-16">
+        {(() => {
+          const pendientes = FILTROS_ESTADO.filter((f) => f.id && f.id !== 'completo');
+          const conteos = pendientes.map((f) => ({ label: f.label.replace('Falta ', ''), cantidad: inscritos.filter(f.test).length }));
+          const totalAcciones = conteos.reduce((acc, c) => acc + c.cantidad, 0);
+          if (totalAcciones === 0) return null;
+          return (
+            <div className="bg-warningBg border border-warningText/30 rounded-xl px-4 py-2.5 mb-4 no-print">
+              <p className="text-warningText text-sm font-semibold">
+                ⚠️ {totalAcciones} acción{totalAcciones !== 1 ? 'es' : ''} pendiente{totalAcciones !== 1 ? 's' : ''} por realizar
+              </p>
+              <p className="text-textMuted text-xs mt-0.5">
+                {conteos.filter((c) => c.cantidad > 0).map((c) => `${c.cantidad} ${c.label}`).join(' · ')}
+              </p>
+            </div>
+          );
+        })()}
         <div className="flex items-center gap-2 mb-4 no-print">
           <button onClick={() => setTab('lista')}
             className={`text-sm px-4 py-2 rounded-lg font-semibold transition-colors ${
@@ -419,7 +429,7 @@ export default function InscritosPage() {
               className={`text-xs px-3 py-1 rounded-full border transition-colors ${
                 filtroEstado === f.id ? 'bg-accentPurple border-accentPurple text-white' : 'bg-surface2 border-border text-textSec hover:text-text'
               }`}>
-              {f.label}
+              {f.label} ({inscritos.filter(f.test).length})
             </button>
           ))}
         </div>
