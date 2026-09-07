@@ -16,6 +16,7 @@ export default function AuditoriaPage() {
   const [desde, setDesde] = useState('');
   const [hasta, setHasta] = useState('');
   const [busqueda, setBusqueda] = useState('');
+  const [leadsPorId, setLeadsPorId] = useState({});
 
   const puedeVer = tienePermisoAuditoria(usuario);
 
@@ -33,7 +34,10 @@ export default function AuditoriaPage() {
     if (desde) params.set('desde', desde);
     if (hasta) params.set('hasta', hasta);
     try {
-      const res = await fetch(`/api/auditoria?${params.toString()}`);
+      const [res, resLeads] = await Promise.all([
+        fetch(`/api/auditoria?${params.toString()}`),
+        fetch(`/api/leads?solicitanteEmail=${encodeURIComponent(usuario.email)}`)
+      ]);
       const r = await res.json();
       if (!res.ok || r.error) {
         setErrorCarga(r.error || 'No se pudo cargar el historial.');
@@ -41,6 +45,10 @@ export default function AuditoriaPage() {
       } else {
         setRegistros(r.registros || []);
       }
+      const rLeads = await resLeads.json();
+      const mapa = {};
+      (rLeads.leads || []).forEach((l) => { mapa[l.ID] = { Email: l.EmailEstudiante, WhatsApp: l.WhatsApp }; });
+      setLeadsPorId(mapa);
     } catch (err) {
       setErrorCarga('No se pudo conectar con el servidor. Probá de nuevo.');
       setRegistros([]);
@@ -66,10 +74,12 @@ export default function AuditoriaPage() {
   if (!usuario || !puedeVer) return null;
 
   const usuariosUnicos = [...new Set(registros.map((r) => r.UsuarioNombre))].sort();
-  const registrosFiltrados = registros.filter((r) =>
-    !busqueda.trim() ||
-    `${r.Accion} ${r.Detalle}`.toLowerCase().includes(busqueda.trim().toLowerCase())
-  );
+  const registrosFiltrados = registros.filter((r) => {
+    if (!busqueda.trim()) return true;
+    const lead = r.LeadIdRelacionado ? leadsPorId[r.LeadIdRelacionado] : null;
+    const textoBuscable = `${r.Accion} ${r.Detalle} ${lead?.Email || ''} ${lead?.WhatsApp || ''}`.toLowerCase();
+    return textoBuscable.includes(busqueda.trim().toLowerCase());
+  });
 
   return (
     <div>
@@ -97,8 +107,8 @@ export default function AuditoriaPage() {
           <div>
             <label className="text-xs text-textSec block mb-1">Buscar</label>
             <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="🔍 Acción o detalle…"
-              className="bg-bg border border-border rounded-lg px-3 py-2 text-sm w-48" />
+              placeholder="🔍 Nombre, acción, email o WhatsApp…"
+              className="bg-bg border border-border rounded-lg px-3 py-2 text-sm w-64" />
           </div>
           <button onClick={exportarExcel} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm">
             ⬇ Exportar a Excel
@@ -146,6 +156,8 @@ export default function AuditoriaPage() {
                   const esLoginFallido = (r.Accion || '').toLowerCase().includes('login fallido') || (r.Accion || '').toLowerCase().includes('login rechazado');
                   const esGrupoWhatsapp = (r.Accion || '').toLowerCase().includes('grupo de whatsapp') || (r.Accion || '').toLowerCase().includes('grupo whatsapp');
                   const esMensajeFrecuente = (r.Accion || '').toLowerCase().includes('mensaje frecuente');
+                  const esEliminar = (r.Accion || '').toLowerCase().includes('eliminó') || (r.Accion || '').toLowerCase().includes('eliminado');
+                  const lead = r.LeadIdRelacionado ? leadsPorId[r.LeadIdRelacionado] : null;
                   return (
                     <tr key={i} className="border-b border-border">
                       <td className="py-2 whitespace-nowrap">{new Date(r.Fecha).toLocaleString('es-AR', { hour12: false })}</td>
@@ -156,11 +168,19 @@ export default function AuditoriaPage() {
                         esGrupoWhatsapp ? 'text-accentTeal font-medium' :
                         esMensajeFrecuente ? 'text-accentMagenta font-medium' :
                         esLogin ? 'text-infoText font-medium' :
-                        esLoginFallido ? 'text-dangerText font-medium' : ''
+                        esLoginFallido ? 'text-dangerText font-medium' :
+                        esEliminar ? 'text-dangerText font-semibold' : ''
                       }`}>
-                        {esVenta && '💰 '}{esLead && '📩 '}{esGrupoWhatsapp && '💬 '}{esMensajeFrecuente && '📝 '}{esLogin && '🔑 '}{esLoginFallido && '⚠️ '}{r.Accion}
+                        {esVenta && '💰 '}{esLead && '📩 '}{esGrupoWhatsapp && '💬 '}{esMensajeFrecuente && '📝 '}{esLogin && '🔑 '}{esLoginFallido && '⚠️ '}{esEliminar && '🗑️ '}{r.Accion}
                       </td>
-                      <td className="leading-snug">{r.Detalle}</td>
+                      <td className="leading-snug">
+                        {r.Detalle}
+                        {lead && (
+                          <p className="text-textMuted text-[11px] mt-0.5">
+                            {lead.Email && `✉️ ${lead.Email}`}{lead.Email && lead.WhatsApp && ' · '}{lead.WhatsApp && `📱 ${lead.WhatsApp}`}
+                          </p>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}
