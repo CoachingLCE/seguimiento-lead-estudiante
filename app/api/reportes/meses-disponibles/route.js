@@ -13,8 +13,9 @@ export async function GET(request) {
   }
 
   const leads = await readSheet('Leads');
+  const MES_MINIMO = '2026-06'; // no hay info real de antes — descarta leads de prueba/viejos con fecha anterior
   const mesesConDatos = [...new Set(
-    leads.map((l) => (l.FechaIngreso || '').slice(0, 7)).filter(Boolean)
+    leads.map((l) => (l.FechaIngreso || '').slice(0, 7)).filter((m) => m && m >= MES_MINIMO)
   )].sort((a, b) => b.localeCompare(a));
 
   // Si por algún motivo no hay ningún lead todavía, al menos se muestra el mes actual.
