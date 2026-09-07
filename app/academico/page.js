@@ -72,13 +72,14 @@ function calcularResumenGlobal(todosLosEstudiantes, todasLasEdiciones, cursosInf
     const ed = e.Edicion || 'Sin edición';
     const clave = `${e.Curso}|||${ed}`;
     if (!porClave[clave]) {
-      porClave[clave] = { curso: e.Curso, edicion: ed, inscritos: 0, certificados: 0, bajas: 0, cc: 0, noCertificaron: 0 };
+      porClave[clave] = { curso: e.Curso, edicion: ed, inscritos: 0, certificados: 0, bajas: 0, cc: 0, noCertificaron: 0, pendientes: 0 };
     }
     porClave[clave].inscritos++;
     if (e.SituacionAcademica === 'Certificado') porClave[clave].certificados++;
     else if (e.SituacionAcademica === 'Baja') porClave[clave].bajas++;
     else if (e.SituacionAcademica === 'Cambio de cursada') porClave[clave].cc++;
     else if (e.SituacionAcademica === 'No se certificó') porClave[clave].noCertificaron++;
+    else porClave[clave].pendientes++;
   });
 
   return Object.values(porClave).map((r) => {
@@ -87,11 +88,14 @@ function calcularResumenGlobal(todosLosEstudiantes, todasLasEdiciones, cursosInf
     // El formador de la edición puntual tiene prioridad; si no está definido, se usa el del
     // curso como respaldo (compatibilidad con cursos donde todas las ediciones comparten uno solo).
     const formador = edicionInfo?.Formador || cursosInfo.find((c) => c.Curso === r.curso)?.Formador || '';
-    const fechaInicioDate = parsearFechaFlexible(fechaInicio);
+    // "Cerrado" ya NO se decide por días transcurridos desde el inicio (un curso puede durar
+    // mucho más de 30 días y seguir activo) — se decide por si TODOS los alumnos ya tienen una
+    // situación académica definida. Si falta alguno, sigue "En curso" sin importar la fecha.
     let cursada = 'Sin fecha de inicio';
-    if (fechaInicioDate) {
-      const dias = Math.floor((new Date() - fechaInicioDate) / (1000 * 60 * 60 * 24));
-      cursada = dias > 30 ? 'Curso cerrado' : 'En curso';
+    if (r.inscritos > 0 && r.pendientes === 0) {
+      cursada = 'Curso cerrado';
+    } else if (parsearFechaFlexible(fechaInicio)) {
+      cursada = 'En curso';
     }
     return {
       ...r, formador, fechaInicio, cursada,
@@ -236,12 +240,17 @@ export default function AcademicoPage() {
   }
 
   async function guardarFormadorEdicion(curso, edicion, formador) {
-    await fetch('/api/academico/ediciones', {
+    const res = await fetch('/api/academico/ediciones', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ curso, edicion, formador, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
     });
     setEditandoFormadorEdicion(null);
+    if (!res.ok) {
+      const r = await res.json().catch(() => ({}));
+      alert(r.error || 'No se pudo guardar el formador. Probá de nuevo.');
+      return;
+    }
     cargarTodo();
   }
 
@@ -511,9 +520,24 @@ export default function AcademicoPage() {
                           <td className="pr-3 font-medium">Edición {r.edicion}</td>
                           <td className="pr-3" onClick={(ev) => ev.stopPropagation()}>
                             {editandoFormadorEdicion === `${r.curso}|${r.edicion}` ? (
-                              <input type="text" defaultValue={r.formador} placeholder="Nombre del formador"
-                                onBlur={(e) => guardarFormadorEdicion(r.curso, r.edicion, e.target.value)}
-                                className="bg-bg border border-border rounded px-1.5 py-0.5 text-xs w-32" autoFocus />
+                              editandoFormadorEdicion === `nuevo:${r.curso}|${r.edicion}` ? (
+                                <input type="text" defaultValue={r.formador} placeholder="Nombre del formador" autoFocus
+                                  onBlur={(e) => guardarFormadorEdicion(r.curso, r.edicion, e.target.value)}
+                                  onKeyDown={(e) => e.key === 'Enter' && e.target.blur()}
+                                  className="bg-bg border border-border rounded px-1.5 py-0.5 text-xs w-32" />
+                              ) : (
+                                <select autoFocus defaultValue={r.formador}
+                                  onChange={(e) => {
+                                    if (e.target.value === '__nuevo__') { setEditandoFormadorEdicion(`nuevo:${r.curso}|${r.edicion}`); return; }
+                                    guardarFormadorEdicion(r.curso, r.edicion, e.target.value);
+                                  }}
+                                  onBlur={() => setEditandoFormadorEdicion(null)}
+                                  className="bg-bg border border-border rounded px-1.5 py-0.5 text-xs w-36">
+                                  <option value="">Sin definir</option>
+                                  {docentesUnicos.map((d) => <option key={d} value={d}>{d}</option>)}
+                                  <option value="__nuevo__">✏️ Escribir otro nombre…</option>
+                                </select>
+                              )
                             ) : (
                               <button onClick={() => setEditandoFormadorEdicion(`${r.curso}|${r.edicion}`)} className="text-textSec text-xs hover:text-accentTeal">
                                 {r.formador || '✏️ Definir'}

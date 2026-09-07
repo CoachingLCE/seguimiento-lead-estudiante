@@ -95,6 +95,21 @@ function TickCursoDosLineas({ x, y, payload }) {
 
 // Tooltip del gráfico "Días hasta la conversión": además de la cantidad, lista de quiénes
 // fueron esas ventas — si son muchas, corta la lista y avisa cuántas más hay.
+// Tooltip de "Evolución de ventas por día": además de las ventas de ese día puntual, muestra
+// el acumulado del mes hasta ese día — ej: "el 3 se hicieron 2 ventas y el acumulado es 14".
+function TooltipVentasPorDia({ active, payload, label }) {
+  if (!active || !payload || payload.length === 0) return null;
+  const d = payload[0].payload;
+  return (
+    <div style={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} className="px-3 py-2.5">
+      <p className="text-text text-xs font-semibold mb-1">Día {label}</p>
+      <p className="text-textSec text-xs">Ventas ese día: <b className="text-accentTeal">{d.ventas}</b></p>
+      <p className="text-textSec text-xs">Acumulado del mes: <b className="text-text">{d.acumulado}</b></p>
+      <p className="text-textMuted text-xs mt-1">Mes anterior (mismo día): {d.ventasMesAnterior}</p>
+    </div>
+  );
+}
+
 function TooltipDiasConversion({ active, payload }) {
   if (!active || !payload || payload.length === 0) return null;
   const d = payload[0].payload;
@@ -1123,20 +1138,28 @@ export default function ReportesPage() {
 
                 {/* GRÁFICOS PRINCIPALES */}
                 <div className="grid md:grid-cols-2 gap-4">
-                  <ChartCard titulo="Evolución de ventas por día" subtitulo="Mes seleccionado — comparado con el mes anterior" tooltip="Cantidad de ventas confirmadas por día del mes, superpuesto con el mismo día del mes anterior"
+                  <ChartCard titulo="Evolución de ventas por día" subtitulo="Mes seleccionado — comparado con el mes anterior" tooltip="Cantidad de ventas confirmadas por día del mes, superpuesto con el mismo día del mes anterior. Pasá el mouse para ver el acumulado del mes hasta ese día."
                     valorGrande={`${datos.totalCompras} ventas`}
                     comparacion={<Flecha actual={datos.comparativa.ventas.actual} anterior={datos.comparativa.ventas.anterior} />}
-                    onExportar={() => exportarGrafico('ventas-por-dia', datos.serieDiaria.map((d, i) => ({
-                      dia: d.dia, ventas: d.ventas, ventasMesAnterior: datos.serieDiariaMesAnterior?.[i]?.ventas ?? 0
-                    })))}>
+                    onExportar={() => exportarGrafico('ventas-por-dia', (() => {
+                      let acumulado = 0;
+                      return datos.serieDiaria.map((d, i) => {
+                        acumulado += d.ventas;
+                        return { dia: d.dia, ventas: d.ventas, acumulado, ventasMesAnterior: datos.serieDiariaMesAnterior?.[i]?.ventas ?? 0 };
+                      });
+                    })())}>
                     <ResponsiveContainer>
-                      <LineChart data={datos.serieDiaria.map((d, i) => ({
-                        dia: d.dia, ventas: d.ventas, ventasMesAnterior: datos.serieDiariaMesAnterior?.[i]?.ventas ?? 0
-                      }))}>
+                      <LineChart data={(() => {
+                        let acumulado = 0;
+                        return datos.serieDiaria.map((d, i) => {
+                          acumulado += d.ventas;
+                          return { dia: d.dia, ventas: d.ventas, acumulado, ventasMesAnterior: datos.serieDiariaMesAnterior?.[i]?.ventas ?? 0 };
+                        });
+                      })()}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#262c4a" />
                         <XAxis dataKey="dia" stroke="#6b7299" fontSize={11} />
                         <YAxis stroke="#6b7299" fontSize={11} allowDecimals={false} />
-                        <Tooltip contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} />
+                        <Tooltip content={<TooltipVentasPorDia />} />
                         <Legend wrapperStyle={{ fontSize: 11 }} formatter={(v) => (v === 'ventas' ? 'Este mes' : 'Mes anterior')} />
                         <Line type="monotone" dataKey="ventas" stroke="#22d3ee" strokeWidth={2} dot={false} />
                         <Line type="monotone" dataKey="ventasMesAnterior" stroke="#6b7299" strokeWidth={2} dot={false} strokeDasharray="4 3" />

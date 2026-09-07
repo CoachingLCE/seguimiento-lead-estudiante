@@ -362,6 +362,10 @@ export default function SeguimientoPage() {
   const noContactada = (s) => s.Contactado !== 'TRUE';
 
   const vencido = (s) => new Date(s.FechaVence) <= ahora;
+  // Si alguien ya programó "contactame el [fecha]" para esta fila puntual, no debe seguir
+  // apareciendo en su lote numérico de origen (aunque ese lote ya esté vencido) — tiene que
+  // esperar tranquila hasta que llegue esa fecha, momento en el que aparece en LOTE PROGRAMADO.
+  const sinProgramar = (s) => !s.FechaProgramada;
   const maniana = new Date(ahora); maniana.setDate(maniana.getDate() + 1); maniana.setHours(0, 0, 0, 0);
   const pasadoManiana = new Date(maniana); pasadoManiana.setDate(pasadoManiana.getDate() + 1);
   const venceManiana = (s) => {
@@ -369,19 +373,19 @@ export default function SeguimientoPage() {
     return f >= maniana && f < pasadoManiana;
   };
 
-  const lote0Todas = seguimiento.filter((s) => s.Lote === '1' && !vencido(s) && filaValida(s));
+  const lote0Todas = seguimiento.filter((s) => s.Lote === '1' && !vencido(s) && filaValida(s) && sinProgramar(s));
   const lote0 = lote0Todas.filter(noContactada);
-  const lote1Todas = seguimiento.filter((s) => s.Lote === '1' && vencido(s) && filaValida(s));
+  const lote1Todas = seguimiento.filter((s) => s.Lote === '1' && vencido(s) && filaValida(s) && sinProgramar(s));
   const lote1 = lote1Todas.filter(noContactada);
-  const lote2Todas = seguimiento.filter((s) => s.Lote === '2' && vencido(s) && filaValida(s));
+  const lote2Todas = seguimiento.filter((s) => s.Lote === '2' && vencido(s) && filaValida(s) && sinProgramar(s));
   const lote2 = lote2Todas.filter(noContactada);
-  const lote3Todas = seguimiento.filter((s) => s.Lote === '3' && vencido(s) && filaValida(s));
+  const lote3Todas = seguimiento.filter((s) => s.Lote === '3' && vencido(s) && filaValida(s) && sinProgramar(s));
   const lote3 = lote3Todas.filter(noContactada);
-  const lote4Todas = seguimiento.filter((s) => s.Lote === '4' && vencido(s) && filaValida(s));
+  const lote4Todas = seguimiento.filter((s) => s.Lote === '4' && vencido(s) && filaValida(s) && sinProgramar(s));
   const lote4 = lote4Todas.filter(noContactada);
-  const lote5Todas = seguimiento.filter((s) => s.Lote === '5' && vencido(s) && filaValida(s));
+  const lote5Todas = seguimiento.filter((s) => s.Lote === '5' && vencido(s) && filaValida(s) && sinProgramar(s));
   const lote5 = lote5Todas.filter(noContactada);
-  const lote6Todas = seguimiento.filter((s) => s.Lote === '6' && vencido(s) && filaValida(s));
+  const lote6Todas = seguimiento.filter((s) => s.Lote === '6' && vencido(s) && filaValida(s) && sinProgramar(s));
   const lote6 = lote6Todas.filter(noContactada);
 
   const seAgreganManiana = (numeroLote) =>
@@ -402,7 +406,7 @@ export default function SeguimientoPage() {
 
   // LOTE BAJAS: alguien que se dio de baja de la cursada, 90 días después de la baja,
   // para ofrecerle volver a información y ver si se reincorpora.
-  const loteBajasTodas = seguimiento.filter((s) => s.Lote === 'baja' && vencido(s) && filaValida(s));
+  const loteBajasTodas = seguimiento.filter((s) => s.Lote === 'baja' && vencido(s) && filaValida(s) && sinProgramar(s));
   const loteBajas = loteBajasTodas.filter(noContactada);
 
   // SIN LOTE: leads que ya no aparecen en ningún lote activo, y por qué (un resultado final como
