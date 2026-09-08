@@ -138,6 +138,7 @@ export default function BajasPage() {
   const [seleccionadas, setSeleccionadas] = useState(new Set());
   const [eliminando, setEliminando] = useState(false);
   const [filtroHistorial, setFiltroHistorial] = useState('todas');
+  const [filtroCurso, setFiltroCurso] = useState('');
 
   async function eliminarBajas(leadIds) {
     setEliminando(true);
@@ -220,7 +221,9 @@ export default function BajasPage() {
     if (filtroHistorial === 'lote') return b.disponibleAhora && !b.contactado;
     if (filtroHistorial === 'contactadas') return b.contactado;
     return true;
-  });
+  }).filter((b) => !filtroCurso || b.curso === filtroCurso);
+
+  const cursosUnicos = [...new Set(listaBajas.map((b) => b.curso).filter(Boolean))].sort();
 
   return (
     <div>
@@ -311,6 +314,13 @@ export default function BajasPage() {
                     {f.label}
                   </button>
                 ))}
+                {cursosUnicos.length > 0 && (
+                  <select value={filtroCurso} onChange={(e) => setFiltroCurso(e.target.value)}
+                    className="text-xs px-2.5 py-1 rounded-full bg-surface2 border border-border text-textSec">
+                    <option value="">Todos los cursos</option>
+                    {cursosUnicos.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                )}
               </div>
 
               {seleccionadas.size > 0 && (

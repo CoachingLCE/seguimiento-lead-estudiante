@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { readSheet, appendRow, deleteRows } from '../../../../lib/sheets';
+import { readSheet, appendRow, updateRow, deleteRows } from '../../../../lib/sheets';
 import { findUsuario, tienePermisoBajas } from '../../../../lib/auth';
 import { registrarAccion } from '../../../../lib/auditoria';
 
@@ -148,6 +148,22 @@ export async function POST(request) {
       }
 
       if (!fueCreado && yaTieneBaja.has(lead.ID)) {
+        // Si esta vez vino el email y antes no lo tenía cargado, se aprovecha para completarlo
+        // — así el mail de reactivación (Acción 1) va a poder mandarse cuando llegue el momento.
+        if (entrada.email && !lead.EmailEstudiante && lead._rowIndex) {
+          await updateRow('Leads', lead._rowIndex, [
+            lead.ID, lead.Nombre, lead.Apellido, lead.WhatsApp || '', lead.Curso || '', lead.CursosAdicionales || '',
+            lead.Origen || '', lead.FechaIngreso || '', lead.CargadoPorEmail || '', lead.CargadoPorNombre || '',
+            lead.Estado || '', lead.FechaVenta || '', lead.MedioPago || '', lead.Modalidad || '',
+            lead.CantCuotas || '', lead.ValorCuota || '', lead.MontoTotal || '', lead.Edicion || '',
+            entrada.email, lead.NotasInternas || '', lead.InstagramUsuario || '', lead.Docentes || '',
+            lead.DetalleCuotas || '', lead.VendidoPorNombre || '', lead.Pais || ''
+          ]);
+          await registrarAccion(
+            body.solicitanteEmail, body.solicitanteNombre,
+            'Completó el email al recargar una baja ya existente', `${lead.Nombre} ${lead.Apellido}`, lead.ID
+          );
+        }
         resultado.yaExistentes.push(`${lead.Nombre} ${lead.Apellido}`);
         continue;
       }
