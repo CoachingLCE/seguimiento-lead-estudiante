@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import ThemeSelector from './ThemeSelector';
 import {
   tienePermisoOperativo,
+  tienePermisoInformesRRSS,
   tienePermisoCrearLeads,
   tienePermisoReportes,
   tienePermisoEstudiantes,
@@ -124,6 +125,16 @@ export default function Nav({ usuario, onLogout }) {
                   : 'bg-surface2 border border-border text-textSec hover:text-text hover:border-accentTeal'
               }`}>
               📄
+            </Link>
+          )}
+          {tienePermisoInformesRRSS(usuario) && (
+            <Link href="/informes-rrss" title="Informes RRSS"
+              className={`w-9 h-9 flex items-center justify-center rounded-lg text-base transition-colors ${
+                pathname === '/informes-rrss'
+                  ? 'bg-accentPurple text-white'
+                  : 'bg-surface2 border border-border text-textSec hover:text-text hover:border-accentTeal'
+              }`}>
+              📊
             </Link>
           )}
           <Link href="/herramientas" title="Herramientas"
