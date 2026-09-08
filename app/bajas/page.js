@@ -181,7 +181,8 @@ export default function BajasPage() {
           });
         }
       } catch (err) {
-        acumulado.errores.push('No se pudo conectar con el servidor en una de las cargas. Probá de nuevo con los que falten.');
+        const etiqueta = entradas[i].nombre || entradas[i].email || entradas[i].whatsapp || `fila ${i + 1}`;
+        acumulado.errores.push(`${etiqueta}: no se pudo conectar con el servidor. Probá de nuevo con esta persona.`);
       }
       setProgresoCarga({ actual: i + 1, total: entradas.length });
     }
