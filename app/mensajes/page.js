@@ -20,7 +20,7 @@ export default function MensajesFrecuentesPage() {
   const [mensajeForm, setMensajeForm] = useState('');
   const [guardando, setGuardando] = useState(false);
   const [confirmarBorrar, setConfirmarBorrar] = useState(null);
-  const [vistaCompacta, setVistaCompacta] = useState(false);
+  const [vistaCompacta, setVistaCompacta] = useState(true);
   const [expandidoId, setExpandidoId] = useState(null);
   const [arrastrandoId, setArrastrandoId] = useState(null);
 
