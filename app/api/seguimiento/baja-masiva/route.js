@@ -61,14 +61,21 @@ function soloDigitos(v) {
 // Busca al estudiante con lo que haya disponible, en orden de confiabilidad:
 // email exacto > WhatsApp exacto > nombre (+ curso si hay más de un resultado por nombre).
 function buscarEstudiante(entrada, leadsComprados) {
+  // Se prueba en cascada (email -> whatsapp -> nombre) — si el dato más específico que trajo
+  // esta carga no encuentra nada (ej: el registro existente todavía no tenía el email guardado),
+  // se sigue probando con lo que queda, en vez de darlo por "no encontrado" y crear un duplicado.
   const email = (entrada.email || '').trim().toLowerCase();
   if (email) {
-    return leadsComprados.filter((l) => (l.EmailEstudiante || '').trim().toLowerCase() === email);
+    const porEmail = leadsComprados.filter((l) => (l.EmailEstudiante || '').trim().toLowerCase() === email);
+    if (porEmail.length > 0) return porEmail;
   }
+
   const whatsapp = soloDigitos(entrada.whatsapp);
   if (whatsapp && whatsapp.length >= 6) {
-    return leadsComprados.filter((l) => soloDigitos(l.WhatsApp) === whatsapp);
+    const porWhatsapp = leadsComprados.filter((l) => soloDigitos(l.WhatsApp) === whatsapp);
+    if (porWhatsapp.length > 0) return porWhatsapp;
   }
+
   const nombre = (entrada.nombre || '').trim().toLowerCase();
   if (nombre) {
     let candidatos = leadsComprados.filter((l) => `${l.Nombre} ${l.Apellido}`.trim().toLowerCase() === nombre);

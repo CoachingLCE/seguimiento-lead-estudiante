@@ -221,18 +221,32 @@ export default function BajasPage() {
   const listasParaRecontactar = listaBajas.filter((b) => b.listaParaReactivacion).length;
   const proximasAlDia90 = listaBajas.filter((b) => !b.disponibleAhora && b.diasFaltantes <= 5).length;
 
+  // Duplicados: misma persona (por nombre normalizado) con la misma fecha de baja, pero en
+  // registros DISTINTOS (leads distintos) — pasa cuando se vuelve a cargar a alguien que no se
+  // encontró la primera vez. No se borran solos (podría borrarse por error la versión con el
+  // email correcto) — se marcan para que los revises y elijas cuál dejar.
+  const conteoPorClave = {};
+  listaBajas.forEach((b) => {
+    const clave = `${(b.nombre || '').trim().toLowerCase()}|||${new Date(b.fechaBaja).toDateString()}`;
+    conteoPorClave[clave] = (conteoPorClave[clave] || 0) + 1;
+  });
+  const esDuplicado = (b) => conteoPorClave[`${(b.nombre || '').trim().toLowerCase()}|||${new Date(b.fechaBaja).toDateString()}`] > 1;
+  const totalDuplicados = listaBajas.filter(esDuplicado).length;
+
   const FILTROS_HISTORIAL = [
     { id: 'todas', label: 'Todas' },
     { id: 'recontactar', label: 'Recontactar' },
     { id: 'proximas90', label: 'Próximas al día 90' },
     { id: 'lote', label: 'En Lote Bajas' },
-    { id: 'contactadas', label: 'Contactadas' }
+    { id: 'contactadas', label: 'Contactadas' },
+    { id: 'duplicados', label: `⚠️ Duplicados${totalDuplicados > 0 ? ` (${totalDuplicados})` : ''}` }
   ];
   const listaFiltrada = listaBajas.filter((b) => {
     if (filtroHistorial === 'recontactar') return b.listaParaReactivacion;
     if (filtroHistorial === 'proximas90') return !b.disponibleAhora && b.diasFaltantes <= 5;
     if (filtroHistorial === 'lote') return b.disponibleAhora && !b.contactado;
     if (filtroHistorial === 'contactadas') return b.contactado;
+    if (filtroHistorial === 'duplicados') return esDuplicado(b);
     return true;
   }).filter((b) => !filtroCurso || b.curso === filtroCurso);
 
@@ -365,7 +379,7 @@ export default function BajasPage() {
                               checked={listaFiltrada.length > 0 && listaFiltrada.every((b) => seleccionadas.has(b.leadId))}
                               onChange={(e) => setSeleccionadas(e.target.checked ? new Set(listaFiltrada.map((b) => b.leadId)) : new Set())} />
                           </th>
-                          <th className="px-2">Nombre</th><th className="px-2">Curso</th><th className="px-2">Fecha baja</th>
+                          <th className="px-2">Nombre</th><th className="px-2">Email</th><th className="px-2">Curso</th><th className="px-2">Fecha baja</th>
                           <th className="px-2">Reactivación</th>
                           <th className="px-2">Seguimiento</th>
                           <th className="px-2"></th>
@@ -373,7 +387,7 @@ export default function BajasPage() {
                       </thead>
                       <tbody>
                         {listaFiltrada.map((b) => (
-                          <tr key={b.leadId} className="border-b border-border last:border-b-0 hover:bg-bg/40">
+                          <tr key={b.leadId} className={`border-b border-border last:border-b-0 hover:bg-bg/40 ${esDuplicado(b) ? 'bg-warningBg/40' : ''}`}>
                             <td className="py-2 px-3">
                               <input type="checkbox" checked={seleccionadas.has(b.leadId)}
                                 onChange={() => setSeleccionadas((prev) => {
@@ -382,7 +396,11 @@ export default function BajasPage() {
                                   return nuevo;
                                 })} />
                             </td>
-                            <td className="px-2 font-medium">{b.nombre}</td>
+                            <td className="px-2 font-medium whitespace-nowrap">
+                              {esDuplicado(b) && <span title="Hay más de un registro con este nombre y fecha">⚠️ </span>}
+                              {b.nombre}
+                            </td>
+                            <td className="px-2 text-textSec whitespace-nowrap">{b.email || <span className="text-warningText">Sin email</span>}</td>
                             <td className="px-2 text-textSec">{b.curso}</td>
                             <td className="px-2 whitespace-nowrap">{new Date(b.fechaBaja).toLocaleDateString('es-AR')}</td>
                             <td className="px-2"><BadgeReactivacion b={b} enviandoMensajeId={enviandoMensajeId} onEnviar={enviarMensaje1} /></td>
@@ -400,7 +418,7 @@ export default function BajasPage() {
                   {/* Cards — mobile */}
                   <div className="sm:hidden space-y-2 max-h-96 overflow-y-auto">
                     {listaFiltrada.map((b) => (
-                      <div key={b.leadId} className="bg-bg border border-border rounded-xl p-3">
+                      <div key={b.leadId} className={`border rounded-xl p-3 ${esDuplicado(b) ? 'bg-warningBg/40 border-warningText/40' : 'bg-bg border-border'}`}>
                         <div className="flex items-start justify-between gap-2 mb-1.5">
                           <div className="flex items-center gap-2">
                             <input type="checkbox" checked={seleccionadas.has(b.leadId)}
@@ -409,12 +427,13 @@ export default function BajasPage() {
                                 nuevo.has(b.leadId) ? nuevo.delete(b.leadId) : nuevo.add(b.leadId);
                                 return nuevo;
                               })} />
-                            <p className="text-sm font-medium">{b.nombre}</p>
+                            <p className="text-sm font-medium">{esDuplicado(b) && '⚠️ '}{b.nombre}</p>
                           </div>
                           <button onClick={() => eliminarBajas([b.leadId])} disabled={eliminando}
                             className="text-dangerText text-xs disabled:opacity-60 shrink-0">🗑</button>
                         </div>
-                        <p className="text-textSec text-xs mb-2">{b.curso} · {new Date(b.fechaBaja).toLocaleDateString('es-AR')}</p>
+                        <p className="text-textSec text-xs mb-1">{b.curso} · {new Date(b.fechaBaja).toLocaleDateString('es-AR')}</p>
+                        <p className="text-xs mb-2">{b.email || <span className="text-warningText">Sin email</span>}</p>
                         <div className="flex flex-wrap gap-1.5">
                           <BadgeReactivacion b={b} enviandoMensajeId={enviandoMensajeId} onEnviar={enviarMensaje1} />
                           <BadgeSeguimiento b={b} />
