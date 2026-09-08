@@ -132,6 +132,7 @@ export default function BajasPage() {
     [textoBajasMasivas]
   );
   const [cargandoBajasMasivas, setCargandoBajasMasivas] = useState(false);
+  const [progresoCarga, setProgresoCarga] = useState(null);
   const [resultadoBajasMasivas, setResultadoBajasMasivas] = useState(null);
   const [listaBajas, setListaBajas] = useState([]);
   const [enviandoMensajeId, setEnviandoMensajeId] = useState(null);
@@ -160,23 +161,34 @@ export default function BajasPage() {
   async function cargarBajasMasivas() {
     setCargandoBajasMasivas(true);
     const entradas = parsearBloquesBajas(textoBajasMasivas);
-    try {
-      const res = await fetch('/api/seguimiento/baja-masiva', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entradas, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
-      });
-      const r = await res.json();
-      if (!res.ok) {
-        setResultadoBajasMasivas({ procesados: [], creados: [], noEncontrados: [], yaExistentes: [], ambiguos: [], errores: [r.error || 'Error desconocido del servidor'] });
-      } else {
-        setResultadoBajasMasivas(r);
-        setTextoBajasMasivas('');
-        cargarDatosBajas();
+    // Se manda una por una (en vez de todo el lote junto) para poder mostrar el progreso en
+    // vivo — antes era una sola llamada larga y no había forma de saber en qué iba.
+    const acumulado = { procesados: [], creados: [], noEncontrados: [], yaExistentes: [], ambiguos: [], errores: [] };
+    setProgresoCarga({ actual: 0, total: entradas.length });
+    for (let i = 0; i < entradas.length; i++) {
+      try {
+        const res = await fetch('/api/seguimiento/baja-masiva', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ entradas: [entradas[i]], solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
+        });
+        const r = await res.json();
+        if (!res.ok) {
+          acumulado.errores.push(r.error || 'Error desconocido del servidor');
+        } else {
+          ['procesados', 'creados', 'noEncontrados', 'yaExistentes', 'ambiguos', 'errores'].forEach((clave) => {
+            if (r[clave]?.length) acumulado[clave].push(...r[clave]);
+          });
+        }
+      } catch (err) {
+        acumulado.errores.push('No se pudo conectar con el servidor en una de las cargas. Probá de nuevo con los que falten.');
       }
-    } catch (err) {
-      setResultadoBajasMasivas({ procesados: [], creados: [], noEncontrados: [], yaExistentes: [], ambiguos: [], errores: ['No se pudo conectar con el servidor. Probá de nuevo.'] });
+      setProgresoCarga({ actual: i + 1, total: entradas.length });
     }
+    setResultadoBajasMasivas(acumulado);
+    setTextoBajasMasivas('');
+    cargarDatosBajas();
+    setProgresoCarga(null);
     setCargandoBajasMasivas(false);
   }
 
@@ -272,9 +284,14 @@ export default function BajasPage() {
           <button onClick={cargarBajasMasivas} disabled={cargandoBajasMasivas || !textoBajasMasivas.trim()}
             className="text-sm px-5 py-2.5 rounded-xl bg-dangerText text-white font-semibold disabled:opacity-50 mb-1 shadow-sm">
             {cargandoBajasMasivas
-              ? 'Cargando…'
+              ? (progresoCarga ? `Cargando ${progresoCarga.actual} de ${progresoCarga.total}…` : 'Cargando…')
               : `🔴 Registrar ${previewBajas.length > 0 ? previewBajas.length : ''} baja${previewBajas.length !== 1 ? 's' : ''}`.replace('  ', ' ')}
           </button>
+          {cargandoBajasMasivas && progresoCarga && (
+            <div className="w-full max-w-xs bg-bg border border-border rounded-full h-1.5 overflow-hidden mb-1">
+              <div className="h-full bg-dangerText transition-all" style={{ width: `${(progresoCarga.actual / progresoCarga.total) * 100}%` }} />
+            </div>
+          )}
 
           {resultadoBajasMasivas && (
             <div className="mt-3 flex flex-col gap-1.5">
