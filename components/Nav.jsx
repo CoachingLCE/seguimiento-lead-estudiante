@@ -77,7 +77,8 @@ export default function Nav({ usuario, onLogout }) {
     tienePermisoResumenEstudiantes(usuario) && itemNav('/resumen-estudiantes', 'Reportes Estudiantes', pathname),
     tienePermisoResumenDiario(usuario) && itemNav('/resumen-diario', 'Resumen diario', pathname),
     tienePermisoDiplomas(usuario) && itemNav('/diplomas', 'Diplomas', pathname),
-    tienePermisoAcademico(usuario) && itemNav('/academico', '🎓 Académico', pathname)
+    tienePermisoAcademico(usuario) && itemNav('/academico', '🎓 Académico', pathname),
+    tienePermisoInformesRRSS(usuario) && itemNav('/informes-rrss', '📊 Informes RRSS', pathname)
   ].filter(Boolean);
 
   const administracion = [
@@ -126,16 +127,6 @@ export default function Nav({ usuario, onLogout }) {
                   : 'bg-surface2 border border-border text-textSec hover:text-text hover:border-accentTeal'
               }`}>
               📄
-            </Link>
-          )}
-          {tienePermisoInformesRRSS(usuario) && (
-            <Link href="/informes-rrss" title="Informes RRSS"
-              className={`w-9 h-9 flex items-center justify-center rounded-lg text-base transition-colors ${
-                pathname === '/informes-rrss'
-                  ? 'bg-accentPurple text-white'
-                  : 'bg-surface2 border border-border text-textSec hover:text-text hover:border-accentTeal'
-              }`}>
-              📊
             </Link>
           )}
           {tienePermisoEmails(usuario) && (
