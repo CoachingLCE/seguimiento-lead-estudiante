@@ -33,25 +33,30 @@ export async function POST(request) {
   const body = await request.json();
   const solicitante = await findUsuario(body.solicitanteEmail);
   if (!tienePermisoInformesRRSS(solicitante)) {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    return NextResponse.json({ error: 'No tenés permisos para realizar esta acción.' }, { status: 403 });
   }
-  if (!body.mes) return NextResponse.json({ error: 'Falta el mes' }, { status: 400 });
+  if (!body.mes) return NextResponse.json({ error: 'Falta el mes.' }, { status: 400 });
 
   const ahora = new Date().toISOString();
-  const fila = [body.mes, body.resumen || '', body.causas || '', body.propuestas || '', body.solicitanteEmail, body.solicitanteNombre, ahora];
+  const fila = [body.mes, body.resumen ?? '', body.causas ?? '', body.propuestas ?? '', body.solicitanteEmail, body.solicitanteNombre, ahora];
 
-  const todos = await readSheet('RRSSAnalisis');
-  const existente = todos.find((a) => a.Mes === body.mes);
-  if (existente) {
-    await updateRow('RRSSAnalisis', existente._rowIndex, fila);
-  } else {
-    await appendRow('RRSSAnalisis', fila);
+  try {
+    const todos = await readSheet('RRSSAnalisis');
+    const existente = todos.find((a) => a.Mes === body.mes);
+    if (existente) {
+      await updateRow('RRSSAnalisis', existente._rowIndex, fila);
+    } else {
+      await appendRow('RRSSAnalisis', fila);
+    }
+
+    await registrarAccion(
+      body.solicitanteEmail, body.solicitanteNombre,
+      'Actualizó el análisis mensual de RRSS', body.mes, ''
+    );
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error('Error guardando análisis RRSS:', err);
+    return NextResponse.json({ error: 'No se pudo guardar. Probá de nuevo.' }, { status: 500 });
   }
-
-  await registrarAccion(
-    body.solicitanteEmail, body.solicitanteNombre,
-    'Actualizó el análisis mensual de RRSS', body.mes, ''
-  );
-
-  return NextResponse.json({ ok: true });
 }

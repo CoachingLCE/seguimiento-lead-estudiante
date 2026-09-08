@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Nav from '../../components/Nav';
 import { useSession } from '../../lib/useSession';
@@ -13,6 +13,12 @@ const PLATAFORMAS = [
   { id: 'blog', label: 'Blog', color: 'text-accentTeal' }
 ];
 const TIPOS_PIEZA = ['Reel', 'Carrusel', 'Post', 'Video', 'Artículo', 'Historia'];
+const CAMPOS_METRICA = [
+  ['followers', 'Seguidores'], ['reach', 'Alcance'], ['impressions', 'Impresiones'],
+  ['profileVisits', 'Visitas al perfil'], ['engagementRate', 'Engagement (%)'], ['saves', 'Guardados'],
+  ['linkClicks', 'Clics a link'], ['qualifiedLeads', 'Leads calificados']
+];
+const CAMPOS_ENTERO = ['followers', 'reach', 'impressions', 'profileVisits', 'saves', 'linkClicks', 'qualifiedLeads'];
 
 function mesesDisponibles() {
   const hoy = new Date();
@@ -23,16 +29,74 @@ function mesesDisponibles() {
   }
   return meses;
 }
+function mesAnteriorDe(mes) {
+  const [anio, m] = mes.split('-').map(Number);
+  const d = new Date(anio, m - 2, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
 function labelDeMes(mes) {
   const [anio, m] = mes.split('-').map(Number);
-  return new Date(anio, m - 1, 1).toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+  const texto = new Date(anio, m - 1, 1).toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
 function num(v) {
   return v === '' || v === undefined || v === null ? null : Number(v);
 }
 function fmt(v) {
   const n = num(v);
-  return n === null ? '—' : n.toLocaleString('es-AR');
+  return n === null || Number.isNaN(n) ? '—' : Math.round(n).toLocaleString('es-AR');
+}
+function fechaHoraAmigable(iso) {
+  const fecha = new Date(iso);
+  const hoy = new Date();
+  const esHoy = fecha.toDateString() === hoy.toDateString();
+  const ayer = new Date(hoy); ayer.setDate(ayer.getDate() - 1);
+  const esAyer = fecha.toDateString() === ayer.toDateString();
+  const hora = fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+  if (esHoy) return `Hoy, ${hora}`;
+  if (esAyer) return `Ayer, ${hora}`;
+  return `${fecha.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}, ${hora}`;
+}
+// Validación de campos numéricos — se reutiliza igual en el frontend que ya valida el backend,
+// así el error se ve antes de mandar el pedido.
+function validarEnteroONulo(v) {
+  if (v === '' || v === undefined || v === null) return true;
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 && Number.isInteger(n);
+}
+function engagementDePieza(p) {
+  const views = num(p.Views);
+  if (!views || views <= 0) return null;
+  const interacciones = (num(p.Likes) || 0) + (num(p.Comments) || 0) + (num(p.Saves) || 0) + (num(p.Shares) || 0);
+  return (interacciones / views) * 100;
+}
+function totalesDeMetricas(metricas) {
+  const t = { followers: 0, reach: 0, impressions: 0, profileVisits: 0, qualifiedLeads: 0, engagementSuma: 0, engagementCant: 0 };
+  metricas.forEach((m) => {
+    t.followers += num(m.Followers) || 0;
+    t.reach += num(m.Reach) || 0;
+    t.impressions += num(m.Impressions) || 0;
+    t.profileVisits += num(m.ProfileVisits) || 0;
+    t.qualifiedLeads += num(m.QualifiedLeads) || 0;
+    if (num(m.EngagementRate) !== null) { t.engagementSuma += num(m.EngagementRate); t.engagementCant++; }
+  });
+  t.engagementPromedio = t.engagementCant > 0 ? t.engagementSuma / t.engagementCant : null;
+  return t;
+}
+function Delta({ actual, anterior, esPuntos }) {
+  if (anterior === null || anterior === undefined || actual === null || actual === undefined) return null;
+  if (esPuntos) {
+    const diff = actual - anterior;
+    if (Math.abs(diff) < 0.05) return <span className="text-textMuted text-[11px]">= sin cambios</span>;
+    return <span className={`text-[11px] font-semibold ${diff > 0 ? 'text-successText' : 'text-dangerText'}`}>{diff > 0 ? '↑' : '↓'} {diff > 0 ? '+' : ''}{diff.toFixed(1)} puntos</span>;
+  }
+  if (anterior === 0) return null; // división por cero — no se puede mostrar % de crecimiento
+  const pct = ((actual - anterior) / anterior) * 100;
+  if (Math.abs(pct) < 0.5) return <span className="text-textMuted text-[11px]">= sin cambios</span>;
+  return <span className={`text-[11px] font-semibold ${pct > 0 ? 'text-successText' : 'text-dangerText'}`}>{pct > 0 ? '↑' : '↓'} {pct > 0 ? '+' : ''}{pct.toFixed(0)}%</span>;
+}
+function Skeleton({ h = 'h-24' }) {
+  return <div className={`bg-surface2 animate-pulse rounded-2xl ${h}`} />;
 }
 
 export default function InformesRRSSPage() {
@@ -41,29 +105,59 @@ export default function InformesRRSSPage() {
 
   const [mes, setMes] = useState('');
   const [cargando, setCargando] = useState(true);
+  const [errorCarga, setErrorCarga] = useState('');
   const [metricas, setMetricas] = useState([]);
+  const [metricasAnterior, setMetricasAnterior] = useState([]);
   const [piezas, setPiezas] = useState([]);
+  const [objetivos, setObjetivos] = useState([]);
   const [analisis, setAnalisis] = useState(null);
   const [comentarios, setComentarios] = useState([]);
 
+  const [aviso, setAviso] = useState(null); // { tipo: 'success'|'error', texto }
+
   const [editandoPlataforma, setEditandoPlataforma] = useState(null);
   const [formMetrica, setFormMetrica] = useState({});
+  const [errorFormMetrica, setErrorFormMetrica] = useState('');
   const [guardandoMetrica, setGuardandoMetrica] = useState(false);
 
   const [mostrarFormPieza, setMostrarFormPieza] = useState(false);
-  const [editandoPiezaId, setEditandoPiezaId] = useState(null);
+  const [editandoPieza, setEditandoPieza] = useState(null);
   const [formPieza, setFormPieza] = useState({ plataforma: 'instagram', tipo: 'Reel', titulo: '', views: '', likes: '', comments: '', saves: '', shares: '', guion: '', notaIA: '' });
+  const [errorFormPieza, setErrorFormPieza] = useState('');
   const [guardandoPieza, setGuardandoPieza] = useState(false);
   const [confirmarBorrarPieza, setConfirmarBorrarPieza] = useState(null);
 
+  const [nuevoObjetivo, setNuevoObjetivo] = useState('');
+  const [guardandoObjetivo, setGuardandoObjetivo] = useState(false);
+
   const [editandoAnalisis, setEditandoAnalisis] = useState(false);
   const [formAnalisis, setFormAnalisis] = useState({ resumen: '', causas: '', propuestas: '' });
+  const [errorFormAnalisis, setErrorFormAnalisis] = useState('');
   const [guardandoAnalisis, setGuardandoAnalisis] = useState(false);
 
   const [textoComentario, setTextoComentario] = useState('');
+  const [errorComentario, setErrorComentario] = useState('');
   const [enviandoComentario, setEnviandoComentario] = useState(false);
 
   const puedeVer = tienePermisoInformesRRSS(usuario);
+
+  function mostrarAviso(tipo, texto) {
+    setAviso({ tipo, texto });
+    setTimeout(() => setAviso((a) => (a?.texto === texto ? null : a)), 4000);
+  }
+
+  // Wrapper de fetch: chequea response.ok, devuelve el JSON o tira con el mensaje del servidor.
+  const pedir = useCallback(async (url, opciones) => {
+    let res;
+    try {
+      res = await fetch(url, opciones);
+    } catch {
+      throw new Error('No se pudo conectar con el servidor. Probá de nuevo.');
+    }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Ocurrió un error inesperado.');
+    return data;
+  }, []);
 
   useEffect(() => {
     if (!usuario) return;
@@ -77,110 +171,214 @@ export default function InformesRRSSPage() {
 
   async function cargarTodo() {
     setCargando(true);
+    setErrorCarga('');
     const qs = `mes=${mes}&solicitanteEmail=${encodeURIComponent(usuario.email)}`;
-    const [rMetricas, rPiezas, rAnalisis, rComentarios] = await Promise.all([
-      fetch(`/api/informes-rrss/metricas?${qs}`).then((r) => r.json()),
-      fetch(`/api/informes-rrss/piezas?${qs}`).then((r) => r.json()),
-      fetch(`/api/informes-rrss/analisis?${qs}`).then((r) => r.json()),
-      fetch(`/api/informes-rrss/comentarios?${qs}`).then((r) => r.json())
-    ]);
-    setMetricas(rMetricas.metricas || []);
-    setPiezas(rPiezas.piezas || []);
-    setAnalisis(rAnalisis.analisis || null);
-    setFormAnalisis(rAnalisis.analisis ? {
-      resumen: rAnalisis.analisis.resumen, causas: rAnalisis.analisis.causas, propuestas: rAnalisis.analisis.propuestas
-    } : { resumen: '', causas: '', propuestas: '' });
-    setComentarios(rComentarios.comentarios || []);
+    const qsAnterior = `mes=${mesAnteriorDe(mes)}&solicitanteEmail=${encodeURIComponent(usuario.email)}`;
+    try {
+      const [rMetricas, rMetricasAnt, rPiezas, rObjetivos, rAnalisis, rComentarios] = await Promise.all([
+        pedir(`/api/informes-rrss/metricas?${qs}`),
+        pedir(`/api/informes-rrss/metricas?${qsAnterior}`),
+        pedir(`/api/informes-rrss/piezas?${qs}`),
+        pedir(`/api/informes-rrss/objetivos?${qs}`),
+        pedir(`/api/informes-rrss/analisis?${qs}`),
+        pedir(`/api/informes-rrss/comentarios?${qs}`)
+      ]);
+      setMetricas(rMetricas.metricas || []);
+      setMetricasAnterior(rMetricasAnt.metricas || []);
+      setPiezas(rPiezas.piezas || []);
+      setObjetivos(rObjetivos.objetivos || []);
+      setAnalisis(rAnalisis.analisis || null);
+      setFormAnalisis(rAnalisis.analisis ? {
+        resumen: rAnalisis.analisis.resumen, causas: rAnalisis.analisis.causas, propuestas: rAnalisis.analisis.propuestas
+      } : { resumen: '', causas: '', propuestas: '' });
+      setComentarios(rComentarios.comentarios || []);
+    } catch (err) {
+      setErrorCarga(err.message);
+    }
     setCargando(false);
   }
 
+  // ---------- MÉTRICAS ----------
   function abrirEdicionMetrica(plataformaId) {
     const actual = metricas.find((m) => m.Plataforma === plataformaId);
     setFormMetrica({
-      followers: actual?.Followers || '', reach: actual?.Reach || '', impressions: actual?.Impressions || '',
-      profileVisits: actual?.ProfileVisits || '', engagementRate: actual?.EngagementRate || '',
-      saves: actual?.Saves || '', linkClicks: actual?.LinkClicks || '', qualifiedLeads: actual?.QualifiedLeads || ''
+      followers: actual?.Followers ?? '', reach: actual?.Reach ?? '', impressions: actual?.Impressions ?? '',
+      profileVisits: actual?.ProfileVisits ?? '', engagementRate: actual?.EngagementRate ?? '',
+      saves: actual?.Saves ?? '', linkClicks: actual?.LinkClicks ?? '', qualifiedLeads: actual?.QualifiedLeads ?? ''
     });
+    setErrorFormMetrica('');
     setEditandoPlataforma(plataformaId);
   }
 
-  async function guardarMetrica() {
-    setGuardandoMetrica(true);
-    await fetch('/api/informes-rrss/metricas', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        mes, plataforma: editandoPlataforma, ...formMetrica,
-        solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
-      })
-    });
-    setGuardandoMetrica(false);
-    setEditandoPlataforma(null);
-    cargarTodo();
+  function validarFormMetrica() {
+    for (const [campo, label] of CAMPOS_METRICA) {
+      if (campo === 'engagementRate') continue;
+      if (!validarEnteroONulo(formMetrica[campo])) return `"${label}" tiene que ser un número entero de 0 para arriba.`;
+    }
+    const eng = formMetrica.engagementRate;
+    if (eng !== '' && eng !== undefined) {
+      const n = Number(eng);
+      if (!Number.isFinite(n) || n < 0 || n > 100) return 'El engagement tiene que ser un número entre 0 y 100.';
+    }
+    return '';
   }
 
+  async function guardarMetrica() {
+    const err = validarFormMetrica();
+    if (err) { setErrorFormMetrica(err); return; }
+    setErrorFormMetrica('');
+    setGuardandoMetrica(true);
+    try {
+      await pedir('/api/informes-rrss/metricas', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mes, plataforma: editandoPlataforma, ...formMetrica, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
+      });
+      setEditandoPlataforma(null);
+      mostrarAviso('success', '✓ Cambios guardados correctamente');
+      cargarTodo();
+    } catch (err2) {
+      setErrorFormMetrica(err2.message); // el formulario queda abierto, no se pierde lo cargado
+    }
+    setGuardandoMetrica(false);
+  }
+
+  // ---------- PIEZAS ----------
   function abrirNuevaPieza() {
-    setEditandoPiezaId(null);
+    setEditandoPieza(null);
     setFormPieza({ plataforma: 'instagram', tipo: 'Reel', titulo: '', views: '', likes: '', comments: '', saves: '', shares: '', guion: '', notaIA: '' });
+    setErrorFormPieza('');
     setMostrarFormPieza(true);
   }
   function abrirEdicionPieza(p) {
-    setEditandoPiezaId(p._rowIndex);
+    setEditandoPieza(p);
     setFormPieza({
       plataforma: p.Plataforma || 'instagram', tipo: p.Tipo || 'Reel', titulo: p.Titulo || '',
-      views: p.Views || '', likes: p.Likes || '', comments: p.Comments || '', saves: p.Saves || '', shares: p.Shares || '',
+      views: p.Views ?? '', likes: p.Likes ?? '', comments: p.Comments ?? '', saves: p.Saves ?? '', shares: p.Shares ?? '',
       guion: p.Guion || '', notaIA: p.NotaIA || ''
     });
+    setErrorFormPieza('');
     setMostrarFormPieza(true);
   }
+  function validarFormPieza() {
+    if (!formPieza.titulo.trim()) return 'Falta el título.';
+    for (const campo of ['views', 'likes', 'comments', 'saves', 'shares']) {
+      if (!validarEnteroONulo(formPieza[campo])) return `El campo "${campo}" tiene que ser un número entero de 0 para arriba.`;
+    }
+    return '';
+  }
   async function guardarPieza() {
-    if (!formPieza.titulo.trim()) return;
+    const err = validarFormPieza();
+    if (err) { setErrorFormPieza(err); return; }
+    setErrorFormPieza('');
     setGuardandoPieza(true);
     const cuerpo = { mes, ...formPieza, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre };
-    if (editandoPiezaId) {
-      await fetch('/api/informes-rrss/piezas', {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...cuerpo, rowIndex: editandoPiezaId })
-      });
-    } else {
-      await fetch('/api/informes-rrss/piezas', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo)
-      });
+    try {
+      if (editandoPieza) {
+        await pedir('/api/informes-rrss/piezas', {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...cuerpo, piezaId: editandoPieza.PiezaID, rowIndex: editandoPieza._rowIndex })
+        });
+      } else {
+        await pedir('/api/informes-rrss/piezas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) });
+      }
+      setMostrarFormPieza(false);
+      mostrarAviso('success', '✓ Pieza guardada correctamente');
+      cargarTodo();
+    } catch (err2) {
+      setErrorFormPieza(err2.message);
     }
     setGuardandoPieza(false);
-    setMostrarFormPieza(false);
-    cargarTodo();
   }
   async function borrarPieza(p) {
-    await fetch('/api/informes-rrss/piezas', {
-      method: 'DELETE', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rowIndex: p._rowIndex, titulo: p.Titulo, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
-    });
-    setConfirmarBorrarPieza(null);
-    cargarTodo();
+    try {
+      await pedir('/api/informes-rrss/piezas', {
+        method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ piezaId: p.PiezaID, rowIndex: p._rowIndex, titulo: p.Titulo, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
+      });
+      setConfirmarBorrarPieza(null);
+      mostrarAviso('success', '✓ Pieza eliminada');
+      cargarTodo();
+    } catch (err) {
+      setConfirmarBorrarPieza(null);
+      mostrarAviso('error', `✕ ${err.message}`);
+    }
   }
 
+  // ---------- OBJETIVOS ----------
+  async function agregarObjetivo() {
+    if (!nuevoObjetivo.trim()) return;
+    setGuardandoObjetivo(true);
+    try {
+      await pedir('/api/informes-rrss/objetivos', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mes, texto: nuevoObjetivo.trim(), solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
+      });
+      setNuevoObjetivo('');
+      cargarTodo();
+    } catch (err) {
+      mostrarAviso('error', `✕ ${err.message}`);
+    }
+    setGuardandoObjetivo(false);
+  }
+  async function toggleObjetivo(o) {
+    const cumplidoNuevo = o.Cumplido !== 'TRUE';
+    setObjetivos((prev) => prev.map((x) => (x._rowIndex === o._rowIndex ? { ...x, Cumplido: cumplidoNuevo ? 'TRUE' : 'FALSE' } : x)));
+    try {
+      await pedir('/api/informes-rrss/objetivos', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rowIndex: o._rowIndex, cumplido: cumplidoNuevo, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
+      });
+    } catch (err) {
+      mostrarAviso('error', `✕ ${err.message}`);
+      cargarTodo();
+    }
+  }
+  async function borrarObjetivo(o) {
+    try {
+      await pedir('/api/informes-rrss/objetivos', {
+        method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rowIndex: o._rowIndex, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
+      });
+      cargarTodo();
+    } catch (err) {
+      mostrarAviso('error', `✕ ${err.message}`);
+    }
+  }
+
+  // ---------- ANÁLISIS ----------
   async function guardarAnalisis() {
+    setErrorFormAnalisis('');
     setGuardandoAnalisis(true);
-    await fetch('/api/informes-rrss/analisis', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mes, ...formAnalisis, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
-    });
+    try {
+      await pedir('/api/informes-rrss/analisis', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mes, ...formAnalisis, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
+      });
+      setEditandoAnalisis(false);
+      mostrarAviso('success', '✓ Cambios guardados correctamente');
+      cargarTodo();
+    } catch (err) {
+      setErrorFormAnalisis(err.message);
+    }
     setGuardandoAnalisis(false);
-    setEditandoAnalisis(false);
-    cargarTodo();
   }
 
+  // ---------- COMENTARIOS ----------
   async function enviarComentario() {
     if (!textoComentario.trim()) return;
+    setErrorComentario('');
     setEnviandoComentario(true);
-    await fetch('/api/informes-rrss/comentarios', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mes, texto: textoComentario.trim(), solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
-    });
-    setTextoComentario('');
+    try {
+      await pedir('/api/informes-rrss/comentarios', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mes, texto: textoComentario.trim(), solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
+      });
+      setTextoComentario(''); // solo se limpia si salió bien
+      cargarTodo();
+    } catch (err) {
+      setErrorComentario(err.message); // el texto escrito NO se pierde
+    }
     setEnviandoComentario(false);
-    cargarTodo();
   }
 
   if (!usuario || !puedeVer) return null;
@@ -188,89 +386,163 @@ export default function InformesRRSSPage() {
   const plataformasConDatos = PLATAFORMAS.filter((p) =>
     ['instagram', 'linkedin', 'youtube'].includes(p.id) || metricas.some((m) => m.Plataforma === p.id)
   );
+  const totales = totalesDeMetricas(metricas);
+  const totalesAnterior = totalesDeMetricas(metricasAnterior);
+  const hayDatosMesAnterior = metricasAnterior.length > 0;
+
+  const piezasConEngagement = piezas.map((p) => ({ ...p, _engagement: engagementDePieza(p) }));
+  const mejorPieza = piezasConEngagement.filter((p) => p._engagement !== null).sort((a, b) => b._engagement - a._engagement)[0] || null;
 
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
-      <div className="max-w-[1300px] mx-auto px-6 pb-16">
-        <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
+      <div className="max-w-[1300px] mx-auto px-4 sm:px-6 pb-16">
+
+        {/* AVISO */}
+        {aviso && (
+          <div className={`fixed top-4 right-4 z-50 px-4 py-2.5 rounded-xl text-sm font-medium shadow-lg ${
+            aviso.tipo === 'success' ? 'bg-successBg text-successText border border-successText/30' : 'bg-dangerBg text-dangerText border border-dangerText/30'
+          }`}>
+            {aviso.texto}
+          </div>
+        )}
+
+        {/* HEADER + SELECTOR DE MES */}
+        <div className="flex items-center justify-between flex-wrap gap-3 mb-1">
           <h3 className="text-lg font-bold">📊 Informes RRSS</h3>
-          <select value={mes} onChange={(e) => setMes(e.target.value)}
-            className="bg-bg border border-border rounded-lg px-3 py-2 text-sm capitalize">
-            {mesesDisponibles().map((m) => <option key={m} value={m} className="capitalize">{labelDeMes(m)}</option>)}
-          </select>
+          <div className="flex items-center gap-2 bg-surface border border-border rounded-xl px-3 py-2">
+            <span className="text-textMuted text-sm">📅</span>
+            <select value={mes} onChange={(e) => setMes(e.target.value)}
+              className="bg-transparent text-sm font-medium focus:outline-none capitalize">
+              {mesesDisponibles().map((m) => <option key={m} value={m} className="capitalize">{labelDeMes(m)}</option>)}
+            </select>
+          </div>
         </div>
         <p className="text-textMuted text-xs mb-5">Métricas mensuales de redes sociales, contenido destacado y análisis.</p>
 
-        {cargando ? (
-          <p className="text-textSec text-sm">Cargando…</p>
+        {errorCarga ? (
+          <div className="bg-dangerBg border border-dangerText/30 rounded-2xl p-6 text-center">
+            <p className="text-dangerText text-sm font-semibold mb-3">✕ {errorCarga}</p>
+            <button onClick={cargarTodo} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">Reintentar</button>
+          </div>
+        ) : cargando ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {[1, 2, 3, 4, 5, 6].map((i) => <Skeleton key={i} h="h-20" />)}
+            </div>
+            <Skeleton h="h-40" />
+            <Skeleton h="h-40" />
+          </div>
         ) : (
           <div className="space-y-4">
-            {/* KPIs POR PLATAFORMA */}
-            <div className="grid md:grid-cols-3 gap-3">
-              {plataformasConDatos.map((plat) => {
-                const m = metricas.find((x) => x.Plataforma === plat.id);
-                return (
-                  <div key={plat.id} className="bg-surface border border-border rounded-2xl p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className={`text-sm font-semibold ${plat.color}`}>{plat.label}</p>
-                      <button onClick={() => abrirEdicionMetrica(plat.id)} className="text-xs text-accentTeal font-semibold">
-                        {m ? '✏️ Editar' : '+ Cargar'}
-                      </button>
-                    </div>
-                    {!m ? (
-                      <p className="text-textMuted text-xs">Sin datos este mes.</p>
-                    ) : (
-                      <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
-                        <p className="text-textSec">Seguidores: <b className="text-text">{fmt(m.Followers)}</b></p>
-                        <p className="text-textSec">Alcance: <b className="text-text">{fmt(m.Reach)}</b></p>
-                        <p className="text-textSec">Impresiones: <b className="text-text">{fmt(m.Impressions)}</b></p>
-                        <p className="text-textSec">Visitas perfil: <b className="text-text">{fmt(m.ProfileVisits)}</b></p>
-                        <p className="text-textSec">Engagement: <b className="text-text">{m.EngagementRate ? `${m.EngagementRate}%` : '—'}</b></p>
-                        <p className="text-textSec">Guardados: <b className="text-text">{fmt(m.Saves)}</b></p>
-                        <p className="text-textSec">Clics a link: <b className="text-text">{fmt(m.LinkClicks)}</b></p>
-                        <p className="text-textSec">Leads calif.: <b className="text-successText">{fmt(m.QualifiedLeads)}</b></p>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
 
-            {/* FORM EDICION METRICA */}
-            {editandoPlataforma && (
-              <div className="bg-surface border border-accentTeal/40 rounded-2xl p-5">
-                <p className="text-sm font-semibold mb-3">Métricas de {PLATAFORMAS.find((p) => p.id === editandoPlataforma)?.label} — {labelDeMes(mes)}</p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                  {[
-                    ['followers', 'Seguidores'], ['reach', 'Alcance'], ['impressions', 'Impresiones'],
-                    ['profileVisits', 'Visitas al perfil'], ['engagementRate', 'Engagement (%)'], ['saves', 'Guardados'],
-                    ['linkClicks', 'Clics a link'], ['qualifiedLeads', 'Leads calificados']
-                  ].map(([campo, label]) => (
-                    <div key={campo}>
-                      <label className="text-[11px] text-textSec block mb-1">{label}</label>
-                      <input type="text" inputMode="decimal" value={formMetrica[campo] || ''}
-                        onChange={(e) => setFormMetrica((f) => ({ ...f, [campo]: e.target.value }))}
-                        className="w-full bg-bg border border-border rounded-lg px-2 py-1.5 text-sm" />
-                    </div>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => setEditandoPlataforma(null)} className="text-sm px-4 py-2 rounded-lg bg-surface2 border border-border">Cancelar</button>
-                  <button onClick={guardarMetrica} disabled={guardandoMetrica}
-                    className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-60">
-                    {guardandoMetrica ? 'Guardando…' : 'Guardar'}
-                  </button>
+            {/* 1. RESUMEN DEL MES */}
+            <div className="bg-surface border border-border rounded-2xl p-4 sm:p-5">
+              <p className="text-sm font-semibold mb-3">📊 Resumen del mes</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                {[
+                  ['Seguidores totales', totales.followers, totalesAnterior.followers, false],
+                  ['Alcance total', totales.reach, totalesAnterior.reach, false],
+                  ['Impresiones totales', totales.impressions, totalesAnterior.impressions, false],
+                  ['Visitas al perfil', totales.profileVisits, totalesAnterior.profileVisits, false],
+                  ['Leads calificados', totales.qualifiedLeads, totalesAnterior.qualifiedLeads, false]
+                ].map(([label, valor, anterior, puntos]) => (
+                  <div key={label} className="bg-bg border border-border rounded-xl p-3">
+                    <p className="text-textMuted text-[11px] mb-1">{label}</p>
+                    <p className="text-lg font-bold">{fmt(valor)}</p>
+                    {hayDatosMesAnterior && <Delta actual={valor} anterior={anterior} esPuntos={puntos} />}
+                  </div>
+                ))}
+                <div className="bg-bg border border-border rounded-xl p-3">
+                  <p className="text-textMuted text-[11px] mb-1">Contenidos cargados</p>
+                  <p className="text-lg font-bold">{piezas.length}</p>
                 </div>
               </div>
-            )}
+              {totales.engagementPromedio !== null && (
+                <p className="text-textSec text-xs mt-3">
+                  Engagement promedio: <b className="text-text">{totales.engagementPromedio.toFixed(1)}%</b>
+                  {hayDatosMesAnterior && totalesAnterior.engagementPromedio !== null && (
+                    <span className="ml-2"><Delta actual={totales.engagementPromedio} anterior={totalesAnterior.engagementPromedio} esPuntos /></span>
+                  )}
+                </p>
+              )}
+              {!hayDatosMesAnterior && (
+                <p className="text-textMuted text-[11px] mt-2 italic">Sin datos de {labelDeMes(mesAnteriorDe(mes))} todavía — no se puede comparar.</p>
+              )}
+            </div>
 
-            {/* CONTENIDO DESTACADO */}
-            <div className="bg-surface border border-border rounded-2xl p-5">
-              <div className="flex items-center justify-between mb-3">
+            {/* 2. MÉTRICAS POR PLATAFORMA */}
+            <div>
+              <p className="text-sm font-semibold mb-3">📱 Métricas por plataforma</p>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {plataformasConDatos.map((plat) => {
+                  const m = metricas.find((x) => x.Plataforma === plat.id);
+                  return (
+                    <div key={plat.id} className="bg-surface border border-border rounded-2xl p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className={`text-sm font-semibold ${plat.color}`}>{plat.label}</p>
+                        <button onClick={() => abrirEdicionMetrica(plat.id)} className="text-xs text-accentTeal font-semibold shrink-0">
+                          {m ? '✏️ Editar' : '+ Cargar'}
+                        </button>
+                      </div>
+                      {!m ? (
+                        <p className="text-textMuted text-xs">Sin datos este mes.</p>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+                          <p className="text-textSec">Seguidores: <b className="text-text">{fmt(m.Followers)}</b></p>
+                          <p className="text-textSec">Alcance: <b className="text-text">{fmt(m.Reach)}</b></p>
+                          <p className="text-textSec">Impresiones: <b className="text-text">{fmt(m.Impressions)}</b></p>
+                          <p className="text-textSec">Visitas perfil: <b className="text-text">{fmt(m.ProfileVisits)}</b></p>
+                          <p className="text-textSec">Engagement: <b className="text-text">{m.EngagementRate !== '' ? `${m.EngagementRate}%` : '—'}</b></p>
+                          <p className="text-textSec">Guardados: <b className="text-text">{fmt(m.Saves)}</b></p>
+                          <p className="text-textSec">Clics a link: <b className="text-text">{fmt(m.LinkClicks)}</b></p>
+                          <p className="text-textSec">Leads calif.: <b className="text-successText">{fmt(m.QualifiedLeads)}</b></p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {editandoPlataforma && (
+                <div className="bg-surface border border-accentTeal/40 rounded-2xl p-4 sm:p-5 mt-3">
+                  <p className="text-sm font-semibold mb-3">Métricas de {PLATAFORMAS.find((p) => p.id === editandoPlataforma)?.label} — {labelDeMes(mes)}</p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                    {CAMPOS_METRICA.map(([campo, label]) => (
+                      <div key={campo}>
+                        <label className="text-[11px] text-textSec block mb-1">{label}</label>
+                        <input type="text" inputMode="decimal" value={formMetrica[campo] ?? ''}
+                          onChange={(e) => setFormMetrica((f) => ({ ...f, [campo]: e.target.value }))}
+                          className="w-full bg-bg border border-border rounded-lg px-2 py-1.5 text-sm" />
+                      </div>
+                    ))}
+                  </div>
+                  {errorFormMetrica && <p className="text-dangerText text-xs mb-3">✕ {errorFormMetrica}</p>}
+                  <div className="flex gap-2 flex-wrap">
+                    <button onClick={() => setEditandoPlataforma(null)} className="text-sm px-4 py-2 rounded-lg bg-surface2 border border-border">Cancelar</button>
+                    <button onClick={guardarMetrica} disabled={guardandoMetrica}
+                      className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-60">
+                      {guardandoMetrica ? 'Guardando…' : 'Guardar'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 3. CONTENIDO DESTACADO */}
+            <div className="bg-surface border border-border rounded-2xl p-4 sm:p-5">
+              <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
                 <p className="text-sm font-semibold">🎬 Contenido destacado</p>
                 <button onClick={abrirNuevaPieza} className="text-xs px-3 py-1.5 rounded-lg bg-accentPurple text-white font-semibold">+ Agregar</button>
               </div>
+
+              {mejorPieza && (
+                <div className="bg-bg border border-warningText/40 rounded-xl p-3 mb-3">
+                  <p className="text-warningText text-xs font-semibold mb-1">🏆 Mejor contenido del mes</p>
+                  <p className="text-sm font-medium">{mejorPieza.Titulo}</p>
+                  <p className="text-textMuted text-[11px]">Engagement: {mejorPieza._engagement.toFixed(1)}%</p>
+                </div>
+              )}
 
               {mostrarFormPieza && (
                 <div className="bg-bg border border-border rounded-xl p-4 mb-4">
@@ -294,7 +566,7 @@ export default function InformesRRSSPage() {
                   <input value={formPieza.titulo} onChange={(e) => setFormPieza((f) => ({ ...f, titulo: e.target.value }))}
                     placeholder="Ej: 3 señales de que tu equipo necesita coaching"
                     className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm mb-3" />
-                  <div className="grid grid-cols-3 md:grid-cols-5 gap-2 mb-3">
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-3">
                     {[['views', 'Views'], ['likes', 'Likes'], ['comments', 'Comments'], ['saves', 'Saves'], ['shares', 'Shares']].map(([campo, label]) => (
                       <div key={campo}>
                         <label className="text-[11px] text-textSec block mb-1">{label}</label>
@@ -304,13 +576,18 @@ export default function InformesRRSSPage() {
                       </div>
                     ))}
                   </div>
+                  {(() => {
+                    const eng = engagementDePieza(formPieza);
+                    return eng !== null ? <p className="text-accentTeal text-xs mb-3">Engagement calculado: {eng.toFixed(1)}%</p> : null;
+                  })()}
                   <label className="text-[11px] text-textSec block mb-1">Guion / copy (opcional)</label>
                   <textarea rows={3} value={formPieza.guion} onChange={(e) => setFormPieza((f) => ({ ...f, guion: e.target.value }))}
                     className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm mb-3" />
-                  <label className="text-[11px] text-textSec block mb-1">Nota / por qué funcionó (opcional)</label>
+                  <label className="text-[11px] text-textSec block mb-1">¿Por qué funcionó? (opcional)</label>
                   <textarea rows={2} value={formPieza.notaIA} onChange={(e) => setFormPieza((f) => ({ ...f, notaIA: e.target.value }))}
                     className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm mb-3" />
-                  <div className="flex gap-2">
+                  {errorFormPieza && <p className="text-dangerText text-xs mb-3">✕ {errorFormPieza}</p>}
+                  <div className="flex gap-2 flex-wrap">
                     <button onClick={() => setMostrarFormPieza(false)} className="text-sm px-4 py-2 rounded-lg bg-surface2 border border-border">Cancelar</button>
                     <button onClick={guardarPieza} disabled={guardandoPieza || !formPieza.titulo.trim()}
                       className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-50">
@@ -320,16 +597,17 @@ export default function InformesRRSSPage() {
                 </div>
               )}
 
-              {piezas.length === 0 ? (
+              {piezasConEngagement.length === 0 ? (
                 <p className="text-textMuted text-sm">Sin piezas cargadas este mes.</p>
               ) : (
-                <div className="grid md:grid-cols-2 gap-3">
-                  {piezas.map((p) => (
-                    <div key={p._rowIndex} className="bg-bg border border-border rounded-xl p-3.5">
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {piezasConEngagement.map((p) => (
+                    <div key={p.PiezaID || p._rowIndex} className={`bg-bg border rounded-xl p-3.5 ${mejorPieza && (mejorPieza.PiezaID || mejorPieza._rowIndex) === (p.PiezaID || p._rowIndex) ? 'border-warningText/50' : 'border-border'}`}>
                       <div className="flex items-start justify-between gap-2 mb-1.5">
-                        <div>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted mr-1.5">{PLATAFORMAS.find((pl) => pl.id === p.Plataforma)?.label || p.Plataforma}</span>
+                        <div className="flex flex-wrap gap-1">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted">{PLATAFORMAS.find((pl) => pl.id === p.Plataforma)?.label || p.Plataforma}</span>
                           <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted">{p.Tipo}</span>
+                          {p._engagement !== null && <span className="text-[10px] px-2 py-0.5 rounded-full bg-accentTeal/20 text-accentTeal font-medium">{p._engagement.toFixed(1)}% eng.</span>}
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <button onClick={() => abrirEdicionPieza(p)} className="text-xs text-accentTeal">✏️</button>
@@ -338,11 +616,11 @@ export default function InformesRRSSPage() {
                       </div>
                       <p className="text-sm font-medium mb-2">{p.Titulo}</p>
                       <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-textSec">
-                        {p.Views && <span>👁 {fmt(p.Views)}</span>}
-                        {p.Likes && <span>❤️ {fmt(p.Likes)}</span>}
-                        {p.Comments && <span>💬 {fmt(p.Comments)}</span>}
-                        {p.Saves && <span>🔖 {fmt(p.Saves)}</span>}
-                        {p.Shares && <span>🔁 {fmt(p.Shares)}</span>}
+                        {p.Views !== '' && <span>👁 {fmt(p.Views)}</span>}
+                        {p.Likes !== '' && <span>❤️ {fmt(p.Likes)}</span>}
+                        {p.Comments !== '' && <span>💬 {fmt(p.Comments)}</span>}
+                        {p.Saves !== '' && <span>🔖 {fmt(p.Saves)}</span>}
+                        {p.Shares !== '' && <span>🔁 {fmt(p.Shares)}</span>}
                       </div>
                       {p.NotaIA && <p className="text-textMuted text-[11px] mt-2 italic border-l-2 border-accentPurple pl-2">{p.NotaIA}</p>}
                     </div>
@@ -351,8 +629,35 @@ export default function InformesRRSSPage() {
               )}
             </div>
 
-            {/* ANALISIS */}
-            <div className="bg-surface border border-border rounded-2xl p-5">
+            {/* 4. OBJETIVOS DEL MES */}
+            <div className="bg-surface border border-border rounded-2xl p-4 sm:p-5">
+              <p className="text-sm font-semibold mb-1">🎯 Objetivos del mes</p>
+              <p className="text-textMuted text-xs mb-3">Ej: aumentar seguidores, mejorar engagement, generar leads, publicar cierta cantidad de contenidos…</p>
+              {objetivos.length > 0 && (
+                <div className="space-y-1.5 mb-3">
+                  {objetivos.map((o) => (
+                    <div key={o._rowIndex} className="flex items-center justify-between gap-2 bg-bg border border-border rounded-lg px-3 py-2">
+                      <label className="flex items-center gap-2 text-sm flex-1 cursor-pointer">
+                        <input type="checkbox" checked={o.Cumplido === 'TRUE'} onChange={() => toggleObjetivo(o)} />
+                        <span className={o.Cumplido === 'TRUE' ? 'line-through text-textMuted' : ''}>{o.Texto}</span>
+                      </label>
+                      <button onClick={() => borrarObjetivo(o)} className="text-dangerText text-xs shrink-0">✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <input value={nuevoObjetivo} onChange={(e) => setNuevoObjetivo(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && agregarObjetivo()}
+                  placeholder="Ej: Aumentar seguidores de Instagram a 40.000"
+                  className="flex-1 bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
+                <button onClick={agregarObjetivo} disabled={guardandoObjetivo || !nuevoObjetivo.trim()}
+                  className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-50">+ Agregar</button>
+              </div>
+            </div>
+
+            {/* 5. ANÁLISIS MENSUAL */}
+            <div className="bg-surface border border-border rounded-2xl p-4 sm:p-5">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-sm font-semibold">🔍 Análisis del mes</p>
                 {!editandoAnalisis && (
@@ -361,16 +666,20 @@ export default function InformesRRSSPage() {
               </div>
               {editandoAnalisis ? (
                 <>
-                  <label className="text-[11px] text-textSec block mb-1">Resumen</label>
+                  <label className="text-[11px] text-textSec block mb-0.5">Resumen</label>
+                  <p className="text-textMuted text-[11px] mb-1">¿Qué pasó este mes?</p>
                   <textarea rows={3} value={formAnalisis.resumen} onChange={(e) => setFormAnalisis((f) => ({ ...f, resumen: e.target.value }))}
                     className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm mb-3" />
-                  <label className="text-[11px] text-textSec block mb-1">Causas</label>
+                  <label className="text-[11px] text-textSec block mb-0.5">Causas</label>
+                  <p className="text-textMuted text-[11px] mb-1">¿Por qué creemos que ocurrió?</p>
                   <textarea rows={3} value={formAnalisis.causas} onChange={(e) => setFormAnalisis((f) => ({ ...f, causas: e.target.value }))}
                     className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm mb-3" />
-                  <label className="text-[11px] text-textSec block mb-1">Propuestas</label>
+                  <label className="text-[11px] text-textSec block mb-0.5">Propuestas</label>
+                  <p className="text-textMuted text-[11px] mb-1">¿Qué vamos a hacer el próximo mes?</p>
                   <textarea rows={3} value={formAnalisis.propuestas} onChange={(e) => setFormAnalisis((f) => ({ ...f, propuestas: e.target.value }))}
                     className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm mb-3" />
-                  <div className="flex gap-2">
+                  {errorFormAnalisis && <p className="text-dangerText text-xs mb-3">✕ {errorFormAnalisis}</p>}
+                  <div className="flex gap-2 flex-wrap">
                     <button onClick={() => setEditandoAnalisis(false)} className="text-sm px-4 py-2 rounded-lg bg-surface2 border border-border">Cancelar</button>
                     <button onClick={guardarAnalisis} disabled={guardandoAnalisis}
                       className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-60">
@@ -389,8 +698,8 @@ export default function InformesRRSSPage() {
               )}
             </div>
 
-            {/* COMENTARIOS */}
-            <div className="bg-surface border border-border rounded-2xl p-5">
+            {/* 6. COMENTARIOS */}
+            <div className="bg-surface border border-border rounded-2xl p-4 sm:p-5">
               <p className="text-sm font-semibold mb-3">💬 Comentarios</p>
               {comentarios.length === 0 ? (
                 <p className="text-textMuted text-sm mb-3">Sin comentarios todavía.</p>
@@ -398,19 +707,20 @@ export default function InformesRRSSPage() {
                 <div className="space-y-3 mb-3">
                   {comentarios.map((c, i) => (
                     <div key={i} className="border-b border-border pb-2.5 last:border-b-0">
-                      <p className="text-xs"><b className="font-semibold">{c.UsuarioNombre}</b> <span className="text-textMuted">· {new Date(c.Fecha).toLocaleString('es-AR')}</span></p>
+                      <p className="text-xs"><b className="font-semibold">{c.UsuarioNombre}</b> <span className="text-textMuted">· {fechaHoraAmigable(c.Fecha)}</span></p>
                       <p className="text-textSec text-sm mt-0.5 whitespace-pre-wrap">{c.Texto}</p>
                     </div>
                   ))}
                 </div>
               )}
-              <div className="flex gap-2">
+              {errorComentario && <p className="text-dangerText text-xs mb-2">✕ {errorComentario}</p>}
+              <div className="flex gap-2 flex-col sm:flex-row">
                 <input value={textoComentario} onChange={(e) => setTextoComentario(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && enviarComentario()}
                   placeholder="Escribir un comentario…" className="flex-1 bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
                 <button onClick={enviarComentario} disabled={enviandoComentario || !textoComentario.trim()}
-                  className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-50">
-                  Enviar
+                  className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-50 shrink-0">
+                  {enviandoComentario ? 'Enviando…' : 'Enviar'}
                 </button>
               </div>
             </div>
@@ -420,7 +730,7 @@ export default function InformesRRSSPage() {
 
       {confirmarBorrarPieza && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4" onClick={() => setConfirmarBorrarPieza(null)}>
-          <div className="bg-surface2 border border-border rounded-2xl p-6 w-96" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-surface2 border border-border rounded-2xl p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
             <p className="text-sm font-semibold mb-2">¿Eliminar "{confirmarBorrarPieza.Titulo}"?</p>
             <p className="text-textMuted text-xs mb-4">Esta acción no se puede deshacer.</p>
             <div className="flex gap-2">
