@@ -5,6 +5,7 @@ import ThemeSelector from './ThemeSelector';
 import {
   tienePermisoOperativo,
   tienePermisoInformesRRSS,
+  tienePermisoEmails,
   tienePermisoCrearLeads,
   tienePermisoReportes,
   tienePermisoEstudiantes,
@@ -135,6 +136,16 @@ export default function Nav({ usuario, onLogout }) {
                   : 'bg-surface2 border border-border text-textSec hover:text-text hover:border-accentTeal'
               }`}>
               📊
+            </Link>
+          )}
+          {tienePermisoEmails(usuario) && (
+            <Link href="/emails" title="Emails"
+              className={`w-9 h-9 flex items-center justify-center rounded-lg text-base transition-colors ${
+                pathname === '/emails'
+                  ? 'bg-accentPurple text-white'
+                  : 'bg-surface2 border border-border text-textSec hover:text-text hover:border-accentTeal'
+              }`}>
+              ✉️
             </Link>
           )}
           <Link href="/herramientas" title="Herramientas"
