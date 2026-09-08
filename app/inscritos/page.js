@@ -71,6 +71,7 @@ export default function InscritosPage() {
   const [filtroCurso, setFiltroCurso] = useState('');
   const [filtroEdicion, setFiltroEdicion] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('');
+  const [filtroMes, setFiltroMes] = useState('');
   const [ordenPor, setOrdenPor] = useState('FechaInscripcion');
   const [ordenDir, setOrdenDir] = useState('desc');
 
@@ -241,10 +242,18 @@ export default function InscritosPage() {
     .filter((i) => !busqueda.trim() || (i.NombreEstudiante || '').toLowerCase().includes(busqueda.trim().toLowerCase()))
     .filter((i) => !filtroCurso || i.Curso === filtroCurso)
     .filter((i) => !filtroEdicion || normalizarEdicion(i.Edicion) === filtroEdicion)
+    .filter((i) => !filtroMes || (i.FechaInscripcion || '').slice(0, 7) === filtroMes)
     .filter((i) => {
       const filtro = FILTROS_ESTADO.find((f) => f.id === filtroEstado);
       return !filtro || filtro.test(i);
     });
+
+  const mesesUnicos = [...new Set(inscritos.map((i) => (i.FechaInscripcion || '').slice(0, 7)).filter(Boolean))].sort((a, b) => b.localeCompare(a));
+  function labelDeMesCorto(mes) {
+    const [anio, m] = mes.split('-').map(Number);
+    const texto = new Date(anio, m - 1, 1).toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+    return texto.charAt(0).toUpperCase() + texto.slice(1);
+  }
 
   const inscritosOrdenados = [...inscritosFiltrados].sort((a, b) => {
     let va = a[ordenPor] || '';
@@ -433,6 +442,25 @@ export default function InscritosPage() {
             </button>
           ))}
         </div>
+
+        {mesesUnicos.length > 1 && (
+          <div className="flex items-center gap-1.5 flex-wrap mb-3">
+            <button onClick={() => setFiltroMes('')}
+              className={`text-xs px-3 py-1 rounded-full border transition-colors ${
+                filtroMes === '' ? 'bg-accentTeal border-accentTeal text-white' : 'bg-surface2 border-border text-textSec hover:text-text'
+              }`}>
+              Todos los meses
+            </button>
+            {mesesUnicos.map((m) => (
+              <button key={m} onClick={() => setFiltroMes(m)}
+                className={`text-xs px-3 py-1 rounded-full border transition-colors ${
+                  filtroMes === m ? 'bg-accentTeal border-accentTeal text-white' : 'bg-surface2 border-border text-textSec hover:text-text'
+                }`}>
+                {labelDeMesCorto(m)} ({inscritos.filter((i) => (i.FechaInscripcion || '').slice(0, 7) === m).length})
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="bg-surface border border-border rounded-2xl p-5">
           <div className="flex items-center justify-between flex-wrap gap-2 mb-3">

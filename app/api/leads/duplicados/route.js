@@ -2,10 +2,7 @@ import { NextResponse } from 'next/server';
 import { readSheet } from '../../../../lib/sheets';
 import { findUsuario } from '../../../../lib/auth';
 import { tienePermisoCrearLeads } from '../../../../lib/permisos';
-
-function soloDigitos(v) {
-  return (v || '').replace(/[^\d]/g, '');
-}
+import { normalizarWhatsapp } from '../../../../lib/constants';
 
 // GET /api/leads/duplicados?nombre=...&whatsapp=...&email=...&solicitanteEmail=...
 // Devuelve solo lo mínimo necesario para mostrar el aviso de duplicado — no expone la lista completa
@@ -18,7 +15,7 @@ export async function GET(request) {
   }
 
   const nombre = (searchParams.get('nombre') || '').trim().toLowerCase();
-  const whatsapp = soloDigitos(searchParams.get('whatsapp'));
+  const whatsapp = normalizarWhatsapp(searchParams.get('whatsapp'));
   const email = (searchParams.get('email') || '').trim().toLowerCase();
 
   if (!nombre && !whatsapp && !email) {
@@ -27,14 +24,14 @@ export async function GET(request) {
 
   const leads = await readSheet('Leads');
   const coincidencias = leads.filter((l) => {
-    const mismoWhatsapp = whatsapp && whatsapp.length >= 6 && soloDigitos(l.WhatsApp) === whatsapp;
+    const mismoWhatsapp = whatsapp && whatsapp.length >= 6 && normalizarWhatsapp(l.WhatsApp) === whatsapp;
     const mismoEmail = email && email.length >= 5 && (l.EmailEstudiante || '').trim().toLowerCase() === email;
     const nombreParecido = nombre && nombre.length >= 3 && (l.Nombre || '').trim().toLowerCase().includes(nombre);
     return mismoWhatsapp || mismoEmail || nombreParecido;
   });
 
   function motivo(l) {
-    if (whatsapp && whatsapp.length >= 6 && soloDigitos(l.WhatsApp) === whatsapp) return 'Mismo WhatsApp';
+    if (whatsapp && whatsapp.length >= 6 && normalizarWhatsapp(l.WhatsApp) === whatsapp) return 'Mismo WhatsApp';
     if (email && email.length >= 5 && (l.EmailEstudiante || '').trim().toLowerCase() === email) return 'Mismo email';
     return 'Nombre parecido';
   }

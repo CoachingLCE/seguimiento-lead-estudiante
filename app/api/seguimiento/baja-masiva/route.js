@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { readSheet, appendRow, updateRow, deleteRows } from '../../../../lib/sheets';
 import { findUsuario, tienePermisoBajas } from '../../../../lib/auth';
 import { registrarAccion } from '../../../../lib/auditoria';
+import { normalizarWhatsapp } from '../../../../lib/constants';
 
 // Con muchas personas en una carga masiva, los reintentos automáticos por cuota (ver lib/sheets.js)
 // pueden alargar bastante la ejecución — se le da más margen de lo normal.
@@ -54,12 +55,8 @@ export async function GET(request) {
   return NextResponse.json({ bajas });
 }
 
-function soloDigitos(v) {
-  return (v || '').replace(/[^\d]/g, '');
-}
-
 // Busca al estudiante con lo que haya disponible, en orden de confiabilidad:
-// email exacto > WhatsApp exacto > nombre (+ curso si hay más de un resultado por nombre).
+// email exacto > WhatsApp (tolerante al "9" móvil argentino) > nombre (+ curso si hay ambigüedad).
 function buscarEstudiante(entrada, leadsComprados) {
   // Se prueba en cascada (email -> whatsapp -> nombre) — si el dato más específico que trajo
   // esta carga no encuentra nada (ej: el registro existente todavía no tenía el email guardado),
@@ -70,9 +67,9 @@ function buscarEstudiante(entrada, leadsComprados) {
     if (porEmail.length > 0) return porEmail;
   }
 
-  const whatsapp = soloDigitos(entrada.whatsapp);
+  const whatsapp = normalizarWhatsapp(entrada.whatsapp);
   if (whatsapp && whatsapp.length >= 6) {
-    const porWhatsapp = leadsComprados.filter((l) => soloDigitos(l.WhatsApp) === whatsapp);
+    const porWhatsapp = leadsComprados.filter((l) => normalizarWhatsapp(l.WhatsApp) === whatsapp);
     if (porWhatsapp.length > 0) return porWhatsapp;
   }
 
