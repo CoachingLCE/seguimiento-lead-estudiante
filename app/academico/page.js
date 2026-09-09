@@ -519,24 +519,26 @@ export default function AcademicoPage() {
                           <td className="py-2 pr-3 text-textSec">{r.curso}</td>
                           <td className="pr-3 font-medium">Edición {r.edicion}</td>
                           <td className="pr-3" onClick={(ev) => ev.stopPropagation()}>
-                            {editandoFormadorEdicion === `${r.curso}|${r.edicion}` ? (
+                            {(editandoFormadorEdicion === `${r.curso}|${r.edicion}` || editandoFormadorEdicion === `nuevo:${r.curso}|${r.edicion}`) ? (
                               editandoFormadorEdicion === `nuevo:${r.curso}|${r.edicion}` ? (
                                 <input type="text" defaultValue={r.formador} placeholder="Nombre del formador" autoFocus
                                   onBlur={(e) => guardarFormadorEdicion(r.curso, r.edicion, e.target.value)}
                                   onKeyDown={(e) => e.key === 'Enter' && e.target.blur()}
                                   className="bg-bg border border-border rounded px-1.5 py-0.5 text-xs w-32" />
                               ) : (
-                                <select autoFocus defaultValue={r.formador}
-                                  onChange={(e) => {
-                                    if (e.target.value === '__nuevo__') { setEditandoFormadorEdicion(`nuevo:${r.curso}|${r.edicion}`); return; }
-                                    guardarFormadorEdicion(r.curso, r.edicion, e.target.value);
-                                  }}
-                                  onBlur={() => setEditandoFormadorEdicion(null)}
-                                  className="bg-bg border border-border rounded px-1.5 py-0.5 text-xs w-36">
-                                  <option value="">Sin definir</option>
-                                  {docentesUnicos.map((d) => <option key={d} value={d}>{d}</option>)}
-                                  <option value="__nuevo__">✏️ Escribir otro nombre…</option>
-                                </select>
+                                <div className="flex items-center gap-1">
+                                  <select autoFocus defaultValue={r.formador}
+                                    onChange={(e) => {
+                                      if (e.target.value === '__nuevo__') { setEditandoFormadorEdicion(`nuevo:${r.curso}|${r.edicion}`); return; }
+                                      guardarFormadorEdicion(r.curso, r.edicion, e.target.value);
+                                    }}
+                                    className="bg-bg border border-border rounded px-1.5 py-0.5 text-xs w-32">
+                                    <option value="">Sin definir</option>
+                                    {docentesUnicos.map((d) => <option key={d} value={d}>{d}</option>)}
+                                    <option value="__nuevo__">✏️ Escribir otro nombre…</option>
+                                  </select>
+                                  <button onClick={() => setEditandoFormadorEdicion(null)} className="text-textMuted text-xs" title="Cancelar">✕</button>
+                                </div>
                               )
                             ) : (
                               <button onClick={() => setEditandoFormadorEdicion(`${r.curso}|${r.edicion}`)} className="text-textSec text-xs hover:text-accentTeal">
