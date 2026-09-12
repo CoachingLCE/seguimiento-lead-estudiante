@@ -36,8 +36,7 @@ const CONFIGURACION = { label: 'Configuración', principal: null, items: [
   { href: '/productos-valores', label: 'Productos y Valores' },
   { href: '/mensajes', label: 'Mensajes frecuentes' },
   { href: '/emails', label: 'Emails' },
-  { href: '/fichas-enviadas', label: 'Fichas enviadas' },
-  { href: '/herramientas', label: 'Herramientas' }
+  { href: '/fichas-enviadas', label: 'Fichas enviadas' }
 ] };
 
 // Chip individual — mismo look para todo (principal, ítems sueltos y de grupo).
@@ -87,6 +86,12 @@ export default function Nav({ usuario, onLogout }) {
 
           {/* ACCIONES + USUARIO — desktop */}
           <div className="hidden lg:flex items-center gap-3 shrink-0">
+            <Link href="/herramientas" title="Herramientas"
+              className={`w-9 h-9 flex items-center justify-center rounded-lg text-base transition-colors ${
+                pathname === '/herramientas' ? 'bg-accentPurple text-white' : 'bg-surface2 border border-border text-textSec hover:text-text hover:border-accentTeal'
+              }`}>
+              ⚡
+            </Link>
             <ThemeSelector />
             {usuario && (
               <div className="text-right text-sm pl-2 border-l border-border">
@@ -157,7 +162,15 @@ export default function Nav({ usuario, onLogout }) {
           ))}
 
           <div className="flex items-center justify-between pt-3 border-t border-border">
-            <ThemeSelector />
+            <div className="flex items-center gap-2">
+              <Link href="/herramientas" title="Herramientas" onClick={() => setMenuMovil(false)}
+                className={`w-9 h-9 flex items-center justify-center rounded-lg text-base transition-colors ${
+                  pathname === '/herramientas' ? 'bg-accentPurple text-white' : 'bg-surface2 border border-border text-textSec'
+                }`}>
+                ⚡
+              </Link>
+              <ThemeSelector />
+            </div>
             {usuario && (
               <div className="text-right text-sm">
                 <p className="font-semibold leading-tight">{usuario.nombre}</p>
