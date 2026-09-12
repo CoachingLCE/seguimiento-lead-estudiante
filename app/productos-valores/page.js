@@ -415,7 +415,7 @@ export default function ProductosValoresPage() {
                           </span>
                         )}
                       </div>
-                      <p className="text-textMuted text-xs">{p.modalidad}{p.duracion ? ` · ${p.duracion}` : ''}</p>
+                      <p className="text-textMuted text-xs">{p.modalidad}{cantCuotas && cantCuotas > 1 ? ` · ${cantCuotas} cuotas` : ''}</p>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                       <div className="text-right">
