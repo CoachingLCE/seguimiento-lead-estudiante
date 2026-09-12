@@ -9,7 +9,7 @@ const ESTADOS = ['Activo', 'Pausado', 'Próximamente'];
 const MODALIDADES = ['Sincrónico', 'On demand', 'Ebook', 'Comunidad', 'Servicio', 'Otro producto'];
 const FORMATOS = ['Sincrónico', 'Asincrónico', 'Híbrido'];
 const MEDIOS_CONOCIDOS = [
-  ['contado', '💳 Contado'], ['debitoAutomatico', '🔄 Débito automático'], ['exterior', '🌎 Exterior (USD)']
+  ['contado', '💳 Contado (MercadoPago)'], ['debitoAutomatico', '🔄 Débito automático (MercadoPago)'], ['exterior', '🌎 PayPal (USD)']
 ];
 
 function num(v) { const n = Number(v); return Number.isFinite(n) ? n : 0; }
