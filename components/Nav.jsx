@@ -6,6 +6,7 @@ import {
   tienePermisoOperativo,
   tienePermisoInformesRRSS,
   tienePermisoEmails,
+  tienePermisoProductosVer,
   tienePermisoCrearLeads,
   tienePermisoReportes,
   tienePermisoEstudiantes,
@@ -78,7 +79,8 @@ export default function Nav({ usuario, onLogout }) {
     tienePermisoResumenDiario(usuario) && itemNav('/resumen-diario', 'Resumen diario', pathname),
     tienePermisoDiplomas(usuario) && itemNav('/diplomas', 'Diplomas', pathname),
     tienePermisoAcademicoVer(usuario) && itemNav('/academico', '🎓 Académico', pathname),
-    tienePermisoInformesRRSS(usuario) && itemNav('/informes-rrss', '📊 Informes RRSS', pathname)
+    tienePermisoInformesRRSS(usuario) && itemNav('/informes-rrss', '📊 Informes RRSS', pathname),
+    tienePermisoProductosVer(usuario) && itemNav('/productos-valores', '💲 Productos y Valores', pathname)
   ].filter(Boolean);
 
   const administracion = [
