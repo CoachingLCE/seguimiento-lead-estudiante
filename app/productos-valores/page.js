@@ -64,11 +64,17 @@ function BadgeEstado({ estado }) {
     : 'bg-infoBg text-infoText';
   return <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${clases}`}>{estado}</span>;
 }
-function BadgeFormato({ formato }) {
-  const clases = formato === 'Sincrónico' ? 'bg-accentPurple/20 text-accentPurple'
+// Para cursos (Sincrónico/On demand) muestra Sincrónico/Asincrónico/Híbrido — para el resto
+// (Ebook, Comunidad, Servicio, Otro producto) la modalidad ya es clara de por sí, así que se
+// muestra ESA en vez de forzar "Asincrónico" en algo que no es un curso.
+function BadgeFormato({ formato, modalidad }) {
+  const esCurso = ['Sincrónico', 'On demand'].includes(modalidad);
+  const texto = esCurso ? formato : modalidad;
+  const clases = !esCurso ? 'bg-surface2 text-textMuted'
+    : formato === 'Sincrónico' ? 'bg-accentPurple/20 text-accentPurple'
     : formato === 'Asincrónico' ? 'bg-accentTeal/20 text-accentTeal'
     : 'bg-accentMagenta/20 text-accentMagenta';
-  return <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${clases}`}>{formato}</span>;
+  return <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${clases}`}>{texto}</span>;
 }
 
 export default function ProductosValoresPage() {
@@ -482,7 +488,7 @@ export default function ProductosValoresPage() {
                       <div className="flex items-center gap-1.5 flex-wrap mb-1">
                         <p className="text-sm font-semibold truncate">{p.nombre}</p>
                         <BadgeEstado estado={p.estado} />
-                        <BadgeFormato formato={p.formato} />
+                        <BadgeFormato formato={p.formato} modalidad={p.modalidad} />
                         {p.esVariante && <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted">Variante</span>}
                         {necesitaRevision(p) && (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide bg-dangerBg text-dangerText" title="Hace más de 30 días que no se actualiza (o ya pasó la fecha de revisión indicada)">
