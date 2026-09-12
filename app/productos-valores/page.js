@@ -7,17 +7,21 @@ import { tienePermisoProductosVer, tienePermisoProductosEditar } from '../../lib
 
 const ESTADOS = ['Activo', 'Pausado', 'Próximamente'];
 const MODALIDADES = ['Sincrónico', 'On demand', 'Ebook', 'Comunidad', 'Servicio', 'Otro producto'];
+const FORMATOS = ['Sincrónico', 'Asincrónico', 'Híbrido'];
 const MEDIOS_CONOCIDOS = [
-  ['contado', 'Contado'], ['debitoAutomatico', 'Débito automático'], ['exterior', 'Exterior (USD)']
+  ['contado', '💳 Contado'], ['debitoAutomatico', '🔄 Débito automático'], ['exterior', '🌎 Exterior (USD)']
 ];
 
 function num(v) { const n = Number(v); return Number.isFinite(n) ? n : 0; }
 function money(n) { return `$${Math.round(n).toLocaleString('es-AR')}`; }
 function conDescuento(total, pct) { return total * (1 - num(pct) / 100); }
 
-// % efectivo de un nivel para un producto: si el producto tiene "override" en ese nivel, usa SU
-// propio %; si no, sigue el % general configurado (así un cambio en la config afecta a todos los
-// productos que no fueron customizados puntualmente).
+// Saca la cantidad de cuotas del texto libre de duración (ej: "12 cuotas · 12 meses" -> 12).
+function cantCuotasDeDuracion(duracion) {
+  const m = (duracion || '').match(/(\d+)\s*cuotas?/i);
+  return m ? Number(m[1]) : null;
+}
+
 function pctEfectivo(producto, tierId, config) {
   const d = producto.descuentos?.[tierId];
   if (!d) return null;
@@ -26,12 +30,26 @@ function pctEfectivo(producto, tierId, config) {
 }
 
 const FORM_VACIO = {
-  nombre: '', modalidad: 'Sincrónico', estado: 'Activo', valorLista: '', valorUnPago: '', precioExterior: '',
+  nombre: '', modalidad: 'Sincrónico', formato: 'Sincrónico', estado: 'Activo',
+  valorLista: '', valorUnPago: '', precioExterior: '',
   margen: '', duracion: '', descripcion: '', publicoObjetivo: '', landing: '',
   proximaActualizacion: '', proximaEdicion: '',
   descuentos: {}, cuotasEscalonadas: [], mediosDePago: {},
   esVariante: false, varianteDeId: '', motivo: '', sinNiveles: false, archivado: false
 };
+
+function BadgeEstado({ estado }) {
+  const clases = estado === 'Activo' ? 'bg-successBg text-successText'
+    : estado === 'Pausado' ? 'bg-warningBg text-warningText'
+    : 'bg-infoBg text-infoText';
+  return <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${clases}`}>{estado}</span>;
+}
+function BadgeFormato({ formato }) {
+  const clases = formato === 'Sincrónico' ? 'bg-accentPurple/20 text-accentPurple'
+    : formato === 'Asincrónico' ? 'bg-accentTeal/20 text-accentTeal'
+    : 'bg-accentMagenta/20 text-accentMagenta';
+  return <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${clases}`}>{formato}</span>;
+}
 
 export default function ProductosValoresPage() {
   const { usuario, logout } = useSession();
@@ -40,10 +58,11 @@ export default function ProductosValoresPage() {
   const [productos, setProductos] = useState(null);
   const [config, setConfig] = useState([]);
   const [errorCarga, setErrorCarga] = useState('');
-  const [mostrarArchivados, setMostrarArchivados] = useState(false);
   const [mostrarVariantes, setMostrarVariantes] = useState(false);
   const [filtroEstado, setFiltroEstado] = useState('');
   const [filtroModalidad, setFiltroModalidad] = useState('');
+  const [filtroFormato, setFiltroFormato] = useState('');
+  const [expandidos, setExpandidos] = useState(new Set());
 
   const [editando, setEditando] = useState(null);
   const [form, setForm] = useState(FORM_VACIO);
@@ -82,6 +101,14 @@ export default function ProductosValoresPage() {
     }
   }
 
+  function toggleExpandido(id) {
+    setExpandidos((prev) => {
+      const nuevo = new Set(prev);
+      nuevo.has(id) ? nuevo.delete(id) : nuevo.add(id);
+      return nuevo;
+    });
+  }
+
   function abrirNuevo() {
     setForm(FORM_VACIO);
     setErrorForm('');
@@ -89,7 +116,7 @@ export default function ProductosValoresPage() {
   }
   function abrirEdicion(p) {
     setForm({
-      nombre: p.nombre, modalidad: p.modalidad, estado: p.estado,
+      nombre: p.nombre, modalidad: p.modalidad, formato: p.formato || 'Sincrónico', estado: p.estado,
       valorLista: p.valorLista || '', valorUnPago: p.valorUnPago || '', precioExterior: p.precioExterior || '',
       margen: p.margen || '', duracion: p.duracion || '', descripcion: p.descripcion || '',
       publicoObjetivo: p.publicoObjetivo || '', landing: p.landing || '',
@@ -110,7 +137,6 @@ export default function ProductosValoresPage() {
   }
   function agregarDescuento(tierId) {
     const tierDefault = config.find((t) => t.tierId === tierId)?.pct || 0;
-    setDescuento(tierId, 'pct', tierDefault);
     setForm((f) => ({ ...f, descuentos: { ...f.descuentos, [tierId]: { pct: tierDefault, override: false } } }));
   }
 
@@ -177,7 +203,7 @@ export default function ProductosValoresPage() {
     try {
       for (const t of configTemp) {
         const original = config.find((c) => c.tierId === t.tierId);
-        if (original && Number(original.pct) === Number(t.pct)) continue; // solo se guarda lo que cambió
+        if (original && Number(original.pct) === Number(t.pct)) continue;
         await fetch('/api/productos-valores/config', {
           method: 'PATCH', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ tierId: t.tierId, pct: Number(t.pct), solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
@@ -194,18 +220,24 @@ export default function ProductosValoresPage() {
 
   if (!usuario || !puedeVer) return null;
 
-  const productosVisibles = (productos || [])
-    .filter((p) => mostrarArchivados || !p.archivado)
-    .filter((p) => mostrarVariantes || !p.esVariante)
-    .filter((p) => !filtroEstado || p.estado === filtroEstado)
-    .filter((p) => !filtroModalidad || p.modalidad === filtroModalidad);
+  const productosSinArchivarNiVariantes = (productos || []).filter((p) => !p.archivado && !p.esVariante);
 
-  const conteoPorModalidad = MODALIDADES.map((m) => ({
-    modalidad: m, cantidad: (productos || []).filter((p) => !p.archivado && !p.esVariante && p.modalidad === m).length
-  })).filter((m) => m.cantidad > 0);
+  const productosVisibles = (productos || [])
+    .filter((p) => mostrarVariantes || !p.esVariante)
+    .filter((p) => filtroEstado === 'Archivado' ? p.archivado : (!p.archivado && (!filtroEstado || p.estado === filtroEstado)))
+    .filter((p) => !filtroModalidad || p.modalidad === filtroModalidad)
+    .filter((p) => !filtroFormato || p.formato === filtroFormato);
+
   const conteoPorEstado = ESTADOS.map((e) => ({
-    estado: e, cantidad: (productos || []).filter((p) => !p.archivado && !p.esVariante && p.estado === e).length
+    estado: e, cantidad: productosSinArchivarNiVariantes.filter((p) => p.estado === e).length
   })).filter((e) => e.cantidad > 0);
+  const cantidadArchivados = (productos || []).filter((p) => p.archivado && !p.esVariante).length;
+  const conteoPorModalidad = MODALIDADES.map((m) => ({
+    modalidad: m, cantidad: productosSinArchivarNiVariantes.filter((p) => p.modalidad === m).length
+  })).filter((m) => m.cantidad > 0);
+  const conteoPorFormato = FORMATOS.map((f) => ({
+    formato: f, cantidad: productosSinArchivarNiVariantes.filter((p) => p.formato === f).length
+  })).filter((f) => f.cantidad > 0);
 
   return (
     <div>
@@ -263,46 +295,56 @@ export default function ProductosValoresPage() {
           <p className="text-textMuted text-[11px] mt-2">Este % se usa en todo producto que no tenga un valor propio ("override") para ese nivel.</p>
         </div>
 
+        {/* FILTROS — 3 filas claramente separadas */}
+        <div className="flex items-center gap-1.5 flex-wrap mb-2">
+          <button onClick={() => setFiltroEstado('')}
+            className={`text-xs px-3 py-1 rounded-full border transition-colors ${filtroEstado === '' ? 'bg-accentPurple border-accentPurple text-white' : 'bg-surface2 border-border text-textSec hover:text-text'}`}>
+            Todos ({productosSinArchivarNiVariantes.length})
+          </button>
+          {conteoPorEstado.map((e) => (
+            <button key={e.estado} onClick={() => setFiltroEstado(e.estado)}
+              className={`text-xs px-3 py-1 rounded-full border transition-colors ${filtroEstado === e.estado ? 'bg-accentPurple border-accentPurple text-white' : 'bg-surface2 border-border text-textSec hover:text-text'}`}>
+              {e.estado === 'Activo' ? 'Activos' : e.estado === 'Pausado' ? 'Pausados' : 'Próximamente'} ({e.cantidad})
+            </button>
+          ))}
+          {cantidadArchivados > 0 && (
+            <button onClick={() => setFiltroEstado('Archivado')}
+              className={`text-xs px-3 py-1 rounded-full border transition-colors ${filtroEstado === 'Archivado' ? 'bg-accentPurple border-accentPurple text-white' : 'bg-surface2 border-border text-textSec hover:text-text'}`}>
+              Archivados ({cantidadArchivados})
+            </button>
+          )}
+        </div>
+
         <div className="flex items-center gap-1.5 flex-wrap mb-2">
           <button onClick={() => setFiltroModalidad('')}
-            className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-              filtroModalidad === '' ? 'bg-accentPurple border-accentPurple text-white' : 'bg-surface2 border-border text-textSec hover:text-text'
-            }`}>
-            Todos ({(productos || []).filter((p) => !p.archivado && !p.esVariante).length})
+            className={`text-xs px-3 py-1 rounded-full border transition-colors ${filtroModalidad === '' ? 'bg-accentTeal border-accentTeal text-white' : 'bg-surface2 border-border text-textSec hover:text-text'}`}>
+            Todos los tipos
           </button>
           {conteoPorModalidad.map((m) => (
             <button key={m.modalidad} onClick={() => setFiltroModalidad(filtroModalidad === m.modalidad ? '' : m.modalidad)}
-              className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-                filtroModalidad === m.modalidad ? 'bg-accentPurple border-accentPurple text-white' : 'bg-surface2 border-border text-textSec hover:text-text'
-              }`}>
+              className={`text-xs px-3 py-1 rounded-full border transition-colors ${filtroModalidad === m.modalidad ? 'bg-accentTeal border-accentTeal text-white' : 'bg-surface2 border-border text-textSec hover:text-text'}`}>
               {m.modalidad} ({m.cantidad})
             </button>
           ))}
         </div>
 
         <div className="flex items-center gap-1.5 flex-wrap mb-4">
-          {conteoPorEstado.map((e) => (
-            <button key={e.estado} onClick={() => setFiltroEstado(filtroEstado === e.estado ? '' : e.estado)}
-              className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-                filtroEstado === e.estado
-                  ? (e.estado === 'Activo' ? 'bg-successText border-successText text-white' : e.estado === 'Pausado' ? 'bg-warningText border-warningText text-white' : 'bg-surface2 border-accentTeal text-text')
-                  : 'bg-surface2 border-border text-textSec hover:text-text'
-              }`}>
-              {e.estado} ({e.cantidad})
+          <button onClick={() => setFiltroFormato('')}
+            className={`text-xs px-3 py-1 rounded-full border transition-colors ${filtroFormato === '' ? 'bg-accentMagenta border-accentMagenta text-white' : 'bg-surface2 border-border text-textSec hover:text-text'}`}>
+            Todos los formatos
+          </button>
+          {conteoPorFormato.map((f) => (
+            <button key={f.formato} onClick={() => setFiltroFormato(filtroFormato === f.formato ? '' : f.formato)}
+              className={`text-xs px-3 py-1 rounded-full border transition-colors ${filtroFormato === f.formato ? 'bg-accentMagenta border-accentMagenta text-white' : 'bg-surface2 border-border text-textSec hover:text-text'}`}>
+              {f.formato === 'Sincrónico' ? 'Sincrónicos' : f.formato === 'Asincrónico' ? 'Asincrónicos' : 'Híbridos'} ({f.cantidad})
             </button>
           ))}
         </div>
 
-        <div className="flex items-center gap-4 mb-4 flex-wrap">
-          <label className="flex items-center gap-2 text-xs text-textSec cursor-pointer">
-            <input type="checkbox" checked={mostrarArchivados} onChange={(e) => setMostrarArchivados(e.target.checked)} />
-            Mostrar archivados
-          </label>
-          <label className="flex items-center gap-2 text-xs text-textSec cursor-pointer">
-            <input type="checkbox" checked={mostrarVariantes} onChange={(e) => setMostrarVariantes(e.target.checked)} />
-            Mostrar variantes (cambios de cursada, re cursadas, etc.)
-          </label>
-        </div>
+        <label className="flex items-center gap-2 text-xs text-textSec cursor-pointer mb-4 w-fit">
+          <input type="checkbox" checked={mostrarVariantes} onChange={(e) => setMostrarVariantes(e.target.checked)} />
+          Mostrar variantes (cambios de cursada, re cursadas, etc.)
+        </label>
 
         {errorCarga ? (
           <div className="bg-dangerBg border border-dangerText/30 rounded-2xl p-6 text-center">
@@ -312,93 +354,133 @@ export default function ProductosValoresPage() {
         ) : productos === null ? (
           <p className="text-textSec text-sm">Cargando…</p>
         ) : productosVisibles.length === 0 ? (
-          <p className="text-textMuted text-sm">Sin productos cargados todavía.</p>
+          <p className="text-textMuted text-sm">Sin productos que coincidan con estos filtros.</p>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {productosVisibles.map((p) => {
+              const abierto = expandidos.has(p.id);
+              const cantCuotas = cantCuotasDeDuracion(p.duracion);
+              const tieneEscalonadas = p.cuotasEscalonadas?.length > 0;
               const filasDescuento = Object.keys(p.descuentos || {}).map((tierId) => {
                 const pct = pctEfectivo(p, tierId, config);
                 const label = config.find((t) => t.tierId === tierId)?.label || tierId;
                 return pct > 0 ? { label, pct, valor: conDescuento(p.valorLista, pct) } : null;
               }).filter(Boolean);
               const productoPadre = p.esVariante ? productos.find((x) => x.id === p.varianteDeId) : null;
+              const mediosDisponibles = Object.entries(p.mediosDePago || {}).filter(([, m]) => m.link);
 
               return (
-                <div key={p.id} className="bg-surface border border-border rounded-2xl p-4 sm:p-5">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div>
+                <div key={p.id} className="bg-surface border border-border rounded-2xl overflow-hidden">
+                  {/* CABECERA — siempre visible, clickeable para expandir/colapsar */}
+                  <button onClick={() => toggleExpandido(p.id)} className="w-full text-left p-4 sm:p-5 flex items-center justify-between gap-3 hover:bg-bg/40 transition-colors">
+                    <div className="min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                        <p className="text-sm font-semibold">{p.nombre}</p>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full ${
-                          p.estado === 'Activo' ? 'bg-successBg text-successText' : p.estado === 'Pausado' ? 'bg-warningBg text-warningText' : 'bg-surface2 text-textMuted'
-                        }`}>{p.estado}</span>
-                        {p.archivado && <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted">Archivado</span>}
-                        {p.esVariante && <span className="text-[10px] px-2 py-0.5 rounded-full bg-accentPurple/20 text-accentPurple">Variante</span>}
+                        <p className="text-sm font-semibold truncate">{p.nombre}</p>
+                        <BadgeEstado estado={p.estado} />
+                        <BadgeFormato formato={p.formato} />
+                        {p.esVariante && <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted">Variante</span>}
                       </div>
                       <p className="text-textMuted text-xs">{p.modalidad}{p.duracion ? ` · ${p.duracion}` : ''}</p>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <div className="text-right">
+                        <p className="text-base font-bold">{money(p.valorLista)}</p>
+                        <p className="text-textMuted text-[10px]">Valor de lista</p>
+                      </div>
+                      <span className="text-textMuted text-lg">{abierto ? '▾' : '▸'}</span>
+                    </div>
+                  </button>
+
+                  {abierto && (
+                    <div className="px-4 sm:px-5 pb-5 border-t border-border pt-4">
+                      {p.descripcion && <p className="text-textSec text-xs mb-3">{p.descripcion}</p>}
+
                       {p.esVariante && (
-                        <p className="text-textMuted text-[11px] mt-0.5">
+                        <p className="text-textMuted text-[11px] mb-3">
                           {productoPadre ? `Variante de: ${productoPadre.nombre}` : ''}{p.motivo ? ` — ${p.motivo}` : ''}
                         </p>
                       )}
-                    </div>
-                    {puedeEditar && (
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button onClick={() => abrirEdicion(p)} className="text-xs text-accentTeal font-semibold">✏️ Editar</button>
-                        <button onClick={() => setConfirmarBorrar(p)} className="text-xs text-dangerText font-semibold">🗑</button>
-                      </div>
-                    )}
-                  </div>
 
-                  {p.descripcion && <p className="text-textSec text-xs mb-2">{p.descripcion}</p>}
-
-                  <p className="text-sm mb-2">
-                    Valor de lista: <b>{money(p.valorLista)}</b>
-                    {p.valorUnPago ? <span className="text-textMuted"> · Pago único: {money(p.valorUnPago)}</span> : null}
-                    {p.precioExterior ? <span className="text-textMuted"> · Exterior: USD {p.precioExterior}</span> : null}
-                  </p>
-
-                  {filasDescuento.length > 0 && (
-                    <div className="grid sm:grid-cols-2 gap-1.5 mb-3">
-                      {filasDescuento.map((f) => (
-                        <div key={f.label} className="flex items-center justify-between bg-bg border border-border rounded-lg px-3 py-1.5 text-xs">
-                          <span className="text-textSec">{f.label} <span className="text-warningText">(-{f.pct}%)</span></span>
-                          <b className="text-successText">{money(f.valor)}</b>
+                      {/* PRECIO BASE / CUOTAS */}
+                      <div className="bg-bg border border-border rounded-xl p-3.5 mb-3">
+                        <div className="text-center mb-2">
+                          <p className="text-2xl font-bold">{money(p.valorLista)}</p>
+                          <p className="text-textMuted text-[11px]">Valor de lista</p>
                         </div>
-                      ))}
-                    </div>
-                  )}
+                        {tieneEscalonadas ? (
+                          <div className="overflow-x-auto mt-3">
+                            <table className="w-full text-xs">
+                              <thead>
+                                <tr className="text-textSec text-left border-b border-border">
+                                  <th className="pr-3 py-1">Tramo</th><th className="pr-3">Dto</th><th>Valor</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {p.cuotasEscalonadas.map((t, i) => (
+                                  <tr key={i} className="border-b border-border last:border-b-0">
+                                    <td className="pr-3 py-1 text-textSec">{t.tramo}</td>
+                                    <td className="pr-3 text-warningText">-{t.pctDto}%</td>
+                                    <td className="font-medium">{money(t.valor)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        ) : cantCuotas && cantCuotas > 1 ? (
+                          <div className="flex items-center justify-center gap-4 text-sm">
+                            {p.valorUnPago ? <span className="text-textSec">Contado: <b className="text-text">{money(p.valorUnPago)}</b></span> : null}
+                            <span className="text-textSec">{cantCuotas} cuotas: <b className="text-text">{money(p.valorLista / cantCuotas)}/mes</b></span>
+                          </div>
+                        ) : p.valorUnPago ? (
+                          <div className="flex items-center justify-center gap-4 text-sm">
+                            <span className="text-textSec">Pago único: <b className="text-text">{money(p.valorUnPago)}</b></span>
+                          </div>
+                        ) : null}
+                        {p.precioExterior ? <p className="text-textMuted text-[11px] text-center mt-2">Exterior: USD {p.precioExterior}</p> : null}
+                      </div>
 
-                  {p.cuotasEscalonadas?.length > 0 && (
-                    <div className="mb-3 overflow-x-auto">
-                      <p className="text-textMuted text-[11px] mb-1">Cuotas escalonadas:</p>
-                      <table className="text-xs">
-                        <thead>
-                          <tr className="text-textSec text-left">
-                            <th className="pr-3 py-1">Tramo</th><th className="pr-3">Dto</th><th>Valor</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {p.cuotasEscalonadas.map((t, i) => (
-                            <tr key={i} className="border-t border-border">
-                              <td className="pr-3 py-1 text-textSec">{t.tramo}</td>
-                              <td className="pr-3 text-warningText">-{t.pctDto}%</td>
-                              <td className="font-medium">{money(t.valor)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+                      {/* TABLA DE DESCUENTOS + MEDIOS DE PAGO */}
+                      {filasDescuento.length > 0 && (
+                        <div className="overflow-x-auto mb-3">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="text-textSec text-left border-b border-border">
+                                <th className="py-1.5 pr-3">Beneficio</th><th className="pr-3">Descuento</th><th className="pr-3">Precio</th><th>Medios de pago</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {filasDescuento.map((f) => (
+                                <tr key={f.label} className="border-b border-border last:border-b-0">
+                                  <td className="py-2 pr-3 text-textSec">{f.label}</td>
+                                  <td className="pr-3 text-warningText font-medium">-{f.pct}%</td>
+                                  <td className="pr-3 font-bold text-successText">{money(f.valor)}</td>
+                                  <td>
+                                    {mediosDisponibles.length > 0 ? (
+                                      <div className="flex gap-1 flex-wrap">
+                                        {mediosDisponibles.map(([clave, m]) => (
+                                          <a key={clave} href={m.link} target="_blank" rel="noopener noreferrer"
+                                            className="text-[10px] px-2 py-0.5 rounded-full bg-infoBg text-infoText font-semibold whitespace-nowrap">
+                                            {MEDIOS_CONOCIDOS.find(([k]) => k === clave)?.[1] || clave}
+                                          </a>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <span className="text-textMuted text-[11px]">Sin medio de pago cargado</span>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
 
-                  {Object.keys(p.mediosDePago || {}).length > 0 && (
-                    <div className="flex gap-2 flex-wrap">
-                      {Object.entries(p.mediosDePago).map(([clave, m]) => m.link && (
-                        <a key={clave} href={m.link} target="_blank" rel="noopener noreferrer"
-                          className="text-xs px-3 py-1.5 rounded-lg bg-infoBg text-infoText font-semibold">
-                          💳 {MEDIOS_CONOCIDOS.find(([k]) => k === clave)?.[1] || clave}{m.valor ? ` (USD ${m.valor})` : ''}
-                        </a>
-                      ))}
+                      {puedeEditar && (
+                        <div className="flex items-center gap-2 pt-2">
+                          <button onClick={() => abrirEdicion(p)} className="text-xs text-accentTeal font-semibold">✏️ Editar</button>
+                          <button onClick={() => setConfirmarBorrar(p)} className="text-xs text-dangerText font-semibold">🗑 Eliminar</button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -420,10 +502,17 @@ export default function ProductosValoresPage() {
                   className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
               </div>
               <div>
-                <label className="text-[11px] text-textSec block mb-1">Modalidad</label>
+                <label className="text-[11px] text-textSec block mb-1">Modalidad (tipo de producto)</label>
                 <select value={form.modalidad} onChange={(e) => setForm((f) => ({ ...f, modalidad: e.target.value }))}
                   className="w-full bg-bg border border-border rounded-lg px-2 py-2 text-sm">
                   {MODALIDADES.map((m) => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-[11px] text-textSec block mb-1">Formato (badge visible)</label>
+                <select value={form.formato} onChange={(e) => setForm((f) => ({ ...f, formato: e.target.value }))}
+                  className="w-full bg-bg border border-border rounded-lg px-2 py-2 text-sm">
+                  {FORMATOS.map((f2) => <option key={f2} value={f2}>{f2}</option>)}
                 </select>
               </div>
               <div>
@@ -465,7 +554,6 @@ export default function ProductosValoresPage() {
             <input value={form.landing} onChange={(e) => setForm((f) => ({ ...f, landing: e.target.value }))}
               placeholder="https://..." className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm mb-4" />
 
-            {/* DESCUENTOS POR NIVEL */}
             <p className="text-xs font-semibold text-textSec mb-2">Descuentos por nivel</p>
             <div className="space-y-1.5 mb-2">
               {Object.entries(form.descuentos).map(([tierId, d]) => (
@@ -487,7 +575,6 @@ export default function ProductosValoresPage() {
               ))}
             </div>
 
-            {/* CUOTAS ESCALONADAS */}
             <p className="text-xs font-semibold text-textSec mb-2">Cuotas escalonadas (opcional)</p>
             <div className="space-y-1.5 mb-2">
               {form.cuotasEscalonadas.map((t, i) => (
@@ -506,7 +593,6 @@ export default function ProductosValoresPage() {
             </div>
             <button onClick={agregarTramo} className="text-[11px] px-2.5 py-1 rounded-full bg-surface2 border border-border text-textSec mb-4">+ Agregar tramo</button>
 
-            {/* MEDIOS DE PAGO */}
             <p className="text-xs font-semibold text-textSec mb-2">Medios de pago</p>
             <div className="space-y-1.5 mb-2">
               {Object.entries(form.mediosDePago).map(([clave, m]) => (
@@ -528,7 +614,6 @@ export default function ProductosValoresPage() {
               ))}
             </div>
 
-            {/* VARIANTE */}
             <label className="flex items-center gap-2 text-xs text-textSec mb-2 cursor-pointer">
               <input type="checkbox" checked={form.esVariante} onChange={(e) => setForm((f) => ({ ...f, esVariante: e.target.checked }))} />
               Es una variante de otro producto (cambio de cursada, re cursada, etc.)
