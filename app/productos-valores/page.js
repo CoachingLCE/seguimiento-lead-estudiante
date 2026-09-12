@@ -659,6 +659,23 @@ export default function ProductosValoresPage() {
                         </div>
                       )}
 
+                      {/* Si no hay tabla de descuentos (ej: ebooks, pago único sin niveles), los
+                          medios de pago se muestran igual acá, sueltos — antes solo vivían
+                          adentro de esa tabla y desaparecían con ella. */}
+                      {filasDescuento.length === 0 && mediosDisponibles.length > 0 && (
+                        <div className="mb-1">
+                          <p className="text-xs font-semibold text-textSec mb-2">Medios de pago</p>
+                          <div className="flex gap-1.5 flex-wrap">
+                            {mediosDisponibles.map(([clave, m]) => (
+                              <a key={clave} href={m.link} target="_blank" rel="noopener noreferrer"
+                                className="text-[11px] px-2.5 py-1 rounded-full bg-infoBg text-infoText font-semibold whitespace-nowrap">
+                                {MEDIOS_CONOCIDOS.find(([k]) => k === clave)?.[1] || clave}{m.valor ? ` (USD ${m.valor})` : ''}
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       {puedeEditar && (
                         <div className="flex items-center gap-2 pt-2">
                           <button onClick={() => abrirEdicion(p)} className="text-xs text-accentTeal font-semibold">✏️ Editar</button>
