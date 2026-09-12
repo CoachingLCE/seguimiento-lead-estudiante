@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Nav from '../../components/Nav';
+import AccesoDenegado from '../../components/AccesoDenegado';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoOperativo } from '../../lib/permisos';
 
@@ -18,7 +19,7 @@ export default function FichasEnviadasPage() {
 
   useEffect(() => {
     if (!usuario) return;
-    if (!puedeVer) { router.push('/dashboard'); return; }
+    if (!puedeVer) return; // ya no redirige — la pantalla en sí muestra el mensaje de acceso
     cargar();
   }, [usuario]);
 
@@ -39,7 +40,7 @@ export default function FichasEnviadasPage() {
     setCargando(false);
   }
 
-  if (!usuario || !puedeVer) return null;
+  if (!usuario) return null;
 
   const fichasFiltradas = fichas.filter((f) =>
     !busqueda.trim() || `${f.nombre} ${f.curso}`.toLowerCase().includes(busqueda.trim().toLowerCase())
@@ -48,6 +49,9 @@ export default function FichasEnviadasPage() {
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
+      {!puedeVer ? (
+        <AccesoDenegado seccion="Fichas enviadas" />
+      ) : (
       <div className="max-w-[1100px] mx-auto px-6 pb-16">
         <h3 className="text-lg font-bold mb-1">📄 Fichas enviadas</h3>
         <p className="text-textMuted text-xs mb-5">
@@ -100,6 +104,7 @@ export default function FichasEnviadasPage() {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }

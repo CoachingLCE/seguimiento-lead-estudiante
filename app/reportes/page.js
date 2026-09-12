@@ -9,6 +9,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend
 } from 'recharts';
 import Nav from '../../components/Nav';
+import AccesoDenegado from '../../components/AccesoDenegado';
 import FichaDrawer from '../../components/FichaDrawer';
 import { tienePermisoReportes } from '../../lib/permisos';
 import { useSession } from '../../lib/useSession';
@@ -1050,14 +1051,14 @@ export default function ReportesPage() {
   }
 
   if (!usuario) return null;
-  if (!tienePermisoReportes(usuario)) {
-    if (typeof window !== 'undefined') router.push('/inscritos');
-    return null;
-  }
+  const puedeVer = tienePermisoReportes(usuario);
 
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
+      {!puedeVer ? (
+        <AccesoDenegado seccion="Reportes" />
+      ) : (
       <div className="max-w-[1900px] mx-auto px-4 pb-24 space-y-5">
 
         {/* FILTROS SUPERIORES */}
@@ -1631,6 +1632,7 @@ export default function ReportesPage() {
           </>
         )}
       </div>
+      )}
       {detalleCurso && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4" onClick={() => setDetalleCurso(null)}>
           <div className="bg-surface2 border border-border rounded-2xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import Nav from '../../components/Nav';
+import AccesoDenegado from '../../components/AccesoDenegado';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoResumenEstudiantes } from '../../lib/permisos';
 import { colorParaCurso } from '../../lib/constants';
@@ -19,7 +20,7 @@ export default function ResumenEstudiantesPage() {
 
   useEffect(() => {
     if (!usuario) return;
-    if (!puedeVer) { router.push('/dashboard'); return; }
+    if (!puedeVer) return; // ya no redirige — la pantalla en sí muestra el mensaje de acceso
     cargarDatos();
   }, [usuario, mes]);
 
@@ -32,7 +33,7 @@ export default function ResumenEstudiantesPage() {
     setCargando(false);
   }
 
-  if (!usuario || !puedeVer) return null;
+  if (!usuario) return null;
 
   function labelDeMes(m) {
     const [anio, mm] = m.split('-').map(Number);
@@ -57,6 +58,9 @@ export default function ResumenEstudiantesPage() {
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
+      {!puedeVer ? (
+        <AccesoDenegado seccion="Reportes Inscripciones" />
+      ) : (
       <div className="max-w-5xl mx-auto px-6 pb-16">
         {cargando || !datos ? (
           <p className="text-textSec text-sm">Cargando…</p>
@@ -165,6 +169,7 @@ export default function ResumenEstudiantesPage() {
           </>
         )}
       </div>
+      )}
     </div>
   );
 }

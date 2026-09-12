@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import Nav, { puedeVerOperativo } from '../../components/Nav';
+import AccesoDenegado from '../../components/AccesoDenegado';
 import FichaDrawer from '../../components/FichaDrawer';
 import ModalVenta from '../../components/ModalVenta';
 import { useToast } from '../../components/Toast';
@@ -318,10 +319,7 @@ export default function SeguimientoPage() {
     if (typeof window !== 'undefined') router.push('/');
     return null;
   }
-  if (!puedeVerOperativo(usuario)) {
-    if (typeof window !== 'undefined') router.push('/inscritos');
-    return null;
-  }
+  const puedeVer = puedeVerOperativo(usuario);
 
   const ahora = new Date();
   const buscarLead = (leadId) => leads.find((l) => l.ID === leadId);
@@ -451,6 +449,9 @@ export default function SeguimientoPage() {
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
+      {!puedeVer ? (
+        <AccesoDenegado seccion="Seguimiento" />
+      ) : (
       <div className="max-w-[1300px] mx-auto px-4 pb-24">
         {cargando ? (
           <p className="text-textSec text-sm">Cargando…</p>
@@ -562,6 +563,7 @@ export default function SeguimientoPage() {
           </>
         )}
       </div>
+      )}
 
       {seleccionados.size > 0 && (
         <div className="fixed bottom-0 left-0 right-0 bg-surface2 border-t border-border p-4 flex items-center justify-between flex-wrap gap-3 z-30">

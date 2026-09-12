@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Nav from '../../components/Nav';
+import AccesoDenegado from '../../components/AccesoDenegado';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoInformesRRSS } from '../../lib/permisos';
 
@@ -161,7 +162,7 @@ export default function InformesRRSSPage() {
 
   useEffect(() => {
     if (!usuario) return;
-    if (!puedeVer) { router.push('/dashboard'); return; }
+    if (!puedeVer) return; // ya no redirige — la pantalla en sí muestra el mensaje de acceso
     if (!mes) setMes(mesesDisponibles()[0]);
   }, [usuario]);
 
@@ -381,7 +382,7 @@ export default function InformesRRSSPage() {
     setEnviandoComentario(false);
   }
 
-  if (!usuario || !puedeVer) return null;
+  if (!usuario) return null;
 
   const plataformasConDatos = PLATAFORMAS.filter((p) =>
     ['instagram', 'linkedin', 'youtube'].includes(p.id) || metricas.some((m) => m.Plataforma === p.id)
@@ -396,6 +397,9 @@ export default function InformesRRSSPage() {
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
+      {!puedeVer ? (
+        <AccesoDenegado seccion="Informes RRSS" />
+      ) : (
       <div className="max-w-[1300px] mx-auto px-4 sm:px-6 pb-16">
 
         {/* AVISO */}
@@ -727,6 +731,7 @@ export default function InformesRRSSPage() {
           </div>
         )}
       </div>
+      )}
 
       {confirmarBorrarPieza && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4" onClick={() => setConfirmarBorrarPieza(null)}>

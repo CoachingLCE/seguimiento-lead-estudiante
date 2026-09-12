@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Nav from '../../components/Nav';
+import AccesoDenegado from '../../components/AccesoDenegado';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoBajas } from '../../lib/permisos';
 
@@ -153,10 +154,7 @@ export default function BajasPage() {
     cargarDatosBajas();
   }
 
-  if (usuario && !tienePermisoBajas(usuario)) {
-    router.push('/dashboard');
-    return null;
-  }
+  const puedeVer = tienePermisoBajas(usuario);
 
   async function cargarBajasMasivas() {
     setCargandoBajasMasivas(true);
@@ -255,6 +253,9 @@ export default function BajasPage() {
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
+      {!puedeVer ? (
+        <AccesoDenegado seccion="Bajas" />
+      ) : (
       <div className="max-w-[1700px] mx-auto px-6 pb-16">
 
         {/* ENCABEZADO */}
@@ -446,6 +447,7 @@ export default function BajasPage() {
           </>
         </div>
       </div>
+      )}
     </div>
   );
 }

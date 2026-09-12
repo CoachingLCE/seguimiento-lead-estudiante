@@ -1,173 +1,219 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 import ThemeSelector from './ThemeSelector';
-import {
-  tienePermisoOperativo,
-  tienePermisoInformesRRSS,
-  tienePermisoEmails,
-  tienePermisoProductosVer,
-  tienePermisoCrearLeads,
-  tienePermisoReportes,
-  tienePermisoEstudiantes,
-  tienePermisoResumenEstudiantes,
-  tienePermisoResumenDiario,
-  tienePermisoAccesos,
-  tienePermisoAuditoria,
-  tienePermisoDiplomas,
-  tienePermisoBuscador,
-  tienePermisoMensajesVer,
-  tienePermisoBajas,
-  tienePermisoAcademicoVer
-} from '../lib/permisos';
+import { tienePermisoOperativo } from '../lib/permisos';
 import { nombreVisibleRoles } from '../lib/constants';
 
-// Reexport para no romper imports existentes en otras páginas (`import { puedeVerOperativo } from '.../Nav'`)
+// Se mantiene por compatibilidad con imports viejos (`import { puedeVerOperativo } from '.../Nav'`)
+// — Dashboard y Seguimiento la usan como su chequeo real de acceso (ya no para ocultar del menú,
+// que ahora se muestra completo a cualquier usuario logueado).
 export const puedeVerOperativo = tienePermisoOperativo;
 
-function itemNav(href, label, pathname) {
+const NAV_PRINCIPAL = [
+  { href: '/dashboard', label: 'Dashboard' },
+  { href: '/seguimiento', label: 'Seguimiento' },
+  { href: '/buscador', label: 'Leads' }
+];
+
+const GESTION = [
+  { href: '/inscritos', label: 'Estudiantes' },
+  { href: '/resumen-estudiantes', label: 'Inscripciones' },
+  { href: '/academico', label: 'Académico' },
+  { href: '/diplomas', label: 'Diplomas' }
+];
+
+const REPORTES_MENU = [
+  { href: '/resumen-diario', label: 'Resumen diario' },
+  { href: '/informes-rrss', label: 'Informes RRSS' },
+  { href: '/auditoria', label: 'Historial de acciones' },
+  { href: '/bajas', label: 'Bajas' },
+  { href: '/accesos', label: 'Accesos' }
+];
+
+const CONFIGURACION = [
+  { href: '/productos-valores', label: 'Productos y Valores' },
+  { href: '/mensajes', label: 'Mensajes frecuentes' },
+  { href: '/emails', label: 'Emails' },
+  { href: '/fichas-enviadas', label: 'Fichas enviadas' },
+  { href: '/herramientas', label: 'Herramientas' }
+];
+
+function estaActivo(pathname, href, items) {
+  if (pathname === href) return true;
+  return items?.some((i) => i.href === pathname) || false;
+}
+
+// Botón de nav simple (Dashboard, Seguimiento, Leads).
+function ItemSimple({ item, pathname, onClick }) {
+  const activo = pathname === item.href;
   return (
-    <Link
-      key={href}
-      href={href}
-      className={`h-9 flex items-center px-4 rounded-lg text-sm font-medium border whitespace-nowrap transition-colors ${
-        pathname === href
-          ? 'bg-gradient-to-r from-accentPurple to-accentMagenta text-white border-transparent'
-          : 'bg-surface2 border-border text-textSec hover:text-text hover:border-accentTeal'
-      }`}
-    >
-      {label}
+    <Link href={item.href} onClick={onClick}
+      className={`h-9 flex items-center px-3.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+        activo ? 'bg-accentPurple/15 text-accentPurple' : 'text-textSec hover:text-text hover:bg-surface2'
+      }`}>
+      {item.label}
     </Link>
   );
 }
 
-// Nuevo lead es la acción principal de la app: siempre violeta, no solo cuando está activa.
-function itemNavPrimario(href, label, pathname) {
-  return (
-    <Link
-      key={href}
-      href={href}
-      className={`h-9 flex items-center px-4 rounded-lg text-sm font-semibold whitespace-nowrap transition-all shadow-sm ${
-        pathname === href
-          ? 'bg-gradient-to-r from-accentPurple to-accentMagenta text-white shadow-accentPurple/30'
-          : 'bg-gradient-to-r from-accentPurple to-accentMagenta text-white opacity-90 hover:opacity-100 hover:shadow-accentPurple/20'
-      }`}
-    >
-      {label}
-    </Link>
-  );
-}
+// Botón con submenú desplegable (Gestión, Reportes, Configuración) — clic para abrir/cerrar,
+// clic afuera cierra, y elegir un ítem también cierra. La sección queda marcada como "activa" si
+// la URL actual coincide con ella o con cualquiera de sus ítems.
+function ItemConMenu({ label, principal, items, pathname, abierto, onToggle, onClose }) {
+  const ref = useRef(null);
+  const activo = estaActivo(pathname, principal, items);
 
-// Un separador vertical sutil entre categorías — solo se muestra si hay algo de cada lado.
-function Divisor() {
-  return <span className="w-px h-6 bg-border shrink-0" />;
+  useEffect(() => {
+    if (!abierto) return;
+    function alClickearAfuera(e) {
+      if (ref.current && !ref.current.contains(e.target)) onClose();
+    }
+    document.addEventListener('mousedown', alClickearAfuera);
+    return () => document.removeEventListener('mousedown', alClickearAfuera);
+  }, [abierto, onClose]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button onClick={onToggle}
+        className={`h-9 flex items-center gap-1 px-3.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+          activo ? 'bg-accentPurple/15 text-accentPurple' : 'text-textSec hover:text-text hover:bg-surface2'
+        }`}>
+        {label}
+        <span className={`text-[10px] transition-transform ${abierto ? 'rotate-180' : ''}`}>▾</span>
+      </button>
+      {abierto && (
+        <div className="absolute top-full left-0 mt-1.5 w-56 bg-surface2 border border-border rounded-xl shadow-lg py-1.5 z-50">
+          {principal && (
+            <Link href={principal} onClick={onClose}
+              className={`block px-4 py-2 text-sm border-b border-border mb-1 ${
+                pathname === principal ? 'text-accentPurple font-semibold' : 'text-text font-semibold hover:bg-bg'
+              }`}>
+              Ver {label.toLowerCase()}
+            </Link>
+          )}
+          {items.map((it) => (
+            <Link key={it.href} href={it.href} onClick={onClose}
+              className={`block px-4 py-2 text-sm transition-colors ${
+                pathname === it.href ? 'text-accentPurple font-semibold bg-accentPurple/10' : 'text-textSec hover:text-text hover:bg-bg'
+              }`}>
+              {it.label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function Nav({ usuario, onLogout }) {
   const pathname = usePathname();
+  const [menuAbierto, setMenuAbierto] = useState(null); // 'gestion' | 'reportes' | 'config' | null
+  const [menuMovil, setMenuMovil] = useState(false);
 
-  const operativo = [
-    tienePermisoOperativo(usuario) && itemNav('/dashboard', 'Dashboard', pathname),
-    tienePermisoOperativo(usuario) && itemNav('/seguimiento', 'Seguimiento', pathname),
-    tienePermisoCrearLeads(usuario) && itemNavPrimario('/nuevo-lead', 'Nuevo lead', pathname)
-  ].filter(Boolean);
-
-  const analisis = [
-    tienePermisoReportes(usuario) && itemNav('/reportes', 'Reportes', pathname),
-    tienePermisoEstudiantes(usuario) && itemNav('/inscritos', 'Estudiantes', pathname),
-    tienePermisoResumenEstudiantes(usuario) && itemNav('/resumen-estudiantes', 'Reportes Inscripciones', pathname),
-    tienePermisoResumenDiario(usuario) && itemNav('/resumen-diario', 'Resumen diario', pathname),
-    tienePermisoDiplomas(usuario) && itemNav('/diplomas', 'Diplomas', pathname),
-    tienePermisoAcademicoVer(usuario) && itemNav('/academico', '🎓 Académico', pathname),
-    tienePermisoInformesRRSS(usuario) && itemNav('/informes-rrss', '📊 Informes RRSS', pathname),
-    tienePermisoProductosVer(usuario) && itemNav('/productos-valores', '💲 Productos y Valores', pathname)
-  ].filter(Boolean);
-
-  const administracion = [
-    tienePermisoAuditoria(usuario) && itemNav('/auditoria', 'Historial de acciones', pathname),
-    tienePermisoBajas(usuario) && itemNav('/bajas', '🔴 Bajas', pathname),
-    tienePermisoAccesos(usuario) && itemNav('/accesos', 'Accesos', pathname)
-  ].filter(Boolean);
+  function toggleMenu(nombre) {
+    setMenuAbierto((actual) => (actual === nombre ? null : nombre));
+  }
+  function cerrarMenu() {
+    setMenuAbierto(null);
+  }
 
   return (
-    <div className="max-w-5xl mx-auto px-6 pt-6 no-print">
-      <div className="flex items-center justify-between mb-4 gap-4">
-        <div>
-          <p className="text-accentTeal uppercase text-xs tracking-widest font-semibold mb-1">
-            Instituto ILCE
-          </p>
-          <h1 className="text-2xl font-bold">ILCE Gestión</h1>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <ThemeSelector />
-          {tienePermisoBuscador(usuario) && (
-            <Link href="/buscador" title="Buscador"
-              className={`w-9 h-9 flex items-center justify-center rounded-lg text-base transition-colors ${
-                pathname === '/buscador'
-                  ? 'bg-accentPurple text-white'
-                  : 'bg-surface2 border border-border text-textSec hover:text-text hover:border-accentTeal'
-              }`}>
-              🔍
-            </Link>
-          )}
-          {tienePermisoMensajesVer(usuario) && (
-            <Link href="/mensajes" title="Mensajes frecuentes"
-              className={`w-9 h-9 flex items-center justify-center rounded-lg text-base transition-colors ${
-                pathname === '/mensajes'
-                  ? 'bg-accentPurple text-white'
-                  : 'bg-surface2 border border-border text-textSec hover:text-text hover:border-accentTeal'
-              }`}>
-              💬
-            </Link>
-          )}
-          {tienePermisoOperativo(usuario) && (
-            <Link href="/fichas-enviadas" title="Fichas enviadas"
-              className={`w-9 h-9 flex items-center justify-center rounded-lg text-base transition-colors ${
-                pathname === '/fichas-enviadas'
-                  ? 'bg-accentPurple text-white'
-                  : 'bg-surface2 border border-border text-textSec hover:text-text hover:border-accentTeal'
-              }`}>
-              📄
-            </Link>
-          )}
-          {tienePermisoEmails(usuario) && (
-            <Link href="/emails" title="Emails"
-              className={`w-9 h-9 flex items-center justify-center rounded-lg text-base transition-colors ${
-                pathname === '/emails'
-                  ? 'bg-accentPurple text-white'
-                  : 'bg-surface2 border border-border text-textSec hover:text-text hover:border-accentTeal'
-              }`}>
-              ✉️
-            </Link>
-          )}
-          <Link href="/herramientas" title="Herramientas"
-            className={`w-9 h-9 flex items-center justify-center rounded-lg text-base transition-colors ${
-              pathname === '/herramientas'
-                ? 'bg-accentPurple text-white'
-                : 'bg-surface2 border border-border text-textSec hover:text-text hover:border-accentTeal'
-            }`}>
-            ⚡
+    <div className="border-b border-border no-print">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
+        <div className="flex items-center justify-between gap-4 h-16">
+          {/* LOGO */}
+          <Link href="/dashboard" className="shrink-0">
+            <p className="text-accentTeal uppercase text-[10px] tracking-widest font-semibold leading-none mb-0.5">
+              Instituto ILCE
+            </p>
+            <h1 className="text-lg font-bold leading-none">ILCE Gestión</h1>
           </Link>
-          {usuario && (
-            <div className="text-right text-sm ml-2">
-              <p className="font-semibold">{usuario.nombre}</p>
-              <p className="text-textSec text-xs">{nombreVisibleRoles(usuario.roles)}</p>
-              <button onClick={onLogout} className="text-xs text-textMuted underline mt-1">
-                Salir
-              </button>
-            </div>
-          )}
+
+          {/* NAV PRINCIPAL — desktop */}
+          <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center">
+            {NAV_PRINCIPAL.map((item) => <ItemSimple key={item.href} item={item} pathname={pathname} />)}
+            <ItemConMenu label="Gestión" principal={null} items={GESTION} pathname={pathname}
+              abierto={menuAbierto === 'gestion'} onToggle={() => toggleMenu('gestion')} onClose={cerrarMenu} />
+            <ItemConMenu label="Reportes" principal="/reportes" items={REPORTES_MENU} pathname={pathname}
+              abierto={menuAbierto === 'reportes'} onToggle={() => toggleMenu('reportes')} onClose={cerrarMenu} />
+            <ItemConMenu label="Configuración" principal={null} items={CONFIGURACION} pathname={pathname}
+              abierto={menuAbierto === 'config'} onToggle={() => toggleMenu('config')} onClose={cerrarMenu} />
+          </nav>
+
+          {/* ACCIONES + USUARIO — desktop */}
+          <div className="hidden lg:flex items-center gap-3 shrink-0">
+            <ThemeSelector />
+            <Link href="/nuevo-lead"
+              className={`h-9 flex items-center px-4 rounded-lg text-sm font-semibold whitespace-nowrap shadow-sm transition-all ${
+                pathname === '/nuevo-lead'
+                  ? 'bg-gradient-to-r from-accentPurple to-accentMagenta text-white shadow-accentPurple/30'
+                  : 'bg-gradient-to-r from-accentPurple to-accentMagenta text-white opacity-90 hover:opacity-100'
+              }`}>
+              + Nuevo lead
+            </Link>
+            {usuario && (
+              <div className="text-right text-sm pl-2 border-l border-border">
+                <p className="font-semibold leading-tight">{usuario.nombre}</p>
+                <p className="text-textSec text-[11px] leading-tight">{nombreVisibleRoles(usuario.roles)}</p>
+                <button onClick={onLogout} className="text-[11px] text-textMuted underline">Salir</button>
+              </div>
+            )}
+          </div>
+
+          {/* BOTÓN HAMBURGUESA — mobile/tablet */}
+          <button onClick={() => setMenuMovil((v) => !v)}
+            className="lg:hidden w-9 h-9 flex items-center justify-center rounded-lg bg-surface2 border border-border text-lg shrink-0">
+            {menuMovil ? '✕' : '☰'}
+          </button>
         </div>
       </div>
 
-      <nav className="mb-4 flex items-center gap-3 flex-wrap">
-        {operativo.length > 0 && <div className="flex items-center gap-2 flex-wrap">{operativo}</div>}
-        {operativo.length > 0 && analisis.length > 0 && <Divisor />}
-        {analisis.length > 0 && <div className="flex items-center gap-2 flex-wrap">{analisis}</div>}
-        {(operativo.length > 0 || analisis.length > 0) && administracion.length > 0 && <Divisor />}
-        {administracion.length > 0 && <div className="flex items-center gap-2 flex-wrap">{administracion}</div>}
-      </nav>
+      {/* MENÚ MOBILE — todo apilado, sin submenús colapsables (ya está todo a un clic) */}
+      {menuMovil && (
+        <div className="lg:hidden border-t border-border px-4 pb-4 pt-3 space-y-4 max-h-[75vh] overflow-y-auto">
+          <Link href="/nuevo-lead" onClick={() => setMenuMovil(false)}
+            className="flex items-center justify-center h-10 rounded-lg text-sm font-semibold bg-gradient-to-r from-accentPurple to-accentMagenta text-white">
+            + Nuevo lead
+          </Link>
+
+          <div className="flex flex-wrap gap-1.5">
+            {NAV_PRINCIPAL.map((item) => <ItemSimple key={item.href} item={item} pathname={pathname} onClick={() => setMenuMovil(false)} />)}
+          </div>
+
+          {[['Gestión', GESTION, null], ['Reportes', REPORTES_MENU, '/reportes'], ['Configuración', CONFIGURACION, null]].map(([titulo, items, principal]) => (
+            <div key={titulo}>
+              <p className="text-textMuted text-[11px] uppercase tracking-wide font-semibold mb-1.5">{titulo}</p>
+              <div className="flex flex-col gap-0.5">
+                {principal && (
+                  <Link href={principal} onClick={() => setMenuMovil(false)}
+                    className={`px-3 py-2 rounded-lg text-sm ${pathname === principal ? 'bg-accentPurple/15 text-accentPurple font-semibold' : 'text-textSec hover:bg-surface2'}`}>
+                    Ver {titulo.toLowerCase()}
+                  </Link>
+                )}
+                {items.map((it) => (
+                  <Link key={it.href} href={it.href} onClick={() => setMenuMovil(false)}
+                    className={`px-3 py-2 rounded-lg text-sm ${pathname === it.href ? 'bg-accentPurple/15 text-accentPurple font-semibold' : 'text-textSec hover:bg-surface2'}`}>
+                    {it.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          <div className="flex items-center justify-between pt-3 border-t border-border">
+            <ThemeSelector />
+            {usuario && (
+              <div className="text-right text-sm">
+                <p className="font-semibold leading-tight">{usuario.nombre}</p>
+                <p className="text-textSec text-[11px] leading-tight">{nombreVisibleRoles(usuario.roles)}</p>
+                <button onClick={onLogout} className="text-[11px] text-textMuted underline">Salir</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

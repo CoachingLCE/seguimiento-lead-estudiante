@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import Nav from '../../components/Nav';
+import AccesoDenegado from '../../components/AccesoDenegado';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoAuditoria } from '../../lib/permisos';
 
@@ -59,7 +60,7 @@ export default function AuditoriaPage() {
 
   useEffect(() => {
     if (!usuario) return;
-    if (!puedeVer) { router.push('/dashboard'); return; }
+    if (!puedeVer) return; // ya no redirige — la pantalla en sí muestra el mensaje de acceso
     cargarRegistros();
   }, [usuario, filtroUsuario, desde, hasta]);
 
@@ -108,7 +109,7 @@ export default function AuditoriaPage() {
     XLSX.writeFile(libro, `historial-acciones-${new Date().toISOString().slice(0, 10)}.xlsx`);
   }
 
-  if (!usuario || !puedeVer) return null;
+  if (!usuario) return null;
 
   const usuariosUnicos = [...new Set(registros.map((r) => r.UsuarioNombre))].sort();
   const registrosFiltrados = registros.filter((r) => {
@@ -122,6 +123,9 @@ export default function AuditoriaPage() {
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
+      {!puedeVer ? (
+        <AccesoDenegado seccion="Historial de acciones" />
+      ) : (
       <div className="max-w-[1600px] w-[88%] mx-auto pb-16">
         <div className="flex items-end gap-3 mb-4 flex-wrap no-print">
           <div>
@@ -240,6 +244,7 @@ export default function AuditoriaPage() {
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }

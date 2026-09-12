@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import Nav from '../../components/Nav';
+import AccesoDenegado from '../../components/AccesoDenegado';
 import FichaDrawer from '../../components/FichaDrawer';
 import CheckboxVisual from '../../components/CheckboxVisual';
 import { useToast } from '../../components/Toast';
@@ -22,7 +23,7 @@ export default function DiplomasPage() {
 
   useEffect(() => {
     if (!usuario) return;
-    if (!puedeVer) { router.push('/dashboard'); return; }
+    if (!puedeVer) return; // ya no redirige — la pantalla en sí muestra el mensaje de acceso
     cargarInscritos();
   }, [usuario]);
 
@@ -49,7 +50,7 @@ export default function DiplomasPage() {
     mostrarToast(nuevoValor ? 'Diploma habilitado' : 'Diploma deshabilitado');
   }
 
-  if (!usuario || !puedeVer) return null;
+  if (!usuario) return null;
 
   function exportarExcel() {
     const hoja = XLSX.utils.json_to_sheet(
@@ -66,6 +67,9 @@ export default function DiplomasPage() {
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
+      {!puedeVer ? (
+        <AccesoDenegado seccion="Diplomas" />
+      ) : (
       <div className="max-w-5xl mx-auto px-6 pb-16">
         <div className="flex items-center justify-between mb-3 gap-3">
           <p className="text-textMuted text-xs">
@@ -112,6 +116,7 @@ export default function DiplomasPage() {
           )}
         </div>
       </div>
+      )}
       <FichaDrawer leadId={fichaLeadId} usuario={usuario} onClose={() => setFichaLeadId(null)} />
       {toast}
     </div>

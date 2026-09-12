@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import { ResponsiveContainer, LineChart, Line } from 'recharts';
 import Nav from '../../components/Nav';
+import AccesoDenegado from '../../components/AccesoDenegado';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoAcademico, tienePermisoAcademicoVer } from '../../lib/permisos';
 
@@ -144,7 +145,7 @@ export default function AcademicoPage() {
 
   useEffect(() => {
     if (!usuario) return;
-    if (!puedeVer) { router.push('/dashboard'); return; }
+    if (!puedeVer) return; // ya no redirige — la pantalla en sí muestra el mensaje de acceso
     cargarTodo();
   }, [usuario]);
 
@@ -291,7 +292,7 @@ export default function AcademicoPage() {
     URL.revokeObjectURL(url);
   }
 
-  if (!usuario || !puedeVer) return null;
+  if (!usuario) return null;
 
   const formadorActual = cursosInfo.find((c) => c.Curso === cursoActual)?.Formador || '';
   const edicionesUnicas = [...new Set(estudiantes.map((e) => e.Edicion).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es', { numeric: true }));
@@ -356,6 +357,9 @@ export default function AcademicoPage() {
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
+      {!puedeVer ? (
+        <AccesoDenegado seccion="Académico" />
+      ) : (
       <div className="max-w-[1400px] mx-auto px-6 pb-16">
         <h3 className="text-lg font-bold mb-1">🎓 Académico</h3>
         <p className="text-textMuted text-xs mb-5">
@@ -681,6 +685,7 @@ export default function AcademicoPage() {
           </>
         )}
       </div>
+      )}
 
       {edicionParaModal && (
         <FichaEdicionModal

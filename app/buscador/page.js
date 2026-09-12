@@ -3,6 +3,7 @@ import { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Nav from '../../components/Nav';
+import AccesoDenegado from '../../components/AccesoDenegado';
 import ModalVenta from '../../components/ModalVenta';
 import CheckboxVisual from '../../components/CheckboxVisual';
 import { useSession } from '../../lib/useSession';
@@ -222,11 +223,14 @@ function BuscadorContent() {
     return true;
   });
 
-  if (!usuario || !puedeVer) return null;
+  if (!usuario) return null;
 
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
+      {!puedeVer ? (
+        <AccesoDenegado seccion="Leads" />
+      ) : (
       <div className="max-w-5xl mx-auto px-6 pb-16">
         {!leadId && (
           <>
@@ -360,6 +364,7 @@ function BuscadorContent() {
           <Ficha ficha={ficha} usuario={usuario} onActualizar={cargarFicha} autoEditar={autoEditar} />
         )}
       </div>
+      )}
     </div>
   );
 }

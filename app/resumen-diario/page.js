@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import Nav from '../../components/Nav';
+import AccesoDenegado from '../../components/AccesoDenegado';
 import { tienePermisoResumenDiario } from '../../lib/permisos';
 import { useSession } from '../../lib/useSession';
 
@@ -21,7 +22,7 @@ export default function ResumenDiarioPage() {
 
   useEffect(() => {
     if (!usuario) return;
-    if (!puedeVer) { router.push('/dashboard'); return; }
+    if (!puedeVer) return; // ya no redirige — la pantalla en sí muestra el mensaje de acceso
     cargarResumen();
   }, [usuario, fecha]);
 
@@ -32,7 +33,7 @@ export default function ResumenDiarioPage() {
     setCargando(false);
   }
 
-  if (!usuario || !puedeVer) return null;
+  if (!usuario) return null;
 
   const fechaLegible = new Date(fecha + 'T00:00:00').toLocaleDateString('es-AR', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
@@ -53,6 +54,9 @@ export default function ResumenDiarioPage() {
         <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
       </div>
 
+      {!puedeVer ? (
+        <AccesoDenegado seccion="Resumen diario" />
+      ) : (
       <div className="max-w-5xl mx-auto px-6 pb-16">
         <div className="flex items-center justify-between mb-5 no-print">
           <div>
@@ -158,6 +162,7 @@ export default function ResumenDiarioPage() {
           </>
         )}
       </div>
+      )}
     </div>
   );
 }

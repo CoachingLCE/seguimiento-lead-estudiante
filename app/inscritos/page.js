@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import Nav from '../../components/Nav';
+import AccesoDenegado from '../../components/AccesoDenegado';
 import FichaDrawer from '../../components/FichaDrawer';
 import CheckboxVisual from '../../components/CheckboxVisual';
 import { useToast } from '../../components/Toast';
@@ -94,7 +95,7 @@ export default function InscritosPage() {
 
   useEffect(() => {
     if (!usuario) return;
-    if (!puedeVer) { router.push('/dashboard'); return; }
+    if (!puedeVer) return; // ya no redirige — la pantalla en sí muestra el mensaje de acceso
     cargarInscritos();
   }, [usuario]);
 
@@ -215,7 +216,7 @@ export default function InscritosPage() {
     }
   }
 
-  if (!usuario || !puedeVer) return null;
+  if (!usuario) return null;
 
   // Alerta 1: se envió Bienvenida y no se confirmó (ConfirmoRecepcion), o se hizo el Alta y no se
   // confirmó (ConfirmoAlta) — cada una con su propio campo — y ya pasaron 48hs hábiles desde el
@@ -295,6 +296,9 @@ export default function InscritosPage() {
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
+      {!puedeVer ? (
+        <AccesoDenegado seccion="Estudiantes" />
+      ) : (
       <div className="max-w-[1900px] mx-auto px-4 pb-16">
         {(() => {
           const pendientes = FILTROS_ESTADO.filter((f) => f.id && f.id !== 'completo');
@@ -626,6 +630,7 @@ export default function InscritosPage() {
         </>
         )}
       </div>
+      )}
       <FichaDrawer leadId={fichaLeadId} usuario={usuario} onClose={() => setFichaLeadId(null)} />
       {toast}
 

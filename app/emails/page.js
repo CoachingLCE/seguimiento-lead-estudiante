@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Nav from '../../components/Nav';
+import AccesoDenegado from '../../components/AccesoDenegado';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoEmails } from '../../lib/permisos';
 
@@ -38,7 +39,7 @@ export default function EmailsPage() {
 
   useEffect(() => {
     if (!usuario) return;
-    if (!puedeVer) { router.push('/dashboard'); return; }
+    if (!puedeVer) return; // ya no redirige — la pantalla en sí muestra el mensaje de acceso
     cargar();
   }, [usuario]);
 
@@ -70,11 +71,14 @@ export default function EmailsPage() {
     });
   }, [emails, busqueda, filtroTipo, filtroEstado]);
 
-  if (!usuario || !puedeVer) return null;
+  if (!usuario) return null;
 
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
+      {!puedeVer ? (
+        <AccesoDenegado seccion="Emails" />
+      ) : (
       <div className="max-w-[1100px] mx-auto px-4 sm:px-6 pb-16">
         <h3 className="text-lg font-bold mb-1">✉️ Emails</h3>
         <p className="text-textMuted text-xs mb-5">Qué mails automáticos manda el sistema, y el registro real de cada envío.</p>
@@ -173,6 +177,7 @@ export default function EmailsPage() {
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }

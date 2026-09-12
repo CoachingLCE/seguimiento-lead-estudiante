@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import Nav, { puedeVerOperativo } from '../../components/Nav';
+import AccesoDenegado from '../../components/AccesoDenegado';
 import ModalVenta from '../../components/ModalVenta';
 import FichaDrawer from '../../components/FichaDrawer';
 import { useToast } from '../../components/Toast';
@@ -181,14 +182,14 @@ export default function DashboardPage() {
     if (typeof window !== 'undefined') router.push('/');
     return null;
   }
-  if (!puedeVerOperativo(usuario)) {
-    if (typeof window !== 'undefined') router.push('/inscritos');
-    return null;
-  }
+  const puedeVer = puedeVerOperativo(usuario);
 
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
+      {!puedeVer ? (
+        <AccesoDenegado seccion="Dashboard" />
+      ) : (
       <div className="max-w-5xl mx-auto px-6 pb-16">
         {cargando ? (
           <p className="text-textSec text-sm">Cargando…</p>
@@ -392,6 +393,7 @@ export default function DashboardPage() {
           </>
         )}
       </div>
+      )}
       <ModalVenta lead={leadVenta} onClose={() => setLeadVenta(null)} onConfirm={confirmarVenta} usuarioActual={usuario} />
       <FichaDrawer leadId={fichaLeadId} usuario={usuario} onClose={() => setFichaLeadId(null)} />
       {toast}

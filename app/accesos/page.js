@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Nav from '../../components/Nav';
+import AccesoDenegado from '../../components/AccesoDenegado';
 import { useSession } from '../../lib/useSession';
 import { ROLES, nombreVisibleRoles } from '../../lib/constants';
 
@@ -31,7 +32,7 @@ export default function AccesosPage() {
 
   useEffect(() => {
     if (!usuario) return;
-    if (!esAdmin) { router.push('/dashboard'); return; }
+    if (!esAdmin) return; // ya no redirige — la pantalla en sí muestra el mensaje de acceso
     cargarUsuarios();
   }, [usuario]);
 
@@ -150,11 +151,14 @@ export default function AccesosPage() {
     setCargandoLimpieza(false);
   }
 
-  if (!usuario || !esAdmin) return null;
+  if (!usuario) return null;
 
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
+      {!esAdmin ? (
+        <AccesoDenegado seccion="Accesos" />
+      ) : (
       <div className="max-w-5xl mx-auto px-6 pb-16">
         <div className="bg-surface border border-border rounded-2xl p-5 mb-4">
           <p className="text-sm font-bold mb-3">🔐 Permisos por rol — quién ve qué</p>
@@ -365,6 +369,7 @@ export default function AccesosPage() {
           </form>
         </div>
       </div>
+      )}
 
       {confirmarLimpieza && previewLimpieza && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">

@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Nav from '../../components/Nav';
+import AccesoDenegado from '../../components/AccesoDenegado';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoMensajesVer, tienePermisoMensajesEscribir } from '../../lib/permisos';
 
@@ -29,7 +30,7 @@ export default function MensajesFrecuentesPage() {
 
   useEffect(() => {
     if (!usuario) return;
-    if (!puedeVer) { router.push('/dashboard'); return; }
+    if (!puedeVer) return; // ya no redirige — la pantalla en sí muestra el mensaje de acceso
     cargarMensajes();
   }, [usuario]);
 
@@ -134,11 +135,14 @@ export default function MensajesFrecuentesPage() {
     });
   }
 
-  if (!usuario || !puedeVer) return null;
+  if (!usuario) return null;
 
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
+      {!puedeVer ? (
+        <AccesoDenegado seccion="Mensajes frecuentes" />
+      ) : (
       <div className="max-w-[900px] mx-auto px-6 pb-16">
         <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
           <h3 className="text-lg font-bold">💬 Mensajes frecuentes</h3>
@@ -236,6 +240,7 @@ export default function MensajesFrecuentesPage() {
           </div>
         )}
       </div>
+      )}
 
       {confirmarBorrar && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4" onClick={() => setConfirmarBorrar(null)}>

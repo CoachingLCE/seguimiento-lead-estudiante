@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Nav from '../../components/Nav';
+import AccesoDenegado from '../../components/AccesoDenegado';
 import FichaDrawer from '../../components/FichaDrawer';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoCrearLeads } from '../../lib/permisos';
@@ -263,10 +264,7 @@ export default function NuevoLeadPage() {
     if (typeof window !== 'undefined') router.push('/');
     return null;
   }
-  if (!tienePermisoCrearLeads(usuario)) {
-    if (typeof window !== 'undefined') router.push('/inscritos');
-    return null;
-  }
+  const puedeVer = tienePermisoCrearLeads(usuario);
 
   function toggleCursoAdicional(c) {
     setCursosAdicionales((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
@@ -507,6 +505,9 @@ export default function NuevoLeadPage() {
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
+      {!puedeVer ? (
+        <AccesoDenegado seccion="Nuevo lead" />
+      ) : (
       <div className="max-w-[1500px] mx-auto px-4 pb-24">
 
         {borradorDisponible && (
@@ -808,6 +809,7 @@ export default function NuevoLeadPage() {
           </div>
         </form>
       </div>
+      )}
 
       {/* BOTÓN FLOTANTE */}
       <button type="button" onClick={agregarContacto}

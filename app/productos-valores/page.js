@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Nav from '../../components/Nav';
+import AccesoDenegado from '../../components/AccesoDenegado';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoProductosVer, tienePermisoProductosEditar } from '../../lib/permisos';
 
@@ -112,7 +113,7 @@ export default function ProductosValoresPage() {
 
   useEffect(() => {
     if (!usuario) return;
-    if (!puedeVer) { router.push('/dashboard'); return; }
+    if (!puedeVer) return; // ya no redirige — la pantalla en sí muestra el mensaje de acceso
     cargar();
   }, [usuario]);
 
@@ -312,7 +313,7 @@ export default function ProductosValoresPage() {
     setGuardando(false);
   }
 
-  if (!usuario || !puedeVer) return null;
+  if (!usuario) return null;
 
   const tipoDeCambio = config.find((t) => t.tierId === 'tipoDeCambio')?.pct || null;
   // Convierte a USD cuando el toggle está activo (dividiendo por el tipo de cambio cargado) —
@@ -346,6 +347,9 @@ export default function ProductosValoresPage() {
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
+      {!puedeVer ? (
+        <AccesoDenegado seccion="Productos y Valores" />
+      ) : (
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 pb-16">
 
         {aviso && (
@@ -692,6 +696,7 @@ export default function ProductosValoresPage() {
           </div>
         )}
       </div>
+      )}
 
       {editando !== null && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4 py-8" onClick={() => setEditando(null)}>
