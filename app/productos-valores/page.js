@@ -95,6 +95,10 @@ export default function ProductosValoresPage() {
   const [errorForm, setErrorForm] = useState('');
   const [guardando, setGuardando] = useState(false);
   const [confirmarBorrar, setConfirmarBorrar] = useState(null);
+  const [modoSeleccion, setModoSeleccion] = useState(false);
+  const [seleccionados, setSeleccionados] = useState(new Set());
+  const [quitandoDescuentos, setQuitandoDescuentos] = useState(false);
+  const [confirmarQuitarDescuentos, setConfirmarQuitarDescuentos] = useState(false);
   const [aviso, setAviso] = useState(null);
   const [editandoConfig, setEditandoConfig] = useState(false);
   const [mostrarUSD, setMostrarUSD] = useState(false);
@@ -204,6 +208,42 @@ export default function ProductosValoresPage() {
       setErrorForm('No se pudo conectar con el servidor.');
     }
     setGuardando(false);
+  }
+
+  // Saca los descuentos de todos los productos seleccionados de una — sin tocar precio, medios
+  // de pago ni ningún otro dato, solo vacía "descuentos". Manda un POST por producto (reutiliza
+  // el mismo endpoint de guardar de siempre), así queda igual de registrado en Auditoría.
+  async function quitarDescuentosDeSeleccionados() {
+    setQuitandoDescuentos(true);
+    let fallaron = 0;
+    for (const id of seleccionados) {
+      const p = productos.find((x) => x.id === id);
+      if (!p) continue;
+      try {
+        const res = await fetch('/api/productos-valores', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: p.id, nombre: p.nombre, modalidad: p.modalidad, formato: p.formato, estado: p.estado,
+            valorLista: p.valorLista, valorUnPago: p.valorUnPago, precioExterior: p.precioExterior,
+            margen: p.margen, duracion: p.duracion, descripcion: p.descripcion, publicoObjetivo: p.publicoObjetivo,
+            landing: p.landing, proximaActualizacion: p.proximaActualizacion, proximaEdicion: p.proximaEdicion,
+            descuentos: {}, cuotasEscalonadas: p.cuotasEscalonadas, mediosDePago: p.mediosDePago,
+            esVariante: p.esVariante, varianteDeId: p.varianteDeId, motivo: p.motivo,
+            sinNiveles: p.sinNiveles, archivado: p.archivado,
+            solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
+          })
+        });
+        if (!res.ok) fallaron++;
+      } catch {
+        fallaron++;
+      }
+    }
+    setConfirmarQuitarDescuentos(false);
+    setModoSeleccion(false);
+    setSeleccionados(new Set());
+    setQuitandoDescuentos(false);
+    mostrarAviso(fallaron === 0 ? 'success' : 'error', fallaron === 0 ? '✓ Descuentos quitados' : `✕ ${fallaron} no se pudieron actualizar`);
+    cargar();
   }
 
   async function borrar(p) {
@@ -318,9 +358,24 @@ export default function ProductosValoresPage() {
         <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
           <h3 className="text-lg font-bold">💲 Productos y Valores</h3>
           {puedeEditar && (
-            <button onClick={abrirNuevo} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">+ Nuevo producto</button>
+            <div className="flex items-center gap-2">
+              <button onClick={() => { setModoSeleccion((v) => !v); setSeleccionados(new Set()); }}
+                className={`text-sm px-4 py-2 rounded-lg font-semibold ${modoSeleccion ? 'bg-dangerText text-white' : 'bg-surface2 border border-border text-textSec'}`}>
+                {modoSeleccion ? 'Cancelar selección' : '☑️ Seleccionar varios'}
+              </button>
+              <button onClick={abrirNuevo} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">+ Nuevo producto</button>
+            </div>
           )}
         </div>
+        {modoSeleccion && (
+          <div className="bg-warningBg border border-warningText/30 rounded-xl px-4 py-2.5 mb-4 flex items-center justify-between flex-wrap gap-2">
+            <p className="text-warningText text-sm font-medium">{seleccionados.size} producto{seleccionados.size !== 1 ? 's' : ''} seleccionado{seleccionados.size !== 1 ? 's' : ''}</p>
+            <button onClick={() => setConfirmarQuitarDescuentos(true)} disabled={seleccionados.size === 0}
+              className="text-xs px-3 py-1.5 rounded-lg bg-dangerText text-white font-semibold disabled:opacity-40">
+              🗑 Quitar descuentos de los seleccionados
+            </button>
+          </div>
+        )}
         <p className="text-textMuted text-xs mb-4">Precios, descuentos por nivel y botones de pago de cada curso.</p>
 
         {productosParaRevisar.length > 0 && (
@@ -481,7 +536,18 @@ export default function ProductosValoresPage() {
               const mediosDisponibles = Object.entries(p.mediosDePago || {}).filter(([, m]) => m.link);
 
               return (
-                <div key={p.id} className="bg-surface border border-border rounded-2xl overflow-hidden">
+                <div key={p.id} className={`bg-surface border rounded-2xl overflow-hidden flex items-stretch ${seleccionados.has(p.id) ? 'border-accentPurple' : 'border-border'}`}>
+                  {modoSeleccion && (
+                    <label className="flex items-center px-3 sm:px-4 cursor-pointer shrink-0">
+                      <input type="checkbox" checked={seleccionados.has(p.id)}
+                        onChange={() => setSeleccionados((prev) => {
+                          const nuevo = new Set(prev);
+                          nuevo.has(p.id) ? nuevo.delete(p.id) : nuevo.add(p.id);
+                          return nuevo;
+                        })} />
+                    </label>
+                  )}
+                  <div className="flex-1 min-w-0">
                   {/* CABECERA — siempre visible, clickeable para expandir/colapsar */}
                   <button onClick={() => toggleExpandido(p.id)} className="w-full text-left p-4 sm:p-5 flex items-center justify-between gap-3 hover:bg-bg/40 transition-colors">
                     <div className="min-w-0">
@@ -601,6 +667,7 @@ export default function ProductosValoresPage() {
                       )}
                     </div>
                   )}
+                  </div>
                 </div>
               );
             })}
@@ -769,6 +836,22 @@ export default function ProductosValoresPage() {
             <div className="flex gap-2">
               <button onClick={() => setConfirmarBorrar(null)} className="text-xs px-3 py-2 rounded-lg bg-surface border border-border flex-1">Cancelar</button>
               <button onClick={() => borrar(confirmarBorrar)} className="text-xs px-3 py-2 rounded-lg bg-dangerText text-white font-semibold flex-1">Sí, eliminar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmarQuitarDescuentos && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4" onClick={() => setConfirmarQuitarDescuentos(false)}>
+          <div className="bg-surface2 border border-border rounded-2xl p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+            <p className="text-sm font-semibold mb-2">¿Quitar descuentos de {seleccionados.size} producto{seleccionados.size !== 1 ? 's' : ''}?</p>
+            <p className="text-textMuted text-xs mb-4">Se les vacía la tabla de descuentos por nivel — el resto de los datos (precio, medios de pago, etc.) no se toca.</p>
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmarQuitarDescuentos(false)} className="text-xs px-3 py-2 rounded-lg bg-surface border border-border flex-1">Cancelar</button>
+              <button onClick={quitarDescuentosDeSeleccionados} disabled={quitandoDescuentos}
+                className="text-xs px-3 py-2 rounded-lg bg-dangerText text-white font-semibold flex-1 disabled:opacity-60">
+                {quitandoDescuentos ? 'Quitando…' : 'Sí, quitar'}
+              </button>
             </div>
           </div>
         </div>
