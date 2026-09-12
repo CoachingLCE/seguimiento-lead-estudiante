@@ -79,7 +79,7 @@ export default function ProductosValoresPage() {
   const [config, setConfig] = useState([]);
   const [errorCarga, setErrorCarga] = useState('');
   const [mostrarVariantes, setMostrarVariantes] = useState(false);
-  const [filtroEstado, setFiltroEstado] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState('Activo');
   const [filtroModalidad, setFiltroModalidad] = useState('');
   const [filtroFormato, setFiltroFormato] = useState('');
   const [expandidos, setExpandidos] = useState(new Set());
@@ -246,7 +246,7 @@ export default function ProductosValoresPage() {
   const productosVisibles = (productos || [])
     .filter((p) => mostrarVariantes || !p.esVariante)
     .filter((p) => filtroEstado === 'Archivado' ? p.archivado : (!p.archivado && (!filtroEstado || p.estado === filtroEstado)))
-    .filter((p) => !filtroModalidad || p.modalidad === filtroModalidad)
+    .filter((p) => !filtroModalidad || (filtroModalidad === 'Cursos' ? ['Sincrónico', 'On demand'].includes(p.modalidad) : p.modalidad === filtroModalidad))
     .filter((p) => !filtroFormato || p.formato === filtroFormato);
 
   const conteoPorEstado = ESTADOS.map((e) => ({
@@ -256,6 +256,7 @@ export default function ProductosValoresPage() {
   const conteoPorModalidad = MODALIDADES.map((m) => ({
     modalidad: m, cantidad: productosSinArchivarNiVariantes.filter((p) => p.modalidad === m).length
   })).filter((m) => m.cantidad > 0);
+  const cantidadCursos = productosSinArchivarNiVariantes.filter((p) => ['Sincrónico', 'On demand'].includes(p.modalidad)).length;
   const conteoPorFormato = FORMATOS.map((f) => ({
     formato: f, cantidad: productosSinArchivarNiVariantes.filter((p) => p.formato === f).length
   })).filter((f) => f.cantidad > 0);
@@ -350,6 +351,12 @@ export default function ProductosValoresPage() {
             className={`text-xs px-3 py-1 rounded-full border transition-colors ${filtroModalidad === '' ? 'bg-accentTeal border-accentTeal text-white' : 'bg-surface2 border-border text-textSec hover:text-text'}`}>
             Todos los tipos
           </button>
+          {cantidadCursos > 0 && (
+            <button onClick={() => setFiltroModalidad(filtroModalidad === 'Cursos' ? '' : 'Cursos')}
+              className={`text-xs px-3 py-1 rounded-full border transition-colors ${filtroModalidad === 'Cursos' ? 'bg-accentTeal border-accentTeal text-white' : 'bg-surface2 border-border text-textSec hover:text-text'}`}>
+              Cursos ({cantidadCursos})
+            </button>
+          )}
           {conteoPorModalidad.map((m) => (
             <button key={m.modalidad} onClick={() => setFiltroModalidad(filtroModalidad === m.modalidad ? '' : m.modalidad)}
               className={`text-xs px-3 py-1 rounded-full border transition-colors ${filtroModalidad === m.modalidad ? 'bg-accentTeal border-accentTeal text-white' : 'bg-surface2 border-border text-textSec hover:text-text'}`}>
