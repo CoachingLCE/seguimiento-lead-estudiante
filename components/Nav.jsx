@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import ThemeSelector from './ThemeSelector';
+import Logo from './Logo';
 import { tienePermisoOperativo } from '../lib/permisos';
 import { nombreVisibleRoles } from '../lib/constants';
 
@@ -78,10 +79,7 @@ export default function Nav({ usuario, onLogout }) {
         <div className="flex items-center justify-between gap-4 h-16">
           {/* LOGO */}
           <Link href="/dashboard" className="shrink-0">
-            <p className="text-accentTeal uppercase text-[10px] tracking-widest font-semibold leading-none mb-0.5">
-              Instituto ILCE
-            </p>
-            <h1 className="text-lg font-bold leading-none">ILCE Gestión</h1>
+            <Logo height={36} />
           </Link>
 
           {/* ACCIONES + USUARIO — desktop */}

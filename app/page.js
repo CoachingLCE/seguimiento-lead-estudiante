@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from '../lib/useSession';
 import ThemeSelector from '../components/ThemeSelector';
+import Logo from '../components/Logo';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -50,7 +51,7 @@ export default function LoginPage() {
     <div className="flex justify-center pt-24 px-6">
       <div className="fixed top-4 right-4"><ThemeSelector /></div>
       <div className="w-80 bg-surface2 border border-border rounded-2xl p-7">
-        <h2 className="text-center text-lg font-semibold mb-1">ILCE Gestión</h2>
+        <div className="flex justify-center mb-3"><Logo height={44} /></div>
         <p className="text-center text-textSec text-sm mb-5">Ingresá con tu usuario y contraseña</p>
         <form onSubmit={handleSubmit}>
           <label className="text-xs text-textSec block mb-1">Email</label>
