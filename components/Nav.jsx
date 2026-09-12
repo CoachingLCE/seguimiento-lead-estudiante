@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import ThemeSelector from './ThemeSelector';
 import { tienePermisoOperativo } from '../lib/permisos';
 import { nombreVisibleRoles } from '../lib/constants';
@@ -17,107 +17,61 @@ const NAV_PRINCIPAL = [
   { href: '/buscador', label: 'Leads' }
 ];
 
-const GESTION = [
+const GESTION = { label: 'Académico', principal: null, items: [
   { href: '/inscritos', label: 'Estudiantes' },
   { href: '/resumen-estudiantes', label: 'Inscripciones' },
   { href: '/academico', label: 'Académico' },
   { href: '/diplomas', label: 'Diplomas' }
-];
+] };
 
-const REPORTES_MENU = [
+const REPORTES = { label: 'Reportes', principal: '/reportes', items: [
   { href: '/resumen-diario', label: 'Resumen diario' },
   { href: '/informes-rrss', label: 'Informes RRSS' },
   { href: '/auditoria', label: 'Historial de acciones' },
   { href: '/bajas', label: 'Bajas' },
   { href: '/accesos', label: 'Accesos' }
-];
+] };
 
-const CONFIGURACION = [
+const CONFIGURACION = { label: 'Configuración', principal: null, items: [
   { href: '/productos-valores', label: 'Productos y Valores' },
   { href: '/mensajes', label: 'Mensajes frecuentes' },
   { href: '/emails', label: 'Emails' },
   { href: '/fichas-enviadas', label: 'Fichas enviadas' },
   { href: '/herramientas', label: 'Herramientas' }
-];
+] };
 
-function estaActivo(pathname, href, items) {
-  if (pathname === href) return true;
-  return items?.some((i) => i.href === pathname) || false;
-}
-
-// Botón de nav simple (Dashboard, Seguimiento, Leads).
-function ItemSimple({ item, pathname, onClick }) {
-  const activo = pathname === item.href;
+// Chip individual — mismo look para todo (principal, ítems sueltos y de grupo).
+function Chip({ href, label, pathname, onClick, destacado }) {
+  const activo = pathname === href;
   return (
-    <Link href={item.href} onClick={onClick}
-      className={`h-9 flex items-center px-3.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-        activo ? 'bg-accentPurple/15 text-accentPurple' : 'text-textSec hover:text-text hover:bg-surface2'
+    <Link href={href} onClick={onClick}
+      className={`h-8 flex items-center px-3 rounded-lg text-[13px] font-medium whitespace-nowrap transition-colors ${
+        activo ? 'bg-accentPurple/15 text-accentPurple' : destacado ? 'text-text font-semibold hover:bg-surface2' : 'text-textSec hover:text-text hover:bg-surface2'
       }`}>
-      {item.label}
+      {label}
     </Link>
   );
 }
 
-// Botón con submenú desplegable (Gestión, Reportes, Configuración) — clic para abrir/cerrar,
-// clic afuera cierra, y elegir un ítem también cierra. La sección queda marcada como "activa" si
-// la URL actual coincide con ella o con cualquiera de sus ítems.
-function ItemConMenu({ label, principal, items, pathname, abierto, onToggle, onClose }) {
-  const ref = useRef(null);
-  const activo = estaActivo(pathname, principal, items);
-
-  useEffect(() => {
-    if (!abierto) return;
-    function alClickearAfuera(e) {
-      if (ref.current && !ref.current.contains(e.target)) onClose();
-    }
-    document.addEventListener('mousedown', alClickearAfuera);
-    return () => document.removeEventListener('mousedown', alClickearAfuera);
-  }, [abierto, onClose]);
-
+// Un grupo (Gestión / Reportes / Configuración): etiqueta chica + todos sus ítems ya abiertos,
+// nunca hay que clickear nada para verlos.
+function Grupo({ grupo, pathname, onClick }) {
   return (
-    <div className="relative" ref={ref}>
-      <button onClick={onToggle}
-        className={`h-9 flex items-center gap-1 px-3.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-          activo ? 'bg-accentPurple/15 text-accentPurple' : 'text-textSec hover:text-text hover:bg-surface2'
-        }`}>
-        {label}
-        <span className={`text-[10px] transition-transform ${abierto ? 'rotate-180' : ''}`}>▾</span>
-      </button>
-      {abierto && (
-        <div className="absolute top-full left-0 mt-1.5 w-56 bg-surface2 border border-border rounded-xl shadow-lg py-1.5 z-50">
-          {principal && (
-            <Link href={principal} onClick={onClose}
-              className={`block px-4 py-2 text-sm border-b border-border mb-1 ${
-                pathname === principal ? 'text-accentPurple font-semibold' : 'text-text font-semibold hover:bg-bg'
-              }`}>
-              Ver {label.toLowerCase()}
-            </Link>
-          )}
-          {items.map((it) => (
-            <Link key={it.href} href={it.href} onClick={onClose}
-              className={`block px-4 py-2 text-sm transition-colors ${
-                pathname === it.href ? 'text-accentPurple font-semibold bg-accentPurple/10' : 'text-textSec hover:text-text hover:bg-bg'
-              }`}>
-              {it.label}
-            </Link>
-          ))}
-        </div>
-      )}
+    <div className="flex items-center gap-1 flex-wrap">
+      <span className="text-textMuted text-[11px] uppercase tracking-wide font-semibold mr-0.5">{grupo.label}</span>
+      {grupo.principal && <Chip href={grupo.principal} label="Ver todo" pathname={pathname} onClick={onClick} destacado />}
+      {grupo.items.map((it) => <Chip key={it.href} href={it.href} label={it.label} pathname={pathname} onClick={onClick} />)}
     </div>
   );
 }
 
+function Divisor() {
+  return <span className="hidden lg:block w-px h-5 bg-border shrink-0" />;
+}
+
 export default function Nav({ usuario, onLogout }) {
   const pathname = usePathname();
-  const [menuAbierto, setMenuAbierto] = useState(null); // 'gestion' | 'reportes' | 'config' | null
   const [menuMovil, setMenuMovil] = useState(false);
-
-  function toggleMenu(nombre) {
-    setMenuAbierto((actual) => (actual === nombre ? null : nombre));
-  }
-  function cerrarMenu() {
-    setMenuAbierto(null);
-  }
 
   return (
     <div className="border-b border-border no-print">
@@ -131,28 +85,9 @@ export default function Nav({ usuario, onLogout }) {
             <h1 className="text-lg font-bold leading-none">ILCE Gestión</h1>
           </Link>
 
-          {/* NAV PRINCIPAL — desktop */}
-          <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center">
-            {NAV_PRINCIPAL.map((item) => <ItemSimple key={item.href} item={item} pathname={pathname} />)}
-            <ItemConMenu label="Gestión" principal={null} items={GESTION} pathname={pathname}
-              abierto={menuAbierto === 'gestion'} onToggle={() => toggleMenu('gestion')} onClose={cerrarMenu} />
-            <ItemConMenu label="Reportes" principal="/reportes" items={REPORTES_MENU} pathname={pathname}
-              abierto={menuAbierto === 'reportes'} onToggle={() => toggleMenu('reportes')} onClose={cerrarMenu} />
-            <ItemConMenu label="Configuración" principal={null} items={CONFIGURACION} pathname={pathname}
-              abierto={menuAbierto === 'config'} onToggle={() => toggleMenu('config')} onClose={cerrarMenu} />
-          </nav>
-
           {/* ACCIONES + USUARIO — desktop */}
           <div className="hidden lg:flex items-center gap-3 shrink-0">
             <ThemeSelector />
-            <Link href="/nuevo-lead"
-              className={`h-9 flex items-center px-4 rounded-lg text-sm font-semibold whitespace-nowrap shadow-sm transition-all ${
-                pathname === '/nuevo-lead'
-                  ? 'bg-gradient-to-r from-accentPurple to-accentMagenta text-white shadow-accentPurple/30'
-                  : 'bg-gradient-to-r from-accentPurple to-accentMagenta text-white opacity-90 hover:opacity-100'
-              }`}>
-              + Nuevo lead
-            </Link>
             {usuario && (
               <div className="text-right text-sm pl-2 border-l border-border">
                 <p className="font-semibold leading-tight">{usuario.nombre}</p>
@@ -168,9 +103,28 @@ export default function Nav({ usuario, onLogout }) {
             {menuMovil ? '✕' : '☰'}
           </button>
         </div>
+
+        {/* NAV — desktop: todo a la vista, sin clics para desplegar nada */}
+        <nav className="hidden lg:flex items-center gap-2.5 flex-wrap pb-3">
+          <Link href="/nuevo-lead"
+            className={`h-8 flex items-center px-3.5 rounded-lg text-[13px] font-semibold whitespace-nowrap shadow-sm transition-all ${
+              pathname === '/nuevo-lead'
+                ? 'bg-gradient-to-r from-accentPurple to-accentMagenta text-white shadow-accentPurple/30'
+                : 'bg-gradient-to-r from-accentPurple to-accentMagenta text-white opacity-90 hover:opacity-100'
+            }`}>
+            + Nuevo lead
+          </Link>
+          {NAV_PRINCIPAL.map((item) => <Chip key={item.href} href={item.href} label={item.label} pathname={pathname} destacado />)}
+          <Divisor />
+          <Grupo grupo={GESTION} pathname={pathname} />
+          <Divisor />
+          <Grupo grupo={REPORTES} pathname={pathname} />
+          <Divisor />
+          <Grupo grupo={CONFIGURACION} pathname={pathname} />
+        </nav>
       </div>
 
-      {/* MENÚ MOBILE — todo apilado, sin submenús colapsables (ya está todo a un clic) */}
+      {/* MENÚ MOBILE — todo apilado */}
       {menuMovil && (
         <div className="lg:hidden border-t border-border px-4 pb-4 pt-3 space-y-4 max-h-[75vh] overflow-y-auto">
           <Link href="/nuevo-lead" onClick={() => setMenuMovil(false)}
@@ -179,20 +133,20 @@ export default function Nav({ usuario, onLogout }) {
           </Link>
 
           <div className="flex flex-wrap gap-1.5">
-            {NAV_PRINCIPAL.map((item) => <ItemSimple key={item.href} item={item} pathname={pathname} onClick={() => setMenuMovil(false)} />)}
+            {NAV_PRINCIPAL.map((item) => <Chip key={item.href} href={item.href} label={item.label} pathname={pathname} onClick={() => setMenuMovil(false)} destacado />)}
           </div>
 
-          {[['Gestión', GESTION, null], ['Reportes', REPORTES_MENU, '/reportes'], ['Configuración', CONFIGURACION, null]].map(([titulo, items, principal]) => (
-            <div key={titulo}>
-              <p className="text-textMuted text-[11px] uppercase tracking-wide font-semibold mb-1.5">{titulo}</p>
+          {[GESTION, REPORTES, CONFIGURACION].map((grupo) => (
+            <div key={grupo.label}>
+              <p className="text-textMuted text-[11px] uppercase tracking-wide font-semibold mb-1.5">{grupo.label}</p>
               <div className="flex flex-col gap-0.5">
-                {principal && (
-                  <Link href={principal} onClick={() => setMenuMovil(false)}
-                    className={`px-3 py-2 rounded-lg text-sm ${pathname === principal ? 'bg-accentPurple/15 text-accentPurple font-semibold' : 'text-textSec hover:bg-surface2'}`}>
-                    Ver {titulo.toLowerCase()}
+                {grupo.principal && (
+                  <Link href={grupo.principal} onClick={() => setMenuMovil(false)}
+                    className={`px-3 py-2 rounded-lg text-sm ${pathname === grupo.principal ? 'bg-accentPurple/15 text-accentPurple font-semibold' : 'text-textSec hover:bg-surface2'}`}>
+                    Ver todo
                   </Link>
                 )}
-                {items.map((it) => (
+                {grupo.items.map((it) => (
                   <Link key={it.href} href={it.href} onClick={() => setMenuMovil(false)}
                     className={`px-3 py-2 rounded-lg text-sm ${pathname === it.href ? 'bg-accentPurple/15 text-accentPurple font-semibold' : 'text-textSec hover:bg-surface2'}`}>
                     {it.label}
