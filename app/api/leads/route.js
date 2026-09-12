@@ -204,8 +204,9 @@ export async function PATCH(request) {
 }
 
 // DELETE /api/leads -> elimina uno o varios leads elegidos puntualmente (y su Seguimiento asociado).
-// Solo Admin. Nunca borra un lead que ya tenga una venta confirmada (Estado === 'Comprado').
-// body: { leadIds: ['L-...', 'L-...'], solicitanteEmail, solicitanteNombre }
+// Solo Admin. Por defecto nunca borra un lead con venta confirmada (Estado === 'Comprado') — pero
+// el Admin puede forzarlo explícitamente con { forzar: true } si de verdad quiere borrar ese caso.
+// body: { leadIds: ['L-...', 'L-...'], forzar, solicitanteEmail, solicitanteNombre }
 export async function DELETE(request) {
   const body = await request.json();
   const solicitante = await findUsuario(body.solicitanteEmail);
@@ -220,8 +221,8 @@ export async function DELETE(request) {
 
   const [leads, seguimiento] = await Promise.all([readSheet('Leads'), readSheet('Seguimiento')]);
   const encontrados = leads.filter((l) => idsPedidos.has(l.ID));
-  const aBorrar = encontrados.filter((l) => l.Estado !== 'Comprado');
-  const protegidos = encontrados.filter((l) => l.Estado === 'Comprado');
+  const aBorrar = body.forzar ? encontrados : encontrados.filter((l) => l.Estado !== 'Comprado');
+  const protegidos = body.forzar ? [] : encontrados.filter((l) => l.Estado === 'Comprado');
   const idsABorrar = new Set(aBorrar.map((l) => l.ID));
   const filasSeguimientoABorrar = seguimiento.filter((s) => idsABorrar.has(s.LeadID));
 
@@ -230,7 +231,7 @@ export async function DELETE(request) {
 
   await registrarAccion(
     body.solicitanteEmail, body.solicitanteNombre,
-    'Eliminó lead(s) puntual(es)',
+    body.forzar ? 'Eliminó lead(s) FORZADO (incluía venta confirmada)' : 'Eliminó lead(s) puntual(es)',
     `${aBorrar.map((l) => `${l.Nombre} ${l.Apellido}`).join(', ')}${protegidos.length > 0 ? ` — ${protegidos.length} protegido(s) por venta` : ''}`
   );
 

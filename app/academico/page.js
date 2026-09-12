@@ -5,7 +5,7 @@ import * as XLSX from 'xlsx';
 import { ResponsiveContainer, LineChart, Line } from 'recharts';
 import Nav from '../../components/Nav';
 import { useSession } from '../../lib/useSession';
-import { tienePermisoAcademico } from '../../lib/permisos';
+import { tienePermisoAcademico, tienePermisoAcademicoVer } from '../../lib/permisos';
 
 const SITUACIONES = ['', 'Certificado', 'No se certificó', 'Baja', 'Cambio de cursada'];
 const COLOR_SITUACION = {
@@ -139,7 +139,8 @@ export default function AcademicoPage() {
   const [filtroDocente, setFiltroDocente] = useState('');
   const [edicionAbierta, setEdicionAbierta] = useState(null);
 
-  const puedeVer = tienePermisoAcademico(usuario);
+  const puedeVer = tienePermisoAcademicoVer(usuario);
+  const puedeEditar = tienePermisoAcademico(usuario);
 
   useEffect(() => {
     if (!usuario) return;
@@ -368,9 +369,11 @@ export default function AcademicoPage() {
             {cursosDisponibles.length > 0 && <option value={TODOS}>— Todos los cursos —</option>}
             {cursosDisponibles.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
-          <button onClick={() => setMostrarCarga((v) => !v)} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">
-            {mostrarCarga ? 'Cancelar carga' : '+ Cargar estudiantes'}
-          </button>
+          {puedeEditar && (
+            <button onClick={() => setMostrarCarga((v) => !v)} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">
+              {mostrarCarga ? 'Cancelar carga' : '+ Cargar estudiantes'}
+            </button>
+          )}
           {estudiantesFiltrados.length > 0 && (
             <>
             <button onClick={exportarExcel} className="text-sm px-4 py-2 rounded-lg bg-surface2 border border-border">⬇ Excel</button>
@@ -431,7 +434,9 @@ export default function AcademicoPage() {
               ) : (
                 <>
                   <p className="text-sm text-textSec">{formadorActual || 'Sin definir'}</p>
-                  <button onClick={() => { setFormadorTemp(formadorActual); setEditandoFormador(true); }} className="text-xs text-accentTeal font-semibold">✏️ Editar</button>
+                  {puedeEditar && (
+                    <button onClick={() => { setFormadorTemp(formadorActual); setEditandoFormador(true); }} className="text-xs text-accentTeal font-semibold">✏️ Editar</button>
+                  )}
                 </>
               )}
               <p className="text-textMuted text-[11px] w-full">
@@ -519,7 +524,9 @@ export default function AcademicoPage() {
                           <td className="py-2 pr-3 text-textSec">{r.curso}</td>
                           <td className="pr-3 font-medium">Edición {r.edicion}</td>
                           <td className="pr-3" onClick={(ev) => ev.stopPropagation()}>
-                            {(editandoFormadorEdicion === `${r.curso}|${r.edicion}` || editandoFormadorEdicion === `nuevo:${r.curso}|${r.edicion}`) ? (
+                            {!puedeEditar ? (
+                              <span className="text-textSec text-xs">{r.formador || '—'}</span>
+                            ) : (editandoFormadorEdicion === `${r.curso}|${r.edicion}` || editandoFormadorEdicion === `nuevo:${r.curso}|${r.edicion}`) ? (
                               editandoFormadorEdicion === `nuevo:${r.curso}|${r.edicion}` ? (
                                 <input type="text" defaultValue={r.formador} placeholder="Nombre del formador" autoFocus
                                   onBlur={(e) => guardarFormadorEdicion(r.curso, r.edicion, e.target.value)}
@@ -547,7 +554,11 @@ export default function AcademicoPage() {
                             )}
                           </td>
                           <td className="pr-3" onClick={(ev) => ev.stopPropagation()}>
-                            {editandoFecha === `${r.curso}|${r.edicion}` ? (
+                            {!puedeEditar ? (
+                              <span className="text-textSec text-xs">
+                                {r.fechaInicio ? (parsearFechaFlexible(r.fechaInicio)?.toLocaleDateString('es-AR') || '⚠️ Fecha inválida') : '—'}
+                              </span>
+                            ) : editandoFecha === `${r.curso}|${r.edicion}` ? (
                               <input type="date" defaultValue={r.fechaInicio ? (() => { const f = parsearFechaFlexible(r.fechaInicio); return f ? fechaAISO(f) : ''; })() : ''}
                                 onBlur={(e) => guardarFechaInicio(r.curso, r.edicion, e.target.value)}
                                 className="bg-bg border border-border rounded px-1.5 py-0.5 text-xs" autoFocus />
@@ -594,7 +605,7 @@ export default function AcademicoPage() {
                     <option value="">Todas las ediciones</option>
                     {edicionesUnicas.map((ed) => <option key={ed} value={ed}>Edición {ed}</option>)}
                   </select>
-                  {seleccionadas.size > 0 && (
+                  {puedeEditar && seleccionadas.size > 0 && (
                     <button onClick={eliminarSeleccionados} className="text-xs px-2.5 py-1.5 rounded bg-dangerText text-white font-semibold">
                       🗑 Eliminar ({seleccionadas.size})
                     </button>
@@ -606,8 +617,10 @@ export default function AcademicoPage() {
                   <thead className="sticky top-0 bg-surface z-10">
                     <tr className="text-textSec text-left border-b border-border">
                       <th className="py-2 w-6">
-                        <input type="checkbox" checked={estudiantesFiltrados.length > 0 && seleccionadas.size === estudiantesFiltrados.length}
-                          onChange={(e) => setSeleccionadas(e.target.checked ? new Set(estudiantesFiltrados.map((x) => x._rowIndex)) : new Set())} />
+                        {puedeEditar && (
+                          <input type="checkbox" checked={estudiantesFiltrados.length > 0 && seleccionadas.size === estudiantesFiltrados.length}
+                            onChange={(e) => setSeleccionadas(e.target.checked ? new Set(estudiantesFiltrados.map((x) => x._rowIndex)) : new Set())} />
+                        )}
                       </th>
                       <th className="pr-3">Nombre completo</th>
                       <th className="pr-3">Email</th>
@@ -619,30 +632,44 @@ export default function AcademicoPage() {
                     {estudiantesFiltrados.map((e) => (
                       <tr key={e._rowIndex} className="border-b border-border">
                         <td className="py-2">
-                          <input type="checkbox" checked={seleccionadas.has(e._rowIndex)}
-                            onChange={() => setSeleccionadas((prev) => {
-                              const nuevo = new Set(prev);
-                              nuevo.has(e._rowIndex) ? nuevo.delete(e._rowIndex) : nuevo.add(e._rowIndex);
-                              return nuevo;
-                            })} />
+                          {puedeEditar && (
+                            <input type="checkbox" checked={seleccionadas.has(e._rowIndex)}
+                              onChange={() => setSeleccionadas((prev) => {
+                                const nuevo = new Set(prev);
+                                nuevo.has(e._rowIndex) ? nuevo.delete(e._rowIndex) : nuevo.add(e._rowIndex);
+                                return nuevo;
+                              })} />
+                          )}
                         </td>
                         <td className="pr-3">
-                          <input defaultValue={e.NombreCompleto} onBlur={(ev) => ev.target.value !== e.NombreCompleto && editarCampo(e._rowIndex, 'NombreCompleto', ev.target.value)}
-                            className="bg-transparent border-none w-full focus:bg-bg rounded px-1" />
+                          {puedeEditar ? (
+                            <input defaultValue={e.NombreCompleto} onBlur={(ev) => ev.target.value !== e.NombreCompleto && editarCampo(e._rowIndex, 'NombreCompleto', ev.target.value)}
+                              className="bg-transparent border-none w-full focus:bg-bg rounded px-1" />
+                          ) : e.NombreCompleto}
                         </td>
                         <td className="pr-3">
-                          <input defaultValue={e.Email} onBlur={(ev) => ev.target.value !== e.Email && editarCampo(e._rowIndex, 'Email', ev.target.value)}
-                            className="bg-transparent border-none w-full focus:bg-bg rounded px-1 text-textSec" />
+                          {puedeEditar ? (
+                            <input defaultValue={e.Email} onBlur={(ev) => ev.target.value !== e.Email && editarCampo(e._rowIndex, 'Email', ev.target.value)}
+                              className="bg-transparent border-none w-full focus:bg-bg rounded px-1 text-textSec" />
+                          ) : <span className="text-textSec">{e.Email}</span>}
                         </td>
                         <td className="pr-3">
-                          <select value={e.SituacionAcademica || ''} onChange={(ev) => editarCampo(e._rowIndex, 'SituacionAcademica', ev.target.value)}
-                            className={`text-xs px-2 py-1 rounded-md border-none ${COLOR_SITUACION[e.SituacionAcademica] || COLOR_SITUACION['']}`}>
-                            {SITUACIONES.map((s) => <option key={s} value={s}>{s || 'Sin definir'}</option>)}
-                          </select>
+                          {puedeEditar ? (
+                            <select value={e.SituacionAcademica || ''} onChange={(ev) => editarCampo(e._rowIndex, 'SituacionAcademica', ev.target.value)}
+                              className={`text-xs px-2 py-1 rounded-md border-none ${COLOR_SITUACION[e.SituacionAcademica] || COLOR_SITUACION['']}`}>
+                              {SITUACIONES.map((s) => <option key={s} value={s}>{s || 'Sin definir'}</option>)}
+                            </select>
+                          ) : (
+                            <span className={`text-xs px-2 py-1 rounded-md ${COLOR_SITUACION[e.SituacionAcademica] || COLOR_SITUACION['']}`}>
+                              {e.SituacionAcademica || 'Sin definir'}
+                            </span>
+                          )}
                         </td>
                         <td>
-                          <input defaultValue={e.Edicion} onBlur={(ev) => ev.target.value !== e.Edicion && editarCampo(e._rowIndex, 'Edicion', ev.target.value)}
-                            className="bg-transparent border-none w-16 focus:bg-bg rounded px-1" />
+                          {puedeEditar ? (
+                            <input defaultValue={e.Edicion} onBlur={(ev) => ev.target.value !== e.Edicion && editarCampo(e._rowIndex, 'Edicion', ev.target.value)}
+                              className="bg-transparent border-none w-16 focus:bg-bg rounded px-1" />
+                          ) : e.Edicion}
                         </td>
                       </tr>
                     ))}
@@ -661,6 +688,7 @@ export default function AcademicoPage() {
           estudiantes={todosLosEstudiantes.filter((e) => e.Curso === edicionParaModal.curso && (e.Edicion || 'Sin edición') === edicionParaModal.edicion)}
           pagosPorEmail={pagosPorEmail}
           onEditarCampo={editarCampo}
+          puedeEditar={puedeEditar}
           onClose={() => setEdicionAbierta(null)}
         />
       )}
@@ -692,7 +720,7 @@ function Sparkline({ titulo, datos, campo, color }) {
   );
 }
 
-function FichaEdicionModal({ info, estudiantes, pagosPorEmail, onEditarCampo, onClose }) {
+function FichaEdicionModal({ info, estudiantes, pagosPorEmail, onEditarCampo, onClose, puedeEditar }) {
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4" onClick={onClose}>
       <div className="bg-surface2 border border-border rounded-2xl p-6 w-full max-w-4xl max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>

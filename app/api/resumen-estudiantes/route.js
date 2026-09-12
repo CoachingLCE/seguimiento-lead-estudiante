@@ -3,13 +3,14 @@ import { readSheet } from '../../../lib/sheets';
 import { findUsuario, tienePermisoResumenEstudiantes } from '../../../lib/auth';
 import { normalizarEdicion } from '../../../lib/constants';
 
-// GET /api/resumen-estudiantes?solicitanteEmail=...
+// GET /api/resumen-estudiantes?solicitanteEmail=...&mes=2026-08 (mes opcional — sin él, es todo el histórico)
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const solicitante = await findUsuario(searchParams.get('solicitanteEmail'));
   if (!tienePermisoResumenEstudiantes(solicitante)) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
   }
+  const mes = searchParams.get('mes') || '';
 
   const [inscritosSinFiltrar, leads] = await Promise.all([readSheet('Inscritos'), readSheet('Leads')]);
   // Los registros creados automáticamente al cargar una baja de alguien que no existía en el
@@ -17,7 +18,9 @@ export async function GET(request) {
   const idsCargaManualBaja = new Set(
     leads.filter((l) => l.Origen === 'Carga manual (baja)').map((l) => l.ID)
   );
-  const inscritos = inscritosSinFiltrar.filter((i) => !idsCargaManualBaja.has(i.LeadId));
+  const inscritos = inscritosSinFiltrar
+    .filter((i) => !idsCargaManualBaja.has(i.LeadId))
+    .filter((i) => !mes || (i.FechaInscripcion || '').slice(0, 7) === mes);
   const hoyStr = new Date().toDateString();
   const esHoy = (fechaISO) => fechaISO && new Date(fechaISO).toDateString() === hoyStr;
 
@@ -61,6 +64,10 @@ export async function GET(request) {
     if (i.BienvenidaEnviada === 'TRUE') sumar(i.BienvenidaPorNombre, 'bienvenidas');
   });
 
+  const mesesDisponibles = [...new Set(
+    inscritosSinFiltrar.filter((i) => !idsCargaManualBaja.has(i.LeadId)).map((i) => (i.FechaInscripcion || '').slice(0, 7)).filter(Boolean)
+  )].sort((a, b) => b.localeCompare(a));
+
   return NextResponse.json({
     totalEstudiantes: inscritos.length,
     altasPendientes,
@@ -71,6 +78,7 @@ export async function GET(request) {
     enGrupoWhatsapp,
     porCurso,
     porEdicion,
-    porUsuario
+    porUsuario,
+    mesesDisponibles
   });
 }

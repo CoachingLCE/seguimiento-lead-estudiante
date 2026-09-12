@@ -54,6 +54,20 @@ export default function DashboardPage() {
   const mesActual = new Date().toISOString().slice(0, 7);
   const leadsMes = leads.filter((l) => (l.FechaIngreso || '').slice(0, 7) === mesActual).length;
   const comprados = leads.filter((l) => l.Estado === 'Comprado').length;
+
+  // Resumen del día: cuántos contactos pendientes (vencidos, sin programación) tiene ASIGNADOS
+  // el usuario actual en cada lote — solo tiene sentido para quien hace contactos de verdad
+  // (Lucila, Alex, Macarena); Diego y Jennifer no tienen asignaciones de lote.
+  const ahoraParaResumen = new Date();
+  const misPendientesPorLote = Array.from({ length: 7 }, (_, lote) => {
+    const pendientes = seguimiento.filter((s) =>
+      s.Lote === String(lote) && s.AsignadoAEmail === usuario?.email &&
+      s.Contactado !== 'TRUE' && !s.FechaProgramada && new Date(s.FechaVence) <= ahoraParaResumen
+    );
+    return { lote, cantidad: pendientes.length };
+  }).filter((r) => r.cantidad > 0);
+  const totalMisPendientes = misPendientesPorLote.reduce((acc, r) => acc + r.cantidad, 0);
+
   const ventasRecientes = leads
     .filter((l) => l.Estado === 'Comprado' && l.Origen !== 'Carga manual (baja)')
     .sort((a, b) => new Date(b.FechaVenta || 0) - new Date(a.FechaVenta || 0))
@@ -180,6 +194,18 @@ export default function DashboardPage() {
           <p className="text-textSec text-sm">Cargando…</p>
         ) : (
           <>
+            {totalMisPendientes > 0 && (
+              <div className="bg-surface border border-accentPurple/40 rounded-2xl p-4 mb-4 no-print">
+                <p className="text-sm font-semibold mb-2">👋 Tu resumen del día</p>
+                <div className="flex flex-wrap gap-2">
+                  {misPendientesPorLote.map((r) => (
+                    <span key={r.lote} className="text-xs px-3 py-1.5 rounded-full bg-warningBg text-warningText font-medium">
+                      Contactar Lote {r.lote}: {r.cantidad}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="flex justify-between items-center mb-3 no-print">
               <p className="text-sm font-bold flex items-center gap-2">
                 📌 Necesita tu atención ahora

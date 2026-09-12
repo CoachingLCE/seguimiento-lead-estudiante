@@ -4,6 +4,7 @@ import { findUsuario, tienePermisoBuscador } from '../../../lib/auth';
 
 // GET /api/buscador?q=...&solicitanteEmail=...           -> resultados de búsqueda
 // GET /api/buscador?leadId=...&solicitanteEmail=...       -> ficha completa de un alumno
+// GET /api/buscador?origen=...&solicitanteEmail=...       -> TODOS los leads con ese origen exacto, con fecha
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const solicitante = await findUsuario(searchParams.get('solicitanteEmail'));
@@ -12,8 +13,25 @@ export async function GET(request) {
   }
 
   const leadId = searchParams.get('leadId');
+  const origen = searchParams.get('origen');
 
   try {
+    if (origen) {
+      // A diferencia de la búsqueda por texto (limitada a 30 resultados), acá se listan TODOS
+      // los leads de ese origen — sirve para ver el histórico completo y distinguir a qué
+      // campaña puntual corresponde cada carga, por fecha.
+      const leads = await readSheet('Leads');
+      const porOrigen = leads
+        .filter((l) => l.Origen === origen)
+        .map((l) => ({
+          id: l.ID, nombre: `${l.Nombre} ${l.Apellido}`, curso: l.Curso || 'sin curso',
+          fechaIngreso: l.FechaIngreso, estado: l.Estado === 'Comprado' ? 'Comprado' : 'Lead',
+          cargadoPorNombre: l.CargadoPorNombre || ''
+        }))
+        .sort((a, b) => new Date(b.fechaIngreso) - new Date(a.fechaIngreso));
+      return NextResponse.json({ porOrigen });
+    }
+
     if (leadId) {
       const [leads, seguimiento, inscritos, auditoria] = await Promise.all([
         readSheet('Leads'), readSheet('Seguimiento'), readSheet('Inscritos'), readSheetCola('Auditoria', 5000)

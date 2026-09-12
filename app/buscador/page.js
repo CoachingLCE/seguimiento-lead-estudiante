@@ -131,6 +131,9 @@ function BuscadorContent() {
   const autoEditar = searchParams.get('editar') === '1';
 
   const [q, setQ] = useState(qInicial);
+  const [origenBuscado, setOrigenBuscado] = useState('');
+  const [resultadosPorOrigen, setResultadosPorOrigen] = useState(null);
+  const [cargandoPorOrigen, setCargandoPorOrigen] = useState(false);
   const [resultados, setResultados] = useState([]);
   const [ficha, setFicha] = useState(null);
   const [cargando, setCargando] = useState(false);
@@ -180,6 +183,15 @@ function BuscadorContent() {
     setCargando(false);
   }
 
+  async function buscarPorOrigen(origen) {
+    setOrigenBuscado(origen);
+    if (!origen) { setResultadosPorOrigen(null); return; }
+    setCargandoPorOrigen(true);
+    const r = await fetch(`/api/buscador?origen=${encodeURIComponent(origen)}&solicitanteEmail=${encodeURIComponent(usuario.email)}`).then((res) => res.json());
+    setResultadosPorOrigen(r.porOrigen || []);
+    setCargandoPorOrigen(false);
+  }
+
   async function cargarFicha() {
     setCargando(true);
     setErrorCarga('');
@@ -223,6 +235,54 @@ function BuscadorContent() {
               placeholder="Buscar por nombre, email, WhatsApp, curso, edición, país, observaciones…"
               className="w-full bg-bg border border-border rounded-lg px-3 py-2.5 text-sm mb-3 focus:outline-none focus:border-accentTeal"
             />
+
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-textMuted text-xs shrink-0">📊 Ver todos los leads históricos por origen:</span>
+              <select value={origenBuscado} onChange={(e) => buscarPorOrigen(e.target.value)}
+                className="bg-bg border border-border rounded-lg px-2.5 py-1.5 text-xs">
+                <option value="">Elegir origen…</option>
+                {ORIGENES.map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+
+            {origenBuscado && (
+              <div className="bg-surface border border-border rounded-2xl p-4 mb-4">
+                <p className="text-sm font-semibold mb-3">
+                  "{origenBuscado}" {resultadosPorOrigen && `— ${resultadosPorOrigen.length} lead${resultadosPorOrigen.length !== 1 ? 's' : ''} históricamente`}
+                </p>
+                {cargandoPorOrigen ? (
+                  <p className="text-textSec text-sm">Cargando…</p>
+                ) : resultadosPorOrigen?.length === 0 ? (
+                  <p className="text-textMuted text-sm">Sin leads con este origen.</p>
+                ) : (
+                  <div className="overflow-x-auto max-h-80 overflow-y-auto">
+                    <table className="w-full text-sm">
+                      <thead className="sticky top-0 bg-surface z-10">
+                        <tr className="text-textSec text-left border-b border-border">
+                          <th className="py-1.5 pr-3">Nombre</th><th className="pr-3">Curso</th>
+                          <th className="pr-3">Fecha de ingreso</th><th className="pr-3">Estado</th><th>Cargado por</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {resultadosPorOrigen?.map((r) => (
+                          <tr key={r.id} className="border-b border-border last:border-b-0">
+                            <td className="py-1.5 pr-3">
+                              <Link href={`/buscador?leadId=${r.id}`} className="hover:text-accentTeal hover:underline">{r.nombre}</Link>
+                            </td>
+                            <td className="pr-3 text-textSec">{r.curso}</td>
+                            <td className="pr-3 text-textSec whitespace-nowrap">{new Date(r.fechaIngreso).toLocaleDateString('es-AR')}</td>
+                            <td className="pr-3">
+                              <span className={`text-[11px] px-2 py-0.5 rounded-full ${r.estado === 'Comprado' ? 'bg-successBg text-successText' : 'bg-surface2 text-textMuted'}`}>{r.estado}</span>
+                            </td>
+                            <td className="text-textSec whitespace-nowrap">{r.cargadoPorNombre || '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
 
             {q.trim().length >= 2 && (
               <div className="flex items-center gap-2 flex-wrap mb-4">
@@ -343,12 +403,12 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
   const [confirmarEliminarLead, setConfirmarEliminarLead] = useState(false);
   const [eliminandoLead, setEliminandoLead] = useState(false);
 
-  async function eliminarLead() {
+  async function eliminarLead(forzar) {
     setEliminandoLead(true);
     await fetch('/api/leads', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ leadIds: [lead.ID], solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
+      body: JSON.stringify({ leadIds: [lead.ID], forzar: !!forzar, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
     });
     setEliminandoLead(false);
     setConfirmarEliminarLead(false);
@@ -602,15 +662,22 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
               <p className="text-sm font-semibold mb-2">¿Eliminar a {lead.Nombre} {lead.Apellido}?</p>
               <p className="text-textMuted text-xs mb-4">
                 {lead.Estado === 'Comprado'
-                  ? 'Este lead tiene una venta confirmada — no se puede eliminar, está protegido.'
+                  ? (usuario.roles?.includes('Admin')
+                      ? '⚠️ Este lead tiene una venta confirmada. Por seguridad está protegido — pero como Admin podés eliminarlo igual si estás seguro. Esta acción no se puede deshacer.'
+                      : 'Este lead tiene una venta confirmada — no se puede eliminar, está protegido.')
                   : 'Se borra el lead y todo su historial de seguimiento. Esta acción no se puede deshacer.'}
               </p>
               <div className="flex gap-2">
                 <button onClick={() => setConfirmarEliminarLead(false)} className="text-xs px-3 py-2 rounded-lg bg-surface border border-border flex-1">Cancelar</button>
-                {lead.Estado !== 'Comprado' && (
-                  <button onClick={eliminarLead} disabled={eliminandoLead}
+                {lead.Estado !== 'Comprado' ? (
+                  <button onClick={() => eliminarLead(false)} disabled={eliminandoLead}
                     className="text-xs px-3 py-2 rounded-lg bg-dangerText text-white font-semibold flex-1 disabled:opacity-60">
                     {eliminandoLead ? 'Eliminando…' : 'Sí, eliminar'}
+                  </button>
+                ) : usuario.roles?.includes('Admin') && (
+                  <button onClick={() => eliminarLead(true)} disabled={eliminandoLead}
+                    className="text-xs px-3 py-2 rounded-lg bg-dangerText text-white font-semibold flex-1 disabled:opacity-60">
+                    {eliminandoLead ? 'Eliminando…' : 'Eliminar igual (tiene venta)'}
                   </button>
                 )}
               </div>

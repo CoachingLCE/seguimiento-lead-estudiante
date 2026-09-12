@@ -360,6 +360,19 @@ export async function GET(request) {
     alertas.push(`${programadosSinContactar} contacto${programadosSinContactar !== 1 ? 's' : ''} programado${programadosSinContactar !== 1 ? 's' : ''} sin resolver — ya pasó la fecha pedida y nadie lo contactó`);
   }
 
+  // Retraso por lote: de los que están pendientes de contactar en cada lote (vencidos, sin
+  // programación pendiente), cuántos hay y hace cuántos días en promedio que están esperando.
+  // Es sobre el estado ACTUAL de todo el pipeline — no se acota al mes del reporte.
+  const retrasoPorLote = ['1', '2', '3', '4', '5', '6'].map((lote) => {
+    const pendientes = seguimiento.filter((s) =>
+      s.Lote === lote && s.Contactado !== 'TRUE' && !s.FechaProgramada && new Date(s.FechaVence) <= ahoraParaProgramados
+    );
+    const diasPromedio = pendientes.length
+      ? pendientes.reduce((acc, s) => acc + (ahoraParaProgramados - new Date(s.FechaVence)) / 86400000, 0) / pendientes.length
+      : 0;
+    return { lote: `Lote ${lote}`, cantidad: pendientes.length, diasPromedioRetraso: Math.round(diasPromedio * 10) / 10 };
+  }).filter((r) => r.cantidad > 0);
+
   // Alertas de cursos sin venta este mes — versión enriquecida: para cada curso sin ventas, se
   // suma ventas del mes anterior y leads activos, y con eso se clasifica una prioridad. Se
   // descartan los cursos realmente inactivos (sin ventas el mes pasado NI leads activos ahora),
@@ -430,6 +443,7 @@ export async function GET(request) {
     ventasDebitoAutomatico,
     contactosBajasDelMes,
     movimientosPorPersona,
+    retrasoPorLote,
     serieDiariaMesAnterior: anterior.serieDiaria
   });
   } catch (err) {

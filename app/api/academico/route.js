@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import { readSheet, appendRow, updateRow, deleteRows } from '../../../lib/sheets';
-import { findUsuario, tienePermisoAcademico } from '../../../lib/auth';
+import { findUsuario, tienePermisoAcademico, tienePermisoAcademicoVer } from '../../../lib/auth';
 import { registrarAccion } from '../../../lib/auditoria';
 
-// GET /api/academico?curso=...&solicitanteEmail=...
+// GET /api/academico?curso=...&solicitanteEmail=... — cualquier usuario logueado puede ver
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const solicitante = await findUsuario(searchParams.get('solicitanteEmail'));
-  if (!tienePermisoAcademico(solicitante)) {
+  if (!tienePermisoAcademicoVer(solicitante)) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
   }
 

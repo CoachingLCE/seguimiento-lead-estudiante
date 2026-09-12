@@ -17,7 +17,7 @@ import {
   tienePermisoBuscador,
   tienePermisoMensajesVer,
   tienePermisoBajas,
-  tienePermisoAcademico
+  tienePermisoAcademicoVer
 } from '../lib/permisos';
 import { nombreVisibleRoles } from '../lib/constants';
 
@@ -74,10 +74,10 @@ export default function Nav({ usuario, onLogout }) {
   const analisis = [
     tienePermisoReportes(usuario) && itemNav('/reportes', 'Reportes', pathname),
     tienePermisoEstudiantes(usuario) && itemNav('/inscritos', 'Estudiantes', pathname),
-    tienePermisoResumenEstudiantes(usuario) && itemNav('/resumen-estudiantes', 'Reportes Estudiantes', pathname),
+    tienePermisoResumenEstudiantes(usuario) && itemNav('/resumen-estudiantes', 'Reportes Inscripciones', pathname),
     tienePermisoResumenDiario(usuario) && itemNav('/resumen-diario', 'Resumen diario', pathname),
     tienePermisoDiplomas(usuario) && itemNav('/diplomas', 'Diplomas', pathname),
-    tienePermisoAcademico(usuario) && itemNav('/academico', '🎓 Académico', pathname),
+    tienePermisoAcademicoVer(usuario) && itemNav('/academico', '🎓 Académico', pathname),
     tienePermisoInformesRRSS(usuario) && itemNav('/informes-rrss', '📊 Informes RRSS', pathname)
   ].filter(Boolean);
 

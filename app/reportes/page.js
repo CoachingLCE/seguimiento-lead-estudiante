@@ -903,6 +903,7 @@ export default function ReportesPage() {
   const [error, setError] = useState('');
   const [cargado, setCargado] = useState(false);
   const [fichaLeadId, setFichaLeadId] = useState(null);
+  const [detalleCurso, setDetalleCurso] = useState(null); // { curso, leads: [...] | null (cargando) }
   const [montosRotos, setMontosRotos] = useState(null);
   const [corrigiendo, setCorrigiendo] = useState(false);
 
@@ -959,6 +960,11 @@ export default function ReportesPage() {
 
   function setFiltro(campo, valor) {
     setFiltros((prev) => ({ ...prev, [campo]: prev[campo] === valor ? '' : valor }));
+  }
+  async function abrirDetalleCurso(curso) {
+    setDetalleCurso({ curso, leads: null });
+    const r = await fetch(`/api/reportes/leads-por-curso?mes=${mes}&curso=${encodeURIComponent(curso)}&solicitanteEmail=${encodeURIComponent(usuario.email)}`).then((res) => res.json());
+    setDetalleCurso({ curso, leads: r.leads || [] });
   }
   function limpiarFiltros() {
     setFiltros({ curso: '', vendedor: '', origen: '', medioPago: '', modalidad: '', pais: '', montoMin: '', montoMax: '' });
@@ -1226,7 +1232,7 @@ export default function ReportesPage() {
                         <YAxis type="category" dataKey="nombre" stroke="#6b7299" width={140}
                           tick={<TickCursoDosLineas />} interval={0} />
                         <Tooltip contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} itemStyle={{ color: '#e5e7eb' }} labelStyle={{ color: '#e5e7eb' }} />
-                        <Bar dataKey="cantidad" fill="#a855f7" radius={[0, 4, 4, 0]} onClick={(d) => setFiltro('curso', d.nombre)} cursor="pointer" />
+                        <Bar dataKey="cantidad" fill="#a855f7" radius={[0, 4, 4, 0]} onClick={(d) => abrirDetalleCurso(d.nombre)} cursor="pointer" />
                       </BarChart>
                     </ResponsiveContainer>
                   </ChartCard>
@@ -1245,6 +1251,43 @@ export default function ReportesPage() {
                     </ResponsiveContainer>
                   </ChartCard>
                 </div>
+
+                {(() => {
+                  const COLORES_VENDEDOR = ['#22d3ee', '#a855f7', '#4ade80', '#f59e0b', '#ec4899', '#60a5fa'];
+                  const vendedoresTop = datos.rankingVendedores.slice(0, 6).map((v) => v.nombre);
+                  if (vendedoresTop.length < 2) return null; // con 1 solo vendedor no hay nada que comparar
+
+                  const diasEnMes = new Date(Number(mes.slice(0, 4)), Number(mes.slice(5, 7)), 0).getDate();
+                  const dataPorDia = Array.from({ length: diasEnMes }, (_, i) => {
+                    const fila = { dia: i + 1 };
+                    vendedoresTop.forEach((v) => { fila[v] = 0; });
+                    return fila;
+                  });
+                  datos.compras.forEach((c) => {
+                    if (!vendedoresTop.includes(c.vendidoPor)) return;
+                    const dia = new Date(c.fechaVenta).getDate();
+                    if (dataPorDia[dia - 1]) dataPorDia[dia - 1][c.vendidoPor]++;
+                  });
+
+                  return (
+                    <ChartCard titulo="Comparación de vendedores por día" subtitulo="Mes seleccionado — cuántas ventas cerró cada uno, día a día"
+                      valorGrande={`${vendedoresTop.length} vendedores`}
+                      onExportar={() => exportarGrafico('vendedores-por-dia', dataPorDia)}>
+                      <ResponsiveContainer>
+                        <LineChart data={dataPorDia}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#262c4a" />
+                          <XAxis dataKey="dia" stroke="#6b7299" fontSize={11} />
+                          <YAxis stroke="#6b7299" fontSize={11} allowDecimals={false} />
+                          <Tooltip contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} itemStyle={{ color: '#e5e7eb' }} labelStyle={{ color: '#e5e7eb' }} />
+                          <Legend wrapperStyle={{ fontSize: 11 }} />
+                          {vendedoresTop.map((v, i) => (
+                            <Line key={v} type="monotone" dataKey={v} stroke={COLORES_VENDEDOR[i % COLORES_VENDEDOR.length]} strokeWidth={2} dot={false} />
+                          ))}
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </ChartCard>
+                  );
+                })()}
               </>
             )}
 
@@ -1295,6 +1338,30 @@ export default function ReportesPage() {
                     </ResponsiveContainer>
                   </ChartCard>
                 </div>
+
+                {datos.retrasoPorLote?.length > 0 && (
+                  <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm">
+                    <p className="text-sm font-semibold mb-1">⏱ Retraso por lote</p>
+                    <p className="text-textMuted text-xs mb-4">
+                      Pendientes de contactar en cada lote (vencidos, sin programación), y hace cuántos días en promedio esperan — estado actual, no se acota al mes seleccionado.
+                    </p>
+                    <div className="space-y-2.5">
+                      {datos.retrasoPorLote.map((r) => {
+                        const critico = r.diasPromedioRetraso >= 3;
+                        return (
+                          <div key={r.lote} className="flex items-center justify-between bg-bg border border-border rounded-lg px-3.5 py-2.5">
+                            <span className="text-sm font-medium">{r.lote}</span>
+                            <span className="text-xs text-textSec">
+                              <b className="text-text">{r.cantidad}</b> pendiente{r.cantidad !== 1 ? 's' : ''}
+                              {' · '}
+                              <b className={critico ? 'text-dangerText' : 'text-warningText'}>{r.diasPromedioRetraso}</b> día{r.diasPromedioRetraso !== 1 ? 's' : ''} de retraso promedio
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </>
             )}
 
@@ -1538,6 +1605,48 @@ export default function ReportesPage() {
           </>
         )}
       </div>
+      {detalleCurso && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4" onClick={() => setDetalleCurso(null)}>
+          <div className="bg-surface2 border border-border rounded-2xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-semibold">{detalleCurso.curso} <span className="text-textMuted font-normal">— {labelDeMes(mes)}</span></p>
+              <button onClick={() => setDetalleCurso(null)} className="text-textMuted hover:text-text text-xl leading-none">✕</button>
+            </div>
+            {detalleCurso.leads === null ? (
+              <p className="text-textSec text-sm">Cargando…</p>
+            ) : detalleCurso.leads.length === 0 ? (
+              <p className="text-textMuted text-sm">Sin leads en esta categoría.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-textSec text-left border-b border-border">
+                      <th className="py-1.5 pr-3">Nombre</th><th className="pr-3">Ingresó</th>
+                      <th className="pr-3">Estado</th><th>Origen</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detalleCurso.leads.map((l) => (
+                      <tr key={l.id} className="border-b border-border last:border-b-0">
+                        <td className="py-1.5 pr-3">
+                          <button onClick={() => { setFichaLeadId(l.id); setDetalleCurso(null); }} className="hover:text-accentTeal hover:underline text-left">
+                            {l.nombre}
+                          </button>
+                        </td>
+                        <td className="pr-3 text-textSec whitespace-nowrap">{new Date(l.fechaIngreso).toLocaleDateString('es-AR')}</td>
+                        <td className="pr-3">
+                          <span className={`text-[11px] px-2 py-0.5 rounded-full ${l.estado === 'Comprado' ? 'bg-successBg text-successText' : 'bg-surface2 text-textMuted'}`}>{l.estado}</span>
+                        </td>
+                        <td className="text-textSec">{l.origen || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       <FichaDrawer leadId={fichaLeadId} usuario={usuario} onClose={() => setFichaLeadId(null)} />
     </div>
   );
