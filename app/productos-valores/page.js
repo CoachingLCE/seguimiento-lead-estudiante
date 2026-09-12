@@ -91,6 +91,9 @@ export default function ProductosValoresPage() {
   const [confirmarBorrar, setConfirmarBorrar] = useState(null);
   const [aviso, setAviso] = useState(null);
   const [editandoConfig, setEditandoConfig] = useState(false);
+  const [mostrarUSD, setMostrarUSD] = useState(false);
+  const [editandoTC, setEditandoTC] = useState(false);
+  const [tcTemp, setTcTemp] = useState('');
   const [configTemp, setConfigTemp] = useState([]);
 
   const puedeVer = tienePermisoProductosVer(usuario);
@@ -215,7 +218,7 @@ export default function ProductosValoresPage() {
   }
 
   function abrirEdicionConfig() {
-    setConfigTemp(config.map((t) => ({ ...t })));
+    setConfigTemp(config.filter((t) => t.tierId !== 'tipoDeCambio').map((t) => ({ ...t })));
     setEditandoConfig(true);
   }
   async function guardarConfig() {
@@ -238,7 +241,39 @@ export default function ProductosValoresPage() {
     setGuardando(false);
   }
 
+  function abrirEdicionTC() {
+    setTcTemp(tipoDeCambio || '');
+    setEditandoTC(true);
+  }
+  async function guardarTC() {
+    if (!tcTemp || Number(tcTemp) <= 0) return;
+    setGuardando(true);
+    try {
+      await fetch('/api/productos-valores/config', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tierId: 'tipoDeCambio', label: 'Tipo de cambio (ARS por USD)', pct: Number(tcTemp),
+          solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
+        })
+      });
+      setEditandoTC(false);
+      mostrarAviso('success', '✓ Tipo de cambio actualizado');
+      cargar();
+    } catch (err) {
+      mostrarAviso('error', '✕ No se pudo guardar.');
+    }
+    setGuardando(false);
+  }
+
   if (!usuario || !puedeVer) return null;
+
+  const tipoDeCambio = config.find((t) => t.tierId === 'tipoDeCambio')?.pct || null;
+  // Convierte a USD cuando el toggle está activo (dividiendo por el tipo de cambio cargado) —
+  // si no hay tipo de cambio cargado, se queda en ARS aunque el toggle esté prendido.
+  function precio(n) {
+    if (mostrarUSD && tipoDeCambio) return `USD ${Math.round(n / tipoDeCambio).toLocaleString('es-AR')}`;
+    return money(n);
+  }
 
   const productosSinArchivarNiVariantes = (productos || []).filter((p) => !p.archivado && !p.esVariante);
   const productosParaRevisar = productosSinArchivarNiVariantes.filter(necesitaRevision);
@@ -291,6 +326,39 @@ export default function ProductosValoresPage() {
           </div>
         )}
 
+        {/* MONEDA */}
+        <div className="bg-surface border border-border rounded-2xl p-4 mb-4 flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-2">
+            <button onClick={() => setMostrarUSD(false)}
+              className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors ${!mostrarUSD ? 'bg-accentPurple text-white' : 'bg-surface2 border border-border text-textSec'}`}>
+              ARS
+            </button>
+            <button onClick={() => setMostrarUSD(true)} disabled={!tipoDeCambio}
+              className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${mostrarUSD ? 'bg-accentPurple text-white' : 'bg-surface2 border border-border text-textSec'}`}>
+              USD
+            </button>
+            {!tipoDeCambio && <span className="text-textMuted text-[11px]">Cargá un tipo de cambio para poder ver los precios en USD</span>}
+          </div>
+          {puedeEditar && (
+            editandoTC ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-textSec">$</span>
+                <input type="text" inputMode="decimal" value={tcTemp} onChange={(e) => setTcTemp(e.target.value)} placeholder="Ej: 1450"
+                  className="w-24 bg-bg border border-border rounded-lg px-2 py-1.5 text-sm" autoFocus />
+                <span className="text-xs text-textSec">por USD</span>
+                <button onClick={() => setEditandoTC(false)} className="text-xs px-2.5 py-1.5 rounded-lg bg-surface2 border border-border">Cancelar</button>
+                <button onClick={guardarTC} disabled={guardando} className="text-xs px-2.5 py-1.5 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-60">
+                  {guardando ? 'Guardando…' : 'Guardar'}
+                </button>
+              </div>
+            ) : (
+              <button onClick={abrirEdicionTC} className="text-xs text-accentTeal font-semibold">
+                {tipoDeCambio ? `✏️ Tipo de cambio: $${tipoDeCambio}/USD` : '+ Cargar tipo de cambio'}
+              </button>
+            )
+          )}
+        </div>
+
         {/* NIVELES GENERALES */}
         <div className="bg-surface border border-border rounded-2xl p-4 mb-4">
           <div className="flex items-center justify-between mb-2">
@@ -318,7 +386,7 @@ export default function ProductosValoresPage() {
             </>
           ) : (
             <div className="flex flex-wrap gap-2">
-              {config.map((t) => (
+              {config.filter((t) => t.tierId !== 'tipoDeCambio').map((t) => (
                 <span key={t.tierId} className="text-xs px-3 py-1 rounded-full bg-infoBg text-infoText font-medium">{t.label}: {t.pct}%</span>
               ))}
             </div>
@@ -426,7 +494,7 @@ export default function ProductosValoresPage() {
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                       <div className="text-right">
-                        <p className="text-base font-bold">{money(p.valorLista)}{!tieneEscalonadas && cantCuotas && cantCuotas > 1 ? <span className="text-xs font-normal text-textMuted"> /cuota</span> : null}</p>
+                        <p className="text-base font-bold">{precio(p.valorLista)}{!tieneEscalonadas && cantCuotas && cantCuotas > 1 ? <span className="text-xs font-normal text-textMuted"> /cuota</span> : null}</p>
                         <p className="text-textMuted text-[10px]">{!tieneEscalonadas && cantCuotas && cantCuotas > 1 ? `Valor de lista · ${cantCuotas} cuotas` : 'Valor de lista'}</p>
                       </div>
                       <span className="text-textMuted text-lg">{abierto ? '▾' : '▸'}</span>
@@ -459,14 +527,14 @@ export default function ProductosValoresPage() {
                                     <tr key={i} className="border-b border-border last:border-b-0">
                                       <td className="pr-3 py-1 text-textSec">{t.tramo}</td>
                                       <td className="pr-3 text-warningText">-{t.pctDto}%</td>
-                                      <td className="font-medium">{money(t.valor)}</td>
+                                      <td className="font-medium">{precio(t.valor)}</td>
                                     </tr>
                                   ))}
                                 </tbody>
                               </table>
                             </div>
                           )}
-                          {p.valorUnPago ? <p className="text-textSec text-xs mt-1.5">Pago único (total): <b className="text-text">{money(p.valorUnPago)}</b></p> : null}
+                          {p.valorUnPago ? <p className="text-textSec text-xs mt-1.5">Pago único (total): <b className="text-text">{precio(p.valorUnPago)}</b></p> : null}
                           {p.precioExterior ? <p className="text-textMuted text-[11px] mt-1">Exterior: USD {p.precioExterior}</p> : null}
                         </div>
                       )}
@@ -492,9 +560,9 @@ export default function ProductosValoresPage() {
                                       <td className="pr-3 text-warningText font-medium">-{f.pct}%</td>
                                       <td className="pr-3">
                                         <p className="font-bold text-successText whitespace-nowrap">
-                                          {conCuotas ? `${cantCuotas} cuotas de ${money(f.valorCuota)}` : money(f.valorCuota)}
+                                          {conCuotas ? `${cantCuotas} cuotas de ${precio(f.valorCuota)}` : precio(f.valorCuota)}
                                         </p>
-                                        {conCuotas && <p className="text-textMuted text-[10px]">Total: {money(total)}</p>}
+                                        {conCuotas && <p className="text-textMuted text-[10px]">Total: {precio(total)}</p>}
                                       </td>
                                       <td>
                                         {mediosDisponibles.length > 0 ? (
@@ -614,7 +682,7 @@ export default function ProductosValoresPage() {
               ))}
             </div>
             <div className="flex gap-1.5 flex-wrap mb-4">
-              {config.filter((t) => !form.descuentos[t.tierId]).map((t) => (
+              {config.filter((t) => t.tierId !== 'tipoDeCambio' && !form.descuentos[t.tierId]).map((t) => (
                 <button key={t.tierId} onClick={() => agregarDescuento(t.tierId)} className="text-[11px] px-2.5 py-1 rounded-full bg-surface2 border border-border text-textSec">+ {t.label}</button>
               ))}
             </div>

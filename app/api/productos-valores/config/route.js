@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
-import { readSheet, updateRow } from '../../../../lib/sheets';
+import { readSheet, appendRow, updateRow } from '../../../../lib/sheets';
 import { findUsuario, tienePermisoProductosEditar } from '../../../../lib/auth';
 import { registrarAccion } from '../../../../lib/auditoria';
 
-// PATCH /api/productos-valores/config -> actualiza el % global de un nivel (tier)
-// body: { tierId, pct, solicitanteEmail, solicitanteNombre }
+// PATCH /api/productos-valores/config -> actualiza el % (o valor) global de un nivel/config.
+// body: { tierId, pct, label?, solicitanteEmail, solicitanteNombre }
 // Esto es el default que se usa para todo producto que NO tenga "override" activado en ese nivel.
+// Si el tierId no existe todavía (ej: la primera vez que se carga el tipo de cambio), se crea.
 export async function PATCH(request) {
   const body = await request.json();
   const solicitante = await findUsuario(body.solicitanteEmail);
@@ -17,12 +18,16 @@ export async function PATCH(request) {
   try {
     const filas = await readSheet('ProductosValoresConfig');
     const fila = filas.find((f) => f.TierId === body.tierId);
-    if (!fila) return NextResponse.json({ error: 'No se encontró ese nivel.' }, { status: 404 });
 
-    await updateRow('ProductosValoresConfig', fila._rowIndex, [fila.TierId, fila.Label, body.pct]);
+    if (fila) {
+      await updateRow('ProductosValoresConfig', fila._rowIndex, [fila.TierId, fila.Label, body.pct]);
+    } else {
+      await appendRow('ProductosValoresConfig', [body.tierId, body.label || body.tierId, body.pct]);
+    }
+
     await registrarAccion(
       body.solicitanteEmail, body.solicitanteNombre,
-      'Actualizó el % general de un nivel de descuento', `${fila.Label} → ${body.pct}%`, ''
+      'Actualizó el % general de un nivel de descuento', `${fila?.Label || body.label || body.tierId} → ${body.pct}%`, ''
     );
 
     return NextResponse.json({ ok: true });
