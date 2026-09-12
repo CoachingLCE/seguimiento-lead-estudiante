@@ -436,84 +436,79 @@ export default function ProductosValoresPage() {
                         </p>
                       )}
 
-                      {/* PRECIO BASE / CUOTAS */}
-                      <div className="bg-bg border border-border rounded-xl p-3.5 mb-3">
-                        <div className="text-center mb-2">
-                          {!tieneEscalonadas && cantCuotas && cantCuotas > 1 ? (
-                            <>
-                              <p className="text-2xl font-bold">{money(p.valorLista)} <span className="text-sm font-normal text-textMuted">/ cuota</span></p>
-                              <p className="text-textMuted text-[11px]">Valor de lista · {cantCuotas} cuotas (total {money(p.valorLista * cantCuotas)})</p>
-                            </>
-                          ) : (
-                            <>
-                              <p className="text-2xl font-bold">{money(p.valorLista)}</p>
-                              <p className="text-textMuted text-[11px]">Valor de lista</p>
-                            </>
+                      {/* Solo lo que NO se repite con la cabecera: cuotas escalonadas, pago único, exterior */}
+                      {(tieneEscalonadas || p.valorUnPago || p.precioExterior) && (
+                        <div className="mb-3">
+                          {tieneEscalonadas && (
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-xs">
+                                <thead>
+                                  <tr className="text-textSec text-left border-b border-border">
+                                    <th className="pr-3 py-1">Tramo</th><th className="pr-3">Dto</th><th>Valor</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {p.cuotasEscalonadas.map((t, i) => (
+                                    <tr key={i} className="border-b border-border last:border-b-0">
+                                      <td className="pr-3 py-1 text-textSec">{t.tramo}</td>
+                                      <td className="pr-3 text-warningText">-{t.pctDto}%</td>
+                                      <td className="font-medium">{money(t.valor)}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
                           )}
+                          {p.valorUnPago ? <p className="text-textSec text-xs mt-1.5">Pago único (total): <b className="text-text">{money(p.valorUnPago)}</b></p> : null}
+                          {p.precioExterior ? <p className="text-textMuted text-[11px] mt-1">Exterior: USD {p.precioExterior}</p> : null}
                         </div>
-                        {tieneEscalonadas && (
-                          <div className="overflow-x-auto mt-3">
-                            <table className="w-full text-xs">
+                      )}
+
+                      {/* PRECIOS Y BENEFICIOS */}
+                      {filasDescuento.length > 0 && (
+                        <div className="mb-1">
+                          <p className="text-xs font-semibold text-textSec mb-2">Precios y beneficios</p>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
                               <thead>
                                 <tr className="text-textSec text-left border-b border-border">
-                                  <th className="pr-3 py-1">Tramo</th><th className="pr-3">Dto</th><th>Valor</th>
+                                  <th className="py-1.5 pr-3">Beneficio</th><th className="pr-3">Descuento</th><th className="pr-3">Precio</th><th>Medios de pago</th>
                                 </tr>
                               </thead>
                               <tbody>
-                                {p.cuotasEscalonadas.map((t, i) => (
-                                  <tr key={i} className="border-b border-border last:border-b-0">
-                                    <td className="pr-3 py-1 text-textSec">{t.tramo}</td>
-                                    <td className="pr-3 text-warningText">-{t.pctDto}%</td>
-                                    <td className="font-medium">{money(t.valor)}</td>
-                                  </tr>
-                                ))}
+                                {filasDescuento.map((f) => {
+                                  const conCuotas = !tieneEscalonadas && cantCuotas && cantCuotas > 1;
+                                  const total = f.valorCuota * (conCuotas ? cantCuotas : 1);
+                                  return (
+                                    <tr key={f.label} className="border-b border-border last:border-b-0">
+                                      <td className="py-2 pr-3 text-textSec">{f.label}</td>
+                                      <td className="pr-3 text-warningText font-medium">-{f.pct}%</td>
+                                      <td className="pr-3">
+                                        <p className="font-bold text-successText whitespace-nowrap">
+                                          {conCuotas ? `${cantCuotas} cuotas de ${money(f.valorCuota)}` : money(f.valorCuota)}
+                                        </p>
+                                        {conCuotas && <p className="text-textMuted text-[10px]">Total: {money(total)}</p>}
+                                      </td>
+                                      <td>
+                                        {mediosDisponibles.length > 0 ? (
+                                          <div className="flex gap-1 flex-wrap">
+                                            {mediosDisponibles.map(([clave, m]) => (
+                                              <a key={clave} href={m.link} target="_blank" rel="noopener noreferrer"
+                                                className="text-[10px] px-2 py-0.5 rounded-full bg-infoBg text-infoText font-semibold whitespace-nowrap">
+                                                {MEDIOS_CONOCIDOS.find(([k]) => k === clave)?.[1] || clave}
+                                              </a>
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          <span className="text-textMuted text-[11px]">Sin medio de pago cargado</span>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
                               </tbody>
                             </table>
                           </div>
-                        )}
-                        {p.valorUnPago ? (
-                          <p className="text-textSec text-sm text-center mt-2">Pago único (total): <b className="text-text">{money(p.valorUnPago)}</b></p>
-                        ) : null}
-                        {p.precioExterior ? <p className="text-textMuted text-[11px] text-center mt-2">Exterior: USD {p.precioExterior}</p> : null}
-                      </div>
-
-                      {/* TABLA DE DESCUENTOS + MEDIOS DE PAGO */}
-                      {filasDescuento.length > 0 && (
-                        <div className="overflow-x-auto mb-3">
-                          <table className="w-full text-sm">
-                            <thead>
-                              <tr className="text-textSec text-left border-b border-border">
-                                <th className="py-1.5 pr-3">Beneficio</th><th className="pr-3">Descuento</th><th className="pr-3">Precio</th><th>Medios de pago</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {filasDescuento.map((f) => (
-                                <tr key={f.label} className="border-b border-border last:border-b-0">
-                                  <td className="py-2 pr-3 text-textSec">{f.label}</td>
-                                  <td className="pr-3 text-warningText font-medium">-{f.pct}%</td>
-                                  <td className="pr-3 font-bold text-successText">
-                                    {!tieneEscalonadas && cantCuotas && cantCuotas > 1
-                                      ? `${cantCuotas} cuotas de ${money(f.valorCuota)}`
-                                      : money(f.valorCuota)}
-                                  </td>
-                                  <td>
-                                    {mediosDisponibles.length > 0 ? (
-                                      <div className="flex gap-1 flex-wrap">
-                                        {mediosDisponibles.map(([clave, m]) => (
-                                          <a key={clave} href={m.link} target="_blank" rel="noopener noreferrer"
-                                            className="text-[10px] px-2 py-0.5 rounded-full bg-infoBg text-infoText font-semibold whitespace-nowrap">
-                                            {MEDIOS_CONOCIDOS.find(([k]) => k === clave)?.[1] || clave}
-                                          </a>
-                                        ))}
-                                      </div>
-                                    ) : (
-                                      <span className="text-textMuted text-[11px]">Sin medio de pago cargado</span>
-                                    )}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
                         </div>
                       )}
 
