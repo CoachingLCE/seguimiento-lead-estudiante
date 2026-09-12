@@ -360,6 +360,26 @@ export async function GET(request) {
     alertas.push(`${programadosSinContactar} contacto${programadosSinContactar !== 1 ? 's' : ''} programado${programadosSinContactar !== 1 ? 's' : ''} sin resolver — ya pasó la fecha pedida y nadie lo contactó`);
   }
 
+  // Actividad por lote: cuántos toques (contactos) se hicieron este mes en cada lote, y cuántos
+  // quedan atrasados ahora mismo (vencidos, sin programación) — para ver de un vistazo dónde
+  // está el cuello de botella. Los toques se acotan al mes del reporte; el atraso es del momento
+  // actual (no tiene sentido "atraso de un mes viejo", siempre es sobre el pipeline de hoy).
+  const actividadPorLote = ['1', '2', '3', '4', '5', '6'].map((lote) => {
+    const toquesDelMes = seguimiento.filter((s) =>
+      s.Lote === lote && s.Contactado === 'TRUE' && (s.FechaContacto || '').slice(0, 7) === mes
+    ).length;
+    const pendientes = seguimiento.filter((s) =>
+      s.Lote === lote && s.Contactado !== 'TRUE' && !s.FechaProgramada && new Date(s.FechaVence) <= ahoraParaProgramados
+    );
+    const diasPromedio = pendientes.length
+      ? pendientes.reduce((acc, s) => acc + (ahoraParaProgramados - new Date(s.FechaVence)) / 86400000, 0) / pendientes.length
+      : 0;
+    return {
+      lote: `Lote ${lote}`, toquesDelMes,
+      atrasados: pendientes.length, diasPromedioRetraso: Math.round(diasPromedio * 10) / 10
+    };
+  });
+
   // Retraso por lote: de los que están pendientes de contactar en cada lote (vencidos, sin
   // programación pendiente), cuántos hay y hace cuántos días en promedio que están esperando.
   // Es sobre el estado ACTUAL de todo el pipeline — no se acota al mes del reporte.
@@ -444,6 +464,7 @@ export async function GET(request) {
     contactosBajasDelMes,
     movimientosPorPersona,
     retrasoPorLote,
+    actividadPorLote,
     serieDiariaMesAnterior: anterior.serieDiaria
   });
   } catch (err) {

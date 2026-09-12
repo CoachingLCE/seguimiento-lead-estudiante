@@ -1367,6 +1367,32 @@ export default function ReportesPage() {
 
             {tab === 'actividad' && (
               <>
+              <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm mb-4">
+                <p className="text-sm font-semibold mb-1">📦 Actividad por lote</p>
+                <p className="text-textMuted text-xs mb-4">
+                  Toques (contactos) hechos este mes en cada lote, y cuántos quedan atrasados ahora mismo (vencidos, sin resolver).
+                </p>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                  {datos.actividadPorLote.map((r) => (
+                    <div key={r.lote} className="bg-bg border border-border rounded-lg px-3.5 py-2.5">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium">{r.lote}</span>
+                        <span className="text-successText text-sm font-bold">{r.toquesDelMes} toque{r.toquesDelMes !== 1 ? 's' : ''}</span>
+                      </div>
+                      {r.atrasados > 0 ? (
+                        <p className="text-xs">
+                          <span className={r.diasPromedioRetraso >= 3 ? 'text-dangerText' : 'text-warningText'}>
+                            ⚠️ {r.atrasados} atrasado{r.atrasados !== 1 ? 's' : ''} ({r.diasPromedioRetraso} día{r.diasPromedioRetraso !== 1 ? 's' : ''} en promedio)
+                          </span>
+                        </p>
+                      ) : (
+                        <p className="text-textMuted text-xs">Sin atrasos</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm">
                 <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
                   <p className="text-sm font-semibold">👤 Actividad por persona</p>
