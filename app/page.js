@@ -50,7 +50,7 @@ export default function LoginPage() {
     <div className="flex justify-center pt-24 px-6">
       <div className="fixed top-4 right-4"><ThemeSelector /></div>
       <div className="w-80 bg-surface2 border border-border rounded-2xl p-7">
-        <h2 className="text-center text-lg font-semibold mb-1">Seguimiento de LEAD-Estudiante</h2>
+        <h2 className="text-center text-lg font-semibold mb-1">ILCE Gestión</h2>
         <p className="text-center text-textSec text-sm mb-5">Ingresá con tu usuario y contraseña</p>
         <form onSubmit={handleSubmit}>
           <label className="text-xs text-textSec block mb-1">Email</label>

@@ -7,7 +7,7 @@ import RecuperadorDeChunks from '../components/RecuperadorDeChunks';
 import { ThemeProvider } from '../lib/ThemeContext';
 
 export const metadata = {
-  title: 'Seguimiento de LEAD-Estudiante — ILCE',
+  title: 'ILCE Gestión',
   description: 'App interna de Ventas & Marketing para el Instituto ILCE'
 };
 

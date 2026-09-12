@@ -96,7 +96,7 @@ export default function Nav({ usuario, onLogout }) {
           <p className="text-accentTeal uppercase text-xs tracking-widest font-semibold mb-1">
             Instituto ILCE
           </p>
-          <h1 className="text-2xl font-bold">Seguimiento de LEAD-Estudiante</h1>
+          <h1 className="text-2xl font-bold">ILCE Gestión</h1>
         </div>
 
         <div className="flex items-center gap-2">
