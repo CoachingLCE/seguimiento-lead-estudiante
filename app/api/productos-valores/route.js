@@ -2,9 +2,10 @@ import { NextResponse } from 'next/server';
 import { readSheet, appendRow, updateRow, deleteRows } from '../../../lib/sheets';
 import { findUsuario, tienePermisoProductosVer, tienePermisoProductosEditar } from '../../../lib/auth';
 import { registrarAccion } from '../../../lib/auditoria';
+import { parseProducto, serializeProducto } from '../../../lib/productosValores';
 
-// GET /api/productos-valores?solicitanteEmail=... -> catálogo completo, visible para cualquier
-// usuario logueado (la edición es la que está restringida).
+// GET /api/productos-valores?solicitanteEmail=... -> catálogo completo + config de niveles.
+// Visible para cualquier usuario logueado (la edición es la que está restringida).
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const solicitante = await findUsuario(searchParams.get('solicitanteEmail'));
@@ -13,19 +14,19 @@ export async function GET(request) {
   }
 
   try {
-    const productos = await readSheet('ProductosValores');
-    return NextResponse.json({ productos });
+    const [filas, configFilas] = await Promise.all([
+      readSheet('ProductosValores'), readSheet('ProductosValoresConfig')
+    ]);
+    const productos = filas.map(parseProducto);
+    const config = configFilas.map((c) => ({ tierId: c.TierId, label: c.Label, pct: Number(c.Pct) || 0 }));
+    return NextResponse.json({ productos, config });
   } catch (err) {
     console.error('Error cargando productos y valores:', err);
     return NextResponse.json({ error: 'Ocurrió un error cargando el catálogo.' }, { status: 500 });
   }
 }
 
-// POST /api/productos-valores -> crea o actualiza un producto (por id — si no viene id, se crea).
-// body: { id?, nombre, modalidad, valorCuota, cantCuotas, estado,
-//         descuento1Pct, descuento1Horas, descuento2Pct, descuento2Dias,
-//         descuentoDocentePct, descuentoComunidadPct, descuentoPagoUnicoPct,
-//         mercadoPagoLink, paypalLink, solicitanteEmail, solicitanteNombre }
+// POST /api/productos-valores -> crea o actualiza un producto (por id — sin id, se crea uno nuevo).
 export async function POST(request) {
   const body = await request.json();
   const solicitante = await findUsuario(body.solicitanteEmail);
@@ -35,26 +36,15 @@ export async function POST(request) {
   const nombre = (body.nombre || '').trim();
   if (!nombre) return NextResponse.json({ error: 'Falta el nombre del producto.' }, { status: 400 });
 
-  const ahora = new Date().toISOString();
-  const fila = [
-    body.id, nombre, body.modalidad || '', body.valorCuota ?? '', body.cantCuotas ?? '', body.estado || 'Activo',
-    body.descuento1Pct ?? '', body.descuento1Horas ?? '',
-    body.descuento2Pct ?? '', body.descuento2Dias ?? '',
-    body.descuentoDocentePct ?? '', body.descuentoComunidadPct ?? '', body.descuentoPagoUnicoPct ?? '',
-    body.mercadoPagoLink ?? '', body.paypalLink ?? '',
-    ahora, body.solicitanteEmail, body.solicitanteNombre
-  ];
-
   try {
-    const productos = await readSheet('ProductosValores');
-    const existente = body.id ? productos.find((p) => p.id === String(body.id)) : null;
-    let idFinal = body.id;
+    const filas = await readSheet('ProductosValores');
+    const existente = body.id ? filas.find((f) => f.id === String(body.id)) : null;
+    const idFinal = existente ? existente.id : `PV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const fila = serializeProducto({ ...body, nombre, actualizado: body.actualizado || new Date().toLocaleDateString('es-AR') }, idFinal);
 
     if (existente) {
       await updateRow('ProductosValores', existente._rowIndex, fila);
     } else {
-      idFinal = `PV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-      fila[0] = idFinal;
       await appendRow('ProductosValores', fila);
     }
 
@@ -80,8 +70,8 @@ export async function DELETE(request) {
   if (!body.id) return NextResponse.json({ error: 'Falta indicar qué eliminar.' }, { status: 400 });
 
   try {
-    const productos = await readSheet('ProductosValores');
-    const fila = productos.find((p) => p.id === String(body.id));
+    const filas = await readSheet('ProductosValores');
+    const fila = filas.find((f) => f.id === String(body.id));
     if (!fila) return NextResponse.json({ error: 'No se encontró ese producto.' }, { status: 404 });
 
     await deleteRows('ProductosValores', [fila._rowIndex]);
