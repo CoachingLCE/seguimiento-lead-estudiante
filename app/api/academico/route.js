@@ -17,9 +17,12 @@ export async function GET(request) {
 
   try {
     const curso = searchParams.get('curso') || '';
-    const [todos, cursos, todasEdiciones, leads] = await Promise.all([
-      readSheet('Academico'), readSheet('AcademicoCursos'), readSheet('AcademicoEdiciones'), readSheet('Leads')
-    ]);
+    // Se leen una por una (en vez de con Promise.all) — 4 pedidos simultáneos a la misma
+    // planilla parecían generarle fricción a la API de Google en este endpoint puntual.
+    const todos = await readSheet('Academico');
+    const cursos = await readSheet('AcademicoCursos');
+    const todasEdiciones = await readSheet('AcademicoEdiciones');
+    const leads = await readSheet('Leads');
     const estudiantes = curso ? todos.filter((e) => e.Curso === curso) : todos;
     const cursosDisponibles = [...new Set(todos.map((e) => e.Curso).filter(Boolean))].sort();
 

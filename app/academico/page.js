@@ -176,7 +176,7 @@ export default function AcademicoPage() {
         }
       }
     } catch (err) {
-      setErrorCarga('No se pudo conectar con el servidor.');
+      setErrorCarga(`No se pudo conectar con el servidor. (${err?.message || 'error desconocido'})`);
     }
     setCargando(false);
   }
