@@ -394,7 +394,7 @@ export default function ProductosValoresPage() {
               const filasDescuento = Object.keys(p.descuentos || {}).map((tierId) => {
                 const pct = pctEfectivo(p, tierId, config);
                 const label = config.find((t) => t.tierId === tierId)?.label || tierId;
-                return pct > 0 ? { label, pct, valor: conDescuento(p.valorLista, pct) } : null;
+                return pct > 0 ? { label, pct, valorCuota: conDescuento(p.valorLista, pct) } : null;
               }).filter(Boolean);
               const productoPadre = p.esVariante ? productos.find((x) => x.id === p.varianteDeId) : null;
               const mediosDisponibles = Object.entries(p.mediosDePago || {}).filter(([, m]) => m.link);
@@ -419,8 +419,8 @@ export default function ProductosValoresPage() {
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                       <div className="text-right">
-                        <p className="text-base font-bold">{money(p.valorLista)}</p>
-                        <p className="text-textMuted text-[10px]">Valor de lista</p>
+                        <p className="text-base font-bold">{money(p.valorLista)}{!tieneEscalonadas && cantCuotas && cantCuotas > 1 ? <span className="text-xs font-normal text-textMuted"> /cuota</span> : null}</p>
+                        <p className="text-textMuted text-[10px]">{!tieneEscalonadas && cantCuotas && cantCuotas > 1 ? `Valor de lista · ${cantCuotas} cuotas` : 'Valor de lista'}</p>
                       </div>
                       <span className="text-textMuted text-lg">{abierto ? '▾' : '▸'}</span>
                     </div>
@@ -439,10 +439,19 @@ export default function ProductosValoresPage() {
                       {/* PRECIO BASE / CUOTAS */}
                       <div className="bg-bg border border-border rounded-xl p-3.5 mb-3">
                         <div className="text-center mb-2">
-                          <p className="text-2xl font-bold">{money(p.valorLista)}</p>
-                          <p className="text-textMuted text-[11px]">Valor de lista</p>
+                          {!tieneEscalonadas && cantCuotas && cantCuotas > 1 ? (
+                            <>
+                              <p className="text-2xl font-bold">{money(p.valorLista)} <span className="text-sm font-normal text-textMuted">/ cuota</span></p>
+                              <p className="text-textMuted text-[11px]">Valor de lista · {cantCuotas} cuotas (total {money(p.valorLista * cantCuotas)})</p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-2xl font-bold">{money(p.valorLista)}</p>
+                              <p className="text-textMuted text-[11px]">Valor de lista</p>
+                            </>
+                          )}
                         </div>
-                        {tieneEscalonadas ? (
+                        {tieneEscalonadas && (
                           <div className="overflow-x-auto mt-3">
                             <table className="w-full text-xs">
                               <thead>
@@ -461,15 +470,9 @@ export default function ProductosValoresPage() {
                               </tbody>
                             </table>
                           </div>
-                        ) : cantCuotas && cantCuotas > 1 ? (
-                          <div className="flex items-center justify-center gap-4 text-sm">
-                            {p.valorUnPago ? <span className="text-textSec">Contado: <b className="text-text">{money(p.valorUnPago)}</b></span> : null}
-                            <span className="text-textSec">{cantCuotas} cuotas: <b className="text-text">{money(p.valorLista / cantCuotas)}/mes</b></span>
-                          </div>
-                        ) : p.valorUnPago ? (
-                          <div className="flex items-center justify-center gap-4 text-sm">
-                            <span className="text-textSec">Pago único: <b className="text-text">{money(p.valorUnPago)}</b></span>
-                          </div>
+                        )}
+                        {p.valorUnPago ? (
+                          <p className="text-textSec text-sm text-center mt-2">Pago único (total): <b className="text-text">{money(p.valorUnPago)}</b></p>
                         ) : null}
                         {p.precioExterior ? <p className="text-textMuted text-[11px] text-center mt-2">Exterior: USD {p.precioExterior}</p> : null}
                       </div>
@@ -488,7 +491,11 @@ export default function ProductosValoresPage() {
                                 <tr key={f.label} className="border-b border-border last:border-b-0">
                                   <td className="py-2 pr-3 text-textSec">{f.label}</td>
                                   <td className="pr-3 text-warningText font-medium">-{f.pct}%</td>
-                                  <td className="pr-3 font-bold text-successText">{money(f.valor)}</td>
+                                  <td className="pr-3 font-bold text-successText">
+                                    {!tieneEscalonadas && cantCuotas && cantCuotas > 1
+                                      ? `${cantCuotas} cuotas de ${money(f.valorCuota)}`
+                                      : money(f.valorCuota)}
+                                  </td>
                                   <td>
                                     {mediosDisponibles.length > 0 ? (
                                       <div className="flex gap-1 flex-wrap">
