@@ -25,6 +25,7 @@ function parsearFechaAR(texto) {
 // Necesita revisión si ya pasó la "próxima actualización" indicada, o — si no hay ninguna
 // cargada — si pasaron más de 30 días desde la última actualización registrada.
 function necesitaRevision(p) {
+  if (p.estado !== 'Activo') return false; // Pausado / Próximamente no necesitan revisión de precio
   const hoy = new Date();
   const proxima = parsearFechaAR(p.proximaActualizacion);
   if (proxima) return hoy >= proxima;
