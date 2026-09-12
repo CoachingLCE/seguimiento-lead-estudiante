@@ -13,6 +13,26 @@ const MEDIOS_CONOCIDOS = [
 ];
 
 function num(v) { const n = Number(v); return Number.isFinite(n) ? n : 0; }
+
+// Las fechas vienen como texto en formato argentino DD/MM/YYYY — no se puede usar new Date(texto)
+// directo porque JS lo interpreta como MM/DD/YYYY y rompe con cualquier día > 12.
+function parsearFechaAR(texto) {
+  const m = (texto || '').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return null;
+  const fecha = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+  return Number.isNaN(fecha.getTime()) ? null : fecha;
+}
+// Necesita revisión si ya pasó la "próxima actualización" indicada, o — si no hay ninguna
+// cargada — si pasaron más de 30 días desde la última actualización registrada.
+function necesitaRevision(p) {
+  const hoy = new Date();
+  const proxima = parsearFechaAR(p.proximaActualizacion);
+  if (proxima) return hoy >= proxima;
+  const ultima = parsearFechaAR(p.actualizado);
+  if (!ultima) return false;
+  const dias = (hoy - ultima) / 86400000;
+  return dias > 30;
+}
 function money(n) { return `$${Math.round(n).toLocaleString('es-AR')}`; }
 function conDescuento(total, pct) { return total * (1 - num(pct) / 100); }
 
@@ -221,6 +241,7 @@ export default function ProductosValoresPage() {
   if (!usuario || !puedeVer) return null;
 
   const productosSinArchivarNiVariantes = (productos || []).filter((p) => !p.archivado && !p.esVariante);
+  const productosParaRevisar = productosSinArchivarNiVariantes.filter(necesitaRevision);
 
   const productosVisibles = (productos || [])
     .filter((p) => mostrarVariantes || !p.esVariante)
@@ -259,6 +280,15 @@ export default function ProductosValoresPage() {
           )}
         </div>
         <p className="text-textMuted text-xs mb-4">Precios, descuentos por nivel y botones de pago de cada curso.</p>
+
+        {productosParaRevisar.length > 0 && (
+          <div className="bg-warningBg border border-warningText/30 rounded-xl px-4 py-2.5 mb-4">
+            <p className="text-warningText text-sm font-semibold">
+              ⚠️ {productosParaRevisar.length} producto{productosParaRevisar.length !== 1 ? 's' : ''} sin actualizar hace más de 30 días
+            </p>
+            <p className="text-textMuted text-xs mt-0.5">{productosParaRevisar.map((p) => p.nombre).join(' · ')}</p>
+          </div>
+        )}
 
         {/* NIVELES GENERALES */}
         <div className="bg-surface border border-border rounded-2xl p-4 mb-4">
@@ -379,6 +409,11 @@ export default function ProductosValoresPage() {
                         <BadgeEstado estado={p.estado} />
                         <BadgeFormato formato={p.formato} />
                         {p.esVariante && <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted">Variante</span>}
+                        {necesitaRevision(p) && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide bg-dangerBg text-dangerText" title="Hace más de 30 días que no se actualiza (o ya pasó la fecha de revisión indicada)">
+                            ⚠️ Revisar valor
+                          </span>
+                        )}
                       </div>
                       <p className="text-textMuted text-xs">{p.modalidad}{p.duracion ? ` · ${p.duracion}` : ''}</p>
                     </div>
