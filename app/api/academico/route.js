@@ -3,6 +3,10 @@ import { readSheet, appendRow, updateRow, deleteRows } from '../../../lib/sheets
 import { findUsuario, tienePermisoAcademico, tienePermisoAcademicoVer } from '../../../lib/auth';
 import { registrarAccion } from '../../../lib/auditoria';
 
+// Este endpoint lee 4 hojas en paralelo (incluida Leads entera, que crece sin límite) — se le da
+// más margen que al default de la plataforma para que no la corte a mitad de camino.
+export const maxDuration = 60;
+
 // GET /api/academico?curso=...&solicitanteEmail=... — cualquier usuario logueado puede ver
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
