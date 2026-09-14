@@ -102,6 +102,7 @@ export default function ProductosValoresPage() {
   const [quitandoDescuentos, setQuitandoDescuentos] = useState(false);
   const [confirmarQuitarDescuentos, setConfirmarQuitarDescuentos] = useState(false);
   const [aviso, setAviso] = useState(null);
+  const [linkCopiado, setLinkCopiado] = useState(null);
   const [editandoConfig, setEditandoConfig] = useState(false);
   const [mostrarUSD, setMostrarUSD] = useState(false);
   const [editandoTC, setEditandoTC] = useState(false);
@@ -120,6 +121,12 @@ export default function ProductosValoresPage() {
   function mostrarAviso(tipo, texto) {
     setAviso({ tipo, texto });
     setTimeout(() => setAviso((a) => (a?.texto === texto ? null : a)), 4000);
+  }
+
+  function copiarLink(link, idUnico) {
+    navigator.clipboard.writeText(link);
+    setLinkCopiado(idUnico);
+    setTimeout(() => setLinkCopiado((actual) => (actual === idUnico ? null : actual)), 2000);
   }
 
   async function cargar() {
@@ -644,12 +651,21 @@ export default function ProductosValoresPage() {
                                       <td>
                                         {mediosDisponibles.length > 0 ? (
                                           <div className="flex gap-1 flex-wrap">
-                                            {mediosDisponibles.map(([clave, m]) => (
-                                              <a key={clave} href={m.link} target="_blank" rel="noopener noreferrer"
-                                                className="text-[10px] px-2 py-0.5 rounded-full bg-infoBg text-infoText font-semibold whitespace-nowrap">
-                                                {MEDIOS_CONOCIDOS.find(([k]) => k === clave)?.[1] || clave}
-                                              </a>
-                                            ))}
+                                            {mediosDisponibles.map(([clave, m]) => {
+                                              const idUnico = `${p.id}-${f.label}-${clave}`;
+                                              return (
+                                                <span key={clave} className="inline-flex items-center gap-1">
+                                                  <a href={m.link} target="_blank" rel="noopener noreferrer"
+                                                    className="text-[10px] px-2 py-0.5 rounded-full bg-infoBg text-infoText font-semibold whitespace-nowrap">
+                                                    {MEDIOS_CONOCIDOS.find(([k]) => k === clave)?.[1] || clave}
+                                                  </a>
+                                                  <button onClick={() => copiarLink(m.link, idUnico)} title="Copiar link"
+                                                    className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface2 border border-border text-textMuted hover:text-text">
+                                                    {linkCopiado === idUnico ? '✓' : '📋'}
+                                                  </button>
+                                                </span>
+                                              );
+                                            })}
                                           </div>
                                         ) : (
                                           <span className="text-textMuted text-[11px]">Sin medio de pago cargado</span>
@@ -671,12 +687,21 @@ export default function ProductosValoresPage() {
                         <div className="mb-1">
                           <p className="text-xs font-semibold text-textSec mb-2">Medios de pago</p>
                           <div className="flex gap-1.5 flex-wrap">
-                            {mediosDisponibles.map(([clave, m]) => (
-                              <a key={clave} href={m.link} target="_blank" rel="noopener noreferrer"
-                                className="text-[11px] px-2.5 py-1 rounded-full bg-infoBg text-infoText font-semibold whitespace-nowrap">
-                                {MEDIOS_CONOCIDOS.find(([k]) => k === clave)?.[1] || clave}{m.valor ? ` (USD ${m.valor})` : ''}
-                              </a>
-                            ))}
+                            {mediosDisponibles.map(([clave, m]) => {
+                              const idUnico = `${p.id}-suelto-${clave}`;
+                              return (
+                                <span key={clave} className="inline-flex items-center gap-1">
+                                  <a href={m.link} target="_blank" rel="noopener noreferrer"
+                                    className="text-[11px] px-2.5 py-1 rounded-full bg-infoBg text-infoText font-semibold whitespace-nowrap">
+                                    {MEDIOS_CONOCIDOS.find(([k]) => k === clave)?.[1] || clave}{m.valor ? ` (USD ${m.valor})` : ''}
+                                  </a>
+                                  <button onClick={() => copiarLink(m.link, idUnico)} title="Copiar link"
+                                    className="text-[11px] px-2 py-1 rounded-full bg-surface2 border border-border text-textMuted hover:text-text">
+                                    {linkCopiado === idUnico ? '✓' : '📋'}
+                                  </button>
+                                </span>
+                              );
+                            })}
                           </div>
                         </div>
                       )}
