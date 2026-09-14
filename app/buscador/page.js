@@ -240,13 +240,18 @@ function BuscadorContent() {
               className="w-full bg-bg border border-border rounded-lg px-3 py-2.5 text-sm mb-3 focus:outline-none focus:border-accentTeal"
             />
 
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-textMuted text-xs shrink-0">📊 Ver todos los leads históricos por origen:</span>
-              <select value={origenBuscado} onChange={(e) => buscarPorOrigen(e.target.value)}
-                className="bg-bg border border-border rounded-lg px-2.5 py-1.5 text-xs">
-                <option value="">Elegir origen…</option>
-                {ORIGENES.map((o) => <option key={o} value={o}>{o}</option>)}
-              </select>
+            <div className="mb-4">
+              <p className="text-textMuted text-xs mb-1.5">📊 Ver todos los leads históricos por origen:</p>
+              <div className="flex flex-wrap gap-1.5">
+                {ORIGENES.map((o) => (
+                  <button key={o} onClick={() => buscarPorOrigen(origenBuscado === o ? '' : o)}
+                    className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                      origenBuscado === o ? 'bg-accentPurple border-accentPurple text-white' : 'bg-bg border-border text-textSec hover:text-text'
+                    }`}>
+                    {o}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {origenBuscado && (
