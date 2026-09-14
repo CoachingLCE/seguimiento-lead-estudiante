@@ -46,6 +46,17 @@ export default function FichasEnviadasPage() {
     !busqueda.trim() || `${f.nombre} ${f.curso}`.toLowerCase().includes(busqueda.trim().toLowerCase())
   );
 
+  const ahora = new Date();
+  function diasSinInscribirse(fecha) {
+    return Math.floor((ahora - new Date(fecha)) / 86400000);
+  }
+  function colorAlerta(dias) {
+    if (dias >= 7) return 'bg-dangerBg text-dangerText';
+    if (dias >= 3) return 'bg-warningBg text-warningText';
+    return 'bg-surface2 text-textMuted';
+  }
+  const conAlerta = fichasFiltradas.filter((f) => diasSinInscribirse(f.fecha) >= 3);
+
   return (
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
@@ -54,9 +65,17 @@ export default function FichasEnviadasPage() {
       ) : (
       <div className="max-w-[1100px] mx-auto px-6 pb-16">
         <h3 className="text-lg font-bold mb-1">📄 Fichas enviadas</h3>
-        <p className="text-textMuted text-xs mb-5">
+        <p className="text-textMuted text-xs mb-3">
           Todos los leads a los que se les marcó "Ficha enviada" como resultado, con fecha y quién la mandó.
         </p>
+
+        {conAlerta.length > 0 && (
+          <div className="bg-warningBg border border-warningText/30 rounded-xl px-4 py-2.5 mb-4">
+            <p className="text-warningText text-sm font-semibold">
+              ⚠️ {conAlerta.length} ficha{conAlerta.length !== 1 ? 's' : ''} enviada{conAlerta.length !== 1 ? 's' : ''} hace 3 días o más, sin inscribirse todavía
+            </p>
+          </div>
+        )}
 
         <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
           <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="🔍 Buscar por nombre o curso…"
@@ -84,20 +103,29 @@ export default function FichasEnviadasPage() {
                     <th className="pr-4 whitespace-nowrap">País</th>
                     <th className="pr-4 whitespace-nowrap">Lote</th>
                     <th className="pr-4 whitespace-nowrap">Fecha de envío</th>
+                    <th className="pr-4 whitespace-nowrap">Sin inscribirse</th>
                     <th className="whitespace-nowrap">Enviada por</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {fichasFiltradas.map((f, i) => (
-                    <tr key={`${f.leadId}-${i}`} className="border-b border-border">
-                      <td className="py-2 pr-4 whitespace-nowrap">{f.nombre}</td>
-                      <td className="pr-4 text-textSec whitespace-nowrap">{f.curso || '—'}</td>
-                      <td className="pr-4 text-textSec whitespace-nowrap">{f.pais || '—'}</td>
-                      <td className="pr-4 text-textSec whitespace-nowrap">Lote {f.lote}</td>
-                      <td className="pr-4 whitespace-nowrap">{new Date(f.fecha).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
-                      <td className="whitespace-nowrap">{f.enviadaPor || '—'}</td>
-                    </tr>
-                  ))}
+                  {fichasFiltradas.map((f, i) => {
+                    const dias = diasSinInscribirse(f.fecha);
+                    return (
+                      <tr key={`${f.leadId}-${i}`} className="border-b border-border">
+                        <td className="py-2 pr-4 whitespace-nowrap">{f.nombre}</td>
+                        <td className="pr-4 text-textSec whitespace-nowrap">{f.curso || '—'}</td>
+                        <td className="pr-4 text-textSec whitespace-nowrap">{f.pais || '—'}</td>
+                        <td className="pr-4 text-textSec whitespace-nowrap">Lote {f.lote}</td>
+                        <td className="pr-4 whitespace-nowrap">{new Date(f.fecha).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+                        <td className="pr-4 whitespace-nowrap">
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${colorAlerta(dias)}`}>
+                            {dias <= 0 ? 'Hoy' : `${dias} día${dias !== 1 ? 's' : ''}`}
+                          </span>
+                        </td>
+                        <td className="whitespace-nowrap">{f.enviadaPor || '—'}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
