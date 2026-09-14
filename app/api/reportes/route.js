@@ -314,19 +314,39 @@ export async function GET(request) {
 
   // Resumen de movimientos del mes por persona: mensajes frecuentes editados/eliminados y
   // contactos reprogramados — mismo texto exacto que registra cada acción (ver lib/auditoria.js).
-  const auditoriaDelMes = auditoria.filter((a) => (a.Fecha || '').slice(0, 7) === mes);
   // Este resumen es puntualmente de quienes hacen contactos (Lucila/Jesabel, Alex y Macarena) —
   // no de todo el que edite un mensaje o reprograme algo (ej: no debe incluir a Diego o Jennifer).
+  // Se desglosa por HOY / ESTA SEMANA / ESTE MES — usando TODA la auditoría (no solo la del mes
+  // filtrado arriba), porque "hoy" y "esta semana" tienen que valer independiente de qué mes esté
+  // elegido en el reporte.
   const NOMBRES_RESUMEN_MOVIMIENTOS = ['jesabel', 'lucila', 'alexander', 'alex', 'macarena'];
   const esDeResumenMovimientos = (nombre) => NOMBRES_RESUMEN_MOVIMIENTOS.some((n) => (nombre || '').toLowerCase().includes(n));
+  const inicioHoy = new Date(); inicioHoy.setHours(0, 0, 0, 0);
+  const inicioSemana = new Date(inicioHoy); inicioSemana.setDate(inicioSemana.getDate() - inicioSemana.getDay()); // domingo como inicio
   const movimientosPorPersona = {};
-  auditoriaDelMes.forEach((a) => {
+  auditoria.forEach((a) => {
     const nombre = a.UsuarioNombre;
     if (!nombre || !esDeResumenMovimientos(nombre)) return;
-    if (!movimientosPorPersona[nombre]) movimientosPorPersona[nombre] = { editoMensajes: 0, eliminoMensajes: 0, postergoContactos: 0 };
-    if (a.Accion === 'Editó un mensaje frecuente') movimientosPorPersona[nombre].editoMensajes++;
-    else if (a.Accion === 'Eliminó un mensaje frecuente') movimientosPorPersona[nombre].eliminoMensajes++;
-    else if ((a.Accion || '').startsWith('Programó contacto')) movimientosPorPersona[nombre].postergoContactos++;
+    const esDelMesElegido = (a.Fecha || '').slice(0, 7) === mes;
+    if (!esDelMesElegido) return; // el desglose diario/semanal solo tiene sentido adentro del mes que se está mirando
+
+    let categoria = null;
+    if (a.Accion === 'Editó un mensaje frecuente') categoria = 'editoMensajes';
+    else if (a.Accion === 'Eliminó un mensaje frecuente') categoria = 'eliminoMensajes';
+    else if ((a.Accion || '').startsWith('Programó contacto')) categoria = 'postergoContactos';
+    if (!categoria) return;
+
+    if (!movimientosPorPersona[nombre]) {
+      movimientosPorPersona[nombre] = {
+        mes: { editoMensajes: 0, eliminoMensajes: 0, postergoContactos: 0 },
+        semana: { editoMensajes: 0, eliminoMensajes: 0, postergoContactos: 0 },
+        hoy: { editoMensajes: 0, eliminoMensajes: 0, postergoContactos: 0 }
+      };
+    }
+    const fechaAccion = new Date(a.Fecha);
+    movimientosPorPersona[nombre].mes[categoria]++;
+    if (fechaAccion >= inicioSemana) movimientosPorPersona[nombre].semana[categoria]++;
+    if (fechaAccion >= inicioHoy) movimientosPorPersona[nombre].hoy[categoria]++;
   });
   const diasHastaConversion = calcularDiasHastaConversion(ventasDelMes);
 

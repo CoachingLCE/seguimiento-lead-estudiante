@@ -1464,16 +1464,27 @@ export default function ReportesPage() {
               {Object.keys(datos.movimientosPorPersona || {}).length > 0 && (
                 <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm mt-4">
                   <p className="text-sm font-semibold mb-1">📋 Resumen de movimientos</p>
-                  <p className="text-textMuted text-xs mb-3">Mensajes frecuentes editados/eliminados y contactos reprogramados este mes, por persona.</p>
-                  <div className="space-y-2">
-                    {Object.entries(datos.movimientosPorPersona).map(([nombre, m]) => (
-                      <div key={nombre} className="flex items-center justify-between bg-bg border border-border rounded-lg px-3 py-2 text-xs flex-wrap gap-1.5">
-                        <span className="font-medium">{nombre}</span>
-                        <span className="text-textSec">
-                          {m.editoMensajes > 0 && <>✏️ Editó {m.editoMensajes} mensaje{m.editoMensajes !== 1 ? 's' : ''}{(m.eliminoMensajes > 0 || m.postergoContactos > 0) && ' · '}</>}
-                          {m.eliminoMensajes > 0 && <>🗑️ Eliminó {m.eliminoMensajes} mensaje{m.eliminoMensajes !== 1 ? 's' : ''}{m.postergoContactos > 0 && ' · '}</>}
-                          {m.postergoContactos > 0 && <>📅 Postergó {m.postergoContactos} contacto{m.postergoContactos !== 1 ? 's' : ''}</>}
-                        </span>
+                  <p className="text-textMuted text-xs mb-3">Mensajes frecuentes editados/eliminados y contactos reprogramados, por persona — hoy, esta semana y en el mes elegido.</p>
+                  <div className="space-y-3">
+                    {Object.entries(datos.movimientosPorPersona).map(([nombre, periodos]) => (
+                      <div key={nombre} className="bg-bg border border-border rounded-lg px-3 py-2.5">
+                        <p className="font-medium text-sm mb-1.5">{nombre}</p>
+                        <div className="grid grid-cols-3 gap-2 text-xs">
+                          {[['Hoy', periodos.hoy], ['Esta semana', periodos.semana], ['Este mes', periodos.mes]].map(([etiqueta, m]) => (
+                            <div key={etiqueta}>
+                              <p className="text-textMuted text-[10.5px] uppercase tracking-wide mb-0.5">{etiqueta}</p>
+                              {(m.editoMensajes + m.eliminoMensajes + m.postergoContactos) === 0 ? (
+                                <p className="text-textMuted">—</p>
+                              ) : (
+                                <div className="text-textSec space-y-0.5">
+                                  {m.editoMensajes > 0 && <p>✏️ {m.editoMensajes} editado{m.editoMensajes !== 1 ? 's' : ''}</p>}
+                                  {m.eliminoMensajes > 0 && <p>🗑️ {m.eliminoMensajes} eliminado{m.eliminoMensajes !== 1 ? 's' : ''}</p>}
+                                  {m.postergoContactos > 0 && <p>📅 {m.postergoContactos} postergado{m.postergoContactos !== 1 ? 's' : ''}</p>}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     ))}
                   </div>
