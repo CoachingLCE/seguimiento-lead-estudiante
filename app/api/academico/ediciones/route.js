@@ -30,6 +30,17 @@ export async function POST(request) {
     await appendRow('AcademicoEdiciones', [curso, edicion, fechaInicio, formador]);
   }
 
+  // Si el formador es un nombre que no estaba en la lista de Docentes, se agrega solo — así la
+  // próxima vez que alguien abra el desplegable, ya aparece ahí sin que nadie tenga que mantener
+  // esa lista a mano.
+  if (formador) {
+    const docentes = await readSheet('Docentes');
+    const yaExiste = docentes.some((d) => (d.Nombre || '').trim().toLowerCase() === formador.trim().toLowerCase());
+    if (!yaExiste) {
+      await appendRow('Docentes', [formador, 'TRUE']);
+    }
+  }
+
   await registrarAccion(
     body.solicitanteEmail, body.solicitanteNombre,
     body.formador !== undefined ? 'Actualizó el formador de una edición' : 'Actualizó la fecha de inicio de una edición',
@@ -60,6 +71,14 @@ export async function PUT(request) {
     await updateRow('AcademicoCursos', existente._rowIndex, [curso, body.formador || '']);
   } else {
     await appendRow('AcademicoCursos', [curso, body.formador || '']);
+  }
+
+  if (body.formador) {
+    const docentes = await readSheet('Docentes');
+    const yaExiste = docentes.some((d) => (d.Nombre || '').trim().toLowerCase() === body.formador.trim().toLowerCase());
+    if (!yaExiste) {
+      await appendRow('Docentes', [body.formador, 'TRUE']);
+    }
   }
 
   await registrarAccion(

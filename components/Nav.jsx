@@ -15,7 +15,7 @@ export const puedeVerOperativo = tienePermisoOperativo;
 const NAV_PRINCIPAL = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/seguimiento', label: 'Seguimiento' },
-  { href: '/buscador', label: 'Leads' }
+  { href: '/buscador', label: 'Buscador' }
 ];
 
 const GESTION = { label: 'Académico', principal: null, items: [

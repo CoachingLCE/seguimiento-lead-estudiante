@@ -23,6 +23,7 @@ export default function DashboardPage() {
   const [leadVenta, setLeadVenta] = useState(null);
   const [fichaLeadId, setFichaLeadId] = useState(null);
   const [cargando, setCargando] = useState(true);
+  const [atencionColapsada, setAtencionColapsada] = useState(false);
   const [pidiendoEmailPara, setPidiendoEmailPara] = useState(null);
   const [emailTemporal, setEmailTemporal] = useState('');
   const [procesandoId, setProcesandoId] = useState(null);
@@ -208,18 +209,21 @@ export default function DashboardPage() {
               </div>
             )}
             <div className="flex justify-between items-center mb-3 no-print">
-              <p className="text-sm font-bold flex items-center gap-2">
-                📌 Necesita tu atención ahora
-                {totalPendientes > 0 && (
-                  <span className="text-textMuted text-xs font-normal">· {totalPendientes} acciones pendientes</span>
-                )}
-              </p>
+              <button onClick={() => setAtencionColapsada((v) => !v)} className="flex items-center gap-2 text-left">
+                <span className="text-textMuted text-xs">{atencionColapsada ? '▸' : '▾'}</span>
+                <p className="text-sm font-bold flex items-center gap-2">
+                  📌 Necesita tu atención ahora
+                  {totalPendientes > 0 && (
+                    <span className="text-textMuted text-xs font-normal">· {totalPendientes} acciones pendientes</span>
+                  )}
+                </p>
+              </button>
               <button onClick={exportarExcel} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm">
                 ⬇ Exportar a Excel
               </button>
             </div>
 
-            {totalPendientes === 0 ? (
+            {!atencionColapsada && (totalPendientes === 0 ? (
               <div className="bg-successBg rounded-xl p-4 mb-5 text-successText text-sm">
                 ✓ No hay nada urgente pendiente ahora mismo.
               </div>
@@ -228,7 +232,7 @@ export default function DashboardPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-textSec text-left border-b border-border">
-                      <th className="py-1.5 pr-2">Prioridad</th><th className="pr-2">Quién</th>
+                      <th className="py-1.5 pr-2">Prioridad</th><th className="pr-2">Tipo</th><th className="pr-2">Quién</th>
                       <th className="pr-2">Motivo</th><th className="pr-2">Detalle</th><th>Acción</th>
                     </tr>
                   </thead>
@@ -236,6 +240,7 @@ export default function DashboardPage() {
                     {altasDemoradas.map((i) => (
                       <tr key={`alta-${i.ID}`} className="border-b border-border">
                         <td className="py-1.5 pr-2"><Pill tono="danger">🔴 Urgente</Pill></td>
+                        <td className="pr-2"><Pill tono="info">🎓 Estudiante</Pill></td>
                         <td className="pr-2">{i.NombreEstudiante}</td>
                         <td className="pr-2">Alta demorada</td>
                         <td className="pr-2">{i.Curso || '—'} · <Pill tono="danger">{horasDesde(i.FechaInscripcion)}hs</Pill></td>
@@ -251,6 +256,7 @@ export default function DashboardPage() {
                     {bienvenidasPendientes.map((i) => (
                       <tr key={`bien-${i.ID}`} className="border-b border-border">
                         <td className="py-1.5 pr-2"><Pill tono="warning">🟡 Hoy</Pill></td>
+                        <td className="pr-2"><Pill tono="info">🎓 Estudiante</Pill></td>
                         <td className="pr-2">{i.NombreEstudiante}</td>
                         <td className="pr-2">Bienvenida sin enviar</td>
                         <td className="pr-2">{i.EmailEstudiante || 'Falta email del estudiante'}</td>
@@ -278,6 +284,7 @@ export default function DashboardPage() {
                       return (
                         <tr key={`seg-${i2}`} className="border-b border-border">
                           <td className="py-1.5 pr-2"><Pill tono="warning">🟡 Hoy</Pill></td>
+                          <td className="pr-2"><Pill tono="warning">📩 Lead</Pill></td>
                           <td className="pr-2">{l ? `${l.Nombre} ${l.Apellido}` : s.LeadID}</td>
                           <td className="pr-2">Lead sin contactar</td>
                           <td className="pr-2">Lote {s.Lote} · asignado a {s.AsignadoANombre || 'sin asignar'}</td>
@@ -295,7 +302,7 @@ export default function DashboardPage() {
                   </tbody>
                 </table>
               </div>
-            )}
+            ))}
 
             <div className={`grid gap-3 mb-5 ${verEstudiantes ? 'grid-cols-5' : 'grid-cols-3'}`}>
               <Stat label="Leads hoy" value={leadsHoy} />

@@ -229,7 +229,7 @@ function BuscadorContent() {
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
       {!puedeVer ? (
-        <AccesoDenegado seccion="Leads" />
+        <AccesoDenegado seccion="Buscador" />
       ) : (
       <div className="max-w-5xl mx-auto px-6 pb-16">
         {!leadId && (

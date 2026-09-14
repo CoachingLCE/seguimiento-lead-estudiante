@@ -23,6 +23,7 @@ export async function GET(request) {
     const cursos = await readSheet('AcademicoCursos');
     const todasEdiciones = await readSheet('AcademicoEdiciones');
     const leads = await readSheet('Leads');
+    const docentes = await readSheet('Docentes');
     const estudiantes = curso ? todos.filter((e) => e.Curso === curso) : todos;
     const cursosDisponibles = [...new Set(todos.map((e) => e.Curso).filter(Boolean))].sort();
 
@@ -42,7 +43,8 @@ export async function GET(request) {
       estudiantes, cursosDisponibles, cursos,
       ediciones: todasEdiciones, // TODAS, sin filtrar — el reporte institucional necesita verlas juntas
       todosLosEstudiantes: todos, // idem, para el reporte por edición (todos los cursos a la vez)
-      pagosPorEmail
+      pagosPorEmail,
+      docentesActivos: docentes.filter((d) => d.Activo !== 'FALSE').map((d) => d.Nombre).filter(Boolean).sort()
     });
   } catch (err) {
     console.error('Error cargando academico:', err);

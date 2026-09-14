@@ -30,10 +30,11 @@ export async function GET(request) {
           whatsapp: lead?.WhatsApp || '',
           lote: s.Lote,
           fecha: s.FechaContacto || '',
-          enviadaPor: s.ContactadoPorNombre || s.AsignadoANombre || ''
+          enviadaPor: s.ContactadoPorNombre || s.AsignadoANombre || '',
+          comprado: lead?.Estado === 'Comprado'
         };
       })
-      .filter((f) => f.fecha)
+      .filter((f) => f.fecha && !f.comprado) // si ya compró, no tiene sentido seguir mostrándola acá
       .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
     return NextResponse.json({ fichas });

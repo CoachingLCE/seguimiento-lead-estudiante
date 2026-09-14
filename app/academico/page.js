@@ -121,6 +121,7 @@ export default function AcademicoPage() {
   const [ediciones, setEdiciones] = useState([]);
   const [cursosInfo, setCursosInfo] = useState([]);
   const [pagosPorEmail, setPagosPorEmail] = useState({});
+  const [docentesActivos, setDocentesActivos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [errorCarga, setErrorCarga] = useState('');
 
@@ -170,6 +171,7 @@ export default function AcademicoPage() {
         setCursosInfo(r.cursos || []);
         setEdiciones(r.ediciones || []);
         setPagosPorEmail(r.pagosPorEmail || {});
+        setDocentesActivos(r.docentesActivos || []);
         if (!cursoActual && r.cursosDisponibles?.length > 0) {
           setCursoActual(r.cursosDisponibles[0]);
           setCargando(false);
@@ -305,6 +307,7 @@ export default function AcademicoPage() {
 
   const resumenGlobalCompleto = calcularResumenGlobal(todosLosEstudiantes, ediciones, cursosInfo);
   const docentesUnicos = [...new Set([
+    ...docentesActivos,
     ...cursosInfo.map((c) => c.Formador),
     ...resumenGlobalCompleto.map((r) => r.formador)
   ].filter(Boolean))].sort();

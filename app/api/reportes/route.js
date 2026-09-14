@@ -315,10 +315,14 @@ export async function GET(request) {
   // Resumen de movimientos del mes por persona: mensajes frecuentes editados/eliminados y
   // contactos reprogramados — mismo texto exacto que registra cada acción (ver lib/auditoria.js).
   const auditoriaDelMes = auditoria.filter((a) => (a.Fecha || '').slice(0, 7) === mes);
+  // Este resumen es puntualmente de quienes hacen contactos (Lucila/Jesabel, Alex y Macarena) —
+  // no de todo el que edite un mensaje o reprograme algo (ej: no debe incluir a Diego o Jennifer).
+  const NOMBRES_RESUMEN_MOVIMIENTOS = ['jesabel', 'lucila', 'alexander', 'alex', 'macarena'];
+  const esDeResumenMovimientos = (nombre) => NOMBRES_RESUMEN_MOVIMIENTOS.some((n) => (nombre || '').toLowerCase().includes(n));
   const movimientosPorPersona = {};
   auditoriaDelMes.forEach((a) => {
     const nombre = a.UsuarioNombre;
-    if (!nombre) return;
+    if (!nombre || !esDeResumenMovimientos(nombre)) return;
     if (!movimientosPorPersona[nombre]) movimientosPorPersona[nombre] = { editoMensajes: 0, eliminoMensajes: 0, postergoContactos: 0 };
     if (a.Accion === 'Editó un mensaje frecuente') movimientosPorPersona[nombre].editoMensajes++;
     else if (a.Accion === 'Eliminó un mensaje frecuente') movimientosPorPersona[nombre].eliminoMensajes++;
@@ -364,7 +368,10 @@ export async function GET(request) {
   // quedan atrasados ahora mismo (vencidos, sin programación) — para ver de un vistazo dónde
   // está el cuello de botella. Los toques se acotan al mes del reporte; el atraso es del momento
   // actual (no tiene sentido "atraso de un mes viejo", siempre es sobre el pipeline de hoy).
-  const actividadPorLote = ['1', '2', '3', '4', '5', '6'].map((lote) => {
+  const NOMBRE_LOTE = { '1': 'Lote 1', '2': 'Lote 2', '3': 'Lote 3', '4': 'Lote 4', '5': 'Lote 5', '6': 'Lote 6', baja: 'Reactivación de bajas' };
+  const LOTES_A_MEDIR = ['1', '2', '3', '4', '5', '6', 'baja'];
+
+  const actividadPorLote = LOTES_A_MEDIR.map((lote) => {
     const toquesDelMes = seguimiento.filter((s) =>
       s.Lote === lote && s.Contactado === 'TRUE' && (s.FechaContacto || '').slice(0, 7) === mes
     ).length;
@@ -375,7 +382,7 @@ export async function GET(request) {
       ? pendientes.reduce((acc, s) => acc + (ahoraParaProgramados - new Date(s.FechaVence)) / 86400000, 0) / pendientes.length
       : 0;
     return {
-      lote: `Lote ${lote}`, toquesDelMes,
+      lote: NOMBRE_LOTE[lote] || `Lote ${lote}`, toquesDelMes,
       atrasados: pendientes.length, diasPromedioRetraso: Math.round(diasPromedio * 10) / 10
     };
   });
@@ -383,14 +390,14 @@ export async function GET(request) {
   // Retraso por lote: de los que están pendientes de contactar en cada lote (vencidos, sin
   // programación pendiente), cuántos hay y hace cuántos días en promedio que están esperando.
   // Es sobre el estado ACTUAL de todo el pipeline — no se acota al mes del reporte.
-  const retrasoPorLote = ['1', '2', '3', '4', '5', '6'].map((lote) => {
+  const retrasoPorLote = LOTES_A_MEDIR.map((lote) => {
     const pendientes = seguimiento.filter((s) =>
       s.Lote === lote && s.Contactado !== 'TRUE' && !s.FechaProgramada && new Date(s.FechaVence) <= ahoraParaProgramados
     );
     const diasPromedio = pendientes.length
       ? pendientes.reduce((acc, s) => acc + (ahoraParaProgramados - new Date(s.FechaVence)) / 86400000, 0) / pendientes.length
       : 0;
-    return { lote: `Lote ${lote}`, cantidad: pendientes.length, diasPromedioRetraso: Math.round(diasPromedio * 10) / 10 };
+    return { lote: NOMBRE_LOTE[lote] || `Lote ${lote}`, cantidad: pendientes.length, diasPromedioRetraso: Math.round(diasPromedio * 10) / 10 };
   }).filter((r) => r.cantidad > 0);
 
   // Alertas de cursos sin venta este mes — versión enriquecida: para cada curso sin ventas, se
