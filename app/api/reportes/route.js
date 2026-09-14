@@ -324,10 +324,16 @@ export async function GET(request) {
   const inicioHoy = new Date(); inicioHoy.setHours(0, 0, 0, 0);
   const inicioSemana = new Date(inicioHoy); inicioSemana.setDate(inicioSemana.getDate() - inicioSemana.getDay()); // domingo como inicio
   const movimientosPorPersona = {};
+  const [anioMesElegido, mesElegidoNum] = mes.split('-').map(Number);
   auditoria.forEach((a) => {
     const nombre = a.UsuarioNombre;
     if (!nombre || !esDeResumenMovimientos(nombre)) return;
-    const esDelMesElegido = (a.Fecha || '').slice(0, 7) === mes;
+    const fechaAccion = new Date(a.Fecha);
+    if (Number.isNaN(fechaAccion.getTime())) return;
+    // Comparar por año/mes numérico (no por texto) — Google Sheets a veces reformatea la fecha
+    // guardada al leerla de vuelta (de ISO a otro formato regional), lo que rompía la comparación
+    // de texto ".slice(0,7) === mes" y dejaba afuera movimientos que sí eran del mes elegido.
+    const esDelMesElegido = fechaAccion.getFullYear() === anioMesElegido && (fechaAccion.getMonth() + 1) === mesElegidoNum;
     if (!esDelMesElegido) return; // el desglose diario/semanal solo tiene sentido adentro del mes que se está mirando
 
     let categoria = null;
@@ -343,7 +349,6 @@ export async function GET(request) {
         hoy: { editoMensajes: 0, eliminoMensajes: 0, postergoContactos: 0 }
       };
     }
-    const fechaAccion = new Date(a.Fecha);
     movimientosPorPersona[nombre].mes[categoria]++;
     if (fechaAccion >= inicioSemana) movimientosPorPersona[nombre].semana[categoria]++;
     if (fechaAccion >= inicioHoy) movimientosPorPersona[nombre].hoy[categoria]++;
