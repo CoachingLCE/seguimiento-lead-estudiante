@@ -14,8 +14,7 @@ export const puedeVerOperativo = tienePermisoOperativo;
 
 const NAV_PRINCIPAL = [
   { href: '/dashboard', label: 'Dashboard' },
-  { href: '/seguimiento', label: 'Seguimiento' },
-  { href: '/buscador', label: 'Buscador' }
+  { href: '/seguimiento', label: 'Seguimiento' }
 ];
 
 const GESTION = { label: 'Académico', principal: null, items: [
@@ -84,6 +83,12 @@ export default function Nav({ usuario, onLogout }) {
 
           {/* ACCIONES + USUARIO — desktop */}
           <div className="hidden lg:flex items-center gap-3 shrink-0">
+            <Link href="/buscador" title="Buscador"
+              className={`w-9 h-9 flex items-center justify-center rounded-lg text-base transition-colors ${
+                pathname === '/buscador' ? 'bg-accentPurple text-white' : 'bg-surface2 border border-border text-textSec hover:text-text hover:border-accentTeal'
+              }`}>
+              🔍
+            </Link>
             <Link href="/herramientas" title="Herramientas"
               className={`w-9 h-9 flex items-center justify-center rounded-lg text-base transition-colors ${
                 pathname === '/herramientas' ? 'bg-accentPurple text-white' : 'bg-surface2 border border-border text-textSec hover:text-text hover:border-accentTeal'
@@ -161,6 +166,12 @@ export default function Nav({ usuario, onLogout }) {
 
           <div className="flex items-center justify-between pt-3 border-t border-border">
             <div className="flex items-center gap-2">
+              <Link href="/buscador" title="Buscador" onClick={() => setMenuMovil(false)}
+                className={`w-9 h-9 flex items-center justify-center rounded-lg text-base transition-colors ${
+                  pathname === '/buscador' ? 'bg-accentPurple text-white' : 'bg-surface2 border border-border text-textSec'
+                }`}>
+                🔍
+              </Link>
               <Link href="/herramientas" title="Herramientas" onClick={() => setMenuMovil(false)}
                 className={`w-9 h-9 flex items-center justify-center rounded-lg text-base transition-colors ${
                   pathname === '/herramientas' ? 'bg-accentPurple text-white' : 'bg-surface2 border border-border text-textSec'
