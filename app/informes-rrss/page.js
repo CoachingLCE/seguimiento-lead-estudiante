@@ -12,15 +12,25 @@ const PLATAFORMAS = [
   { id: 'linkedin', label: 'LinkedIn', color: 'text-infoText' },
   { id: 'youtube', label: 'YouTube', color: 'text-dangerText' },
   { id: 'google_business', label: 'Google Business', color: 'text-warningText' },
+  { id: 'threads', label: 'Threads', color: 'text-text' },
+  { id: 'whatsapp_comunidad', label: 'Comunidad WhatsApp', color: 'text-successText' },
+  { id: 'instagram_comunidad', label: 'Comunidad Instagram', color: 'text-accentPurple' },
   { id: 'blog', label: 'Blog', color: 'text-accentTeal' }
 ];
 const TIPOS_PIEZA = ['Reel', 'Carrusel', 'Post', 'Video', 'Artículo', 'Historia'];
 const CAMPOS_METRICA = [
-  ['followers', 'Seguidores'], ['reach', 'Alcance'], ['impressions', 'Impresiones'],
-  ['profileVisits', 'Visitas al perfil'], ['engagementRate', 'Engagement (%)'], ['saves', 'Guardados'],
-  ['linkClicks', 'Clics a link'], ['qualifiedLeads', 'Leads calificados']
+  ['followers', 'Seguidores'], ['newFollowers', 'Nuevos seguidores'], ['reach', 'Alcance'],
+  ['impressions', 'Impresiones'], ['profileVisits', 'Visitas al perfil (únicas)'], ['pageViews', 'Visualizaciones de la página'],
+  ['engagementRate', 'Engagement (%)'], ['interactions', 'Interacciones'], ['reactions', 'Reacciones'],
+  ['saves', 'Guardados'], ['shares', 'Compartidos'], ['comments', 'Comentarios'],
+  ['linkClicks', 'Clics a link'], ['searches', 'Búsquedas'], ['contentPublished', 'Contenidos publicados'],
+  ['watchTimeSeconds', 'Tiempo de visualización (seg)'], ['qualifiedLeads', 'Leads calificados']
 ];
-const CAMPOS_ENTERO = ['followers', 'reach', 'impressions', 'profileVisits', 'saves', 'linkClicks', 'qualifiedLeads'];
+const CAMPOS_ENTERO = [
+  'followers', 'newFollowers', 'reach', 'impressions', 'profileVisits', 'pageViews', 'interactions',
+  'reactions', 'saves', 'shares', 'comments', 'linkClicks', 'searches', 'contentPublished',
+  'watchTimeSeconds', 'qualifiedLeads'
+];
 
 function mesesDisponibles() {
   const hoy = new Date();
@@ -88,13 +98,25 @@ function engagementDePieza(p) {
   return (interacciones / views) * 100;
 }
 function totalesDeMetricas(metricas) {
-  const t = { followers: 0, reach: 0, impressions: 0, profileVisits: 0, qualifiedLeads: 0, engagementSuma: 0, engagementCant: 0 };
+  const t = {
+    followers: 0, reach: 0, impressions: 0, profileVisits: 0, qualifiedLeads: 0, engagementSuma: 0, engagementCant: 0,
+    newFollowers: 0, interactions: 0, reactions: 0, shares: 0, comments: 0, contentPublished: 0, searches: 0, watchTimeSeconds: 0, pageViews: 0
+  };
   metricas.forEach((m) => {
     t.followers += num(m.Followers) || 0;
     t.reach += num(m.Reach) || 0;
     t.impressions += num(m.Impressions) || 0;
     t.profileVisits += num(m.ProfileVisits) || 0;
     t.qualifiedLeads += num(m.QualifiedLeads) || 0;
+    t.newFollowers += num(m.NewFollowers) || 0;
+    t.interactions += num(m.Interactions) || 0;
+    t.reactions += num(m.Reactions) || 0;
+    t.shares += num(m.Shares) || 0;
+    t.comments += num(m.Comments) || 0;
+    t.contentPublished += num(m.ContentPublished) || 0;
+    t.searches += num(m.Searches) || 0;
+    t.watchTimeSeconds += num(m.WatchTimeSeconds) || 0;
+    t.pageViews += num(m.PageViews) || 0;
     if (num(m.EngagementRate) !== null) { t.engagementSuma += num(m.EngagementRate); t.engagementCant++; }
   });
   t.engagementPromedio = t.engagementCant > 0 ? t.engagementSuma / t.engagementCant : null;
@@ -324,7 +346,10 @@ export default function InformesRRSSPage() {
     setFormMetrica({
       followers: actual?.Followers ?? '', reach: actual?.Reach ?? '', impressions: actual?.Impressions ?? '',
       profileVisits: actual?.ProfileVisits ?? '', engagementRate: actual?.EngagementRate ?? '',
-      saves: actual?.Saves ?? '', linkClicks: actual?.LinkClicks ?? '', qualifiedLeads: actual?.QualifiedLeads ?? ''
+      saves: actual?.Saves ?? '', linkClicks: actual?.LinkClicks ?? '', qualifiedLeads: actual?.QualifiedLeads ?? '',
+      newFollowers: actual?.NewFollowers ?? '', interactions: actual?.Interactions ?? '', reactions: actual?.Reactions ?? '',
+      shares: actual?.Shares ?? '', comments: actual?.Comments ?? '', contentPublished: actual?.ContentPublished ?? '',
+      searches: actual?.Searches ?? '', watchTimeSeconds: actual?.WatchTimeSeconds ?? '', pageViews: actual?.PageViews ?? ''
     });
     setErrorFormMetrica('');
     setEditandoPlataforma(plataformaId);

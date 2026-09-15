@@ -30,7 +30,12 @@ export async function GET(request) {
 }
 
 // Campos enteros ≥ 0 — vacío es válido (todavía no se cargó ese dato).
-const CAMPOS_ENTERO = ['followers', 'reach', 'impressions', 'profileVisits', 'saves', 'linkClicks', 'qualifiedLeads'];
+const CAMPOS_ENTERO = [
+  'followers', 'reach', 'impressions', 'profileVisits', 'saves', 'linkClicks', 'qualifiedLeads',
+  // Agregados para poder cargar el historial completo (antes solo entraban estos 7 campos):
+  'newFollowers', 'interactions', 'reactions', 'shares', 'comments', 'contentPublished',
+  'searches', 'watchTimeSeconds', 'pageViews'
+];
 
 function validarMetricas(body) {
   for (const campo of CAMPOS_ENTERO) {
@@ -65,18 +70,24 @@ export async function POST(request) {
   if (errorValidacion) return NextResponse.json({ error: errorValidacion }, { status: 400 });
 
   const ahora = new Date().toISOString();
+  const todas = await readSheet('RRSSMetricas');
+  const existente = todas.find((m) => m.Mes === body.mes && m.Plataforma === body.plataforma);
   // ?? en vez de || — así un 0 cargado a propósito (ej: 0 leads calificados) no se pierde como
-  // si fuera un campo vacío.
+  // si fuera un campo vacío. Si es una edición y el campo nuevo no vino en el body, se conserva
+  // lo que ya había guardado (no se pisa con vacío).
   const fila = [
     body.mes, body.plataforma,
     body.followers ?? '', body.reach ?? '', body.impressions ?? '', body.profileVisits ?? '',
     body.engagementRate ?? '', body.saves ?? '', body.linkClicks ?? '', body.qualifiedLeads ?? '',
-    body.solicitanteEmail, body.solicitanteNombre, ahora
+    body.solicitanteEmail, body.solicitanteNombre, ahora,
+    body.newFollowers ?? existente?.NewFollowers ?? '', body.interactions ?? existente?.Interactions ?? '',
+    body.reactions ?? existente?.Reactions ?? '', body.shares ?? existente?.Shares ?? '',
+    body.comments ?? existente?.Comments ?? '', body.contentPublished ?? existente?.ContentPublished ?? '',
+    body.searches ?? existente?.Searches ?? '', body.watchTimeSeconds ?? existente?.WatchTimeSeconds ?? '',
+    body.pageViews ?? existente?.PageViews ?? ''
   ];
 
   try {
-    const todas = await readSheet('RRSSMetricas');
-    const existente = todas.find((m) => m.Mes === body.mes && m.Plataforma === body.plataforma);
     if (existente) {
       await updateRow('RRSSMetricas', existente._rowIndex, fila);
     } else {
