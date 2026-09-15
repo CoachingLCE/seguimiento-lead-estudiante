@@ -211,6 +211,7 @@ export default function InformesRRSSPage() {
   const [comentarios, setComentarios] = useState([]);
 
   const [rangoEvolucion, setRangoEvolucion] = useState(6); // 3, 6 o 12 meses
+  const [plataformaEvolucion, setPlataformaEvolucion] = useState('instagram');
   const [metricasEvolucion, setMetricasEvolucion] = useState([]);
   const [cargandoEvolucion, setCargandoEvolucion] = useState(false);
 
@@ -616,9 +617,23 @@ export default function InformesRRSSPage() {
 
   // ---------- EVOLUCIÓN (multi-mes) ----------
   const mesesEvolucion = ultimosNMeses(mes, rangoEvolucion);
+  // Qué 4 métricas mostrar en Evolución según la plataforma — no todas tienen los mismos datos
+  // (Google Business no tiene "Seguidores", Instagram no tiene "Búsquedas", etc.)
+  const METRICAS_EVOLUCION_POR_PLATAFORMA = {
+    instagram: [['Impresiones', 'Impressions', '#E0C25C'], ['Nuevos seguidores', 'NewFollowers', '#8C52FF'], ['Interacciones', 'Interactions', '#5CE1E6'], ['Contenidos publicados', 'ContentPublished', '#52D6A0']],
+    linkedin: [['Impresiones', 'Impressions', '#E0C25C'], ['Reacciones', 'Reactions', '#8C52FF'], ['Compartidos', 'Shares', '#5CE1E6'], ['Visitas al perfil', 'ProfileVisits', '#52D6A0']],
+    youtube: [['Visualizaciones', 'Impressions', '#E0C25C'], ['Tiempo de visualización', 'WatchTimeSeconds', '#8C52FF'], ['Suscriptores', 'Followers', '#5CE1E6']],
+    google_business: [['Interacciones', 'Interactions', '#E0C25C'], ['Personas que vieron el perfil', 'ProfileVisits', '#8C52FF'], ['Búsquedas', 'Searches', '#5CE1E6'], ['Clics al sitio', 'LinkClicks', '#52D6A0']],
+    threads: [['Visualizaciones', 'Impressions', '#E0C25C'], ['Interacciones', 'Interactions', '#8C52FF'], ['Me gusta', 'Reactions', '#5CE1E6'], ['Reposts', 'Shares', '#52D6A0']],
+    whatsapp_comunidad: [['Alcance', 'Reach', '#5CE1E6'], ['Miembros', 'Followers', '#8C52FF']],
+    instagram_comunidad: [['Interacciones', 'Interactions', '#E0C25C'], ['Reacciones', 'Reactions', '#8C52FF'], ['Compartidos', 'Shares', '#5CE1E6']],
+    blog: [['Seguidores', 'Followers', '#8C52FF'], ['Alcance', 'Reach', '#5CE1E6'], ['Leads calificados', 'QualifiedLeads', '#52D6A0'], ['Impresiones', 'Impressions', '#E0C25C']]
+  };
+  const metricasEvolucionActuales = METRICAS_EVOLUCION_POR_PLATAFORMA[plataformaEvolucion] || METRICAS_EVOLUCION_POR_PLATAFORMA.blog;
+
   function serieDe(campo) {
     return mesesEvolucion.map((m) => {
-      const filas = metricasEvolucion.filter((x) => x.Mes === m);
+      const filas = metricasEvolucion.filter((x) => x.Mes === m && x.Plataforma === plataformaEvolucion);
       if (filas.length === 0) return null;
       return filas.reduce((acc, f) => acc + (num(f[campo]) || 0), 0);
     });
@@ -820,23 +835,27 @@ export default function InformesRRSSPage() {
             <div className="bg-surface border border-border rounded-2xl p-4 sm:p-5">
               <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
                 <p className="text-sm font-semibold">📈 Evolución</p>
-                <div className="flex items-center gap-1 bg-bg border border-border rounded-lg p-0.5">
-                  {[3, 6, 12].map((n) => (
-                    <button key={n} onClick={() => setRangoEvolucion(n)}
-                      className={`text-xs px-2.5 py-1 rounded-md ${rangoEvolucion === n ? 'bg-accentPurple text-white' : 'text-textMuted'}`}>
-                      {n} meses
-                    </button>
-                  ))}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-1.5 bg-bg border border-border rounded-lg px-2 py-1">
+                    <span className="text-xs">{PLATAFORMAS.find((p) => p.id === plataformaEvolucion)?.icono}</span>
+                    <select value={plataformaEvolucion} onChange={(e) => setPlataformaEvolucion(e.target.value)}
+                      className="bg-transparent text-xs font-medium focus:outline-none">
+                      {PLATAFORMAS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-1 bg-bg border border-border rounded-lg p-0.5">
+                    {[3, 6, 12].map((n) => (
+                      <button key={n} onClick={() => setRangoEvolucion(n)}
+                        className={`text-xs px-2.5 py-1 rounded-md ${rangoEvolucion === n ? 'bg-accentPurple text-white' : 'text-textMuted'}`}>
+                        {n} meses
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
               {cargandoEvolucion ? <Skeleton h="h-28" /> : (
                 <div className="grid sm:grid-cols-2 gap-5">
-                  {[
-                    ['Seguidores', 'Followers', '#8C52FF'],
-                    ['Alcance', 'Reach', '#5CE1E6'],
-                    ['Leads calificados', 'QualifiedLeads', '#52D6A0'],
-                    ['Impresiones', 'Impressions', '#E0C25C']
-                  ].map(([label, campo, color]) => {
+                  {metricasEvolucionActuales.map(([label, campo, color]) => {
                     const serie = serieDe(campo);
                     const conDatos = serie.filter((v) => v !== null);
                     return (
