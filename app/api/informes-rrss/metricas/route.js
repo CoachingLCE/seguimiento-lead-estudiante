@@ -6,19 +6,26 @@ import { registrarAccion } from '../../../../lib/auditoria';
 // GET /api/informes-rrss/metricas?mes=2026-08&solicitanteEmail=...
 // GET /api/informes-rrss/metricas?desde=2026-01&hasta=2026-12&solicitanteEmail=... (rango, para
 // los gráficos de Evolución y el Informe anual — evita pedir mes por mes en paralelo)
+// GET /api/informes-rrss/metricas?listarMeses=1&solicitanteEmail=... (solo los meses que tienen
+// algún dato cargado — para no mostrar en el selector meses vacíos)
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const mes = searchParams.get('mes');
   const desde = searchParams.get('desde');
   const hasta = searchParams.get('hasta');
+  const listarMeses = searchParams.get('listarMeses');
   const solicitante = await findUsuario(searchParams.get('solicitanteEmail'));
   if (!tienePermisoInformesRRSS(solicitante)) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
   }
-  if (!mes && !(desde && hasta)) return NextResponse.json({ error: 'Falta el mes (o el rango desde/hasta)' }, { status: 400 });
+  if (!mes && !(desde && hasta) && !listarMeses) return NextResponse.json({ error: 'Falta el mes (o el rango desde/hasta)' }, { status: 400 });
 
   try {
     const todas = await readSheet('RRSSMetricas');
+    if (listarMeses) {
+      const meses = [...new Set(todas.map((m) => m.Mes).filter(Boolean))].sort().reverse();
+      return NextResponse.json({ meses });
+    }
     const metricas = mes
       ? todas.filter((m) => m.Mes === mes)
       : todas.filter((m) => m.Mes >= desde && m.Mes <= hasta); // "YYYY-MM" ordena bien como texto

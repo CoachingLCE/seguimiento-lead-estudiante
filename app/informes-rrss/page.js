@@ -209,6 +209,7 @@ export default function InformesRRSSPage() {
   const [objetivos, setObjetivos] = useState([]);
   const [analisis, setAnalisis] = useState(null);
   const [comentarios, setComentarios] = useState([]);
+  const [mesesConDatos, setMesesConDatos] = useState(null); // null = todavía no se pidió
 
   const [rangoEvolucion, setRangoEvolucion] = useState(6); // 3, 6 o 12 meses
   const [plataformaEvolucion, setPlataformaEvolucion] = useState('instagram');
@@ -270,6 +271,8 @@ export default function InformesRRSSPage() {
     if (!usuario) return;
     if (!puedeVer) return; // ya no redirige — la pantalla en sí muestra el mensaje de acceso
     if (!mes) setMes(mesesDisponibles()[0]);
+    fetch(`/api/informes-rrss/metricas?listarMeses=1&solicitanteEmail=${encodeURIComponent(usuario.email)}`)
+      .then((r) => r.json()).then((r) => setMesesConDatos(r.meses || [])).catch(() => setMesesConDatos([]));
   }, [usuario]);
 
   useEffect(() => {
@@ -382,6 +385,7 @@ export default function InformesRRSSPage() {
       setEditandoPlataforma(null);
       mostrarAviso('success', '✓ Cambios guardados correctamente');
       cargarTodo();
+      if (mesesConDatos && !mesesConDatos.includes(mes)) setMesesConDatos((prev) => [...prev, mes].sort().reverse());
     } catch (err2) {
       setErrorFormMetrica(err2.message); // el formulario queda abierto, no se pierde lo cargado
     }
@@ -707,7 +711,8 @@ export default function InformesRRSSPage() {
               <span className="text-textMuted text-sm">📅</span>
               <select value={mes} onChange={(e) => setMes(e.target.value)}
                 className="bg-transparent text-sm font-medium focus:outline-none capitalize">
-                {mesesDisponibles().map((m) => <option key={m} value={m} className="capitalize">{labelDeMes(m)}</option>)}
+                {[...new Set([mesesDisponibles()[0], ...(mesesConDatos || [])])].sort().reverse()
+                  .map((m) => <option key={m} value={m} className="capitalize">{labelDeMes(m)}</option>)}
               </select>
             </div>
           </div>
