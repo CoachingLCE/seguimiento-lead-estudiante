@@ -31,11 +31,17 @@ export async function GET(request) {
       const fechaBajaAprox = new Date(vence.getTime() - 90 * 24 * 60 * 60 * 1000);
       const diasFaltantes = Math.ceil((vence - new Date()) / (24 * 60 * 60 * 1000));
       const diasDesdeLaBaja = Math.floor((new Date() - fechaBajaAprox) / (24 * 60 * 60 * 1000));
+      const cursoBase = lead?.Curso || '';
+      // Si el Curso ya trae "Edición" escrita a mano (formatos viejos e inconsistentes), se
+      // deja como está — si no, y hay un número de edición cargado aparte, se agrega prolijo.
+      const curso = lead?.Edicion && !/edici[oó]n/i.test(cursoBase)
+        ? `${cursoBase} — Edición ${lead.Edicion}`
+        : cursoBase;
       return {
         leadId: s.LeadID,
         nombre: lead ? `${lead.Nombre} ${lead.Apellido}` : '(lead no encontrado)',
         email: lead?.EmailEstudiante || '',
-        curso: lead?.Curso || '',
+        curso,
         fechaBaja: fechaBajaAprox.toISOString(),
         fechaDisponible: s.FechaVence,
         diasFaltantes,
@@ -52,7 +58,10 @@ export async function GET(request) {
     })
     .sort((a, b) => new Date(a.fechaDisponible) - new Date(b.fechaDisponible));
 
-  return NextResponse.json({ bajas });
+  const hoy = new Date().toISOString().slice(0, 10);
+  const enviadosReactivacionHoy = seguimiento.filter((s) => (s.MensajeReactivacionEnviado || '').slice(0, 10) === hoy).length;
+
+  return NextResponse.json({ bajas, enviadosReactivacionHoy, limiteReactivacionDiario: 20 });
 }
 
 // Busca al estudiante con lo que haya disponible, en orden de confiabilidad:

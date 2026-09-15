@@ -136,6 +136,8 @@ export default function BajasPage() {
   const [progresoCarga, setProgresoCarga] = useState(null);
   const [resultadoBajasMasivas, setResultadoBajasMasivas] = useState(null);
   const [listaBajas, setListaBajas] = useState([]);
+  const [enviadosReactivacionHoy, setEnviadosReactivacionHoy] = useState(0);
+  const [limiteReactivacionDiario, setLimiteReactivacionDiario] = useState(20);
   const [enviandoMensajeId, setEnviandoMensajeId] = useState(null);
   const [seleccionadas, setSeleccionadas] = useState(new Set());
   const [eliminando, setEliminando] = useState(false);
@@ -198,6 +200,8 @@ export default function BajasPage() {
   async function cargarDatosBajas() {
     const r = await fetch(`/api/seguimiento/baja-masiva?solicitanteEmail=${encodeURIComponent(usuario.email)}`).then((res) => res.json());
     setListaBajas(r.bajas || []);
+    setEnviadosReactivacionHoy(r.enviadosReactivacionHoy || 0);
+    setLimiteReactivacionDiario(r.limiteReactivacionDiario || 20);
   }
 
   async function enviarMensaje1(baja) {
@@ -268,6 +272,8 @@ export default function BajasPage() {
             <IndicadorResumen valor={totalBajas} label="Bajas registradas" />
             <IndicadorResumen valor={listasParaRecontactar} label="Listas para recontactar" colorClase="text-warningText" />
             <IndicadorResumen valor={proximasAlDia90} label="Próximas al día 90" colorClase="text-infoText" />
+            <IndicadorResumen valor={`${enviadosReactivacionHoy}/${limiteReactivacionDiario}`} label="Mails de reactivación hoy"
+              colorClase={enviadosReactivacionHoy >= limiteReactivacionDiario ? 'text-dangerText' : undefined} />
           </div>
         </div>
 

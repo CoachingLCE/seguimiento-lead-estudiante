@@ -20,6 +20,15 @@ export async function POST(request) {
   const filaBaja = seguimiento.find((s) => s.LeadID === body.leadId && s.Lote === 'baja');
   if (!filaBaja) return NextResponse.json({ error: 'No se encontró la baja de este lead' }, { status: 404 });
 
+  // Tope de 20 mails de reactivación por día — para no mandar de más ni que Google nos frene la
+  // cuenta por volumen. Cuenta cuántos ya se mandaron HOY mirando la fecha guardada en cada fila.
+  const hoy = new Date().toISOString().slice(0, 10);
+  const enviadosHoy = seguimiento.filter((s) => (s.MensajeReactivacionEnviado || '').slice(0, 10) === hoy).length;
+  const LIMITE_DIARIO = 20;
+  if (enviadosHoy >= LIMITE_DIARIO) {
+    return NextResponse.json({ error: `Ya se mandaron ${LIMITE_DIARIO} mails de reactivación hoy — es el máximo por día. Probá de nuevo mañana.` }, { status: 429 });
+  }
+
   try {
     await enviarMailReactivacionBaja(lead.EmailEstudiante, `${lead.Nombre} ${lead.Apellido}`, lead.Curso, lead.ID);
   } catch (err) {

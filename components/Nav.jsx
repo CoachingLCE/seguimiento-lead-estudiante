@@ -21,7 +21,8 @@ const GESTION = { label: 'Académico', principal: null, items: [
   { href: '/inscritos', label: 'Estudiantes' },
   { href: '/resumen-estudiantes', label: 'Inscripciones' },
   { href: '/academico', label: 'Académico' },
-  { href: '/diplomas', label: 'Diplomas' }
+  { href: '/diplomas', label: 'Diplomas' },
+  { href: '/comunidades', label: 'Comunidades' }
 ] };
 
 const REPORTES = { label: 'Reportes', principal: '/reportes', items: [
