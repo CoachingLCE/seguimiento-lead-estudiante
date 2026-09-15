@@ -386,7 +386,7 @@ export default function BajasPage() {
                               checked={listaFiltrada.length > 0 && listaFiltrada.every((b) => seleccionadas.has(b.leadId))}
                               onChange={(e) => setSeleccionadas(e.target.checked ? new Set(listaFiltrada.map((b) => b.leadId)) : new Set())} />
                           </th>
-                          <th className="px-2">Nombre</th><th className="px-2">Email</th><th className="px-2">Curso</th><th className="px-2">Fecha baja</th>
+                          <th className="px-2">Nombre</th><th className="px-2">Email</th><th className="px-2">Curso</th><th className="px-2">Edición</th><th className="px-2">Fecha baja</th>
                           <th className="px-2">Reactivación</th>
                           <th className="px-2">Seguimiento</th>
                           <th className="px-2"></th>
@@ -409,6 +409,7 @@ export default function BajasPage() {
                             </td>
                             <td className="px-2 text-textSec whitespace-nowrap">{b.email || <span className="text-warningText">Sin email</span>}</td>
                             <td className="px-2 text-textSec">{b.curso}</td>
+                            <td className="px-2 text-textSec">{b.edicion || '—'}</td>
                             <td className="px-2 whitespace-nowrap">{new Date(b.fechaBaja).toLocaleDateString('es-AR')}</td>
                             <td className="px-2"><BadgeReactivacion b={b} enviandoMensajeId={enviandoMensajeId} onEnviar={enviarMensaje1} /></td>
                             <td className="px-2"><BadgeSeguimiento b={b} /></td>
@@ -439,7 +440,7 @@ export default function BajasPage() {
                           <button onClick={() => eliminarBajas([b.leadId])} disabled={eliminando}
                             className="text-dangerText text-xs disabled:opacity-60 shrink-0">🗑</button>
                         </div>
-                        <p className="text-textSec text-xs mb-1">{b.curso} · {new Date(b.fechaBaja).toLocaleDateString('es-AR')}</p>
+                        <p className="text-textSec text-xs mb-1">{b.curso}{b.edicion ? ` · Edición ${b.edicion}` : ''} · {new Date(b.fechaBaja).toLocaleDateString('es-AR')}</p>
                         <p className="text-xs mb-2">{b.email || <span className="text-warningText">Sin email</span>}</p>
                         <div className="flex flex-wrap gap-1.5">
                           <BadgeReactivacion b={b} enviandoMensajeId={enviandoMensajeId} onEnviar={enviarMensaje1} />

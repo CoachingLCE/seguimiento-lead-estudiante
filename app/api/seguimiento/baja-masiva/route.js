@@ -31,17 +31,20 @@ export async function GET(request) {
       const fechaBajaAprox = new Date(vence.getTime() - 90 * 24 * 60 * 60 * 1000);
       const diasFaltantes = Math.ceil((vence - new Date()) / (24 * 60 * 60 * 1000));
       const diasDesdeLaBaja = Math.floor((new Date() - fechaBajaAprox) / (24 * 60 * 60 * 1000));
-      const cursoBase = lead?.Curso || '';
-      // Si el Curso ya trae "Edición" escrita a mano (formatos viejos e inconsistentes), se
-      // deja como está — si no, y hay un número de edición cargado aparte, se agrega prolijo.
-      const curso = lead?.Edicion && !/edici[oó]n/i.test(cursoBase)
-        ? `${cursoBase} — Edición ${lead.Edicion}`
-        : cursoBase;
+      // El campo Curso a veces trae la edición mezclada adentro, en cualquier orden ("Edición 5 -
+      // Oratoria" u "Oratoria - Edición 5") por como se cargó en su momento — se separan en dos
+      // datos distintos: curso limpio (sin la palabra "Edición") y edición aparte, tomando el
+      // número del campo Edicion del lead si está, o si no del texto viejo.
+      const cursoCrudo = lead?.Curso || '';
+      const matchEdicionEnTexto = cursoCrudo.match(/edici[oó]n\s*(\d+)\s*-?\s*|-\s*edici[oó]n\s*(\d+)/i);
+      const edicion = lead?.Edicion || matchEdicionEnTexto?.[1] || matchEdicionEnTexto?.[2] || '';
+      const curso = cursoCrudo.replace(/edici[oó]n\s*\d+\s*-?\s*|-?\s*edici[oó]n\s*\d+/gi, '').replace(/^[\s—-]+|[\s—-]+$/g, '').trim();
       return {
         leadId: s.LeadID,
         nombre: lead ? `${lead.Nombre} ${lead.Apellido}` : '(lead no encontrado)',
         email: lead?.EmailEstudiante || '',
         curso,
+        edicion,
         fechaBaja: fechaBajaAprox.toISOString(),
         fechaDisponible: s.FechaVence,
         diasFaltantes,
