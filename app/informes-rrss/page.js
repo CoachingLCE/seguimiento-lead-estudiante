@@ -8,14 +8,14 @@ import { useSession } from '../../lib/useSession';
 import { tienePermisoInformesRRSS } from '../../lib/permisos';
 
 const PLATAFORMAS = [
-  { id: 'instagram', label: 'Instagram', color: 'text-accentMagenta' },
-  { id: 'linkedin', label: 'LinkedIn', color: 'text-infoText' },
-  { id: 'youtube', label: 'YouTube', color: 'text-dangerText' },
-  { id: 'google_business', label: 'Google Business', color: 'text-warningText' },
-  { id: 'threads', label: 'Threads', color: 'text-text' },
-  { id: 'whatsapp_comunidad', label: 'Comunidad WhatsApp', color: 'text-successText' },
-  { id: 'instagram_comunidad', label: 'Comunidad Instagram', color: 'text-accentPurple' },
-  { id: 'blog', label: 'Blog', color: 'text-accentTeal' }
+  { id: 'instagram', label: 'Instagram', color: 'text-accentMagenta', icono: '📷' },
+  { id: 'linkedin', label: 'LinkedIn', color: 'text-infoText', icono: '💼' },
+  { id: 'youtube', label: 'YouTube', color: 'text-dangerText', icono: '▶️' },
+  { id: 'google_business', label: 'Google Business', color: 'text-warningText', icono: '📍' },
+  { id: 'threads', label: 'Threads', color: 'text-text', icono: '🧵' },
+  { id: 'whatsapp_comunidad', label: 'Comunidad WhatsApp', color: 'text-successText', icono: '💬' },
+  { id: 'instagram_comunidad', label: 'Comunidad Instagram', color: 'text-accentPurple', icono: '👥' },
+  { id: 'blog', label: 'Blog', color: 'text-accentTeal', icono: '📝' }
 ];
 const TIPOS_PIEZA = ['Reel', 'Carrusel', 'Post', 'Video', 'Artículo', 'Historia'];
 const CAMPOS_METRICA = [
@@ -528,9 +528,10 @@ export default function InformesRRSSPage() {
 
   if (!usuario) return null;
 
-  const plataformasConDatos = PLATAFORMAS.filter((p) =>
-    ['instagram', 'linkedin', 'youtube'].includes(p.id) || metricas.some((m) => m.Plataforma === p.id)
-  );
+  // Se muestran SIEMPRE todas las plataformas — antes solo aparecían Instagram/LinkedIn/YouTube
+  // fijo, y el resto (Google Business, Threads, Comunidades) solo si ya tenían datos ESE mes en
+  // particular, así que en un mes nuevo (vacío) directamente no se veían ni el botón para cargarlas.
+  const plataformasConDatos = PLATAFORMAS;
   const totales = totalesDeMetricas(metricas);
   const totalesAnterior = totalesDeMetricas(metricasAnterior);
   const hayDatosMesAnterior = metricasAnterior.length > 0;
@@ -864,7 +865,7 @@ export default function InformesRRSSPage() {
                   return (
                     <div key={plat.id} className="bg-surface border border-border rounded-2xl p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <p className={`text-sm font-semibold ${plat.color}`}>{plat.label}</p>
+                        <p className={`text-sm font-semibold ${plat.color}`}>{plat.icono} {plat.label}</p>
                         <button onClick={() => abrirEdicionMetrica(plat.id)} className="text-xs text-accentTeal font-semibold shrink-0">
                           {m ? '✏️ Editar' : '+ Cargar'}
                         </button>
@@ -890,7 +891,7 @@ export default function InformesRRSSPage() {
 
               {editandoPlataforma && (
                 <div className="bg-surface border border-accentTeal/40 rounded-2xl p-4 sm:p-5 mt-3">
-                  <p className="text-sm font-semibold mb-3">Métricas de {PLATAFORMAS.find((p) => p.id === editandoPlataforma)?.label} — {labelDeMes(mes)}</p>
+                  <p className="text-sm font-semibold mb-3">{PLATAFORMAS.find((p) => p.id === editandoPlataforma)?.icono} Métricas de {PLATAFORMAS.find((p) => p.id === editandoPlataforma)?.label} — {labelDeMes(mes)}</p>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
                     {CAMPOS_METRICA.map(([campo, label]) => (
                       <div key={campo}>
