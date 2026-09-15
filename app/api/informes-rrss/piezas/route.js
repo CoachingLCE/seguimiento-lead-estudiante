@@ -15,7 +15,7 @@ function encontrarPieza(todas, { piezaId, rowIndex }) {
   return null;
 }
 
-const CAMPOS_ENTERO_PIEZA = ['views', 'likes', 'comments', 'saves', 'shares'];
+const CAMPOS_ENTERO_PIEZA = ['views', 'likes', 'comments', 'saves', 'shares', 'leads'];
 function validarPieza(body) {
   for (const campo of CAMPOS_ENTERO_PIEZA) {
     const v = body[campo];
@@ -29,18 +29,23 @@ function validarPieza(body) {
 }
 
 // GET /api/informes-rrss/piezas?mes=2026-08&solicitanteEmail=...
+// GET /api/informes-rrss/piezas?desde=2026-01&hasta=2026-12&solicitanteEmail=... (rango, para el
+// Informe anual y el ranking de rendimiento por tipo de contenido en todo el año)
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const mes = searchParams.get('mes');
+  const desde = searchParams.get('desde');
+  const hasta = searchParams.get('hasta');
   const solicitante = await findUsuario(searchParams.get('solicitanteEmail'));
   if (!tienePermisoInformesRRSS(solicitante)) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
   }
-  if (!mes) return NextResponse.json({ error: 'Falta el mes' }, { status: 400 });
+  if (!mes && !(desde && hasta)) return NextResponse.json({ error: 'Falta el mes (o el rango desde/hasta)' }, { status: 400 });
 
   try {
     const todas = await readSheet('RRSSPiezas');
-    const piezas = todas.filter((p) => p.Mes === mes).sort((a, b) => new Date(b.FechaCreacion) - new Date(a.FechaCreacion));
+    const piezas = (mes ? todas.filter((p) => p.Mes === mes) : todas.filter((p) => p.Mes >= desde && p.Mes <= hasta))
+      .sort((a, b) => new Date(b.FechaCreacion) - new Date(a.FechaCreacion));
     return NextResponse.json({ piezas });
   } catch (err) {
     console.error('Error cargando piezas RRSS:', err);
@@ -69,7 +74,8 @@ export async function POST(request) {
       body.mes, body.plataforma || '', body.tipo || '', titulo,
       body.views ?? '', body.likes ?? '', body.comments ?? '', body.saves ?? '', body.shares ?? '',
       body.guion ?? '', body.notaIA ?? '',
-      body.solicitanteEmail, body.solicitanteNombre, new Date().toISOString(), piezaId
+      body.solicitanteEmail, body.solicitanteNombre, new Date().toISOString(), piezaId,
+      body.leads ?? ''
     ]);
 
     await registrarAccion(
@@ -108,7 +114,8 @@ export async function PATCH(request) {
       body.saves ?? fila.Saves, body.shares ?? fila.Shares,
       body.guion ?? fila.Guion, body.notaIA ?? fila.NotaIA,
       fila.CreadoPorEmail, fila.CreadoPorNombre, fila.FechaCreacion,
-      fila.PiezaID || nuevoPiezaId() // si era una pieza vieja sin ID, se le asigna uno recién ahora
+      fila.PiezaID || nuevoPiezaId(), // si era una pieza vieja sin ID, se le asigna uno recién ahora
+      body.leads ?? fila.Leads ?? ''
     ]);
 
     await registrarAccion(

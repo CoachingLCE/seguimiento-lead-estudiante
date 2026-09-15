@@ -4,18 +4,24 @@ import { findUsuario, tienePermisoInformesRRSS } from '../../../../lib/auth';
 import { registrarAccion } from '../../../../lib/auditoria';
 
 // GET /api/informes-rrss/metricas?mes=2026-08&solicitanteEmail=...
+// GET /api/informes-rrss/metricas?desde=2026-01&hasta=2026-12&solicitanteEmail=... (rango, para
+// los gráficos de Evolución y el Informe anual — evita pedir mes por mes en paralelo)
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const mes = searchParams.get('mes');
+  const desde = searchParams.get('desde');
+  const hasta = searchParams.get('hasta');
   const solicitante = await findUsuario(searchParams.get('solicitanteEmail'));
   if (!tienePermisoInformesRRSS(solicitante)) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
   }
-  if (!mes) return NextResponse.json({ error: 'Falta el mes' }, { status: 400 });
+  if (!mes && !(desde && hasta)) return NextResponse.json({ error: 'Falta el mes (o el rango desde/hasta)' }, { status: 400 });
 
   try {
     const todas = await readSheet('RRSSMetricas');
-    const metricas = todas.filter((m) => m.Mes === mes);
+    const metricas = mes
+      ? todas.filter((m) => m.Mes === mes)
+      : todas.filter((m) => m.Mes >= desde && m.Mes <= hasta); // "YYYY-MM" ordena bien como texto
     return NextResponse.json({ metricas });
   } catch (err) {
     console.error('Error cargando métricas RRSS:', err);
