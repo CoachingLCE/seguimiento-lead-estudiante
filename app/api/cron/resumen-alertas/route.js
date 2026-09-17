@@ -6,7 +6,8 @@ import { enviarMailResumenAlertas } from '../../../../lib/mailer';
 const DESTINATARIOS = [
   'lourdes.barrantes@institutoilce.com',
   'Victoria.Defilippe@institutoilce.com',
-  'sofia.salgueiro@institutoilce.com'
+  'sofia.salgueiro@institutoilce.com',
+  'Macarena.Juncos@institutoilce.com'
 ];
 
 // GET /api/cron/resumen-alertas

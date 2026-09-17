@@ -19,7 +19,7 @@ const CLAVE_ULTIMOS_ADICIONALES = 'nuevoLead:ultimosAdicionales';
 let contadorIds = 0;
 function contactoVacio() {
   contadorIds += 1;
-  return { key: `c${Date.now()}${contadorIds}`, raw: '', email: '', instagram: '', sinNombre: false };
+  return { key: `c${Date.now()}${contadorIds}`, raw: '', email: '', instagram: '', sinNombre: false, yaContactado: false };
 }
 
 function escaparRegex(s) {
@@ -442,7 +442,7 @@ export default function NuevoLeadPage() {
             nombre: p.nombre, apellido: '', whatsapp: p.whatsapp, email: p.email || contacto.email,
             instagram: p.instagram || contacto.instagram, pais: p.pais, notasIniciales: p.notasExtra,
             curso: cursoFinal, cursosAdicionales: cursosAdicionales.join(', '), origen: origenFinal,
-            cargadoPorEmail: usuario.email, cargadoPorNombre: usuario.nombre
+            cargadoPorEmail: usuario.email, cargadoPorNombre: usuario.nombre, yaContactado: contacto.yaContactado
           })
         });
         i += 1;
@@ -636,6 +636,11 @@ export default function NuevoLeadPage() {
                         <input type="checkbox" checked={!!contacto.sinNombre}
                           onChange={(e) => actualizarContacto(index, 'sinNombre', e.target.checked)} />
                         Sin nombre
+                      </label>
+                      <label className="flex items-center gap-1 text-[11px] text-textMuted ml-1" title="Marcalo si ya lo contactaste por fuera de la app antes de cargarlo — así el Lote 0 queda solo para los que todavía nadie contactó">
+                        <input type="checkbox" checked={!!contacto.yaContactado}
+                          onChange={(e) => actualizarContacto(index, 'yaContactado', e.target.checked)} />
+                        Ya contactado
                       </label>
                     </div>
                     <div className="flex items-center gap-3">

@@ -63,7 +63,7 @@ export default function FichasEnviadasPage() {
       {!puedeVer ? (
         <AccesoDenegado seccion="Fichas enviadas" />
       ) : (
-      <div className="max-w-[1100px] mx-auto px-6 pb-16">
+      <div className="max-w-[1500px] mx-auto px-6 pb-16">
         <h3 className="text-lg font-bold mb-1">📄 Fichas enviadas</h3>
         <p className="text-textMuted text-xs mb-3">
           Todos los leads a los que se les marcó "Ficha enviada" como resultado, con fecha y quién la mandó.

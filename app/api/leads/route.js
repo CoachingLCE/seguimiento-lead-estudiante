@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { readSheet, appendRow, updateRow, deleteRows } from '../../../lib/sheets';
 import { findUsuario, tienePermisoOperativo, tienePermisoCrearLeads, tienePermisoEditarLead, tienePermisoEditarVenta, tienePermisoEditarContactoEstudiante } from '../../../lib/auth';
 import { registrarAccion } from '../../../lib/auditoria';
-import { HORAS_LOTE_1, DIAS_LOTE_3, DIAS_LOTE_4, DIAS_LOTE_5, DIAS_LOTE_6 } from '../../../lib/constants';
+import { HORAS_LOTE_1, DIAS_LOTE_2, DIAS_LOTE_3, DIAS_LOTE_4, DIAS_LOTE_5, DIAS_LOTE_6 } from '../../../lib/constants';
 
 // Mapea el nombre de campo que manda el front al nombre real de columna en la hoja Leads,
 // más una etiqueta legible para el historial de auditoría.
@@ -88,16 +88,33 @@ export async function POST(request) {
     return f.toISOString();
   }
   const vence1 = inicioDelDiaMasHoras(HORAS_LOTE_1);
+  const vence2 = inicioDelDiaMasHoras(DIAS_LOTE_2 * 24);
   const vence3 = inicioDelDiaMasHoras(DIAS_LOTE_3 * 24);
   const vence4 = inicioDelDiaMasHoras(DIAS_LOTE_4 * 24);
   const vence5 = inicioDelDiaMasHoras(DIAS_LOTE_5 * 24);
   const vence6 = inicioDelDiaMasHoras(DIAS_LOTE_6 * 24);
 
+  // "Ya contactado" (tildado en Nuevo lead): el equipo a veces carga un lead DESPUÉS de haberlo
+  // contactado por fuera de la app — sin esto, ese lead se mostraba en el Lote 0 como si nadie le
+  // hubiera escrito todavía. Acá la fila de Lote 1 se crea directamente como "ya contactada" (no
+  // aparece en Lote 0 ni pide un primer contacto de nuevo), y se genera de una el Lote 2 —lo mismo
+  // que pasaría si se marcara el contacto manualmente con un resultado no definitivo—, para no
+  // perder el seguimiento a los 10 días.
   await appendRow('Seguimiento', [
-    leadId, '1', vence1, body.cargadoPorEmail, body.cargadoPorNombre, 'FALSE', '', '', '', '', '', '', '', ''
+    leadId, '1', vence1, body.cargadoPorEmail, body.cargadoPorNombre,
+    body.yaContactado ? 'TRUE' : 'FALSE',
+    body.yaContactado ? 'Contactado antes de cargar el lead' : '',
+    body.yaContactado ? fechaIngreso : '',
+    '', '', '', body.yaContactado ? body.cargadoPorNombre : '', '', ''
   ]);
-  // Lote 2 no se crea todavía: se genera dinámicamente cuando el Lote 1 se marca contactado sin conversión
-  // (ver PATCH en /api/seguimiento). Lotes 3, 4 y 5 sí se pre-crean, "Sin asignación" (AsignadoA vacío).
+  if (body.yaContactado) {
+    await appendRow('Seguimiento', [
+      leadId, '2', vence2, body.cargadoPorEmail, body.cargadoPorNombre, 'FALSE', '', '', '', '', '', '', '', ''
+    ]);
+  }
+  // Lote 2 (cuando no se marcó "ya contactado") no se crea todavía: se genera dinámicamente cuando
+  // el Lote 1 se marca contactado sin conversión (ver PATCH en /api/seguimiento). Lotes 3, 4 y 5 sí
+  // se pre-crean, "Sin asignación" (AsignadoA vacío).
   await appendRow('Seguimiento', [
     leadId, '3', vence3, '', '', 'FALSE', '', '', '', '', '', '', '', ''
   ]);

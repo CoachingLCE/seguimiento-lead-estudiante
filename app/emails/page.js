@@ -53,7 +53,7 @@ const AUTOMATIZACIONES = [
   },
   {
     cuando: 'Todos los viernes a las 8 AM (automático)',
-    quien: 'Lourdes, Victoria y Sofía',
+    quien: 'Lourdes, Victoria, Sofía y Macarena',
     tipo: 'Resumen semanal',
     remitente: 'Instituto ILCE',
     cc: '—',
@@ -73,25 +73,27 @@ function ModalVerMail({ automatizacion, onClose }) {
   if (!automatizacion) return null;
   const preview = automatizacion.previsualizar();
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-surface2 border border-border rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="p-5 border-b border-border">
-          <div className="flex items-start justify-between gap-3 mb-3">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-3 sm:p-4" onClick={onClose}>
+      <div className="bg-surface2 border border-border rounded-2xl w-full max-w-3xl h-[94vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="p-4 sm:p-5 border-b border-border shrink-0">
+          <div className="flex items-start justify-between gap-3 mb-2">
             <p className="text-sm font-bold">✉️ {automatizacion.tipo}</p>
             <button onClick={onClose} className="text-textMuted hover:text-text text-sm">✕</button>
           </div>
-          <div className="text-xs text-textSec space-y-1">
+          <div className="text-xs text-textSec flex flex-wrap gap-x-4 gap-y-0.5">
             <p><span className="text-textMuted">De:</span> {automatizacion.remitente}</p>
             <p><span className="text-textMuted">CC:</span> {automatizacion.cc}</p>
             <p><span className="text-textMuted">Asunto:</span> {automatizacion.asunto}</p>
           </div>
-          <p className="text-[11px] text-textMuted mt-2">Vista previa con datos de ejemplo — el contenido real varía según el estudiante/lead.</p>
+          <p className="text-[11px] text-textMuted mt-1">Vista previa con datos de ejemplo — el contenido real varía según el estudiante/lead.</p>
         </div>
-        <div className="p-5 bg-bg">
+        {/* El cuerpo ocupa todo el espacio que sobra del modal (en vez de una altura fija chica),
+            para que se vea la mayor cantidad de contenido posible sin tener que scrollear de más. */}
+        <div className="p-3 sm:p-5 bg-bg flex-1 min-h-0">
           {preview.html ? (
-            <iframe title="Vista previa del mail" srcDoc={preview.html} className="w-full h-[480px] bg-white rounded-lg border border-border" />
+            <iframe title="Vista previa del mail" srcDoc={preview.html} className="w-full h-full bg-white rounded-lg border border-border" />
           ) : (
-            <pre className="whitespace-pre-wrap text-xs text-textSec bg-surface border border-border rounded-lg p-4">{preview.texto}</pre>
+            <pre className="whitespace-pre-wrap text-xs text-textSec bg-surface border border-border rounded-lg p-4 h-full overflow-y-auto">{preview.texto}</pre>
           )}
         </div>
       </div>
