@@ -1,0 +1,339 @@
+export const CURSOS = [
+  'Coaching de Equipos',
+  'Coaching Deportivo',
+  'Coaching Educativo',
+  'Coaching Inmobiliario',
+  'Coaching Ontológico Profesional',
+  'Coaching Vocacional',
+  'Comunidades',
+  'Copywriting para redes sociales',
+  'Formación para formadores',
+  'In Company',
+  'OKR - Objetivos y Resultados Clave',
+  'Oratoria'
+].sort((a, b) => a.localeCompare(b, 'es'));
+
+// Opción para elegir "Otros" en el curso: al seleccionarla se muestra un campo de texto libre
+// y ese texto pasa a ser el valor real guardado como Curso.
+export const CURSO_OTROS = 'Otros';
+
+// Opción para "Nuevo lead" cuando todavía no se sabe el curso — se completa después desde Seguimiento.
+export const CURSO_SIN_DEFINIR = 'Sin definir (a confirmar)';
+
+// Paleta fija por formación — a propósito NO es por hash, para poder elegir colores realmente
+// distinguibles entre sí (no varios tonos de violeta/verde parecidos). Si se agrega un curso nuevo
+// que no está en esta lista, se le asigna uno de PALETA_CURSOS_RESERVA por hash, como respaldo.
+export const COLOR_POR_CURSO = {
+  'Coaching Educativo': '#3b82f6',                 // azul
+  'Coaching de Equipos': '#22c55e',                 // verde
+  'Coaching Ontológico Profesional': '#a855f7',     // violeta
+  'Coaching Deportivo': '#f97316',                  // naranja
+  'Coaching Vocacional': '#eab308',                  // amarillo/ámbar
+  'Coaching Inmobiliario': '#06b6d4',               // celeste
+  'Copywriting para redes sociales': '#ec4899',     // rosa/fucsia
+  'Formación para formadores': '#14b8a6',           // verde azulado (teal)
+  'OKR - Objetivos y Resultados Clave': '#6366f1',  // índigo
+  'Oratoria': '#ef4444'                             // rojo
+};
+const PALETA_CURSOS_RESERVA = ['#84cc16', '#f43f5e', '#0ea5e9', '#d946ef'];
+
+// Normaliza "edición 16" / "Edición 16" / "EDICIÓN 16" a "Edición 16" — si no, dos personas
+// que escriben la misma edición con distinta mayúscula/minúscula quedan como cosas separadas.
+export function normalizarEdicion(valor) {
+  const v = (valor || '').trim();
+  if (!v) return '';
+  return v.replace(/^edici[oó]n\b/i, 'Edición');
+}
+
+export function colorParaCurso(curso) {
+  if (COLOR_POR_CURSO[curso]) return COLOR_POR_CURSO[curso];
+  const n = (curso || 'Sin curso').split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  return PALETA_CURSOS_RESERVA[n % PALETA_CURSOS_RESERVA.length];
+}
+
+// Lista consolidada de orígenes — incluye los agregados en distintas rondas de pedidos.
+export const ORIGENES = [
+  'Baja (vuelve a cursar)',
+  'Blog',
+  'Campaña de Marketing',
+  'Campañas por estados de WhatsApp',
+  'Consulta anterior',
+  'Dato compartido en Instagram',
+  'Ebook',
+  'Email Marketing',
+  'Equipo ILCE',
+  'Estudiante',
+  'Facebook',
+  'Google',
+  'Google Ads',
+  'Instagram',
+  'Mentorías',
+  'Publicidad Meta',
+  'Recomendación de estudiante',
+  'Sesiones gratuitas',
+  'Sitio web',
+  'Whatsapp - Publicidad',
+  'Whatsapp historias',
+  'Wpp - consulta anterior'
+].sort((a, b) => a.localeCompare(b, 'es'));
+
+// Opción "Otro" para Origen: al elegirla se muestra un campo de texto libre, igual que Curso.
+export const ORIGEN_OTRO = 'Otro';
+export const ORIGEN_SIN_DEFINIR = 'Sin definir';
+
+// País del lead — Argentina primero porque es el valor por defecto, el resto alfabético.
+export const PAISES = [
+  'Argentina', 'Bolivia', 'Chile', 'Colombia', 'Costa Rica', 'Cuba', 'Ecuador', 'El Salvador',
+  'España', 'Estados Unidos', 'Guatemala', 'Honduras', 'México', 'Nicaragua', 'Panamá',
+  'Paraguay', 'Perú', 'Puerto Rico', 'República Dominicana', 'Uruguay', 'Venezuela',
+  'Alemania', 'Francia', 'Italia', 'Portugal', 'Reino Unido', 'Suiza', 'Brasil', 'Canadá', 'Australia', 'Otro'
+];
+
+// Detecta el país a partir del código de un número de WhatsApp/teléfono (con o sin "+").
+// Los códigos de 3 dígitos van primero para no confundirlos con prefijos de 2 o 1 dígito.
+const CODIGOS_PAIS = [
+  { codigo: '591', pais: 'Bolivia' },
+  { codigo: '506', pais: 'Costa Rica' },
+  { codigo: '593', pais: 'Ecuador' },
+  { codigo: '503', pais: 'El Salvador' },
+  { codigo: '502', pais: 'Guatemala' },
+  { codigo: '504', pais: 'Honduras' },
+  { codigo: '505', pais: 'Nicaragua' },
+  { codigo: '507', pais: 'Panamá' },
+  { codigo: '595', pais: 'Paraguay' },
+  { codigo: '598', pais: 'Uruguay' },
+  // +1 es compartido por EEUU, Puerto Rico y República Dominicana — se distingue por el código de área.
+  { codigo: '1809', pais: 'República Dominicana' },
+  { codigo: '1829', pais: 'República Dominicana' },
+  { codigo: '1849', pais: 'República Dominicana' },
+  { codigo: '1787', pais: 'Puerto Rico' },
+  { codigo: '1939', pais: 'Puerto Rico' },
+  { codigo: '54', pais: 'Argentina' },
+  { codigo: '56', pais: 'Chile' },
+  { codigo: '57', pais: 'Colombia' },
+  { codigo: '53', pais: 'Cuba' },
+  { codigo: '34', pais: 'España' },
+  { codigo: '52', pais: 'México' },
+  { codigo: '51', pais: 'Perú' },
+  { codigo: '58', pais: 'Venezuela' },
+  { codigo: '49', pais: 'Alemania' },
+  { codigo: '33', pais: 'Francia' },
+  { codigo: '39', pais: 'Italia' },
+  { codigo: '351', pais: 'Portugal' },
+  { codigo: '44', pais: 'Reino Unido' },
+  { codigo: '41', pais: 'Suiza' },
+  { codigo: '55', pais: 'Brasil' },
+  { codigo: '61', pais: 'Australia' },
+  { codigo: '1', pais: 'Estados Unidos' }
+];
+
+export function detectarPaisPorWhatsapp(numero) {
+  const digitos = (numero || '').replace(/[^\d]/g, '');
+  if (!digitos) return '';
+  for (const { codigo, pais } of CODIGOS_PAIS) {
+    if (digitos.startsWith(codigo)) return pais;
+  }
+  // Error típico: poner un "0" de más justo después del "+" (ej: "+049..." en vez de "+49...").
+  // Si no matcheó nada arriba, se reintenta sacando ese cero inicial.
+  if (digitos.startsWith('0')) {
+    const sinCero = digitos.slice(1);
+    for (const { codigo, pais } of CODIGOS_PAIS) {
+      if (sinCero.startsWith(codigo)) return pais;
+    }
+  }
+  return '';
+}
+
+export const PRIORIDADES = ['Alta', 'Media', 'Baja'];
+
+export const MEDIOS_PAGO = ['MercadoPago', 'Débito automático', 'Western Union', 'Paypal'];
+
+// Resultados "de progreso" (no truncan el seguimiento, pero indican que hay algo más avanzado
+// que un simple contacto): mostrar también en la ficha del lead como hitos.
+// Acción sugerida para el equipo en cada lote de Seguimiento — qué decir/ofrecer según cuánto
+// tiempo pasó sin resolver el lead. El script usa [la formación consultada] como marcador para
+// reemplazar por el curso real de cada lead (varía según a quién se lo estés escribiendo).
+export const ACCIONES_POR_LOTE = {
+  '0': {
+    label: 'Contactar y pasar información con descuento',
+    script: null
+  },
+  '1': {
+    label: 'Contactar y preguntar si tiene alguna duda y pregunta',
+    script: null
+  },
+  '2': {
+    label: 'Ofrecer ebook gratis',
+    script: null
+  },
+  '3': {
+    label: 'Ofrecer un descuento del 75% en la primer cuota',
+    script: 'Buenas ¿cómo estás? Solo por hoy y mañana tenemos un descuento en la primer cuota del 75%. ¿Te interesaría...?'
+  },
+  '4': {
+    label: 'Retomar contacto con info actualizada',
+    script: 'Hola. Hace un tiempo te interesaste por [la formación que consultó]. Te escribo porque ya tenemos días y horarios actualizados para que puedas sumarte sin complicaciones. ¿Querés que te envíe la info actualizada por acá?'
+  },
+  '5': {
+    label: 'Retomar contacto con info actualizada',
+    script: 'Hola. Hace un tiempo te interesaste por [la formación que consultó]. Te escribo porque ya tenemos días y horarios actualizados para que puedas sumarte sin complicaciones. ¿Querés que te envíe la info actualizada por acá?'
+  },
+  '6': {
+    label: 'Retomar contacto con info actualizada',
+    script: 'Hola. Hace un tiempo te interesaste por [la formación que consultó]. Te escribo porque ya tenemos días y horarios actualizados para que puedas sumarte sin complicaciones. ¿Querés que te envíe la info actualizada por acá?'
+  }
+};
+
+export const RESULTADOS_PROGRESO = ['Ficha enviada', 'Ficha recibida', 'Link de pago enviado', 'Pago recibido'];
+
+export const RESULTADOS_CONTACTO = [
+  'No contestó',
+  'Va a pensarlo',
+  'No le interesa',
+  'Interesado',
+  'Ya fue estudiante del curso consultado',
+  ...RESULTADOS_PROGRESO
+];
+
+// Resultados que NO requieren seguir escalando de lote (el lead ya dio una respuesta definitiva
+// o está en un estado de avance activo hacia la venta — no tiene sentido seguir "molestando").
+export const RESULTADOS_FINALES = ['Interesado', 'No le interesa', 'Ya fue estudiante del curso consultado', ...RESULTADOS_PROGRESO];
+
+// Personas que cerraron la venta, para el desplegable de "Quién cerró la venta" en el modal.
+// Se puede elegir "Otro" y escribir un nombre libre si no está en la lista.
+export const EQUIPO_VENTAS = [
+  'Jesabel Reigada',
+  'Alexander Juncos',
+  'Macarena Juncos',
+  'Diego Lerner'
+];
+
+// Roles posibles. Un usuario puede tener más de uno (ej: Jennifer = Coordinador + Inscripciones).
+// "CoordinadorEstudiantes" es el rol de Sofía: ve y controla todo el área de Estudiantes
+// (altas, bienvenidas, resumen del área) pero no el circuito comercial.
+export const ROLES = [
+  'Admin',
+  'Coordinador',
+  'CoordinadorEstudiantes',
+  'Estudiantes',
+  'Inscripciones',
+  'Academico',
+  'ComunicacionMKT'
+];
+
+// Nombres de rol tal cual se guardan en la hoja de Usuarios (fijos, no cambian) vs. cómo se
+// muestran en pantalla (pueden ser distintos por persona según la combinación de roles que tenga,
+// ej: Jennifer tiene Coordinador+Academico y se le muestra "Coordinadora de MKT").
+export function nombreVisibleRol(rol, todosLosRoles = []) {
+  if (rol === 'Coordinador') {
+    return todosLosRoles.includes('Academico') ? 'Coordinadora de MKT' : 'Coordinadora de inscripciones';
+  }
+  if (rol === 'CoordinadorEstudiantes') return 'Coordinadora académica';
+  if (rol === 'Academico') return null; // se absorbe en la etiqueta de "Coordinador" de arriba
+  return rol;
+}
+
+export function nombreVisibleRoles(roles) {
+  if (!roles) return '';
+  return roles.map((r) => nombreVisibleRol(r, roles)).filter(Boolean).join(' + ');
+}
+
+// Personas cuyos leads no pasan por el seguimiento 48hs/10días/mes sino que van directo a Lote 0
+// (consultas de Facebook / MKT). Se identifica por email.
+export const EMAILS_LOTE_CERO = ['jennifer.rebasti@institutoilce.com'];
+
+// Informes RRSS: acceso restringido a estas 2 personas puntuales (no a todo el que sea Admin) —
+// así si en el futuro se suma otro Admin, no lo ve automáticamente.
+export const EMAILS_INFORMES_RRSS = ['diegolernerdl@gmail.com', 'jennifer.rebasti@institutoilce.com'];
+
+export const HORAS_LOTE_1 = 48;
+export const DIAS_LOTE_2 = 10;
+export const DIAS_LOTE_3 = 30; // "al mes"
+export const DIAS_LOTE_4 = 60; // "a los 2 meses"
+export const DIAS_LOTE_5 = 90; // "a los 3 meses"
+export const DIAS_LOTE_6 = 180; // "a los 6 meses"
+
+// Ya no se usa para calcular (ver /api/cron/generar-estudiantes: ahora es por día calendario,
+// "venta de ayer o antes"), se deja solo como referencia histórica del criterio original.
+export const HORAS_PARA_ALTA_ESTUDIANTE = 24;
+
+export const PASSWORD_GENERICA = 'Hola123';
+
+// Google Sheets devuelve los valores de las celdas YA FORMATEADOS como texto, según el formato
+// de esa celda y la configuración regional del Sheet — por ejemplo, un monto de 80800 puede venir
+// como el texto "80.800" (con punto de miles, como se escribe en Argentina). El problema es que
+// JavaScript interpreta el punto SIEMPRE como separador DECIMAL (no cambia por idioma), entonces
+// Number("80.800") da 80.8, no 80800 — y de ahí sale un monto 1000 veces más chico del real.
+// Por eso, para leer un monto/cantidad que viene del Sheet, hay que sacar los puntos de miles
+// ANTES de convertir a número (nunca usar Number(...) directo sobre estos campos).
+export function numeroDesdeSheet(valor) {
+  if (valor === '' || valor === null || valor === undefined) return 0;
+  if (typeof valor === 'number') return valor;
+  const limpio = String(valor).trim().replace(/\./g, '');
+  const n = Number(limpio);
+  return Number.isFinite(n) ? n : 0;
+}
+
+// Datos para el mail de bienvenida al estudiante (área de Estudiantes)
+// ⚠️ Reemplazar PLATAFORMA_URL por el link real de la plataforma antes de ir a producción.
+export const PLATAFORMA_URL = 'https://plataforma.institutoilce.com';
+export const PREGUNTAS_FRECUENTES_URL = 'https://institutoilce.com/preguntas-frecuentes';
+export const CONTACTO_ESTUDIANTES_EMAIL = 'estudiantes@institutoilce.com';
+export const CONTACTO_ESTUDIANTES_TEL = '+54 9 11 6791-8829';
+
+// URL pública del sitio, para armar links dentro de los mails (botones que el estudiante puede
+// tocar sin necesitar login, como "Confirmar recepción").
+export const APP_URL = 'https://seguimiento-lead-estudiante.vercel.app';
+
+// Sugiere agregar el "9" que WhatsApp necesita para reconocer celulares argentinos, cuando se
+// pegó el número CON el "54" pero SIN el 9 (ej: "54 11 3031-0203" en vez de "54 9 11 3031-0203").
+// A propósito solo actúa sobre este caso puntual y ya confirmado — para otros países no hay
+// certeza de cuál es el formato correcto, así que no se toca nada ahí (mejor no sugerir que
+// "corregir" mal un número que ya estaba bien). Nunca se aplica solo: siempre es un botón
+// para que la persona lo confirme con un clic.
+export function sugerirCorreccionWhatsappArgentino(numeroOriginal, pais) {
+  if (pais !== 'Argentina') return null;
+  const digitos = (numeroOriginal || '').replace(/[^\d]/g, '');
+  if (!digitos.startsWith('54')) return null;
+  const resto = digitos.slice(2);
+  if (resto.length !== 10 || resto.startsWith('9')) return null; // ya tiene el 9, o no es el largo esperado
+  return `+54 9 ${resto.slice(0, 2)} ${resto.slice(2, 6)}-${resto.slice(6)}`;
+}
+
+// Compara números de WhatsApp de forma tolerante al "9" que Argentina agrega para celulares
+// (ej: +54 11 7360-6286 y +54 9 11 7360-6286 son el MISMO número) — en vez de comparar todos los
+// dígitos, se comparan solo los últimos 10 (código de área + número), que es lo que no cambia
+// entre esas variantes. Sirve para español/otros países también, ya que 10 dígitos alcanza para
+// identificar el número real sin depender del prefijo de país que se haya tipeado.
+export function normalizarWhatsapp(v) {
+  const digitos = (v || '').replace(/[^\d]/g, '');
+  return digitos.slice(-10);
+}
+
+// Abre Gmail web para redactar un mail — a diferencia de "mailto:", funciona siempre,
+// sin depender de que la compu tenga un programa de mail configurado como predeterminado.
+export function enlaceGmail(email, asunto = '') {
+  const params = new URLSearchParams({ view: 'cm', fs: '1', to: email || '' });
+  if (asunto) params.set('su', asunto);
+  return `https://mail.google.com/mail/?${params.toString()}`;
+}
+
+// Cuenta horas transcurridas entre una fecha y ahora, SIN contar sábados ni domingos
+// (se usa para las alertas de "48hs hábiles" en Estudiantes).
+export function horasHabilesTranscurridas(desde) {
+  if (!desde) return 0;
+  let horas = 0;
+  let cursor = new Date(desde);
+  const ahora = new Date();
+  if (cursor >= ahora) return 0;
+  while (cursor < ahora) {
+    const dia = cursor.getDay(); // 0 = domingo, 6 = sábado
+    const finDelDia = new Date(cursor);
+    finDelDia.setHours(24, 0, 0, 0);
+    const tope = ahora < finDelDia ? ahora : finDelDia;
+    const horasEnEsteTramo = (tope - cursor) / (1000 * 60 * 60);
+    if (dia !== 0 && dia !== 6) horas += horasEnEsteTramo;
+    cursor = finDelDia;
+  }
+  return horas;
+}
