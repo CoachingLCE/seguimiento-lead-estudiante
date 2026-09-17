@@ -1,0 +1,15 @@
+# dependencias
+/node_modules
+
+# build de Next.js
+/.next/
+/out/
+
+# variables de entorno (credenciales) — nunca deben subirse al repo
+.env
+.env*.local
+
+# logs y archivos del sistema
+npm-debug.log*
+.DS_Store
+*.pem
