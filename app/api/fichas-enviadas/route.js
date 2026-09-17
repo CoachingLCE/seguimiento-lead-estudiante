@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { readSheet } from '../../../lib/sheets';
 import { findUsuario, tienePermisoOperativo } from '../../../lib/auth';
+import { obtenerFichasEnviadas } from '../../../lib/fichasEnviadas';
 
 // GET /api/fichas-enviadas?solicitanteEmail=...
 // Junta, de todos los lotes de Seguimiento, cada lead al que se le marcó "Ficha enviada" como
@@ -14,29 +14,7 @@ export async function GET(request) {
   }
 
   try {
-    const [seguimiento, leads] = await Promise.all([readSheet('Seguimiento'), readSheet('Leads')]);
-    const leadsPorId = {};
-    leads.forEach((l) => { leadsPorId[l.ID] = l; });
-
-    const fichas = seguimiento
-      .filter((s) => s.Resultado === 'Ficha enviada')
-      .map((s) => {
-        const lead = leadsPorId[s.LeadID];
-        return {
-          leadId: s.LeadID,
-          nombre: lead ? `${lead.Nombre} ${lead.Apellido}` : '(lead no encontrado)',
-          curso: lead?.Curso || '',
-          pais: lead?.Pais || '',
-          whatsapp: lead?.WhatsApp || '',
-          lote: s.Lote,
-          fecha: s.FechaContacto || '',
-          enviadaPor: s.ContactadoPorNombre || s.AsignadoANombre || '',
-          comprado: lead?.Estado === 'Comprado'
-        };
-      })
-      .filter((f) => f.fecha && !f.comprado) // si ya compró, no tiene sentido seguir mostrándola acá
-      .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-
+    const fichas = await obtenerFichasEnviadas();
     return NextResponse.json({ fichas });
   } catch (err) {
     console.error('Error cargando fichas enviadas:', err);

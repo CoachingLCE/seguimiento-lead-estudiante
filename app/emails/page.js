@@ -6,7 +6,7 @@ import AccesoDenegado from '../../components/AccesoDenegado';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoEmails } from '../../lib/permisos';
 import {
-  textoCredenciales, htmlBienvenidaEstudiante, htmlAltaPlataforma, htmlReactivacionBaja, htmlResumenAlertas
+  textoCredenciales, htmlBienvenidaEstudiante, htmlAltaPlataforma, htmlReactivacionBaja, htmlResumenAlertas, htmlResumenFichasEnviadas
 } from '../../lib/plantillasEmail';
 
 // Documentación de los mails automáticos reales que manda esta app — se actualiza a mano si se
@@ -53,7 +53,7 @@ const AUTOMATIZACIONES = [
   },
   {
     cuando: 'Todos los viernes a las 8 AM (automático)',
-    quien: 'Lourdes, Victoria, Sofía y Macarena',
+    quien: 'Lourdes, Victoria y Sofía',
     tipo: 'Resumen semanal',
     remitente: 'Instituto ILCE',
     cc: '—',
@@ -62,6 +62,20 @@ const AUTOMATIZACIONES = [
       html: htmlResumenAlertas([
         { nombre: 'Juana Pérez', curso: 'Coaching Educativo', tipo: 'Bienvenida', horasHabiles: 60 },
         { nombre: 'Martín Gómez', curso: 'Coaching Ontológico Profesional', tipo: 'Alta en plataforma', horasHabiles: 96 }
+      ])
+    })
+  },
+  {
+    cuando: 'Todos los viernes a las 8 AM (automático)',
+    quien: 'Macarena',
+    tipo: 'Resumen semanal de fichas enviadas',
+    remitente: 'Instituto ILCE',
+    cc: '—',
+    asunto: '📄 Resumen semanal de fichas enviadas — N sin comprar',
+    previsualizar: () => ({
+      html: htmlResumenFichasEnviadas([
+        { nombre: 'Juana Pérez', curso: 'Coaching Educativo', pais: 'Argentina', fecha: new Date(Date.now() - 8 * 86400000).toISOString(), enviadaPor: 'Lourdes' },
+        { nombre: 'Martín Gómez', curso: 'Coaching Ontológico Profesional', pais: 'México', fecha: new Date(Date.now() - 2 * 86400000).toISOString(), enviadaPor: 'Sofía' }
       ])
     })
   }
