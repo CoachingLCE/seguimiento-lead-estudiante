@@ -8,7 +8,7 @@ import { useSession } from '../../lib/useSession';
 import { tienePermisoCrearLeads } from '../../lib/permisos';
 import {
   CURSOS, ORIGENES, ORIGEN_OTRO, ORIGEN_SIN_DEFINIR, PAISES, CURSO_SIN_DEFINIR, CURSO_OTROS,
-  detectarPaisPorWhatsapp
+  detectarPaisPorWhatsapp, sugerirCorreccionWhatsappArgentino
 } from '../../lib/constants';
 
 const CLAVE_BORRADOR = 'nuevoLead:borrador';
@@ -19,7 +19,7 @@ const CLAVE_ULTIMOS_ADICIONALES = 'nuevoLead:ultimosAdicionales';
 let contadorIds = 0;
 function contactoVacio() {
   contadorIds += 1;
-  return { key: `c${Date.now()}${contadorIds}`, raw: '', email: '', instagram: '' };
+  return { key: `c${Date.now()}${contadorIds}`, raw: '', email: '', instagram: '', sinNombre: false };
 }
 
 function escaparRegex(s) {
@@ -128,18 +128,27 @@ function tieneMedioDeContacto(contacto, p) {
   return Boolean(p.whatsapp || contacto.email.trim() || p.instagram || contacto.instagram.trim());
 }
 
+// Si se marcó "Sin nombre" (para cargar un lead solo con el número/usuario, cuando no viene
+// el nombre de quien escribe), no se exige nombre — se guarda vacío a propósito, en vez de
+// escribir el literal "Sin nombre" como si fuera el nombre real (eso generaba falsos
+// duplicados: ver la corrección en /api/leads/duplicados).
+function tieneNombreValido(contacto, p) {
+  return contacto.sinNombre || Boolean(p.nombre.trim());
+}
+
 // Estado visual de una card: vacio | error | duplicado | completo
 function estadoContacto(contacto, p, tieneDuplicadoSinIgnorar) {
   if (!contacto.raw.trim()) return 'vacio';
-  if (!p.nombre.trim() || !tieneMedioDeContacto(contacto, p)) return 'error';
+  if (!tieneNombreValido(contacto, p) || !tieneMedioDeContacto(contacto, p)) return 'error';
   if (tieneDuplicadoSinIgnorar) return 'duplicado';
   return 'completo';
 }
 
 // Texto específico de qué falta, para no dejar el badge de error genérico sin explicación.
 function motivoError(contacto, p) {
-  if (!p.nombre.trim() && !tieneMedioDeContacto(contacto, p)) return 'Falta el nombre y un medio de contacto';
-  if (!p.nombre.trim()) return 'Falta el nombre';
+  const nombreOk = tieneNombreValido(contacto, p);
+  if (!nombreOk && !tieneMedioDeContacto(contacto, p)) return 'Falta el nombre y un medio de contacto';
+  if (!nombreOk) return 'Falta el nombre';
   return 'Falta un medio de contacto (WhatsApp, Email o Instagram)';
 }
 
@@ -402,7 +411,7 @@ export default function NuevoLeadPage() {
     const nuevosErrores = {};
     contactos.forEach((contacto, i) => {
       const p = parsearIngresoLibre(contacto.raw);
-      if (!p.nombre.trim()) {
+      if (!tieneNombreValido(contacto, p)) {
         nuevosErrores[i] = 'Falta el nombre.';
       } else if (!tieneMedioDeContacto(contacto, p)) {
         nuevosErrores[i] = 'Ingresá al menos un medio de contacto (WhatsApp, Email o Instagram/Facebook).';
@@ -541,7 +550,7 @@ export default function NuevoLeadPage() {
                   Producto (para toda la tanda)
                   {cursoAutocompletado && <span className="text-infoText font-normal ml-1.5">· recordado de la carga anterior</span>}
                 </label>
-                <select value={curso} onChange={(e) => { setCurso(e.target.value); setCursoAutocompletado(false); }} className={inputClsBg}>
+                <select value={curso} onChange={(e) => { setCurso(e.target.value); setCursoAutocompletado(false); setCursosAdicionales([]); }} className={inputClsBg}>
                   <option value={CURSO_SIN_DEFINIR}>{CURSO_SIN_DEFINIR}</option>
                   {CURSOS.map((c) => <option key={c}>{c}</option>)}
                   <option value={CURSO_OTROS}>{CURSO_OTROS}</option>
@@ -623,6 +632,11 @@ export default function NuevoLeadPage() {
                       <span className={`text-[11px] font-medium ${estilo.texto}`}>
                         {estilo.badge} {estado === 'error' ? motivoError(contacto, p) : estilo.label}
                       </span>
+                      <label className="flex items-center gap-1 text-[11px] text-textMuted ml-1" title="Para cargar el lead solo con el número/usuario, cuando no tenemos el nombre de quien escribió">
+                        <input type="checkbox" checked={!!contacto.sinNombre}
+                          onChange={(e) => actualizarContacto(index, 'sinNombre', e.target.checked)} />
+                        Sin nombre
+                      </label>
                     </div>
                     <div className="flex items-center gap-3">
                       {contactos.length > 2 && (
@@ -701,14 +715,36 @@ export default function NuevoLeadPage() {
                       {/* "Detectamos:" */}
                       {contacto.raw.trim() && (
                         <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 mb-1 text-[12px]">
-                          <span className={p.nombre ? 'text-successText' : 'text-textMuted'}>{p.nombre ? '✓' : '○'} Nombre{p.nombre ? `: ${p.nombre}` : ' detectado'}</span>
+                          <span className={(p.nombre || contacto.sinNombre) ? 'text-successText' : 'text-textMuted'}>
+                            {p.nombre ? '✓' : contacto.sinNombre ? '✓' : '○'} Nombre{p.nombre ? `: ${p.nombre}` : contacto.sinNombre ? ': (sin nombre)' : ' detectado'}
+                          </span>
                           <span className={p.pais ? 'text-successText' : 'text-textMuted'}>{p.pais ? '✓' : '○'} País{p.pais ? `: ${p.pais}` : ''}</span>
                           <span className={p.whatsapp ? 'text-successText' : 'text-textMuted'}>{p.whatsapp ? '✓' : '○'} WhatsApp{p.whatsapp ? `: ${p.whatsapp}` : ''}</span>
                           <span className={(p.email || contacto.email) ? 'text-successText' : 'text-textMuted'}>{(p.email || contacto.email) ? '✓' : '○'} Email{p.email ? `: ${p.email}` : ''}</span>
-                          <span className={(p.instagram || contacto.instagram) ? 'text-successText' : 'text-textMuted'}>{(p.instagram || contacto.instagram) ? '✓' : '○'} Instagram/Facebook{p.instagram ? `: ${p.instagram}` : ''}</span>
+                          <span className={(p.instagram || contacto.instagram) ? 'text-successText' : 'text-textMuted'}>{(p.instagram || contacto.instagram) ? '✓' : '○'} Instagram/Facebook/WhatsApp (usuario){p.instagram ? `: ${p.instagram}` : ''}</span>
                           {p.notasExtra && <span className="text-infoText">📝 Notas: {p.notasExtra}</span>}
                         </div>
                       )}
+
+                      {/* Aviso puntual: a los celulares argentinos les falta el "9" que WhatsApp
+                          necesita para reconocerlos (ej: pegaron "54 11 3031-0203" en vez de
+                          "54 9 11 3031-0203"). Solo se corrige con un clic explícito — nunca solo,
+                          porque para otros países no hay certeza de cuál es el formato correcto. */}
+                      {(() => {
+                        if (!p.whatsapp || p.pais !== 'Argentina') return null;
+                        const sugerido = sugerirCorreccionWhatsappArgentino(p.whatsapp, p.pais);
+                        if (!sugerido) return null;
+                        return (
+                          <div className="flex items-center justify-between gap-2 bg-warningBg border border-warningText/30 rounded-lg px-3 py-2 mt-1">
+                            <p className="text-warningText text-[12px]">⚠️ A este WhatsApp le podría faltar el "9" (celulares argentinos lo necesitan).</p>
+                            <button type="button"
+                              onClick={() => actualizarContacto(index, 'raw', contacto.raw.replace(p.whatsapp, sugerido))}
+                              className="text-[12px] px-2.5 py-1 rounded bg-accentPurple text-white font-semibold whitespace-nowrap">
+                              Corregir a {sugerido}
+                            </button>
+                          </div>
+                        );
+                      })()}
 
                       {contacto.raw.trim().toLowerCase().includes('prueba') && (
                         <p className="text-infoText text-[12px] mb-2 flex items-center gap-1">
@@ -726,10 +762,11 @@ export default function NuevoLeadPage() {
                         </div>
                         <div>
                           <label className="text-[13px] font-medium text-textSec block mb-1">
-                            Instagram / Facebook {!contacto.instagram && p.instagram && <span className="text-successText font-normal">· detectado arriba</span>}
+                            Instagram / Facebook / usuario de WhatsApp {!contacto.instagram && p.instagram && <span className="text-successText font-normal">· detectado arriba</span>}
                           </label>
                           <input value={contacto.instagram || p.instagram} placeholder="@juanperez"
                             onChange={(e) => actualizarContacto(index, 'instagram', e.target.value)} className={inputCls} />
+                          <p className="text-textMuted text-[11px] mt-1">Usalo también para el nuevo @usuario de WhatsApp cuando no haya número.</p>
                         </div>
                       </div>
 

@@ -18,17 +18,34 @@ export async function GET(request) {
   const whatsapp = normalizarWhatsapp(searchParams.get('whatsapp'));
   const email = (searchParams.get('email') || '').trim().toLowerCase();
 
-  if (!nombre && !whatsapp && !email) {
+  // Nombres "placeholder" (vacío, o el literal "sin nombre" que se usa para cargar un lead solo
+  // con el número) NO deben contar como coincidencia de nombre — si no, dos leads sin nombre
+  // cualquiera aparecen como "duplicados" entre sí aunque sean personas totalmente distintas,
+  // y esa coincidencia débil puede tapar una coincidencia real y más fuerte (mismo WhatsApp/email).
+  const NOMBRES_PLACEHOLDER = ['', 'sin nombre'];
+  const nombreEsValido = nombre.length >= 3 && !NOMBRES_PLACEHOLDER.includes(nombre);
+
+  if (!nombreEsValido && !whatsapp && !email) {
     return NextResponse.json({ coincidencias: [] });
   }
 
+  // Fuerza de la coincidencia: WhatsApp/email (dato exacto) siempre pesa más que un nombre
+  // parecido (dato débil) — así, si hay varias coincidencias, la que se muestra primero
+  // (coincidencias[0] en el front) es siempre la más confiable, no la primera que aparezca
+  // en la hoja por casualidad de orden.
+  function fuerzaCoincidencia(l) {
+    if (whatsapp && whatsapp.length >= 6 && normalizarWhatsapp(l.WhatsApp) === whatsapp) return 3;
+    if (email && email.length >= 5 && (l.EmailEstudiante || '').trim().toLowerCase() === email) return 2;
+    if (nombreEsValido && (l.Nombre || '').trim().toLowerCase().includes(nombre)) return 1;
+    return 0;
+  }
+
   const leads = await readSheet('Leads');
-  const coincidencias = leads.filter((l) => {
-    const mismoWhatsapp = whatsapp && whatsapp.length >= 6 && normalizarWhatsapp(l.WhatsApp) === whatsapp;
-    const mismoEmail = email && email.length >= 5 && (l.EmailEstudiante || '').trim().toLowerCase() === email;
-    const nombreParecido = nombre && nombre.length >= 3 && (l.Nombre || '').trim().toLowerCase().includes(nombre);
-    return mismoWhatsapp || mismoEmail || nombreParecido;
-  });
+  const coincidencias = leads
+    .map((l) => ({ l, fuerza: fuerzaCoincidencia(l) }))
+    .filter((x) => x.fuerza > 0)
+    .sort((a, b) => b.fuerza - a.fuerza)
+    .map((x) => x.l);
 
   function motivo(l) {
     if (whatsapp && whatsapp.length >= 6 && normalizarWhatsapp(l.WhatsApp) === whatsapp) return 'Mismo WhatsApp';

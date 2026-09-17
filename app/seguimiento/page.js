@@ -632,7 +632,10 @@ export default function SeguimientoPage() {
   );
 }
 
-function CopyButton({ valor }) {
+// Botón de copiar — con tamaño de tap-target real (antes era un emoji suelto sin padding,
+// muy chico para tocar bien en la práctica). Acepta icono/título custom para poder reusarlo
+// como "copiar Instagram/Facebook" cuando el lead no tiene WhatsApp.
+function CopyButton({ valor, icono = '📋', titulo = 'Copiar' }) {
   const [copiado, setCopiado] = useState(false);
   function copiar(e) {
     e.preventDefault();
@@ -642,8 +645,11 @@ function CopyButton({ valor }) {
     setTimeout(() => setCopiado(false), 1500);
   }
   return (
-    <button onClick={copiar} title="Copiar" className="text-textMuted hover:text-accentTeal">
-      {copiado ? '✓' : '📋'}
+    <button type="button" onClick={copiar} title={copiado ? 'Copiado' : titulo}
+      className={`inline-flex items-center justify-center w-6 h-6 rounded-md border text-xs transition-colors ${
+        copiado ? 'border-successText/50 text-successText' : 'border-border text-textMuted hover:text-accentTeal hover:border-accentTeal'
+      }`}>
+      {copiado ? '✓' : icono}
     </button>
   );
 }
@@ -912,6 +918,11 @@ function FilaLote({
                   )}
                 </div>
               )}
+              {/* Sin WhatsApp, el botón que ocupa ese lugar pasa a copiar Instagram/Facebook —
+                  un único lugar fijo para "copiar el contacto", tenga o no WhatsApp. */}
+              {!lead.WhatsApp && lead.InstagramUsuario && (
+                <CopyButton valor={lead.InstagramUsuario} icono="📷" titulo="Copiar Instagram/Facebook" />
+              )}
               {lead.EmailEstudiante && (
                 <a href={enlaceGmail(lead.EmailEstudiante)} target="_blank" rel="noopener noreferrer" className="w-6 h-6 flex items-center justify-center rounded-md border border-border text-xs" title="Email">✉️</a>
               )}
@@ -927,7 +938,9 @@ function FilaLote({
             {lead.WhatsApp && <span className="inline-flex items-center gap-1">📱 {lead.WhatsApp} <CopyButton valor={lead.WhatsApp} /></span>}
             {lead.EmailEstudiante && <span className="inline-flex items-center gap-1">✉️ {lead.EmailEstudiante} <CopyButton valor={lead.EmailEstudiante} /></span>}
             {lead.InstagramUsuario && <span className="inline-flex items-center gap-1">📷 {lead.InstagramUsuario} <CopyButton valor={lead.InstagramUsuario} /></span>}
-            {lead.Pais && <span>🌎 {lead.Pais}</span>}
+            {lead.Pais && (
+              <span className={lead.Pais !== 'Argentina' ? 'font-bold text-text' : ''}>🌎 {lead.Pais}</span>
+            )}
             {lead.Origen && <span>Origen: {lead.Origen}</span>}
             {lead.CursosAdicionales && <span>· También le interesa: {lead.CursosAdicionales}</span>}
           </p>

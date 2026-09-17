@@ -5,16 +5,99 @@ import Nav from '../../components/Nav';
 import AccesoDenegado from '../../components/AccesoDenegado';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoEmails } from '../../lib/permisos';
+import {
+  textoCredenciales, htmlBienvenidaEstudiante, htmlAltaPlataforma, htmlReactivacionBaja, htmlResumenAlertas
+} from '../../lib/plantillasEmail';
 
 // Documentación de los mails automáticos reales que manda esta app — se actualiza a mano si se
 // agrega o cambia una automatización (ver lib/mailer.js para la lista de funciones de envío).
+// "remitente"/"cc"/"asunto" son tal cual se arman en mailer.js. "previsualizar" arma el mismo
+// HTML que se manda de verdad (lib/plantillasEmail.js), con datos de ejemplo — así "Ver mail"
+// muestra el mail real, no una descripción aparte que se puede desactualizar.
 const AUTOMATIZACIONES = [
-  { cuando: 'Se marca "Enviar bienvenida" en Estudiantes', quien: 'Al estudiante (con cc a estudiantes@)', tipo: 'Confirmación inscripción (Bienvenida)' },
-  { cuando: 'Se marca "Alta en plataforma" en Estudiantes', quien: 'Al estudiante (con cc a estudiantes@)', tipo: 'Alta en plataforma' },
-  { cuando: 'Se crea un usuario nuevo o se resetea una contraseña', quien: 'Al usuario (con su contraseña)', tipo: 'Credenciales de acceso' },
-  { cuando: 'Se toca "Enviar mail" en la columna Reactivación de Bajas', quien: 'A la persona dada de baja', tipo: 'Reactivación de baja' },
-  { cuando: 'Todos los viernes a las 8 AM (automático)', quien: 'Lourdes, Victoria y Sofía', tipo: 'Resumen semanal' }
+  {
+    cuando: 'Se marca "Enviar bienvenida" en Estudiantes',
+    quien: 'Al estudiante (con cc a estudiantes@)',
+    tipo: 'Confirmación inscripción (Bienvenida)',
+    remitente: 'Instituto ILCE',
+    cc: 'estudiantes@institutoilce.com',
+    asunto: '¡Bienvenido/a a ILCE!',
+    previsualizar: () => ({ html: htmlBienvenidaEstudiante('Juana Pérez', 'Coaching Educativo', null) })
+  },
+  {
+    cuando: 'Se marca "Alta en plataforma" en Estudiantes',
+    quien: 'Al estudiante (con cc a estudiantes@)',
+    tipo: 'Alta en plataforma',
+    remitente: 'Instituto ILCE',
+    cc: 'estudiantes@institutoilce.com',
+    asunto: 'Ya tenés acceso a la plataforma — [Curso]',
+    previsualizar: () => ({ html: htmlAltaPlataforma('Juana Pérez', 'Coaching Educativo', '16', null) })
+  },
+  {
+    cuando: 'Se crea un usuario nuevo o se resetea una contraseña',
+    quien: 'Al usuario (con su contraseña)',
+    tipo: 'Credenciales de acceso',
+    remitente: 'Instituto ILCE',
+    cc: '—',
+    asunto: 'Acceso a la app de gestión de leads — ILCE',
+    previsualizar: () => ({ texto: textoCredenciales('Juana Pérez', 'juana@ejemplo.com', 'Hola123') })
+  },
+  {
+    cuando: 'Se toca "Enviar mail" en la columna Reactivación de Bajas',
+    quien: 'A la persona dada de baja',
+    tipo: 'Reactivación de baja',
+    remitente: 'Info ILCE',
+    cc: '—',
+    asunto: '¿Retomamos tu formación?',
+    previsualizar: () => ({ html: htmlReactivacionBaja('Juana Pérez', 'Coaching Educativo', 'L-EJEMPLO') })
+  },
+  {
+    cuando: 'Todos los viernes a las 8 AM (automático)',
+    quien: 'Lourdes, Victoria y Sofía',
+    tipo: 'Resumen semanal',
+    remitente: 'Instituto ILCE',
+    cc: '—',
+    asunto: '📩 Resumen semanal de alertas — N sin confirmar',
+    previsualizar: () => ({
+      html: htmlResumenAlertas([
+        { nombre: 'Juana Pérez', curso: 'Coaching Educativo', tipo: 'Bienvenida', horasHabiles: 60 },
+        { nombre: 'Martín Gómez', curso: 'Coaching Ontológico Profesional', tipo: 'Alta en plataforma', horasHabiles: 96 }
+      ])
+    })
+  }
 ];
+
+// Modal simple para "Ver mail": muestra Remitente/CC/Asunto y una vista previa real del cuerpo
+// (el mismo HTML/texto que arma lib/plantillasEmail.js), con datos de ejemplo.
+function ModalVerMail({ automatizacion, onClose }) {
+  if (!automatizacion) return null;
+  const preview = automatizacion.previsualizar();
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-surface2 border border-border rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="p-5 border-b border-border">
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <p className="text-sm font-bold">✉️ {automatizacion.tipo}</p>
+            <button onClick={onClose} className="text-textMuted hover:text-text text-sm">✕</button>
+          </div>
+          <div className="text-xs text-textSec space-y-1">
+            <p><span className="text-textMuted">De:</span> {automatizacion.remitente}</p>
+            <p><span className="text-textMuted">CC:</span> {automatizacion.cc}</p>
+            <p><span className="text-textMuted">Asunto:</span> {automatizacion.asunto}</p>
+          </div>
+          <p className="text-[11px] text-textMuted mt-2">Vista previa con datos de ejemplo — el contenido real varía según el estudiante/lead.</p>
+        </div>
+        <div className="p-5 bg-bg">
+          {preview.html ? (
+            <iframe title="Vista previa del mail" srcDoc={preview.html} className="w-full h-[480px] bg-white rounded-lg border border-border" />
+          ) : (
+            <pre className="whitespace-pre-wrap text-xs text-textSec bg-surface border border-border rounded-lg p-4">{preview.texto}</pre>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function normalizar(s) {
   return (s || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -34,6 +117,7 @@ export default function EmailsPage() {
   const [busqueda, setBusqueda] = useState('');
   const [filtroTipo, setFiltroTipo] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('');
+  const [mailAVer, setMailAVer] = useState(null);
 
   const puedeVer = tienePermisoEmails(usuario);
 
@@ -92,21 +176,34 @@ export default function EmailsPage() {
                 <tr className="text-textSec text-left border-b border-border">
                   <th className="py-2 pr-4">Cuándo se envía</th>
                   <th className="pr-4">A quién</th>
+                  <th className="pr-4">De / CC</th>
+                  <th className="pr-4">Asunto</th>
                   <th>Tipo</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
                 {AUTOMATIZACIONES.map((a, i) => (
-                  <tr key={i} className="border-b border-border last:border-b-0">
+                  <tr key={i} className="border-b border-border last:border-b-0 hover:bg-bg/50 cursor-pointer" onClick={() => setMailAVer(a)}>
                     <td className="py-2 pr-4">{a.cuando}</td>
                     <td className="pr-4 text-textSec">{a.quien}</td>
+                    <td className="pr-4 text-textSec whitespace-nowrap">
+                      {a.remitente}{a.cc && a.cc !== '—' ? <span className="text-textMuted"> · cc {a.cc}</span> : ''}
+                    </td>
+                    <td className="pr-4 text-textSec">{a.asunto}</td>
                     <td><span className="text-[11px] px-2.5 py-1 rounded-full bg-infoBg text-infoText whitespace-nowrap">{a.tipo}</span></td>
+                    <td>
+                      <button type="button" onClick={(e) => { e.stopPropagation(); setMailAVer(a); }}
+                        className="text-accentTeal text-xs font-semibold whitespace-nowrap">Ver mail →</button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
+
+        <ModalVerMail automatizacion={mailAVer} onClose={() => setMailAVer(null)} />
 
         {/* REGISTRO EN VIVO */}
         <div className="bg-surface border border-border rounded-2xl p-4 sm:p-5">

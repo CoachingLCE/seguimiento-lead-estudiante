@@ -82,8 +82,10 @@ export default function Nav({ usuario, onLogout }) {
             <Logo height={36} />
           </Link>
 
-          {/* ACCIONES + USUARIO — desktop */}
-          <div className="hidden lg:flex items-center gap-3 shrink-0">
+          {/* ACCIONES — buscador, herramientas y tema: SIEMPRE visibles (aunque la ventana sea
+              angosta, ej. usada al lado de WhatsApp Web) — antes se ocultaban del todo por debajo
+              de "lg" y solo quedaban accesibles abriendo el menú hamburguesa. */}
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <Link href="/buscador" title="Buscador"
               className={`w-9 h-9 flex items-center justify-center rounded-lg text-base transition-colors ${
                 pathname === '/buscador' ? 'bg-accentPurple text-white' : 'bg-surface2 border border-border text-textSec hover:text-text hover:border-accentTeal'
@@ -98,7 +100,7 @@ export default function Nav({ usuario, onLogout }) {
             </Link>
             <ThemeSelector />
             {usuario && (
-              <div className="text-right text-sm pl-2 border-l border-border">
+              <div className="hidden md:block text-right text-sm pl-2 border-l border-border">
                 <p className="font-semibold leading-tight">{usuario.nombre}</p>
                 <p className="text-textSec text-[11px] leading-tight">{nombreVisibleRoles(usuario.roles)}</p>
                 <button onClick={onLogout} className="text-[11px] text-textMuted underline">Salir</button>
@@ -165,30 +167,17 @@ export default function Nav({ usuario, onLogout }) {
             </div>
           ))}
 
-          <div className="flex items-center justify-between pt-3 border-t border-border">
-            <div className="flex items-center gap-2">
-              <Link href="/buscador" title="Buscador" onClick={() => setMenuMovil(false)}
-                className={`w-9 h-9 flex items-center justify-center rounded-lg text-base transition-colors ${
-                  pathname === '/buscador' ? 'bg-accentPurple text-white' : 'bg-surface2 border border-border text-textSec'
-                }`}>
-                🔍
-              </Link>
-              <Link href="/herramientas" title="Herramientas" onClick={() => setMenuMovil(false)}
-                className={`w-9 h-9 flex items-center justify-center rounded-lg text-base transition-colors ${
-                  pathname === '/herramientas' ? 'bg-accentPurple text-white' : 'bg-surface2 border border-border text-textSec'
-                }`}>
-                ⚡
-              </Link>
-              <ThemeSelector />
-            </div>
-            {usuario && (
+          {/* Buscador/Herramientas/Tema ya están siempre visibles arriba en el header — acá solo
+              queda el usuario, para las pantallas angostas donde el header lo oculta (< md). */}
+          {usuario && (
+            <div className="flex items-center justify-end pt-3 border-t border-border md:hidden">
               <div className="text-right text-sm">
                 <p className="font-semibold leading-tight">{usuario.nombre}</p>
                 <p className="text-textSec text-[11px] leading-tight">{nombreVisibleRoles(usuario.roles)}</p>
                 <button onClick={onLogout} className="text-[11px] text-textMuted underline">Salir</button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
     </div>
