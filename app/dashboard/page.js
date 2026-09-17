@@ -9,7 +9,7 @@ import FichaDrawer from '../../components/FichaDrawer';
 import { useToast } from '../../components/Toast';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoEstudiantes } from '../../lib/permisos';
-import { RESULTADOS_FINALES } from '../../lib/constants';
+import { RESULTADOS_FINALES, numeroDesdeSheet } from '../../lib/constants';
 
 const HORAS_ALTA_DEMORADA = 24;
 
@@ -348,7 +348,7 @@ export default function DashboardPage() {
                           <td className="pr-3 text-textSec whitespace-nowrap">{l.Curso || '—'}</td>
                           <td className="pr-3 text-textSec whitespace-nowrap">{l.VendidoPorNombre || '—'}</td>
                           <td className="pr-3 font-semibold text-successText whitespace-nowrap">
-                            ${Number(l.MontoTotal || 0).toLocaleString('es-AR')}
+                            ${numeroDesdeSheet(l.MontoTotal).toLocaleString('es-AR')}
                           </td>
                           <td className="whitespace-nowrap">
                             {l.FechaVenta ? new Date(l.FechaVenta).toLocaleDateString('es-AR') : '—'}

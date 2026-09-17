@@ -8,7 +8,7 @@ import ModalVenta from '../../components/ModalVenta';
 import CheckboxVisual from '../../components/CheckboxVisual';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoBuscador, tienePermisoEditarLead, tienePermisoEditarVenta, tienePermisoEditarContactoEstudiante } from '../../lib/permisos';
-import { ORIGENES, ORIGEN_OTRO, CURSOS, CURSO_OTROS, CURSO_SIN_DEFINIR, PAISES, RESULTADOS_CONTACTO, enlaceGmail } from '../../lib/constants';
+import { ORIGENES, ORIGEN_OTRO, CURSOS, CURSO_OTROS, CURSO_SIN_DEFINIR, PAISES, RESULTADOS_CONTACTO, enlaceGmail, numeroDesdeSheet } from '../../lib/constants';
 
 const SEP_NOTAS = '\n@@\n';
 
@@ -409,6 +409,22 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
   const [programandoLote, setProgramandoLote] = useState(null);
   const [fechaAProgramar, setFechaAProgramar] = useState('');
   const [mostrarModalVenta, setMostrarModalVenta] = useState(false);
+  const [verTanda, setVerTanda] = useState(false);
+  const [tandaLeads, setTandaLeads] = useState(null);
+  const [cargandoTanda, setCargandoTanda] = useState(false);
+
+  // Trae TODOS los leads históricos con el mismo Origen que este lead ("la tanda"), reutilizando
+  // el mismo endpoint que ya usa el buscador general — así se puede ver desde la propia ficha
+  // quiénes más entraron por ese mismo canal/campaña, sin tener que volver atrás a buscarlo.
+  async function cargarTanda() {
+    if (tandaLeads) { setVerTanda((v) => !v); return; }
+    setCargandoTanda(true);
+    const r = await fetch(`/api/buscador?origen=${encodeURIComponent(lead.Origen)}&solicitanteEmail=${encodeURIComponent(usuario.email)}`)
+      .then((res) => res.json());
+    setTandaLeads(r.porOrigen || []);
+    setCargandoTanda(false);
+    setVerTanda(true);
+  }
   const [mostrarFormBaja, setMostrarFormBaja] = useState(false);
   const [confirmarEliminarLead, setConfirmarEliminarLead] = useState(false);
   const [eliminandoLead, setEliminandoLead] = useState(false);
@@ -562,7 +578,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
   const puedeEditarVenta = tienePermisoEditarVenta(usuario);
   const [editandoVenta, setEditandoVenta] = useState(false);
   const [datosVenta, setDatosVenta] = useState({
-    montoTotal: lead.MontoTotal || '', medioPago: lead.MedioPago || '', modalidad: lead.Modalidad || '',
+    montoTotal: lead.MontoTotal ? String(numeroDesdeSheet(lead.MontoTotal)) : '', medioPago: lead.MedioPago || '', modalidad: lead.Modalidad || '',
     edicion: lead.Edicion || '', docentes: lead.Docentes || '', vendidoPor: lead.VendidoPorNombre || ''
   });
   const [guardandoVenta, setGuardandoVenta] = useState(false);
@@ -588,7 +604,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
 
   function cancelarEdicionVenta() {
     setDatosVenta({
-      montoTotal: lead.MontoTotal || '', medioPago: lead.MedioPago || '', modalidad: lead.Modalidad || '',
+      montoTotal: lead.MontoTotal ? String(numeroDesdeSheet(lead.MontoTotal)) : '', medioPago: lead.MedioPago || '', modalidad: lead.Modalidad || '',
       edicion: lead.Edicion || '', docentes: lead.Docentes || '', vendidoPor: lead.VendidoPorNombre || ''
     });
     setEditandoVenta(false);
@@ -771,7 +787,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
         <Kpi label="Último contacto" valor={ultimoContacto ? tiempoRelativo(ultimoContacto.FechaContacto) : 'Sin contacto'} />
         <Kpi label="Estado" valor={lead.Estado === 'Comprado' ? '🟢 Compró' : '⚪ Lead'} />
         <Kpi label="Responsable" valor={responsableFila?.AsignadoANombre || 'No asignado'} />
-        <Kpi label="Monto" valor={lead.MontoTotal && !Number.isNaN(Number(lead.MontoTotal)) ? `$${Number(lead.MontoTotal).toLocaleString('es-AR')}` : '—'} grande={!!lead.MontoTotal} />
+        <Kpi label="Monto" valor={lead.MontoTotal ? `$${numeroDesdeSheet(lead.MontoTotal).toLocaleString('es-AR')}` : '—'} grande={!!lead.MontoTotal} />
         <Kpi label="Curso" valor={lead.Curso || 'Sin definir'} />
         <Kpi label="Edición" valor={inscrito?.Edicion || '—'} />
       </div>
@@ -811,9 +827,11 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
             <Campo label="Email" valor={lead.EmailEstudiante} vacio="No cargado" />
             <Campo label="Instagram" valor={lead.InstagramUsuario} vacio="No cargado" />
             <Campo label="País" valor={lead.Pais} vacio="No cargado" />
+            <Campo label="Cómo llegó" valor={lead.Origen} vacio="No especificado" />
           </div>
           <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm">
             <p className="text-xs font-bold text-textMuted uppercase tracking-wide mb-3">Más información</p>
+            <Campo label="Fecha de creación del lead" valor={lead.FechaIngreso ? fechaLarga(lead.FechaIngreso) : null} vacio="—" />
             <Campo label="Días sin contacto" valor={String(diasSinContacto)} />
             <Campo label="Intentos de contacto" valor={String(contactadas.length)} />
             <Campo label="Notas internas" valor={notas.length > 0 ? `${notas.length} nota(s)` : null} vacio="Todavía no hay notas" />
@@ -821,6 +839,52 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
             <Campo label="Cargado por" valor={lead.CargadoPorNombre} />
             {lead.CursosAdicionales && <Campo label="Interés adicional" valor={lead.CursosAdicionales} />}
           </div>
+
+          {lead.Origen && (
+            <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm md:col-span-2">
+              <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                <p className="text-xs font-bold text-textMuted uppercase tracking-wide">Cómo llegaron · toda la tanda de "{lead.Origen}"</p>
+                <button onClick={cargarTanda} disabled={cargandoTanda} className="text-accentTeal text-xs font-semibold disabled:opacity-60">
+                  {cargandoTanda ? 'Cargando…' : verTanda ? 'Ocultar' : 'Ver toda la tanda'}
+                </button>
+              </div>
+              {verTanda && (
+                tandaLeads?.length === 0 ? (
+                  <p className="text-textMuted text-sm">Sin otros leads con este origen.</p>
+                ) : (
+                  <div className="overflow-x-auto max-h-80 overflow-y-auto">
+                    <table className="w-full text-sm">
+                      <thead className="sticky top-0 bg-surface z-10">
+                        <tr className="text-textSec text-left border-b border-border">
+                          <th className="py-1.5 pr-3">Nombre</th><th className="pr-3">Curso</th>
+                          <th className="pr-3">Fecha de ingreso</th><th className="pr-3">Estado</th><th>Cargado por</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {tandaLeads?.map((r) => (
+                          <tr key={r.id} className={`border-b border-border last:border-b-0 ${r.id === lead.ID ? 'bg-infoBg/40' : ''}`}>
+                            <td className="py-1.5 pr-3">
+                              {r.id === lead.ID ? (
+                                <span className="font-semibold">{r.nombre} (este lead)</span>
+                              ) : (
+                                <Link href={`/buscador?leadId=${r.id}`} className="hover:text-accentTeal hover:underline">{r.nombre}</Link>
+                              )}
+                            </td>
+                            <td className="pr-3 text-textSec">{r.curso}</td>
+                            <td className="pr-3 text-textSec whitespace-nowrap">{new Date(r.fechaIngreso).toLocaleDateString('es-AR')}</td>
+                            <td className="pr-3">
+                              <span className={`text-[11px] px-2 py-0.5 rounded-full ${r.estado === 'Comprado' ? 'bg-successBg text-successText' : 'bg-surface2 text-textMuted'}`}>{r.estado}</span>
+                            </td>
+                            <td className="text-textSec whitespace-nowrap">{r.cargadoPorNombre || '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -930,7 +994,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
             <p className="text-textMuted text-sm">Sin seguimiento comercial — todavía no se registró una venta.</p>
           ) : !editandoVenta ? (
             <>
-              <Campo label="Monto" valor={lead.MontoTotal && !Number.isNaN(Number(lead.MontoTotal)) ? `$${Number(lead.MontoTotal).toLocaleString('es-AR')}` : null} vacio="—" grande />
+              <Campo label="Monto" valor={lead.MontoTotal ? `$${numeroDesdeSheet(lead.MontoTotal).toLocaleString('es-AR')}` : null} vacio="—" grande />
               <Campo label="Forma de pago" valor={lead.MedioPago} />
               <Campo label="Modalidad" valor={lead.Modalidad} />
               {lead.DetalleCuotas && <Campo label="Detalle de cuotas" valor={`$${lead.DetalleCuotas}`} />}

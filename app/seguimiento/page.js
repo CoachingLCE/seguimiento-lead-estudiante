@@ -155,15 +155,19 @@ export default function SeguimientoPage() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
-  async function cargarDatos() {
-    setCargando(true);
+  // mostrarSpinner=false permite refrescar los datos "en silencio" en segundo plano (después de
+  // registrar un contacto, reasignar, etc.) sin tapar toda la pantalla con "Cargando…" — la
+  // lista sigue viéndose con los datos anteriores hasta que llegan los nuevos, y ahí se actualiza
+  // sola (la fila desaparece de su lote si corresponde), sin que la persona pierda su lugar.
+  async function cargarDatos(mostrarSpinner = true) {
+    if (mostrarSpinner) setCargando(true);
     const [rLeads, rSeg] = await Promise.all([
       fetch(`/api/leads?solicitanteEmail=${encodeURIComponent(usuario.email)}`).then((r) => r.json()),
       fetch(`/api/seguimiento?solicitanteEmail=${encodeURIComponent(usuario.email)}`).then((r) => r.json())
     ]);
     setLeads(rLeads.leads || []);
     setSeguimiento(rSeg.seguimiento || []);
-    setCargando(false);
+    if (mostrarSpinner) setCargando(false);
   }
 
   async function registrarContacto(leadId, lote, resultado, observaciones, proximaAccion, fechaProgramada) {
@@ -178,7 +182,7 @@ export default function SeguimientoPage() {
       })
     });
     mostrarToast('Seguimiento guardado');
-    cargarDatos();
+    cargarDatos(false);
   }
 
   async function reasignar(leadId, lote, nuevoEmail, nuevoNombre) {
@@ -193,7 +197,7 @@ export default function SeguimientoPage() {
       })
     });
     mostrarToast(`Reasignado a ${nuevoNombre}`);
-    cargarDatos();
+    cargarDatos(false);
   }
 
   async function reasignarMasivo(nuevoEmail, nuevoNombre) {
@@ -216,7 +220,7 @@ export default function SeguimientoPage() {
     mostrarToast(`${filas.length} lead(s) reasignado(s) a ${nuevoNombre}`);
     setSeleccionados(new Set());
     setModalReasignar(null);
-    cargarDatos();
+    cargarDatos(false);
   }
 
   async function marcarContactoMasivo(resultado) {
@@ -229,7 +233,7 @@ export default function SeguimientoPage() {
     }
     mostrarToast(`${filas.length} lead(s) marcado(s) como "${resultado}"`);
     setSeleccionados(new Set());
-    cargarDatos();
+    cargarDatos(false);
   }
 
   async function registrarContactoSilencioso(leadId, lote, resultado) {
@@ -261,7 +265,7 @@ export default function SeguimientoPage() {
     }
     setSeleccionados(new Set());
     setConfirmarEliminarLeads(false);
-    cargarDatos();
+    cargarDatos(false);
   }
 
   function exportarSeleccionados() {
@@ -298,7 +302,7 @@ export default function SeguimientoPage() {
     });
     setLeadVenta(null);
     mostrarToast('Venta registrada');
-    cargarDatos();
+    cargarDatos(false);
   }
 
   function toggleSeleccion(leadId, lote) {

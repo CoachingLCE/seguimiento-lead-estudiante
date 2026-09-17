@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { enlaceGmail } from '../lib/constants';
+import { enlaceGmail, numeroDesdeSheet } from '../lib/constants';
 
 // Mapea el texto de la acción de auditoría a un ícono representativo para el timeline.
 function iconoPara(accion) {
@@ -95,7 +95,7 @@ export default function FichaDrawer({ leadId, usuario, onClose }) {
             {lead.Estado === 'Comprado' && (
               <div className="bg-surface border border-border rounded-xl p-3 mb-4 text-xs">
                 <p className="font-bold mb-1.5">Detalle de la venta</p>
-                <p className="text-textSec">{lead.MedioPago} · {lead.Modalidad} · ${Number(lead.MontoTotal || 0).toLocaleString('es-AR')}</p>
+                <p className="text-textSec">{lead.MedioPago} · {lead.Modalidad} · ${numeroDesdeSheet(lead.MontoTotal).toLocaleString('es-AR')}</p>
                 {lead.DetalleCuotas && <p className="text-textMuted">Cuotas: ${lead.DetalleCuotas}</p>}
                 {lead.VendidoPorNombre && <p className="text-textSec">Cerrada por: {lead.VendidoPorNombre}</p>}
               </div>

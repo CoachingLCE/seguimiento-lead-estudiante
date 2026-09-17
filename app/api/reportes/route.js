@@ -14,8 +14,13 @@ function diasDelMes(mes) {
   return new Date(y, m, 0).getDate();
 }
 
+// Los montos/cuotas vienen del Sheet ya formateados como texto (ej: "80.800", con punto de
+// miles a la argentina). Number() interpreta ese punto como decimal SIEMPRE, sin importar el
+// idioma, y convertiría "80.800" en 80.8 — por eso hay que sacar los puntos antes de parsear.
 function numeroValido(v) {
-  const n = Number(v);
+  if (v === '' || v === null || v === undefined) return 0;
+  if (typeof v === 'number') return v;
+  const n = Number(String(v).trim().replace(/\./g, ''));
   return Number.isFinite(n) ? n : 0;
 }
 
