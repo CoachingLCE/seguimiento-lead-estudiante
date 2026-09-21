@@ -5,6 +5,7 @@ import Nav from '../../components/Nav';
 import AccesoDenegado from '../../components/AccesoDenegado';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoBajas } from '../../lib/permisos';
+import { CURSOS } from '../../lib/constants';
 
 // Cada persona es un bloque separado por una línea en blanco, con campos "Etiqueta: valor"
 // en cualquier orden — todos opcionales, con al menos uno para poder identificarla.
@@ -136,6 +137,10 @@ export default function BajasPage() {
   const [progresoCarga, setProgresoCarga] = useState(null);
   const [resultadoBajasMasivas, setResultadoBajasMasivas] = useState(null);
   const [listaBajas, setListaBajas] = useState([]);
+  const [editandoCursoDe, setEditandoCursoDe] = useState(null); // leadId de la fila en edición
+  const [cursoTemp, setCursoTemp] = useState('');
+  const [edicionTemp, setEdicionTemp] = useState('');
+  const [guardandoCurso, setGuardandoCurso] = useState(false);
   const [enviadosReactivacionHoy, setEnviadosReactivacionHoy] = useState(0);
   const [limiteReactivacionDiario, setLimiteReactivacionDiario] = useState(20);
   const [enviandoMensajeId, setEnviandoMensajeId] = useState(null);
@@ -202,6 +207,32 @@ export default function BajasPage() {
     setListaBajas(r.bajas || []);
     setEnviadosReactivacionHoy(r.enviadosReactivacionHoy || 0);
     setLimiteReactivacionDiario(r.limiteReactivacionDiario || 20);
+  }
+
+  function abrirEdicionCurso(baja) {
+    setEditandoCursoDe(baja.leadId);
+    setCursoTemp(baja.curso || '');
+    setEdicionTemp(baja.edicion || '');
+  }
+
+  async function guardarCurso(baja) {
+    setGuardandoCurso(true);
+    try {
+      const res = await fetch('/api/leads', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          leadId: baja.leadId, curso: cursoTemp.trim(), edicion: edicionTemp.trim(),
+          solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
+        })
+      });
+      const r = await res.json();
+      if (!res.ok) { alert(r.error || 'No se pudo guardar.'); setGuardandoCurso(false); return; }
+      setEditandoCursoDe(null);
+      cargarDatosBajas();
+    } catch {
+      alert('No se pudo conectar con el servidor.');
+    }
+    setGuardandoCurso(false);
   }
 
   async function enviarMensaje1(baja) {
@@ -376,6 +407,9 @@ export default function BajasPage() {
                 <p className="text-textMuted text-xs py-4 text-center">Sin bajas para este filtro.</p>
               ) : (
                 <>
+                  <datalist id="cursos-oficiales">
+                    {CURSOS.map((c) => <option key={c} value={c} />)}
+                  </datalist>
                   {/* Tabla — visible desde tablet para arriba */}
                   <div className="hidden sm:block overflow-x-auto max-h-[750px] overflow-y-auto rounded-xl border border-border">
                     <table className="w-full text-xs">
@@ -408,8 +442,32 @@ export default function BajasPage() {
                               {b.nombre}
                             </td>
                             <td className="px-2 text-textSec whitespace-nowrap">{b.email || <span className="text-warningText">Sin email</span>}</td>
-                            <td className="px-2 text-textSec">{b.curso}</td>
-                            <td className="px-2 text-textSec">{b.edicion || '—'}</td>
+                            {editandoCursoDe === b.leadId ? (
+                              <>
+                                <td className="px-2">
+                                  <input list="cursos-oficiales" value={cursoTemp} onChange={(e) => setCursoTemp(e.target.value)}
+                                    autoFocus className="bg-bg border border-border rounded px-1.5 py-1 text-xs w-36" />
+                                </td>
+                                <td className="px-2">
+                                  <div className="flex items-center gap-1">
+                                    <input value={edicionTemp} onChange={(e) => setEdicionTemp(e.target.value)} placeholder="Edición"
+                                      className="bg-bg border border-border rounded px-1.5 py-1 text-xs w-16" />
+                                    <button onClick={() => guardarCurso(b)} disabled={guardandoCurso}
+                                      className="text-successText text-xs font-bold disabled:opacity-50" title="Guardar">✓</button>
+                                    <button onClick={() => setEditandoCursoDe(null)} className="text-textMuted text-xs" title="Cancelar">✕</button>
+                                  </div>
+                                </td>
+                              </>
+                            ) : (
+                              <>
+                                <td className="px-2 text-textSec cursor-pointer hover:text-text hover:underline" onClick={() => abrirEdicionCurso(b)} title="Editar curso">
+                                  {b.curso} <span className="text-textMuted text-[10px]">✏️</span>
+                                </td>
+                                <td className="px-2 text-textSec cursor-pointer hover:text-text hover:underline" onClick={() => abrirEdicionCurso(b)} title="Editar edición">
+                                  {b.edicion || '—'}
+                                </td>
+                              </>
+                            )}
                             <td className="px-2 whitespace-nowrap">{new Date(b.fechaBaja).toLocaleDateString('es-AR')}</td>
                             <td className="px-2"><BadgeReactivacion b={b} enviandoMensajeId={enviandoMensajeId} onEnviar={enviarMensaje1} /></td>
                             <td className="px-2"><BadgeSeguimiento b={b} /></td>
