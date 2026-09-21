@@ -38,7 +38,18 @@ export async function GET(request) {
       const cursoCrudo = lead?.Curso || '';
       const matchEdicionEnTexto = cursoCrudo.match(/edici[oó]n\s*(\d+)\s*-?\s*|-\s*edici[oó]n\s*(\d+)/i);
       const edicion = lead?.Edicion || matchEdicionEnTexto?.[1] || matchEdicionEnTexto?.[2] || '';
-      const curso = cursoCrudo.replace(/edici[oó]n\s*\d+\s*-?\s*|-?\s*edici[oó]n\s*\d+/gi, '').replace(/^[\s—-]+|[\s—-]+$/g, '').trim();
+      let curso = cursoCrudo.replace(/edici[oó]n\s*\d+\s*-?\s*|-?\s*edici[oó]n\s*\d+/gi, '').replace(/^[\s—-]+|[\s—-]+$/g, '').trim();
+      // Si el nombre del curso quedó repetido dos veces seguidas en el dato de origen (ej:
+      // "Coaching Deportivo Coaching Deportivo"), se deja solo una — no debería pasar, pero si
+      // pasa que no se vea roto en pantalla. Se compara por palabras (no por largo de texto),
+      // para que funcione sin importar el espaciado.
+      const palabras = curso.split(/\s+/).filter(Boolean);
+      if (palabras.length % 2 === 0) {
+        const mitad = palabras.length / 2;
+        if (palabras.slice(0, mitad).join(' ') === palabras.slice(mitad).join(' ')) {
+          curso = palabras.slice(0, mitad).join(' ');
+        }
+      }
       return {
         leadId: s.LeadID,
         nombre: lead ? `${lead.Nombre} ${lead.Apellido}` : '(lead no encontrado)',
