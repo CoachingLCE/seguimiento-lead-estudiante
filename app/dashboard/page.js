@@ -232,19 +232,19 @@ export default function DashboardPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-textSec text-left border-b border-border">
-                      <th className="py-1.5 pr-2">Prioridad</th><th className="pr-2">Tipo</th><th className="pr-2">Quién</th>
-                      <th className="pr-2">Motivo</th><th className="pr-2">Detalle</th><th>Acción</th>
+                      <th className="py-1.5 pr-2 whitespace-nowrap">Prioridad</th><th className="pr-2 whitespace-nowrap">Tipo</th><th className="pr-2 whitespace-nowrap">Quién</th>
+                      <th className="pr-2 whitespace-nowrap">Motivo</th><th className="pr-2 whitespace-nowrap">Detalle</th><th className="whitespace-nowrap">Acción</th>
                     </tr>
                   </thead>
                   <tbody>
                     {altasDemoradas.map((i) => (
                       <tr key={`alta-${i.ID}`} className="border-b border-border">
-                        <td className="py-1.5 pr-2"><Pill tono="danger">🔴 Urgente</Pill></td>
-                        <td className="pr-2"><Pill tono="info">🎓 Estudiante</Pill></td>
-                        <td className="pr-2">{i.NombreEstudiante}</td>
-                        <td className="pr-2">Alta demorada</td>
-                        <td className="pr-2">{i.Curso || '—'} · <Pill tono="danger">{horasDesde(i.FechaInscripcion)}hs</Pill></td>
-                        <td className="flex items-center gap-2">
+                        <td className="py-1.5 pr-2 whitespace-nowrap"><Pill tono="danger">🔴 Urgente</Pill></td>
+                        <td className="pr-2 whitespace-nowrap"><Pill tono="info">🎓 Estudiante</Pill></td>
+                        <td className="pr-2 whitespace-nowrap">{i.NombreEstudiante}</td>
+                        <td className="pr-2 whitespace-nowrap">Alta demorada</td>
+                        <td className="pr-2 whitespace-nowrap">{i.Curso || '—'} · <Pill tono="danger">{horasDesde(i.FechaInscripcion)}hs</Pill></td>
+                        <td className="flex items-center gap-2 whitespace-nowrap">
                           <button disabled={procesandoId === i.ID} onClick={() => toggleAltaInline(i)}
                             className="text-xs px-3 py-1 rounded-md bg-surface2 border border-border disabled:opacity-60">
                             {procesandoId === i.ID ? '...' : '✓ Marcar alta'}
@@ -255,12 +255,12 @@ export default function DashboardPage() {
                     ))}
                     {bienvenidasPendientes.map((i) => (
                       <tr key={`bien-${i.ID}`} className="border-b border-border">
-                        <td className="py-1.5 pr-2"><Pill tono="warning">🟡 Hoy</Pill></td>
-                        <td className="pr-2"><Pill tono="info">🎓 Estudiante</Pill></td>
-                        <td className="pr-2">{i.NombreEstudiante}</td>
-                        <td className="pr-2">Bienvenida sin enviar</td>
-                        <td className="pr-2">{i.EmailEstudiante || 'Falta email del estudiante'}</td>
-                        <td className="flex items-center gap-2">
+                        <td className="py-1.5 pr-2 whitespace-nowrap"><Pill tono="warning">🟡 Hoy</Pill></td>
+                        <td className="pr-2 whitespace-nowrap"><Pill tono="info">🎓 Estudiante</Pill></td>
+                        <td className="pr-2 whitespace-nowrap">{i.NombreEstudiante}</td>
+                        <td className="pr-2 whitespace-nowrap">Bienvenida sin enviar</td>
+                        <td className="pr-2 whitespace-nowrap">{i.EmailEstudiante || 'Falta email del estudiante'}</td>
+                        <td className="flex items-center gap-2 whitespace-nowrap">
                           {pidiendoEmailPara === i.ID ? (
                             <div className="flex items-center gap-1.5">
                               <input type="email" autoFocus placeholder="email@mail.com" value={emailTemporal}
@@ -283,12 +283,12 @@ export default function DashboardPage() {
                       const l = leads.find((x) => x.ID === s.LeadID);
                       return (
                         <tr key={`seg-${i2}`} className="border-b border-border">
-                          <td className="py-1.5 pr-2"><Pill tono="warning">🟡 Hoy</Pill></td>
-                          <td className="pr-2"><Pill tono="warning">📩 Lead</Pill></td>
-                          <td className="pr-2">{l ? `${l.Nombre} ${l.Apellido}` : s.LeadID}</td>
-                          <td className="pr-2">Lead sin contactar</td>
-                          <td className="pr-2">Lote {s.Lote} · asignado a {s.AsignadoANombre || 'sin asignar'}</td>
-                          <td className="flex items-center gap-2">
+                          <td className="py-1.5 pr-2 whitespace-nowrap"><Pill tono="warning">🟡 Hoy</Pill></td>
+                          <td className="pr-2 whitespace-nowrap"><Pill tono="warning">📩 Lead</Pill></td>
+                          <td className="pr-2 whitespace-nowrap">{l ? `${l.Nombre} ${l.Apellido}` : s.LeadID}</td>
+                          <td className="pr-2 whitespace-nowrap">Lead sin contactar</td>
+                          <td className="pr-2 whitespace-nowrap">Lote {s.Lote} · asignado a {s.AsignadoANombre || 'sin asignar'}</td>
+                          <td className="flex items-center gap-2 whitespace-nowrap">
                             {l?.WhatsApp && (
                               <a href={linkWhatsapp(l.WhatsApp)} target="_blank" rel="noopener noreferrer"
                                 className="w-6 h-6 flex items-center justify-center rounded-md border border-border" title="WhatsApp">💬</a>
