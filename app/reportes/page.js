@@ -6,7 +6,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine
 } from 'recharts';
 import Nav from '../../components/Nav';
 import AccesoDenegado from '../../components/AccesoDenegado';
@@ -1052,6 +1052,9 @@ export default function ReportesPage() {
 
   if (!usuario) return null;
   const puedeVer = tienePermisoReportes(usuario);
+  // Solo tiene sentido marcar "hoy" en el gráfico si el mes elegido es el mes actual de verdad
+  // (en un mes pasado no hay ningún día que marcar).
+  const diaHoy = mes === new Date().toISOString().slice(0, 7) ? new Date().getDate() : null;
 
   return (
     <div>
@@ -1175,6 +1178,10 @@ export default function ReportesPage() {
                         <YAxis stroke="#6b7299" fontSize={11} allowDecimals={false} />
                         <Tooltip content={<TooltipVentasPorDia />} />
                         <Legend wrapperStyle={{ fontSize: 11 }} formatter={(v) => (v === 'ventas' ? 'Este mes' : 'Mes anterior')} />
+                        {diaHoy && (
+                          <ReferenceLine x={diaHoy} stroke="#f59e0b" strokeWidth={2}
+                            label={{ value: 'Hoy', position: 'top', fill: '#f59e0b', fontSize: 11, fontWeight: 700 }} />
+                        )}
                         <Line type="monotone" dataKey="ventas" stroke="#22d3ee" strokeWidth={2} dot={false} />
                         <Line type="monotone" dataKey="ventasMesAnterior" stroke="#6b7299" strokeWidth={2} dot={false} strokeDasharray="4 3" />
                       </LineChart>
@@ -1197,6 +1204,10 @@ export default function ReportesPage() {
                         <YAxis stroke="#6b7299" fontSize={11} tickFormatter={(v) => `$${v / 1000}k`} />
                         <Tooltip formatter={(v) => money(v)} contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} itemStyle={{ color: '#e5e7eb' }} labelStyle={{ color: '#e5e7eb' }} />
                         <Legend wrapperStyle={{ fontSize: 11 }} formatter={(v) => (v === 'facturacion' ? 'Facturación' : 'Ingresos (estimado)')} />
+                        {diaHoy && (
+                          <ReferenceLine x={diaHoy} stroke="#f59e0b" strokeWidth={2}
+                            label={{ value: 'Hoy', position: 'top', fill: '#f59e0b', fontSize: 11, fontWeight: 700 }} />
+                        )}
                         <Line type="monotone" dataKey="facturacion" stroke="#7c3aed" strokeWidth={2} dot={false} />
                         <Line type="monotone" dataKey="ingresos" stroke="#4ade80" strokeWidth={2} dot={false} strokeDasharray="4 3" />
                       </LineChart>
