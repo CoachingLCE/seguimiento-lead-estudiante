@@ -8,6 +8,16 @@ import { normalizarWhatsapp } from '../../../../lib/constants';
 // pueden alargar bastante la ejecución — se le da más margen de lo normal.
 export const maxDuration = 300;
 
+// Nombres más cortos para mostrar en esta pantalla puntual (no cambia el dato real del lead,
+// solo cómo se ve acá) — agregar más pares abajo si aparecen otras variantes largas.
+const NOMBRES_CURSO_CORTOS = {
+  'coaching ontológico profesional': 'Coaching Ontológico',
+  'coaching ontologico profesional': 'Coaching Ontológico'
+};
+function nombreCortoDeCurso(curso) {
+  return NOMBRES_CURSO_CORTOS[curso.trim().toLowerCase()] || curso;
+}
+
 function esperar(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -50,6 +60,7 @@ export async function GET(request) {
           curso = palabras.slice(0, mitad).join(' ');
         }
       }
+      curso = nombreCortoDeCurso(curso);
       return {
         leadId: s.LeadID,
         nombre: lead ? `${lead.Nombre} ${lead.Apellido}` : '(lead no encontrado)',
