@@ -5,6 +5,7 @@
 /* Paleta oscura (default, y también explícita con [data-theme="dark"]) */
 :root,
 [data-theme='dark'] {
+  color-scheme: dark;
   --color-bg: 11 14 26;
   --color-surface: 18 22 42;
   --color-surface2: 24 29 53;
@@ -27,6 +28,7 @@
 
 /* Paleta clara */
 [data-theme='light'] {
+  color-scheme: light;
   --color-bg: 248 250 252;
   --color-surface: 255 255 255;
   --color-surface2: 241 245 249;
