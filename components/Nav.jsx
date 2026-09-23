@@ -79,8 +79,10 @@ export default function Nav({ usuario, onLogout }) {
   useEffect(() => {
     const r = leerUsuarioReal(); setReal(r); setVc(getVerComo());
     if (r && r.email === EMAIL_VERCOMO) {
-      fetch(`/api/usuarios?solicitanteEmail=${encodeURIComponent(r.email)}`).then((x) => x.json())
-        .then((d) => { if (d.usuarios) setPersonas(d.usuarios.filter((u) => u.email !== EMAIL_VERCOMO)); }).catch(() => {});
+      fetch(`/api/usuarios?list=true&solicitanteEmail=${encodeURIComponent(r.email)}`).then((x) => x.json())
+        .then((d) => { if (d.usuarios) setPersonas(d.usuarios
+          .filter((u) => u.Activo && u.Email && u.Email !== EMAIL_VERCOMO)
+          .map((u) => ({ email: u.Email, nombre: u.Nombre, roles: (u.Roles || '').split(',').map((x) => x.trim()).filter(Boolean) }))); }).catch(() => {});
     }
   }, []);
   const puedeVerComo = real && real.email === EMAIL_VERCOMO;
