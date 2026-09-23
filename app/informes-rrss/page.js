@@ -141,6 +141,7 @@ function Skeleton({ h = 'h-24' }) {
 // Gráfico de línea simple en SVG puro — sin librerías nuevas. "puntos" es un array de números
 // (puede tener null para meses sin datos, se saltea al dibujar el trazo).
 function GraficoEvolucion({ etiquetas, puntos, color = '#8C52FF', alto = 90 }) {
+  const [hover, setHover] = useState(null);
   const ancho = 560;
   const padY = 14;
   const validos = puntos.filter((p) => p !== null && p !== undefined);
@@ -167,16 +168,34 @@ function GraficoEvolucion({ etiquetas, puntos, color = '#8C52FF', alto = 90 }) {
   });
   if (actual.length > 1) segmentos.push(actual);
 
+  const onMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (!rect.width) return;
+    const rel = (e.clientX - rect.left) / rect.width;
+    let i = Math.round(rel * Math.max(puntos.length - 1, 1));
+    i = Math.max(0, Math.min(puntos.length - 1, i));
+    setHover(puntos[i] === null || puntos[i] === undefined ? null : i);
+  };
+  const fmtNum = (n) => (typeof n === 'number' ? n.toLocaleString('es-AR') : n);
+
   return (
-    <svg viewBox={`0 0 ${ancho} ${alto}`} className="w-full" style={{ height: alto }} preserveAspectRatio="none">
-      {segmentos.map((seg, i) => (
-        <polyline key={i} points={seg.map(([x, y]) => `${x},${y}`).join(' ')}
-          fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      ))}
-      {coords.map((c, i) => c && (
-        <circle key={i} cx={c[0]} cy={c[1]} r="3" fill={color} />
-      ))}
-    </svg>
+    <div className="relative" onMouseMove={onMove} onMouseLeave={() => setHover(null)}>
+      <svg viewBox={`0 0 ${ancho} ${alto}`} className="w-full" style={{ height: alto }} preserveAspectRatio="none">
+        {segmentos.map((seg, i) => (
+          <polyline key={i} points={seg.map(([x, y]) => `${x},${y}`).join(' ')}
+            fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        ))}
+        {coords.map((c, i) => c && (
+          <circle key={i} cx={c[0]} cy={c[1]} r={hover === i ? '5' : '3'} fill={color} />
+        ))}
+      </svg>
+      {hover !== null && coords[hover] && (
+        <div className="absolute pointer-events-none z-10 -translate-x-1/2 -translate-y-full bg-surface2 border border-border rounded-lg px-2 py-1 text-[11px] shadow-lg whitespace-nowrap"
+          style={{ left: `${(hover / Math.max(puntos.length - 1, 1)) * 100}%`, top: `${(coords[hover][1] / alto) * 100}%`, marginTop: -6 }}>
+          <span className="text-textMuted">{etiquetas && etiquetas[hover] ? etiquetas[hover] + ': ' : ''}</span><b>{fmtNum(puntos[hover])}</b>
+        </div>
+      )}
+    </div>
   );
 }
 
