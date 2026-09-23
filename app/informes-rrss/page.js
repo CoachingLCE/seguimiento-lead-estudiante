@@ -730,7 +730,7 @@ export default function InformesRRSSPage() {
               <span className="text-textMuted text-sm">📅</span>
               <select value={mes} onChange={(e) => setMes(e.target.value)}
                 className="bg-transparent text-sm font-medium focus:outline-none capitalize">
-                {[...new Set([mesesDisponibles()[0], ...(mesesConDatos || [])])].sort().reverse()
+                {[...new Set([...mesesDisponibles(), ...(mesesConDatos || [])])].sort().reverse()
                   .map((m) => <option key={m} value={m} className="capitalize">{labelDeMes(m)}</option>)}
               </select>
             </div>

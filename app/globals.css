@@ -100,3 +100,6 @@ body {
   table { color: #111827 !important; }
   th, td { border-color: #d1d5db !important; color: #111827 !important; }
 }
+
+/* Selects nativos: en modo oscuro el navegador pintaba el desplegable en blanco. */
+[data-theme="dark"] select { color-scheme: dark; }
