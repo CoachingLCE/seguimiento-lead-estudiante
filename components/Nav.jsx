@@ -1,11 +1,12 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ThemeSelector from './ThemeSelector';
 import Logo from './Logo';
 import { tienePermisoOperativo } from '../lib/permisos';
 import { nombreVisibleRoles } from '../lib/constants';
+import { leerUsuarioReal, getVerComo, aplicarVerComo, quitarVerComo, EMAIL_VERCOMO } from '../lib/useSession';
 
 // Se mantiene por compatibilidad con imports viejos (`import { puedeVerOperativo } from '.../Nav'`)
 // — Dashboard y Seguimiento la usan como su chequeo real de acceso (ya no para ocultar del menú,
@@ -72,6 +73,22 @@ function Divisor() {
 export default function Nav({ usuario, onLogout }) {
   const pathname = usePathname();
   const [menuMovil, setMenuMovil] = useState(false);
+  const [real, setReal] = useState(null);
+  const [personas, setPersonas] = useState([]);
+  const [vc, setVc] = useState(null);
+  useEffect(() => {
+    const r = leerUsuarioReal(); setReal(r); setVc(getVerComo());
+    if (r && r.email === EMAIL_VERCOMO) {
+      fetch(`/api/usuarios?solicitanteEmail=${encodeURIComponent(r.email)}`).then((x) => x.json())
+        .then((d) => { if (d.usuarios) setPersonas(d.usuarios.filter((u) => u.email !== EMAIL_VERCOMO)); }).catch(() => {});
+    }
+  }, []);
+  const puedeVerComo = real && real.email === EMAIL_VERCOMO;
+  function elegirVerComo(email) {
+    if (!email) { quitarVerComo(); window.location.reload(); return; }
+    const u = personas.find((x) => x.email === email);
+    if (u) { aplicarVerComo(u); window.location.reload(); }
+  }
 
   return (
     <div className="border-b border-border no-print">
@@ -99,6 +116,13 @@ export default function Nav({ usuario, onLogout }) {
               ⚡
             </Link>
             <ThemeSelector />
+            {puedeVerComo && (
+              <select value={vc ? vc.email : ''} onChange={(e) => elegirVerComo(e.target.value)} title="Ver la app como otra persona (solo lectura)"
+                className="hidden md:block bg-surface2 border border-border rounded-lg text-[12px] px-2 h-9 text-textSec hover:border-accentTeal max-w-[170px]">
+                <option value="">👁 Ver como…</option>
+                {personas.map((p) => <option key={p.email} value={p.email}>{p.nombre}</option>)}
+              </select>
+            )}
             {usuario && (
               <div className="hidden md:block text-right text-sm pl-2 border-l border-border">
                 <p className="font-semibold leading-tight">{usuario.nombre}</p>
@@ -115,6 +139,12 @@ export default function Nav({ usuario, onLogout }) {
           </button>
         </div>
 
+        {puedeVerComo && vc && (
+          <div className="no-print flex items-center gap-3 text-[12px] bg-accentPurple/15 border border-accentPurple/40 text-text rounded-lg px-3 py-1.5 mb-2">
+            <span>👁 Estás viendo la app <b>como {vc.nombre}</b> (solo lectura).</span>
+            <button onClick={() => elegirVerComo('')} className="underline ml-auto whitespace-nowrap">Salir del modo vista</button>
+          </div>
+        )}
         {/* NAV — desktop: todo a la vista, sin clics para desplegar nada */}
         <nav className="hidden lg:flex items-center gap-2.5 flex-wrap pb-3">
           <Link href="/nuevo-lead"
