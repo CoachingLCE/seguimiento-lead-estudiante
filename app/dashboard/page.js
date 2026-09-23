@@ -191,7 +191,7 @@ export default function DashboardPage() {
       {!puedeVer ? (
         <AccesoDenegado seccion="Dashboard" />
       ) : (
-      <div className="max-w-5xl mx-auto px-6 pb-16">
+      <div className="max-w-[1400px] mx-auto px-6 pb-16">
         {cargando ? (
           <p className="text-textSec text-sm">Cargando…</p>
         ) : (
