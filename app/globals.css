@@ -105,3 +105,7 @@ body {
 
 /* Selects nativos: en modo oscuro el navegador pintaba el desplegable en blanco. */
 [data-theme="dark"] select { color-scheme: dark; }
+
+/* Desplegables nativos: el navegador pintaba el popup de opciones en blanco aun con
+   color-scheme. Estilamos las <option> con las variables del tema para que se vean bien. */
+select, option { background-color: rgb(var(--color-surface)); color: rgb(var(--color-text)); }
