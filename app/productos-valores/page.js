@@ -539,10 +539,20 @@ export default function ProductosValoresPage() {
               const abierto = expandidos.has(p.id);
               const cantCuotas = cantCuotasDeDuracion(p.duracion);
               const tieneEscalonadas = p.cuotasEscalonadas?.length > 0;
+              // Cuando el producto tiene cuotas escalonadas, "valorLista" deja de ser el precio
+              // real del curso (ver más abajo: se deja de mostrar "/cuota" y de multiplicar por
+              // la cantidad de cuotas para este mismo motivo) — el precio real es la suma de
+              // todas las cuotas escalonadas. Los descuentos de "Precios y beneficios" (ej.
+              // "Pago único") tienen que aplicarse sobre ESE total, no sobre valorLista, o el
+              // resultado no tiene relación con lo que el estudiante paga en cuotas.
+              const totalEscalonadas = tieneEscalonadas
+                ? p.cuotasEscalonadas.reduce((suma, t) => suma + num(t.valor), 0)
+                : null;
+              const baseDescuento = tieneEscalonadas ? totalEscalonadas : p.valorLista;
               const filasDescuento = Object.keys(p.descuentos || {}).map((tierId) => {
                 const pct = pctEfectivo(p, tierId, config);
                 const label = config.find((t) => t.tierId === tierId)?.label || tierId;
-                return pct > 0 ? { label, pct, valorCuota: conDescuento(p.valorLista, pct) } : null;
+                return pct > 0 ? { label, pct, valorCuota: conDescuento(baseDescuento, pct) } : null;
               }).filter(Boolean);
               const productoPadre = p.esVariante ? productos.find((x) => x.id === p.varianteDeId) : null;
               const mediosDisponibles = Object.entries(p.mediosDePago || {}).filter(([, m]) => m.link);
