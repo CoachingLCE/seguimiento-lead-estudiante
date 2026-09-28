@@ -3,11 +3,13 @@ import { readSheet } from '../../../../lib/sheets';
 import { horasHabilesTranscurridas } from '../../../../lib/constants';
 import { enviarMailResumenAlertas } from '../../../../lib/mailer';
 
+// Pedido de Diego: sacar a Macarena de este resumen — ella recibe aparte el de "Fichas
+// enviadas" (ver app/api/cron/resumen-fichas-enviadas o similar), pero este de alertas de
+// confirmación no le corresponde.
 const DESTINATARIOS = [
   'lourdes.barrantes@institutoilce.com',
   'Victoria.Defilippe@institutoilce.com',
-  'sofia.salgueiro@institutoilce.com',
-  'Macarena.Juncos@institutoilce.com'
+  'sofia.salgueiro@institutoilce.com'
 ];
 
 // GET /api/cron/resumen-alertas
