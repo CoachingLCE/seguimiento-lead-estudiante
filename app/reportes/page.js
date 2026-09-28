@@ -1155,23 +1155,41 @@ export default function ReportesPage() {
                     onExportar={() => exportarGrafico('ventas-por-dia', (() => {
                       let acumulado = 0;
                       let acumuladoAnterior = 0;
-                      return datos.serieDiaria.map((d, i) => {
+                      const puntos = datos.serieDiaria.map((d, i) => {
                         acumulado += d.ventas;
                         const ventasMesAnterior = datos.serieDiariaMesAnterior?.[i]?.ventas ?? 0;
                         acumuladoAnterior += ventasMesAnterior;
                         return { dia: d.dia, ventas: d.ventas, acumulado, ventasMesAnterior, acumuladoMesAnterior: acumuladoAnterior };
                       });
+                      // Si el mes anterior tuvo mas dias que el actual (ej. agosto 31 vs septiembre 30), sumar
+                      // los dias sobrantes al ultimo punto para que el "acumulado mes anterior" refleje el TOTAL real.
+                      const prevMes = datos.serieDiariaMesAnterior || [];
+                      if (prevMes.length > datos.serieDiaria.length && puntos.length) {
+                        const extra = prevMes.slice(datos.serieDiaria.length).reduce((a, x) => a + (x.ventas || 0), 0);
+                        const u = puntos.length - 1;
+                        puntos[u] = { ...puntos[u], acumuladoMesAnterior: puntos[u].acumuladoMesAnterior + extra };
+                      }
+                      return puntos;
                     })())}>
                     <ResponsiveContainer>
                       <LineChart data={(() => {
                         let acumulado = 0;
                         let acumuladoAnterior = 0;
-                        return datos.serieDiaria.map((d, i) => {
+                        const puntos = datos.serieDiaria.map((d, i) => {
                           acumulado += d.ventas;
                           const ventasMesAnterior = datos.serieDiariaMesAnterior?.[i]?.ventas ?? 0;
                           acumuladoAnterior += ventasMesAnterior;
                           return { dia: d.dia, ventas: d.ventas, acumulado, ventasMesAnterior, acumuladoMesAnterior: acumuladoAnterior };
                         });
+                        // Si el mes anterior tuvo mas dias que el actual (ej. agosto 31 vs septiembre 30), sumar
+                        // los dias sobrantes al ultimo punto para que el "acumulado mes anterior" refleje el TOTAL real.
+                        const prevMes = datos.serieDiariaMesAnterior || [];
+                        if (prevMes.length > datos.serieDiaria.length && puntos.length) {
+                          const extra = prevMes.slice(datos.serieDiaria.length).reduce((a, x) => a + (x.ventas || 0), 0);
+                          const u = puntos.length - 1;
+                          puntos[u] = { ...puntos[u], acumuladoMesAnterior: puntos[u].acumuladoMesAnterior + extra };
+                        }
+                        return puntos;
                       })()}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#262c4a" />
                         <XAxis dataKey="dia" stroke="#6b7299" fontSize={11} />
