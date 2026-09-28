@@ -757,7 +757,7 @@ export default function InformesRRSSPage() {
                       <p className="text-lg font-bold">{fmt(anual.totalLeads)}</p>
                     </div>
                     <div className="bg-bg border border-border rounded-xl p-3">
-                      <p className="text-textMuted text-[11px] mb-1">Contenidos publicados</p>
+                      <p className="text-textMuted text-[11px] mb-1">Contenido destacado</p>
                       <p className="text-lg font-bold">{anual.totalPiezas}</p>
                     </div>
                     <div className="bg-bg border border-border rounded-xl p-3">
