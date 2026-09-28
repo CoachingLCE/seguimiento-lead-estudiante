@@ -19,8 +19,14 @@ function diasDelMes(mes) {
 // idioma, y convertiría "80.800" en 80.8 — por eso hay que sacar los puntos antes de parsear.
 function numeroValido(v) {
   if (v === '' || v === null || v === undefined) return 0;
-  if (typeof v === 'number') return v;
-  const n = Number(String(v).trim().replace(/\./g, ''));
+  if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
+  // Deja solo digitos, coma, punto y signo: "$80.800" / "$ 80.800,00" / "80800 ARS" -> numero.
+  let s = String(v).trim().replace(/[^\d.,-]/g, '');
+  if (!s || s === '-' || s === '.' || s === ',') return 0;
+  // Punto = miles (formato AR). Si ademas hay coma, la coma es el decimal.
+  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+  else s = s.replace(/\./g, '');
+  const n = Number(s);
   return Number.isFinite(n) ? n : 0;
 }
 
