@@ -39,6 +39,16 @@ function Flecha({ actual, anterior, invertido = false }) {
   const delta = ((actual - anterior) / anterior) * 100;
   const mejora = invertido ? delta < 0 : delta > 0;
   if (Math.abs(delta) < 0.5) return <span className="text-textMuted text-xs">≈ sin cambios</span>;
+  // Si el mes anterior tenia base minima, el % se dispara (ej: 2 -> 929 = 46350%) y no dice nada.
+  // En ese caso mostramos el cambio absoluto y aclaramos la base, que es mas honesto.
+  if (Math.abs(delta) >= 1000) {
+    const dif = actual - anterior;
+    return (
+      <span className={`text-xs font-semibold ${mejora ? 'text-successText' : 'text-dangerText'}`}>
+        {dif > 0 ? '▲' : '▼'} {Math.abs(Math.round(dif)).toLocaleString('es-AR')} <span className="text-textMuted font-normal">(mes ant.: {Math.round(anterior).toLocaleString('es-AR')})</span>
+      </span>
+    );
+  }
   return (
     <span className={`text-xs font-semibold ${mejora ? 'text-successText' : 'text-dangerText'}`}>
       {delta > 0 ? '▲' : '▼'} {Math.abs(delta).toFixed(1)}%
