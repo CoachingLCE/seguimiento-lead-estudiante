@@ -910,7 +910,6 @@ export default function ReportesPage() {
   }
 
   const [datos, setDatos] = useState(null);
-  const [modoVentas, setModoVentas] = useState('dia'); // 'dia' | 'acumulado'
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
   const [cargado, setCargado] = useState(false);
@@ -1182,14 +1181,6 @@ export default function ReportesPage() {
                       }
                       return puntos;
                     })())}>
-                    <div className="flex gap-2 mb-3">
-                      {[['dia', 'Por día'], ['acumulado', 'Acumulado']].map(([m, lbl]) => (
-                        <button key={m} onClick={() => setModoVentas(m)}
-                          className={`text-xs font-semibold px-3 py-1 rounded-full border transition-colors ${modoVentas === m ? 'bg-gradient-to-r from-accentPurple to-accentMagenta text-white border-transparent' : 'bg-transparent text-textSec border-border hover:border-accentTeal'}`}>
-                          {lbl}
-                        </button>
-                      ))}
-                    </div>
                     <ResponsiveContainer>
                       <LineChart data={(() => {
                         let acumulado = 0;
@@ -1214,22 +1205,63 @@ export default function ReportesPage() {
                         <XAxis dataKey="dia" stroke="#6b7299" fontSize={11} />
                         <YAxis stroke="#6b7299" fontSize={11} allowDecimals={false} />
                         <Tooltip content={<TooltipVentasPorDia />} />
-                        <Legend wrapperStyle={{ fontSize: 11 }} formatter={(v) => (v === 'ventas' || v === 'acumulado' ? 'Este mes' : 'Mes anterior')} />
+                        <Legend wrapperStyle={{ fontSize: 11 }} formatter={(v) => (v === 'ventas' ? 'Este mes' : 'Mes anterior')} />
                         {diaHoy && (
                           <ReferenceLine x={diaHoy} stroke="#f59e0b" strokeWidth={2}
                             label={{ value: 'Hoy', position: 'top', fill: '#f59e0b', fontSize: 11, fontWeight: 700 }} />
                         )}
-                        {modoVentas === 'acumulado' ? (
-                          <>
-                            <Line type="monotone" dataKey="acumulado" stroke="#22d3ee" strokeWidth={2} dot={false} />
-                            <Line type="monotone" dataKey="acumuladoMesAnterior" stroke="#6b7299" strokeWidth={2} dot={false} strokeDasharray="4 3" />
-                          </>
-                        ) : (
-                          <>
-                            <Line type="monotone" dataKey="ventas" stroke="#22d3ee" strokeWidth={2} dot={false} />
-                            <Line type="monotone" dataKey="ventasMesAnterior" stroke="#6b7299" strokeWidth={2} dot={false} strokeDasharray="4 3" />
-                          </>
+                        <Line type="monotone" dataKey="ventas" stroke="#22d3ee" strokeWidth={2} dot={false} />
+                        <Line type="monotone" dataKey="ventasMesAnterior" stroke="#6b7299" strokeWidth={2} dot={false} strokeDasharray="4 3" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </ChartCard>
+
+                  <ChartCard titulo="Ventas acumuladas del mes" subtitulo="Total corriendo — comparado con el mes anterior"
+                    tooltip="El total de ventas acumulado dia a dia del mes, superpuesto con el acumulado del mes anterior. Sirve para comparar el ritmo mes contra mes."
+                    valorGrande={`${datos.totalCompras} ventas`}
+                    comparacion={<Flecha actual={datos.comparativa.ventas.actual} anterior={datos.comparativa.ventas.anterior} />}
+                    onExportar={() => exportarGrafico('ventas-acumuladas', (() => {
+                      let ac = 0, acA = 0;
+                      const puntos = datos.serieDiaria.map((d, i) => {
+                        ac += d.ventas;
+                        const va = datos.serieDiariaMesAnterior?.[i]?.ventas ?? 0;
+                        acA += va;
+                        return { dia: d.dia, acumulado: ac, acumuladoMesAnterior: acA };
+                      });
+                      const prevMes = datos.serieDiariaMesAnterior || [];
+                      if (prevMes.length > datos.serieDiaria.length && puntos.length) {
+                        const extra = prevMes.slice(datos.serieDiaria.length).reduce((a, x) => a + (x.ventas || 0), 0);
+                        puntos[puntos.length - 1].acumuladoMesAnterior += extra;
+                      }
+                      return puntos;
+                    })())}>
+                    <ResponsiveContainer>
+                      <LineChart data={(() => {
+                        let ac = 0, acA = 0;
+                        const puntos = datos.serieDiaria.map((d, i) => {
+                          ac += d.ventas;
+                          const va = datos.serieDiariaMesAnterior?.[i]?.ventas ?? 0;
+                          acA += va;
+                          return { dia: d.dia, ventas: d.ventas, acumulado: ac, ventasMesAnterior: va, acumuladoMesAnterior: acA };
+                        });
+                        const prevMes = datos.serieDiariaMesAnterior || [];
+                        if (prevMes.length > datos.serieDiaria.length && puntos.length) {
+                          const extra = prevMes.slice(datos.serieDiaria.length).reduce((a, x) => a + (x.ventas || 0), 0);
+                          puntos[puntos.length - 1].acumuladoMesAnterior += extra;
+                        }
+                        return puntos;
+                      })()}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#262c4a" />
+                        <XAxis dataKey="dia" stroke="#6b7299" fontSize={11} />
+                        <YAxis stroke="#6b7299" fontSize={11} allowDecimals={false} />
+                        <Tooltip content={<TooltipVentasPorDia />} />
+                        <Legend wrapperStyle={{ fontSize: 11 }} formatter={(v) => (v === 'acumulado' ? 'Este mes' : 'Mes anterior')} />
+                        {diaHoy && (
+                          <ReferenceLine x={diaHoy} stroke="#f59e0b" strokeWidth={2}
+                            label={{ value: 'Hoy', position: 'top', fill: '#f59e0b', fontSize: 11, fontWeight: 700 }} />
                         )}
+                        <Line type="monotone" dataKey="acumulado" stroke="#22d3ee" strokeWidth={2} dot={false} />
+                        <Line type="monotone" dataKey="acumuladoMesAnterior" stroke="#6b7299" strokeWidth={2} dot={false} strokeDasharray="4 3" />
                       </LineChart>
                     </ResponsiveContainer>
                   </ChartCard>
