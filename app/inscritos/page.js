@@ -75,6 +75,23 @@ export default function InscritosPage() {
   const [filtroMes, setFiltroMes] = useState('');
   const [ordenPor, setOrdenPor] = useState('FechaInscripcion');
   const [ordenDir, setOrdenDir] = useState('desc');
+  const [pendientesOcultoHasta, setPendientesOcultoHasta] = useState(0);
+
+  // El cartel de "acciones pendientes por realizar" se puede cerrar con la ✕ — queda oculto
+  // 24 horas exactas (no hasta mañana: acá se pidió puntualmente "24 horas") y vuelve a
+  // aparecer solo, después, si sigue habiendo pendientes.
+  const CLAVE_PENDIENTES_OCULTO = 'ilce-seg-pendientes-inscritos-oculto-hasta';
+  useEffect(() => {
+    try {
+      const guardado = parseInt(localStorage.getItem(CLAVE_PENDIENTES_OCULTO) || '0', 10);
+      if (guardado > Date.now()) setPendientesOcultoHasta(guardado);
+    } catch { /* localStorage no disponible: el cartel simplemente arranca visible */ }
+  }, []);
+  function cerrarPendientesPor24hs() {
+    const hasta = Date.now() + 24 * 60 * 60 * 1000;
+    setPendientesOcultoHasta(hasta);
+    try { localStorage.setItem(CLAVE_PENDIENTES_OCULTO, String(hasta)); } catch { /* */ }
+  }
 
   const puedeVer = tienePermisoEstudiantes(usuario);
   const esAdmin = usuario?.roles?.includes('Admin');
@@ -305,14 +322,21 @@ export default function InscritosPage() {
           const conteos = pendientes.map((f) => ({ label: f.label.replace('Falta ', ''), cantidad: inscritos.filter(f.test).length }));
           const totalAcciones = conteos.reduce((acc, c) => acc + c.cantidad, 0);
           if (totalAcciones === 0) return null;
+          if (pendientesOcultoHasta > Date.now()) return null;
           return (
-            <div className="bg-warningBg border border-warningText/30 rounded-xl px-4 py-2.5 mb-4 no-print">
-              <p className="text-warningText text-sm font-semibold">
-                ⚠️ {totalAcciones} acción{totalAcciones !== 1 ? 'es' : ''} pendiente{totalAcciones !== 1 ? 's' : ''} por realizar
-              </p>
-              <p className="text-textMuted text-xs mt-0.5">
-                {conteos.filter((c) => c.cantidad > 0).map((c) => `${c.cantidad} ${c.label}`).join(' · ')}
-              </p>
+            <div className="bg-warningBg border border-warningText/30 rounded-xl px-4 py-2.5 mb-4 no-print flex items-start justify-between gap-3">
+              <div>
+                <p className="text-warningText text-sm font-semibold">
+                  ⚠️ {totalAcciones} acción{totalAcciones !== 1 ? 'es' : ''} pendiente{totalAcciones !== 1 ? 's' : ''} por realizar
+                </p>
+                <p className="text-textMuted text-xs mt-0.5">
+                  {conteos.filter((c) => c.cantidad > 0).map((c) => `${c.cantidad} ${c.label}`).join(' · ')}
+                </p>
+              </div>
+              <button onClick={cerrarPendientesPor24hs} title="Ocultar por 24hs"
+                className="text-warningText/70 hover:text-warningText text-sm px-1.5 flex-none">
+                ✕
+              </button>
             </div>
           );
         })()}

@@ -1,24 +1,57 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { APP_VERSION, APP_UPDATED_AT } from '../lib/version';
 import { CHANGELOG } from '../lib/changelog';
 
+const CLAVE_ULTIMA_VISTA = 'ilce-seg-ultima-version-vista';
+
 export default function VersionBadge() {
   const pathname = usePathname();
   const [abierto, setAbierto] = useState(false);
+  const [hayNovedades, setHayNovedades] = useState(false);
+  const [verAnteriores, setVerAnteriores] = useState(false);
   const fecha = new Date(APP_UPDATED_AT + 'T00:00:00').toLocaleDateString('es-AR', {
     day: '2-digit', month: '2-digit', year: 'numeric'
   });
 
+  // El botón "parpadea" (ver .version-badge-novedad en globals.css) mientras la versión que la
+  // persona vio por última vez sea distinta de la actual — arranca "apagado" e ilumina en loop
+  // hasta que hace clic, ahí se guarda la versión actual como vista y se apaga.
+  useEffect(() => {
+    try {
+      const vista = localStorage.getItem(CLAVE_ULTIMA_VISTA);
+      if (vista !== APP_VERSION) setHayNovedades(true);
+    } catch { /* localStorage no disponible: el botón simplemente no parpadea */ }
+  }, []);
+
+  function abrir() {
+    setAbierto(true);
+    setHayNovedades(false);
+    try { localStorage.setItem(CLAVE_ULTIMA_VISTA, APP_VERSION); } catch { /* */ }
+  }
+
   // Pantalla pública para estudiantes — no tiene sentido mostrar acá cosas del equipo interno.
   if (pathname === '/confirmar-recepcion') return null;
+
+  // Por defecto se muestran solo las novedades del mes en curso — el resto queda atrás de "Ver
+  // novedades anteriores" para no abrir un cartel gigante con meses de historial.
+  const hoy = new Date();
+  const mesActual = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
+  const delMes = CHANGELOG.filter((e) => (e.fecha || '').slice(0, 7) === mesActual);
+  // Si todavía no se cargó nada este mes (recién empezó uno), mostramos al menos la entrada
+  // más reciente para que el cartel nunca aparezca vacío.
+  const paraMostrar = verAnteriores ? CHANGELOG : (delMes.length ? delMes : CHANGELOG.slice(0, 1));
+  const hayMasParaVer = !verAnteriores && paraMostrar.length < CHANGELOG.length;
 
   return (
     <>
       <button
-        onClick={() => setAbierto(true)}
-        className="fixed bottom-3 right-4 text-[11px] text-textMuted bg-surface2/80 border border-border rounded-full px-3 py-1 z-40 no-print hover:text-text hover:border-accentTeal transition-colors"
+        onClick={abrir}
+        className={
+          'fixed bottom-3 right-4 text-[11px] text-textMuted bg-surface2/80 border border-border rounded-full px-3 py-1 z-40 no-print hover:text-text hover:border-accentTeal transition-colors' +
+          (hayNovedades ? ' version-badge-novedad' : '')
+        }
         title="Ver novedades"
       >
         v{APP_VERSION} · Actualizado {fecha}
@@ -32,7 +65,7 @@ export default function VersionBadge() {
               <button onClick={() => setAbierto(false)} className="text-textMuted hover:text-text">✕</button>
             </div>
             <div className="space-y-5">
-              {CHANGELOG.map((entrada) => (
+              {paraMostrar.map((entrada) => (
                 <div key={entrada.version}>
                   <p className="text-sm font-semibold text-accentTeal mb-1.5">
                     v{entrada.version} · {new Date(entrada.fecha + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
@@ -48,6 +81,11 @@ export default function VersionBadge() {
                 </div>
               ))}
             </div>
+            {hayMasParaVer && (
+              <button onClick={() => setVerAnteriores(true)} className="mt-4 text-xs text-accentTeal hover:underline">
+                Ver novedades anteriores →
+              </button>
+            )}
           </div>
         </div>
       )}

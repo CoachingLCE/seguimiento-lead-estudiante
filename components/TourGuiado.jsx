@@ -6,22 +6,26 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession } from '../lib/useSession';
+import { tienePermisoCrearLeads, tienePermisoEstudiantes, tienePermisoReportes, tienePermisoDiplomas, tienePermisoEmails } from '../lib/permisos';
 
+// "requiere" usa el mismo permiso real que protege cada página (ver AccesoDenegado en cada
+// una) — así el recorrido guiado y las tareas puntuales nunca llevan a alguien a una sección
+// a la que en realidad no tiene acceso.
 const PASOS = [
   { id: 'bienvenida', ruta: '/dashboard', selector: null, titulo: '¡Bienvenido/a a ILCE Gestión!', texto: 'Te mostramos rápido las secciones principales para hacer el seguimiento de leads y estudiantes.' },
   { id: 'dashboard', ruta: '/dashboard', selector: null, titulo: 'Dashboard', texto: 'Tu resumen del día y las acciones que necesitan atención ahora: a quién contactar, bienvenidas pendientes, etc.' },
-  { id: 'nuevo-lead', ruta: '/dashboard', selector: 'a[href="/nuevo-lead"]', titulo: 'Cargar un lead', texto: 'Desde este botón agregás un nuevo lead o interesado al sistema.' },
-  { id: 'inscritos', ruta: '/inscritos', selector: null, titulo: 'Inscritos', texto: 'El listado de estudiantes ya inscriptos, con sus datos, curso y estado.' },
-  { id: 'reportes', ruta: '/reportes', selector: null, titulo: 'Reportes', texto: 'Métricas y análisis: leads, conversión, inscripciones por curso y evolución en el tiempo.' },
-  { id: 'diplomas', ruta: '/diplomas', selector: null, titulo: 'Diplomas', texto: 'Seguimiento de las solicitudes y la emisión de diplomas.' },
-  { id: 'emails', ruta: '/emails', selector: null, titulo: 'Emails', texto: 'Los correos automáticos que envía el sistema y el registro de envíos.' },
+  { id: 'nuevo-lead', ruta: '/dashboard', selector: 'a[href="/nuevo-lead"]', requiere: 'leads', titulo: 'Cargar un lead', texto: 'Desde este botón agregás un nuevo lead o interesado al sistema.' },
+  { id: 'inscritos', ruta: '/inscritos', selector: null, requiere: 'estudiantes', titulo: 'Inscritos', texto: 'El listado de estudiantes ya inscriptos, con sus datos, curso y estado.' },
+  { id: 'reportes', ruta: '/reportes', selector: null, requiere: 'reportes', titulo: 'Reportes', texto: 'Métricas y análisis: leads, conversión, inscripciones por curso y evolución en el tiempo.' },
+  { id: 'diplomas', ruta: '/diplomas', selector: null, requiere: 'diplomas', titulo: 'Diplomas', texto: 'Seguimiento de las solicitudes y la emisión de diplomas.' },
+  { id: 'emails', ruta: '/emails', selector: null, requiere: 'emails', titulo: 'Emails', texto: 'Los correos automáticos que envía el sistema y el registro de envíos.' },
   { id: 'accesos', ruta: '/accesos', selector: null, requiere: 'admin', titulo: 'Accesos', texto: 'Quién entra al sistema y con qué permisos (solo Admin).' },
   { id: 'fin', ruta: null, selector: null, titulo: '¡Listo!', texto: 'Eso es lo principal. Podés volver a abrir esta ayuda cuando quieras, desde el botón “❓ Necesito ayuda”.' }
 ];
 const TAREAS = [
-  { id: 't-lead', pasoInicial: 'nuevo-lead', label: '¿Cómo cargo un lead nuevo?' },
-  { id: 't-rep', pasoInicial: 'reportes', label: '¿Dónde veo los reportes?' },
-  { id: 't-dip', pasoInicial: 'diplomas', label: '¿Dónde están los diplomas?' }
+  { id: 't-lead', pasoInicial: 'nuevo-lead', requiere: 'leads', label: '¿Cómo cargo un lead nuevo?' },
+  { id: 't-rep', pasoInicial: 'reportes', requiere: 'reportes', label: '¿Dónde veo los reportes?' },
+  { id: 't-dip', pasoInicial: 'diplomas', requiere: 'diplomas', label: '¿Dónde están los diplomas?' }
 ];
 
 export default function TourGuiado() {
@@ -36,8 +40,17 @@ export default function TourGuiado() {
   const [buscando, setBuscando] = useState(false);
 
   const esAdmin = !!(usuario && (usuario.roles || []).includes('Admin'));
-  const permitido = useCallback((p) => !p.requiere || (p.requiere === 'admin' && esAdmin), [esAdmin]);
+  const CHEQUEOS = useMemo(() => ({
+    admin: () => esAdmin,
+    leads: () => tienePermisoCrearLeads(usuario),
+    estudiantes: () => tienePermisoEstudiantes(usuario),
+    reportes: () => tienePermisoReportes(usuario),
+    diplomas: () => tienePermisoDiplomas(usuario),
+    emails: () => tienePermisoEmails(usuario)
+  }), [usuario, esAdmin]);
+  const permitido = useCallback((p) => !p.requiere || (CHEQUEOS[p.requiere]?.() ?? true), [CHEQUEOS]);
   const pasos = useMemo(() => PASOS.filter(permitido), [permitido]);
+  const tareas = useMemo(() => TAREAS.filter(permitido), [permitido]);
 
   const idx = pasoId ? pasos.findIndex((p) => p.id === pasoId) : -1;
   const pasoActual = idx >= 0 ? pasos[idx] : null;
@@ -104,14 +117,18 @@ export default function TourGuiado() {
             <button className="w-full bg-gradient-to-r from-accentPurple to-accentMagenta text-white rounded-lg px-3 py-2 text-sm font-semibold mb-3" onClick={iniciarCompleto}>
               Comenzar recorrido
             </button>
+            {tareas.length > 0 && (
+            <>
             <p className="text-[11px] text-textMuted mb-1.5 font-semibold">O elegí una tarea puntual:</p>
             <div className="flex flex-col gap-1">
-              {TAREAS.map((t) => (
+              {tareas.map((t) => (
                 <button key={t.id} className="text-left text-xs text-textSec hover:text-text bg-bg border border-border rounded-lg px-2.5 py-1.5" onClick={() => iniciarTarea(t)}>
                   {t.label}
                 </button>
               ))}
             </div>
+            </>
+            )}
           </div>
         </div>
       )}

@@ -201,12 +201,12 @@ export default function EmailsPage() {
               <tbody>
                 {AUTOMATIZACIONES.map((a, i) => (
                   <tr key={i} className="border-b border-border last:border-b-0 hover:bg-bg/50 cursor-pointer" onClick={() => setMailAVer(a)}>
-                    <td className="py-2 pr-4">{a.cuando}</td>
-                    <td className="pr-4 text-textSec">{a.quien}</td>
+                    <td className="py-2 pr-4 whitespace-nowrap">{a.cuando}</td>
+                    <td className="pr-4 text-textSec whitespace-nowrap">{a.quien}</td>
                     <td className="pr-4 text-textSec whitespace-nowrap">
                       {a.remitente}{a.cc && a.cc !== '—' ? <span className="text-textMuted"> · cc {a.cc}</span> : ''}
                     </td>
-                    <td className="pr-4 text-textSec">{a.asunto}</td>
+                    <td className="pr-4 text-textSec whitespace-nowrap">{a.asunto}</td>
                     <td><span className="text-[11px] px-2.5 py-1 rounded-full bg-infoBg text-infoText whitespace-nowrap">{a.tipo}</span></td>
                     <td>
                       <button type="button" onClick={(e) => { e.stopPropagation(); setMailAVer(a); }}
