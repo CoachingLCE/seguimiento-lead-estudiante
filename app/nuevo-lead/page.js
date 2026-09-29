@@ -660,31 +660,42 @@ export default function NuevoLeadPage() {
 
                   {!colapsada && (
                     <>
-                      {duplicados[index]?.length > 0 && !ignorarDuplicado[index] && (
-                        <div className="bg-warningBg border border-warningText/30 rounded-lg p-3 mb-3">
-                          <p className="text-warningText text-[13px] font-semibold mb-1.5">
-                            🟠 Ya existe un contacto similar — {duplicados[index][0].motivo}
-                          </p>
-                          <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[12px] text-textSec mb-2.5">
-                            <p><span className="text-textMuted">Nombre:</span> {duplicados[index][0].nombre}</p>
-                            <p><span className="text-textMuted">Curso:</span> {duplicados[index][0].curso}</p>
-                            <p><span className="text-textMuted">WhatsApp:</span> {duplicados[index][0].whatsapp || '—'}</p>
-                            <p><span className="text-textMuted">Estado:</span> {duplicados[index][0].estado}</p>
-                            <p><span className="text-textMuted">Responsable:</span> {duplicados[index][0].responsable || '—'}</p>
-                            {duplicados[index][0].ultimaGestion && (
-                              <p className="col-span-2"><span className="text-textMuted">Última gestión:</span> {duplicados[index][0].ultimaGestion}</p>
-                            )}
+                      {duplicados[index]?.length > 0 && !ignorarDuplicado[index] && (() => {
+                        const dup = duplicados[index][0];
+                        const m = (dup.motivo || '').toLowerCase();
+                        const subtitulo = m.includes('email') ? 'Este email ya está asociado a un contacto.'
+                          : m.includes('whatsapp') ? 'Este WhatsApp ya está asociado a un contacto.'
+                          : `Coincidencia por: ${dup.motivo || 'datos similares'}.`;
+                        return (
+                          <div className="rounded-xl border border-warningText/30 bg-warningText/10 p-3.5 mb-3">
+                            <div className="flex items-start gap-2.5">
+                              <span className="text-[16px] leading-none mt-px shrink-0">⚠️</span>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-warningText text-[13.5px] font-semibold leading-tight">Encontramos un contacto existente</p>
+                                <p className="text-textSec text-[12px] mt-0.5">{subtitulo}</p>
+                                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[12px] mt-2.5">
+                                  <p><span className="text-textMuted">Nombre: </span><span className="text-text">{dup.nombre || '—'}</span></p>
+                                  <p><span className="text-textMuted">Curso: </span><span className="text-text">{dup.curso || '—'}</span></p>
+                                  <p><span className="text-textMuted">WhatsApp: </span><span className="text-text">{dup.whatsapp || '—'}</span></p>
+                                  <p><span className="text-textMuted">Responsable: </span><span className="text-text">{dup.responsable || '—'}</span></p>
+                                  <p><span className="text-textMuted">Estado: </span><span className="text-text">{dup.estado || '—'}</span></p>
+                                  {dup.ultimaGestion && (
+                                    <p className="col-span-2"><span className="text-textMuted">Última gestión: </span><span className="text-text">{dup.ultimaGestion}</span></p>
+                                  )}
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2 mt-3">
+                                  <button type="button" onClick={() => setFichaLeadId(dup.id)}
+                                    className="text-[12px] font-semibold px-3 py-1.5 rounded-lg bg-warningText text-[#1a1400] hover:brightness-110 transition">Ver ficha</button>
+                                  <a href={`/buscador?leadId=${dup.id}&editar=1`}
+                                    className="text-[12px] font-semibold px-3 py-1.5 rounded-lg border border-warningText/40 text-warningText hover:bg-warningText/10 transition">Actualizar</a>
+                                  <button type="button" onClick={() => setIgnorarDuplicado((prev) => ({ ...prev, [index]: true }))}
+                                    className="text-[12px] px-2.5 py-1.5 rounded-lg text-textMuted hover:text-textSec transition ml-auto" title="Crea un contacto nuevo aunque ya exista uno similar">Crear igualmente</button>
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex gap-2">
-                            <button type="button" onClick={() => setFichaLeadId(duplicados[index][0].id)}
-                              className="text-[12px] px-2.5 py-1 rounded bg-surface2 border border-border">Ver ficha</button>
-                            <a href={`/buscador?leadId=${duplicados[index][0].id}&editar=1`}
-                              className="text-[12px] px-2.5 py-1 rounded bg-surface2 border border-border">Actualizar</a>
-                            <button type="button" onClick={() => setIgnorarDuplicado((prev) => ({ ...prev, [index]: true }))}
-                              className="text-[12px] px-2.5 py-1 rounded bg-accentPurple text-white">Crear igualmente</button>
-                          </div>
-                        </div>
-                      )}
+                        );
+                      })()}
 
                       <label className="text-[13px] font-medium text-textSec block mb-1">
                         Pegá el contacto como lo recibiste
