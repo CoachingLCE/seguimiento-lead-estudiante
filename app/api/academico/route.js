@@ -24,8 +24,36 @@ export async function GET(request) {
     const todasEdiciones = await readSheet('AcademicoEdiciones');
     const leads = await readSheet('Leads');
     const docentes = await readSheet('Docentes');
-    const estudiantes = curso ? todos.filter((e) => e.Curso === curso) : todos;
-    const cursosDisponibles = [...new Set(todos.map((e) => e.Curso).filter(Boolean))].sort();
+
+    // Sincronización con Inscripciones: Nombre, Curso y Edición se muestran según el Lead con
+    // el mismo email (fuente de verdad de Inscripciones) en vez de la copia que se haya cargado
+    // a mano en Académico — así un cambio hecho en Inscripciones (ej. pasar de Vocacional 19 a
+    // Oratoria 19, o corregir "María Gramajo" a "Malena") se refleja acá solo, sin tener que
+    // volver a cargarlo. Si no hay ningún Lead con ese email (carga manual sin email, o el
+    // email de Académico quedó desactualizado y ya no matchea), se deja tal cual estaba.
+    // SituacionAcademica y Observaciones NO se tocan: son propias de Académico, no de Leads.
+    const leadPorEmail = {};
+    leads.forEach((l) => {
+      const email = (l.EmailEstudiante || '').trim().toLowerCase();
+      if (!email) return;
+      leadPorEmail[email] = {
+        nombreCompleto: `${l.Nombre || ''} ${l.Apellido || ''}`.trim(),
+        curso: (l.Curso || '').trim(),
+        edicion: (l.Edicion || '').trim()
+      };
+    });
+    const todosSincronizados = todos.map((e) => {
+      const lead = leadPorEmail[(e.Email || '').trim().toLowerCase()];
+      if (!lead) return e;
+      return {
+        ...e,
+        NombreCompleto: lead.nombreCompleto || e.NombreCompleto,
+        Curso: lead.curso || e.Curso,
+        Edicion: lead.edicion || e.Edicion
+      };
+    });
+    const estudiantes = curso ? todosSincronizados.filter((e) => e.Curso === curso) : todosSincronizados;
+    const cursosDisponibles = [...new Set(todosSincronizados.map((e) => e.Curso).filter(Boolean))].sort();
 
     // Vínculo best-effort con los pagos reales (Leads), buscando por email — para poder mostrar
     // "Pagos" en la ficha detallada de cada edición sin duplicar esa info a mano en Académico.
@@ -42,7 +70,7 @@ export async function GET(request) {
     return NextResponse.json({
       estudiantes, cursosDisponibles, cursos,
       ediciones: todasEdiciones, // TODAS, sin filtrar — el reporte institucional necesita verlas juntas
-      todosLosEstudiantes: todos, // idem, para el reporte por edición (todos los cursos a la vez)
+      todosLosEstudiantes: todosSincronizados, // idem, para el reporte por edición (todos los cursos a la vez)
       pagosPorEmail,
       docentesActivos: docentes.filter((d) => d.Activo !== 'FALSE').map((d) => d.Nombre).filter(Boolean).sort()
     });

@@ -19,7 +19,10 @@ export async function POST(request) {
   if (!curso || !edicion) return NextResponse.json({ error: 'Falta curso o edición' }, { status: 400 });
 
   const ediciones = await readSheet('AcademicoEdiciones');
-  const existente = ediciones.find((e) => e.Curso === curso && e.Edicion === edicion);
+  // Comparación normalizada (trim): si la fila ya en la planilla tiene espacios de más al
+  // final del Curso/Edición (algo común al pegar datos a mano), antes no la encontraba, creaba
+  // una fila duplicada, y el formador/fecha "no quedaba guardado" — quedaba en la fila vieja.
+  const existente = ediciones.find((e) => (e.Curso || '').trim() === curso && (e.Edicion || '').trim() === edicion);
 
   const fechaInicio = body.fechaInicio !== undefined ? body.fechaInicio : (existente?.FechaInicio || '');
   const formador = body.formador !== undefined ? body.formador : (existente?.Formador || '');

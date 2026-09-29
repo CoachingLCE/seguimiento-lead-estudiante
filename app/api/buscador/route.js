@@ -36,11 +36,18 @@ export async function GET(request) {
       const [leads, seguimiento, inscritos, auditoria] = await Promise.all([
         readSheet('Leads'), readSheet('Seguimiento'), readSheet('Inscritos'), readSheetCola('Auditoria', 5000)
       ]);
-      const lead = leads.find((l) => l.ID === leadId);
-      if (!lead) return NextResponse.json({ error: 'No encontrado' }, { status: 404 });
+      const leadOriginal = leads.find((l) => l.ID === leadId);
+      if (!leadOriginal) return NextResponse.json({ error: 'No encontrado' }, { status: 404 });
 
       const seguimientoLead = seguimiento.filter((s) => s.LeadID === leadId);
       const inscrito = inscritos.find((i) => i.LeadId === leadId) || null;
+      // Si el email no está cargado en Leads pero sí se cargó a mano en Inscritos (por ejemplo,
+      // al mandar la bienvenida sin tenerlo todavía — ver PATCH /api/inscritos acción
+      // "bienvenida"), lo mostramos igual acá: el sistema ya lo usa para mandar correos, así
+      // que no tiene sentido que la ficha lo muestre vacío.
+      const lead = (!leadOriginal.EmailEstudiante && inscrito?.EmailEstudiante)
+        ? { ...leadOriginal, EmailEstudiante: inscrito.EmailEstudiante }
+        : leadOriginal;
       const historial = auditoria
         .filter((a) => a.LeadIdRelacionado === leadId)
         .sort((a, b) => new Date(a.Fecha) - new Date(b.Fecha));

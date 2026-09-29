@@ -24,6 +24,7 @@ export default function DashboardPage() {
   const [fichaLeadId, setFichaLeadId] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [atencionColapsada, setAtencionColapsada] = useState(false);
+  const [atencionOcultaHoy, setAtencionOcultaHoy] = useState(false);
   const [pidiendoEmailPara, setPidiendoEmailPara] = useState(null);
   const [emailTemporal, setEmailTemporal] = useState('');
   const [procesandoId, setProcesandoId] = useState(null);
@@ -34,6 +35,24 @@ export default function DashboardPage() {
     if (!usuario) return;
     cargarDatos();
   }, [usuario]);
+
+  // El cartel de "Necesita tu atención ahora" se puede cerrar con la ✕ — queda oculto por lo
+  // que resta del día (se guarda la fecha de hoy en localStorage) y vuelve a aparecer solo al
+  // otro día si sigue habiendo pendientes. No usamos esto para decidir si HAY pendientes o no,
+  // solo si el cartel arranca colapsado o no.
+  useEffect(() => {
+    try {
+      const ocultoHasta = localStorage.getItem('ilce-seg-atencion-oculta-hasta');
+      const hoyStr = new Date().toISOString().slice(0, 10);
+      if (ocultoHasta === hoyStr) { setAtencionOcultaHoy(true); setAtencionColapsada(true); }
+    } catch { /* localStorage no disponible: el cartel simplemente arranca visible */ }
+  }, []);
+
+  function cerrarAtencionPorHoy() {
+    setAtencionColapsada(true);
+    setAtencionOcultaHoy(true);
+    try { localStorage.setItem('ilce-seg-atencion-oculta-hasta', new Date().toISOString().slice(0, 10)); } catch { /* */ }
+  }
 
   async function cargarDatos() {
     setCargando(true);
@@ -216,11 +235,22 @@ export default function DashboardPage() {
                   {totalPendientes > 0 && (
                     <span className="text-textMuted text-xs font-normal">· {totalPendientes} acciones pendientes</span>
                   )}
+                  {atencionOcultaHoy && atencionColapsada && (
+                    <span className="text-textMuted text-xs font-normal">(oculto por hoy)</span>
+                  )}
                 </p>
               </button>
-              <button onClick={exportarExcel} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm">
-                ⬇ Exportar a Excel
-              </button>
+              <div className="flex items-center gap-2">
+                {!atencionColapsada && totalPendientes > 0 && (
+                  <button onClick={cerrarAtencionPorHoy} title="Ocultar por hoy — vuelve a aparecer mañana si sigue pendiente"
+                    className="text-textMuted hover:text-text text-sm px-2 py-1 rounded-md hover:bg-surface2 no-print">
+                    ✕
+                  </button>
+                )}
+                <button onClick={exportarExcel} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm">
+                  ⬇ Exportar a Excel
+                </button>
+              </div>
             </div>
 
             {!atencionColapsada && (totalPendientes === 0 ? (
