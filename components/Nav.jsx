@@ -46,7 +46,7 @@ function Chip({ href, label, pathname, onClick, destacado }) {
   const activo = pathname === href;
   return (
     <Link href={href} onClick={onClick}
-      className={`h-8 flex items-center px-3 rounded-lg text-[13px] font-medium whitespace-nowrap transition-colors ${
+      className={`h-8 flex items-center px-3.5 rounded-lg text-[13px] font-medium whitespace-nowrap transition-colors ${
         activo ? 'bg-accentPurple/15 text-accentPurple' : destacado ? 'text-text font-semibold hover:bg-surface2' : 'text-textSec hover:text-text hover:bg-surface2'
       }`}>
       {label}
@@ -58,8 +58,8 @@ function Chip({ href, label, pathname, onClick, destacado }) {
 // nunca hay que clickear nada para verlos.
 function Grupo({ grupo, pathname, onClick }) {
   return (
-    <div className="flex items-center gap-1 flex-wrap">
-      <span className="text-textMuted text-[11px] uppercase tracking-wide font-semibold mr-0.5">{grupo.label}</span>
+    <div className="flex items-center gap-2 flex-wrap">
+      <span className="text-textMuted text-[11px] uppercase tracking-wide font-semibold mr-2.5">{grupo.label}</span>
       {grupo.principal && <Chip href={grupo.principal} label="Ver todo" pathname={pathname} onClick={onClick} destacado />}
       {grupo.items.map((it) => <Chip key={it.href} href={it.href} label={it.label} pathname={pathname} onClick={onClick} />)}
     </div>
@@ -67,7 +67,7 @@ function Grupo({ grupo, pathname, onClick }) {
 }
 
 function Divisor() {
-  return <span className="hidden lg:block w-px h-5 bg-border shrink-0" />;
+  return <span className="hidden lg:block w-px h-[22px] bg-border shrink-0" />;
 }
 
 export default function Nav({ usuario, onLogout }) {
@@ -148,7 +148,7 @@ export default function Nav({ usuario, onLogout }) {
           </div>
         )}
         {/* NAV — desktop: todo a la vista, sin clics para desplegar nada */}
-        <nav className="hidden lg:flex items-center gap-2.5 flex-wrap pb-3">
+        <nav className="hidden lg:flex items-center gap-x-4 gap-y-3.5 flex-wrap pt-1 pb-5">
           <Link href="/nuevo-lead"
             className={`h-8 flex items-center px-3.5 rounded-lg text-[13px] font-semibold whitespace-nowrap shadow-sm transition-all ${
               pathname === '/nuevo-lead'

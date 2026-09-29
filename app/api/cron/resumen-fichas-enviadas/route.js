@@ -3,7 +3,9 @@ import { obtenerFichasEnviadas } from '../../../../lib/fichasEnviadas';
 import { enviarMailResumenFichasEnviadas } from '../../../../lib/mailer';
 
 const DESTINATARIOS = [
-  'Macarena.Juncos@institutoilce.com'
+  'Macarena.Juncos@institutoilce.com',
+  'alexander.juncos@institutoilce.com',
+  'jesabel.reigada@institutoilce.com' // Lucila
 ];
 
 // GET /api/cron/resumen-fichas-enviadas

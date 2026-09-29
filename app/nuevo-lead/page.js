@@ -476,8 +476,8 @@ export default function NuevoLeadPage() {
     setResultadoFinal(null);
   }
 
-  const inputCls = 'w-full bg-surface2 border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accentTeal transition-colors';
-  const inputClsBg = 'w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accentTeal transition-colors';
+  const inputCls = 'w-full bg-surface2 border border-border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-accentTeal transition-colors';
+  const inputClsBg = 'w-full bg-bg border border-border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-accentTeal transition-colors';
 
   // Pantalla de éxito
   if (resultadoFinal) {
@@ -532,7 +532,7 @@ export default function NuevoLeadPage() {
         <form id="form-nuevo-lead" onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5 items-start">
 
           {/* COLUMNA PRINCIPAL */}
-          <div className="bg-surface border border-border rounded-2xl p-6">
+          <div className="bg-surface border border-border rounded-2xl p-5">
             <div className="flex items-center justify-between mb-0.5">
               <h3 className="text-lg font-bold">Nuevo lead</h3>
               <button type="button" onClick={() => setMostrarPegarLista(true)}
@@ -540,11 +540,11 @@ export default function NuevoLeadPage() {
                 📋 Pegar lista completa
               </button>
             </div>
-            <p className="text-textMuted text-xs mb-5">
+            <p className="text-textMuted text-xs mb-3.5">
               Podés cargar varios contactos de una — comparten curso y origen. Atajos: Ctrl+Enter guardar · Ctrl+N nuevo contacto · Ctrl+D duplicar.
             </p>
 
-            <div className="grid grid-cols-2 gap-5 mb-4">
+            <div className="grid grid-cols-2 gap-4 mb-3">
               <div>
                 <label className="text-[13px] font-medium text-textSec block mb-1">
                   Producto (para toda la tanda)
@@ -583,9 +583,9 @@ export default function NuevoLeadPage() {
               </div>
             </div>
 
-            <hr className="border-border mb-4" />
+            <hr className="border-border mb-3" />
 
-            <div className="mb-5">
+            <div className="mb-4">
               <label className="text-[13px] font-medium text-textSec block mb-1.5">
                 ¿Les interesan otros cursos también? <span className="text-textMuted font-normal">(opcional, aplica a toda la tanda)</span>
               </label>
@@ -619,9 +619,9 @@ export default function NuevoLeadPage() {
                   onDragEnd={onDragEnd}
                   onDragOver={onDragOver}
                   onDrop={() => onDrop(index)}
-                  className={`bg-bg border-2 rounded-xl p-4 mb-3 transition-all ${estilo.borde} ${arrastrando === index ? 'opacity-40' : 'opacity-100'}`}>
+                  className={`bg-bg border-2 rounded-xl p-3.5 mb-2.5 transition-all ${estilo.borde} ${arrastrando === index ? 'opacity-40' : 'opacity-100'}`}>
 
-                  <div className="flex items-center justify-between mb-2.5">
+                  <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       {contactos.length > 1 && (
                         <span onMouseDown={() => { handleActivoRef.current = true; }}
@@ -703,7 +703,7 @@ export default function NuevoLeadPage() {
                       <textarea rows={3} value={contacto.raw}
                         placeholder={'Juan Pérez\nArgentina\n+54 9 11 5555 5555\n\nTambién podés pegar/escribir varios contactos juntos.'}
                         onChange={(e) => actualizarContacto(index, 'raw', e.target.value)}
-                        className={`w-full bg-surface2 border-2 rounded-xl px-4 py-3.5 text-[15px] leading-relaxed
+                        className={`w-full bg-surface2 border-2 rounded-xl px-4 py-2.5 text-[15px] leading-normal
                           focus:outline-none transition-colors ${
                             estado === 'error' ? 'border-dangerText/50 focus:border-dangerText' :
                             estado === 'duplicado' ? 'border-warningText/50 focus:border-warningText' :
@@ -768,7 +768,7 @@ export default function NuevoLeadPage() {
                         </p>
                       )}
 
-                      <div className="grid grid-cols-2 gap-4 mt-3">
+                      <div className="grid grid-cols-2 gap-3 mt-2.5">
                         <div>
                           <label className="text-[13px] font-medium text-textSec block mb-1">
                             Email {!contacto.email && p.email && <span className="text-successText font-normal">· detectado arriba</span>}
@@ -810,7 +810,7 @@ export default function NuevoLeadPage() {
               )}
             </div>
 
-            <div className="mt-5">
+            <div className="mt-3">
               <label className="text-[13px] font-medium text-textSec block mb-1">Fecha de ingreso</label>
               <input disabled value={new Date().toLocaleDateString('es-AR')} className={`${inputClsBg} text-textSec max-w-xs`} />
             </div>
@@ -821,7 +821,7 @@ export default function NuevoLeadPage() {
           </div>
 
           {/* PANEL LATERAL FIJO */}
-          <div className="lg:sticky lg:top-4 bg-surface border border-border rounded-2xl p-5 flex flex-col gap-3">
+          <div className="lg:sticky lg:top-4 bg-surface border border-border rounded-2xl p-5 flex flex-col gap-2.5">
             <p className="text-sm font-bold">Resumen</p>
             <div className="text-[13px] text-textSec space-y-1">
               <p><span className="text-textMuted">Curso:</span> {cursoTextoPreview || 'sin definir'}</p>
