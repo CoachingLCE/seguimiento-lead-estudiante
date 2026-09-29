@@ -1,7 +1,6 @@
 import './globals.css';
 import ComoFuncionaGate from '../components/ComoFuncionaGate';
 import VersionBadge from '../components/VersionBadge';
-import TutorialHandbook from '../components/TutorialHandbook';
 import TourGuiado from '../components/TourGuiado';
 import ErrorBoundary from '../components/ErrorBoundary';
 import RecuperadorDeChunks from '../components/RecuperadorDeChunks';
@@ -39,7 +38,6 @@ export default function RootLayout({ children }) {
             {children}
             <ComoFuncionaGate />
             <VersionBadge />
-            <TutorialHandbook />
             <TourGuiado />
           </ThemeProvider>
         </ErrorBoundary>

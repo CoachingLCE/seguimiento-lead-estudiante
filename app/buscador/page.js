@@ -994,6 +994,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
             <p className="text-textMuted text-sm">Sin seguimiento comercial — todavía no se registró una venta.</p>
           ) : !editandoVenta ? (
             <>
+              <Campo label="Curso" valor={lead.Curso} vacio="Sin definir" />
               <Campo label="Monto" valor={lead.MontoTotal ? `$${numeroDesdeSheet(lead.MontoTotal).toLocaleString('es-AR')}` : null} vacio="—" grande />
               <Campo label="Forma de pago" valor={lead.MedioPago} />
               <Campo label="Modalidad" valor={lead.Modalidad} />

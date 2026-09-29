@@ -6,26 +6,46 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession } from '../lib/useSession';
-import { tienePermisoCrearLeads, tienePermisoEstudiantes, tienePermisoReportes, tienePermisoDiplomas, tienePermisoEmails } from '../lib/permisos';
+import {
+  tienePermisoCrearLeads, tienePermisoOperativo, tienePermisoEstudiantes, tienePermisoResumenEstudiantes,
+  tienePermisoAcademicoVer, tienePermisoReportes, tienePermisoDiplomas, tienePermisoResumenDiario,
+  tienePermisoInformesRRSS, tienePermisoAuditoria, tienePermisoBajas, tienePermisoAccesos,
+  tienePermisoMensajesVer, tienePermisoEmails, tienePermisoBuscador
+} from '../lib/permisos';
 
 // "requiere" usa el mismo permiso real que protege cada página (ver AccesoDenegado en cada
 // una) — así el recorrido guiado y las tareas puntuales nunca llevan a alguien a una sección
-// a la que en realidad no tiene acceso.
+// a la que en realidad no tiene acceso. Se actualizó (sept. 2026) para cubrir todo el menú
+// actual — antes solo tenía 6 de los ~17 ítems reales y algunos nombres ya no coincidían
+// con el menú (ej: "Inscritos" ahora se llama "Estudiantes").
 const PASOS = [
   { id: 'bienvenida', ruta: '/dashboard', selector: null, titulo: '¡Bienvenido/a a ILCE Gestión!', texto: 'Te mostramos rápido las secciones principales para hacer el seguimiento de leads y estudiantes.' },
   { id: 'dashboard', ruta: '/dashboard', selector: null, titulo: 'Dashboard', texto: 'Tu resumen del día y las acciones que necesitan atención ahora: a quién contactar, bienvenidas pendientes, etc.' },
   { id: 'nuevo-lead', ruta: '/dashboard', selector: 'a[href="/nuevo-lead"]', requiere: 'leads', titulo: 'Cargar un lead', texto: 'Desde este botón agregás un nuevo lead o interesado al sistema.' },
-  { id: 'inscritos', ruta: '/inscritos', selector: null, requiere: 'estudiantes', titulo: 'Inscritos', texto: 'El listado de estudiantes ya inscriptos, con sus datos, curso y estado.' },
-  { id: 'reportes', ruta: '/reportes', selector: null, requiere: 'reportes', titulo: 'Reportes', texto: 'Métricas y análisis: leads, conversión, inscripciones por curso y evolución en el tiempo.' },
-  { id: 'diplomas', ruta: '/diplomas', selector: null, requiere: 'diplomas', titulo: 'Diplomas', texto: 'Seguimiento de las solicitudes y la emisión de diplomas.' },
-  { id: 'emails', ruta: '/emails', selector: null, requiere: 'emails', titulo: 'Emails', texto: 'Los correos automáticos que envía el sistema y el registro de envíos.' },
-  { id: 'accesos', ruta: '/accesos', selector: null, requiere: 'admin', titulo: 'Accesos', texto: 'Quién entra al sistema y con qué permisos (solo Admin).' },
+  { id: 'seguimiento', ruta: '/seguimiento', selector: null, requiere: 'operativo', titulo: 'Seguimiento', texto: 'El detalle de cada lead que todavía no compró: últimos contactos, próximo paso y filtros para organizar el trabajo del día.' },
+  { id: 'estudiantes', ruta: '/inscritos', selector: null, requiere: 'estudiantes', titulo: 'Académico → Estudiantes', texto: 'El listado de estudiantes ya inscriptos, con sus datos, curso y estado.' },
+  { id: 'inscripciones', ruta: '/resumen-estudiantes', selector: null, requiere: 'resumenEstudiantes', titulo: 'Académico → Inscripciones', texto: 'Resumen de altas y bienvenidas por edición: quién confirmó, quién falta.' },
+  { id: 'academico', ruta: '/academico', selector: null, requiere: 'academicoVer', titulo: 'Académico → Académico', texto: 'Situación académica de cada estudiante por curso y edición (certificado, de baja, etc.), a cargo del equipo académico.' },
+  { id: 'diplomas', ruta: '/diplomas', selector: null, requiere: 'diplomas', titulo: 'Académico → Diplomas', texto: 'Seguimiento de las solicitudes y la emisión de diplomas.' },
+  { id: 'reportes', ruta: '/reportes', selector: null, requiere: 'reportes', titulo: 'Reportes → Ver todo', texto: 'Métricas y análisis: leads, conversión, inscripciones por curso y evolución en el tiempo.' },
+  { id: 'resumen-diario', ruta: '/resumen-diario', selector: null, requiere: 'resumenDiario', titulo: 'Reportes → Resumen diario', texto: 'Los leads cargados y los contactos registrados en un día puntual — se puede exportar a Excel o imprimir.' },
+  { id: 'informes-rrss', ruta: '/informes-rrss', selector: null, requiere: 'informesRRSS', titulo: 'Reportes → Informes RRSS', texto: 'Reporte mensual/anual de resultados de redes sociales.' },
+  { id: 'auditoria', ruta: '/auditoria', selector: null, requiere: 'auditoria', titulo: 'Reportes → Historial de acciones', texto: 'Registro de quién hizo qué en el sistema (altas, ediciones, ventas), para auditar cualquier cambio.' },
+  { id: 'bajas', ruta: '/bajas', selector: null, requiere: 'bajas', titulo: 'Reportes → Bajas', texto: 'Registro y seguimiento de las bajas de la cursada.' },
+  { id: 'accesos', ruta: '/accesos', selector: null, requiere: 'accesos', titulo: 'Reportes → Accesos', texto: 'Quién entra al sistema y con qué permisos (solo Admin).' },
+  { id: 'productos-valores', ruta: '/productos-valores', selector: null, titulo: 'Configuración → Productos y Valores', texto: 'Los cursos, sus precios y modalidades de pago vigentes.' },
+  { id: 'mensajes', ruta: '/mensajes', selector: null, requiere: 'mensajesVer', titulo: 'Configuración → Mensajes frecuentes', texto: 'Mensajes ya redactados para copiar y pegar en las conversaciones con leads y estudiantes.' },
+  { id: 'emails', ruta: '/emails', selector: null, requiere: 'emails', titulo: 'Configuración → Emails', texto: 'Los correos automáticos que envía el sistema y el registro de envíos.' },
+  { id: 'fichas-enviadas', ruta: '/fichas-enviadas', selector: null, requiere: 'operativo', titulo: 'Configuración → Fichas enviadas', texto: 'Registro de las fichas de estudiante que se compartieron, y con quién.' },
+  { id: 'buscador', ruta: '/buscador', selector: 'a[href="/buscador"]', requiere: 'buscador', titulo: 'Buscador', texto: 'Buscá a cualquier lead o estudiante por nombre, WhatsApp o email y entrá directo a su ficha.' },
   { id: 'fin', ruta: null, selector: null, titulo: '¡Listo!', texto: 'Eso es lo principal. Podés volver a abrir esta ayuda cuando quieras, desde el botón “❓ Necesito ayuda”.' }
 ];
 const TAREAS = [
   { id: 't-lead', pasoInicial: 'nuevo-lead', requiere: 'leads', label: '¿Cómo cargo un lead nuevo?' },
   { id: 't-rep', pasoInicial: 'reportes', requiere: 'reportes', label: '¿Dónde veo los reportes?' },
-  { id: 't-dip', pasoInicial: 'diplomas', requiere: 'diplomas', label: '¿Dónde están los diplomas?' }
+  { id: 't-dip', pasoInicial: 'diplomas', requiere: 'diplomas', label: '¿Dónde están los diplomas?' },
+  { id: 't-baja', pasoInicial: 'bajas', requiere: 'bajas', label: '¿Dónde registro una baja?' },
+  { id: 't-buscador', pasoInicial: 'buscador', requiere: 'buscador', label: '¿Cómo busco a un estudiante?' }
 ];
 
 export default function TourGuiado() {
@@ -39,15 +59,23 @@ export default function TourGuiado() {
   const [rect, setRect] = useState(null);
   const [buscando, setBuscando] = useState(false);
 
-  const esAdmin = !!(usuario && (usuario.roles || []).includes('Admin'));
   const CHEQUEOS = useMemo(() => ({
-    admin: () => esAdmin,
     leads: () => tienePermisoCrearLeads(usuario),
+    operativo: () => tienePermisoOperativo(usuario),
     estudiantes: () => tienePermisoEstudiantes(usuario),
+    resumenEstudiantes: () => tienePermisoResumenEstudiantes(usuario),
+    academicoVer: () => tienePermisoAcademicoVer(usuario),
     reportes: () => tienePermisoReportes(usuario),
     diplomas: () => tienePermisoDiplomas(usuario),
-    emails: () => tienePermisoEmails(usuario)
-  }), [usuario, esAdmin]);
+    resumenDiario: () => tienePermisoResumenDiario(usuario),
+    informesRRSS: () => tienePermisoInformesRRSS(usuario),
+    auditoria: () => tienePermisoAuditoria(usuario),
+    bajas: () => tienePermisoBajas(usuario),
+    accesos: () => tienePermisoAccesos(usuario),
+    mensajesVer: () => tienePermisoMensajesVer(usuario),
+    emails: () => tienePermisoEmails(usuario),
+    buscador: () => tienePermisoBuscador(usuario)
+  }), [usuario]);
   const permitido = useCallback((p) => !p.requiere || (CHEQUEOS[p.requiere]?.() ?? true), [CHEQUEOS]);
   const pasos = useMemo(() => PASOS.filter(permitido), [permitido]);
   const tareas = useMemo(() => TAREAS.filter(permitido), [permitido]);
