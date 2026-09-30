@@ -20,15 +20,23 @@ export async function PATCH(request) {
     const fila = filas.find((f) => f.TierId === body.tierId);
 
     if (fila) {
-      await updateRow('ProductosValoresConfig', fila._rowIndex, [fila.TierId, fila.Label, body.pct]);
+      const nuevoLabel = body.label || fila.Label;
+      await updateRow('ProductosValoresConfig', fila._rowIndex, [fila.TierId, nuevoLabel, body.pct]);
+      await registrarAccion(
+        body.solicitanteEmail, body.solicitanteNombre,
+        'Actualizó un nivel de descuento',
+        nuevoLabel !== fila.Label
+          ? `"${fila.Label}" → "${nuevoLabel}", ${body.pct}%`
+          : `${nuevoLabel} → ${body.pct}%`,
+        ''
+      );
     } else {
       await appendRow('ProductosValoresConfig', [body.tierId, body.label || body.tierId, body.pct]);
+      await registrarAccion(
+        body.solicitanteEmail, body.solicitanteNombre,
+        'Creó un nivel de descuento nuevo', `${body.label || body.tierId} — ${body.pct}%`, ''
+      );
     }
-
-    await registrarAccion(
-      body.solicitanteEmail, body.solicitanteNombre,
-      'Actualizó el % general de un nivel de descuento', `${fila?.Label || body.label || body.tierId} → ${body.pct}%`, ''
-    );
 
     return NextResponse.json({ ok: true });
   } catch (err) {

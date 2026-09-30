@@ -38,6 +38,23 @@ function necesitaRevision(p) {
 function money(n) { return `$${Math.round(n).toLocaleString('es-AR')}`; }
 function conDescuento(total, pct) { return total * (1 - num(pct) / 100); }
 
+// Un beneficio "pago único" (ej: "Inscripción anticipada (PAGO UNICO)") implica pagar todo el
+// curso de una sola vez, no en cuotas — se identifica por el texto del label en vez de un
+// tierId fijo, porque el nombre exacto lo define quien edita "Niveles de descuento" en la app.
+function esPagoUnico(label) {
+  const norm = (label || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  return norm.includes('pago unico') || norm.includes('pago único');
+}
+
+// Genera un tierId a partir de un label nuevo (ej: "Débito automático" -> "debitoAutomatico"),
+// para poder crear un beneficio nuevo en "Niveles de descuento" sin pedirle un id a mano.
+function slugTierId(label) {
+  return (label || '')
+    .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+(.)/g, (_, c) => c.toUpperCase())
+    .replace(/[^a-zA-Z0-9]/g, '');
+}
+
 // Saca la cantidad de cuotas del texto libre de duración (ej: "12 cuotas · 12 meses" -> 12).
 function cantCuotasDeDuracion(duracion) {
   const m = (duracion || '').match(/(\d+)\s*cuotas?/i);
@@ -276,15 +293,23 @@ export default function ProductosValoresPage() {
     setConfigTemp(config.filter((t) => t.tierId !== 'tipoDeCambio').map((t) => ({ ...t })));
     setEditandoConfig(true);
   }
+  function agregarNivelNuevo() {
+    setConfigTemp((prev) => [...prev, { tierId: '', label: '', pct: '0', esNuevo: true }]);
+  }
+  function quitarNivelTemp(i) {
+    setConfigTemp((prev) => prev.filter((_, idx) => idx !== i));
+  }
   async function guardarConfig() {
     setGuardando(true);
     try {
       for (const t of configTemp) {
-        const original = config.find((c) => c.tierId === t.tierId);
-        if (original && Number(original.pct) === Number(t.pct)) continue;
+        if (!t.label?.trim()) continue; // fila nueva sin completar todavía, se ignora
+        const tierId = t.tierId || slugTierId(t.label);
+        const original = config.find((c) => c.tierId === tierId);
+        if (original && Number(original.pct) === Number(t.pct) && original.label === t.label) continue;
         await fetch('/api/productos-valores/config', {
           method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tierId: t.tierId, pct: Number(t.pct), solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
+          body: JSON.stringify({ tierId, label: t.label, pct: Number(t.pct), solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
         });
       }
       setEditandoConfig(false);
@@ -440,16 +465,28 @@ export default function ProductosValoresPage() {
           </div>
           {editandoConfig ? (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-3">
+              <div className="space-y-2 mb-3">
                 {configTemp.map((t, i) => (
-                  <div key={t.tierId}>
-                    <label className="text-[11px] text-textSec block mb-1">{t.label}</label>
-                    <input type="text" inputMode="decimal" value={t.pct}
-                      onChange={(e) => setConfigTemp((prev) => prev.map((x, idx) => idx === i ? { ...x, pct: e.target.value } : x))}
-                      className="w-full bg-bg border border-border rounded-lg px-2 py-1.5 text-sm" />
+                  <div key={t.tierId || `nuevo-${i}`} className="flex items-end gap-2">
+                    <div className="flex-1">
+                      <label className="text-[11px] text-textSec block mb-1">{t.esNuevo ? 'Beneficio nuevo — nombre' : 'Nombre'}</label>
+                      <input type="text" value={t.label} placeholder={t.esNuevo ? 'Ej: Inscripción anticipada débito automático' : ''}
+                        onChange={(e) => setConfigTemp((prev) => prev.map((x, idx) => idx === i ? { ...x, label: e.target.value } : x))}
+                        className="w-full bg-bg border border-border rounded-lg px-2 py-1.5 text-sm" />
+                    </div>
+                    <div className="w-20 shrink-0">
+                      <label className="text-[11px] text-textSec block mb-1">%</label>
+                      <input type="text" inputMode="decimal" value={t.pct}
+                        onChange={(e) => setConfigTemp((prev) => prev.map((x, idx) => idx === i ? { ...x, pct: e.target.value } : x))}
+                        className="w-full bg-bg border border-border rounded-lg px-2 py-1.5 text-sm" />
+                    </div>
+                    {t.esNuevo && (
+                      <button onClick={() => quitarNivelTemp(i)} title="Quitar" className="text-dangerText text-xs px-2 py-1.5 shrink-0">✕</button>
+                    )}
                   </div>
                 ))}
               </div>
+              <button onClick={agregarNivelNuevo} className="text-xs text-accentTeal font-semibold mb-3">+ Agregar beneficio nuevo</button>
               <div className="flex gap-2">
                 <button onClick={() => setEditandoConfig(false)} className="text-xs px-3 py-1.5 rounded-lg bg-surface2 border border-border">Cancelar</button>
                 <button onClick={guardarConfig} disabled={guardando} className="text-xs px-3 py-1.5 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-60">
@@ -549,10 +586,16 @@ export default function ProductosValoresPage() {
                 ? p.cuotasEscalonadas.reduce((suma, t) => suma + num(t.valor), 0)
                 : null;
               const baseDescuento = tieneEscalonadas ? totalEscalonadas : p.valorLista;
+              const hayCuotasDelProducto = !tieneEscalonadas && cantCuotas && cantCuotas > 1;
               const filasDescuento = Object.keys(p.descuentos || {}).map((tierId) => {
                 const pct = pctEfectivo(p, tierId, config);
                 const label = config.find((t) => t.tierId === tierId)?.label || tierId;
-                return pct > 0 ? { label, pct, valorCuota: conDescuento(baseDescuento, pct) } : null;
+                const pagoUnico = esPagoUnico(label);
+                // Un beneficio "pago único" paga TODO el curso de una vez, no cuota por cuota —
+                // el descuento se aplica sobre el valor total (valor de la cuota × cant. de
+                // cuotas), no sobre el valor de una sola cuota como el resto de los beneficios.
+                const base = pagoUnico && hayCuotasDelProducto ? baseDescuento * cantCuotas : baseDescuento;
+                return pct > 0 ? { label, pct, valorCuota: conDescuento(base, pct), pagoUnico } : null;
               }).filter(Boolean);
               const productoPadre = p.esVariante ? productos.find((x) => x.id === p.varianteDeId) : null;
               const mediosDisponibles = Object.entries(p.mediosDePago || {}).filter(([, m]) => m.link);
@@ -646,7 +689,7 @@ export default function ProductosValoresPage() {
                               </thead>
                               <tbody>
                                 {filasDescuento.map((f) => {
-                                  const conCuotas = !tieneEscalonadas && cantCuotas && cantCuotas > 1;
+                                  const conCuotas = hayCuotasDelProducto && !f.pagoUnico;
                                   const total = f.valorCuota * (conCuotas ? cantCuotas : 1);
                                   return (
                                     <tr key={f.label} className="border-b border-border last:border-b-0">
