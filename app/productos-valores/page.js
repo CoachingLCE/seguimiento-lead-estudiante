@@ -331,9 +331,11 @@ export default function ProductosValoresPage() {
   // "override"), sin inventar ningún valor propio para cada producto.
   async function aplicarNivelATodos() {
     if (!confirmarAplicarNivel) return;
-    const { tierId } = confirmarAplicarNivel;
+    const { tierId, soloCursos } = confirmarAplicarNivel;
     setAplicandoNivel(true);
-    const candidatos = productosSinArchivarNiVariantes.filter((p) => !p.descuentos?.[tierId]);
+    const candidatos = productosSinArchivarNiVariantes
+      .filter((p) => !p.descuentos?.[tierId])
+      .filter((p) => !soloCursos || ['Sincrónico', 'On demand'].includes(p.modalidad));
     let aplicados = 0, fallaron = 0;
     for (const p of candidatos) {
       try {
@@ -590,13 +592,15 @@ export default function ProductosValoresPage() {
             <>
             <div className="flex flex-wrap gap-2">
               {config.filter((t) => t.tierId !== 'tipoDeCambio').map((t) => {
-                const faltanEn = productosSinArchivarNiVariantes.filter((p) => !p.descuentos?.[t.tierId]).length;
+                const sinBeneficio = productosSinArchivarNiVariantes.filter((p) => !p.descuentos?.[t.tierId]);
+                const faltanEn = sinBeneficio.length;
+                const faltanEnCursos = sinBeneficio.filter((p) => ['Sincrónico', 'On demand'].includes(p.modalidad)).length;
                 return (
                   <span key={t.tierId} className="text-xs px-3 py-1 rounded-full bg-infoBg text-infoText font-medium flex items-center gap-1.5">
                     {t.label}: {t.pct}%
                     {puedeEditar && faltanEn > 0 && (
-                      <button onClick={() => setConfirmarAplicarNivel({ tierId: t.tierId, label: t.label, faltanEn })}
-                        title={`Agregar este beneficio a los ${faltanEn} producto${faltanEn !== 1 ? 's' : ''} que todavía no lo tienen`}
+                      <button onClick={() => setConfirmarAplicarNivel({ tierId: t.tierId, label: t.label, faltanEn, faltanEnCursos, soloCursos: true })}
+                        title={`Agregar este beneficio a los productos que todavía no lo tienen`}
                         className="text-accentTeal font-semibold hover:underline">
                         + aplicar a todos
                       </button>
@@ -1056,8 +1060,15 @@ export default function ProductosValoresPage() {
       {confirmarAplicarNivel && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4" onClick={() => setConfirmarAplicarNivel(null)}>
           <div className="bg-surface2 border border-border rounded-2xl p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-            <p className="text-sm font-semibold mb-2">¿Agregar "{confirmarAplicarNivel.label}" a {confirmarAplicarNivel.faltanEn} producto{confirmarAplicarNivel.faltanEn !== 1 ? 's' : ''}?</p>
-            <p className="text-textMuted text-xs mb-4">Se agrega ese beneficio a los productos activos que todavía no lo tienen, siguiendo el % general ({config.find((t) => t.tierId === confirmarAplicarNivel.tierId)?.pct}%). No se toca ningún otro dato.</p>
+            <p className="text-sm font-semibold mb-2">
+              ¿Agregar "{confirmarAplicarNivel.label}" a {confirmarAplicarNivel.soloCursos ? confirmarAplicarNivel.faltanEnCursos : confirmarAplicarNivel.faltanEn} producto{(confirmarAplicarNivel.soloCursos ? confirmarAplicarNivel.faltanEnCursos : confirmarAplicarNivel.faltanEn) !== 1 ? 's' : ''}?
+            </p>
+            <p className="text-textMuted text-xs mb-3">Se agrega siguiendo el % general ({config.find((t) => t.tierId === confirmarAplicarNivel.tierId)?.pct}%). No se toca ningún otro dato.</p>
+            <label className="flex items-center gap-2 text-xs text-textSec cursor-pointer mb-4">
+              <input type="checkbox" checked={confirmarAplicarNivel.soloCursos}
+                onChange={(e) => setConfirmarAplicarNivel((prev) => ({ ...prev, soloCursos: e.target.checked }))} />
+              Solo cursos (Sincrónico / On demand) — no Ebooks, Comunidad, Servicio, etc.
+            </label>
             <div className="flex gap-2">
               <button onClick={() => setConfirmarAplicarNivel(null)} className="text-xs px-3 py-2 rounded-lg bg-surface border border-border flex-1">Cancelar</button>
               <button onClick={aplicarNivelATodos} disabled={aplicandoNivel}
