@@ -83,6 +83,19 @@ function BadgeEstado({ estado }) {
     : 'bg-infoBg text-infoText';
   return <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${clases}`}>{estado}</span>;
 }
+// Mismos colores que BadgeEstado, pero como "chip" sólido (para el filtro de estado) en vez de
+// la versión tenue del badge — así el filtro "Activos" se ve del mismo color que el badge
+// "ACTIVO" que aparece en cada producto.
+function claseChipEstado(estado) {
+  if (estado === 'Activo') return 'bg-successText border-successText text-white';
+  if (estado === 'Pausado') return 'bg-warningText border-warningText text-[#1a1400]';
+  if (estado === 'Próximamente') return 'bg-infoText border-infoText text-white';
+  return 'bg-accentPurple border-accentPurple text-white'; // "Todos" / "Archivados"
+}
+// Día del mes en que vuelve a aparecer la alerta de "productos sin actualizar" si se cerró con
+// la cruz — se guarda en localStorage (por navegador) la fecha hasta la que hay que ocultarla.
+const CLAVE_ALERTA_REVISAR_OCULTA = 'productosValores_alertaRevisarOcultaHasta';
+const DIA_REAPARICION_ALERTA = 28;
 // Para cursos (Sincrónico/On demand) muestra Sincrónico/Asincrónico/Híbrido — para el resto
 // (Ebook, Comunidad, Servicio, Otro producto) la modalidad ya es clara de por sí, así que se
 // muestra ESA en vez de forzar "Asincrónico" en algo que no es un curso.
@@ -106,7 +119,6 @@ export default function ProductosValoresPage() {
   const [mostrarVariantes, setMostrarVariantes] = useState(false);
   const [filtroEstado, setFiltroEstado] = useState('Activo');
   const [filtroModalidad, setFiltroModalidad] = useState('');
-  const [filtroFormato, setFiltroFormato] = useState('');
   const [expandidos, setExpandidos] = useState(new Set());
 
   const [editando, setEditando] = useState(null);
@@ -125,6 +137,23 @@ export default function ProductosValoresPage() {
   const [editandoTC, setEditandoTC] = useState(false);
   const [tcTemp, setTcTemp] = useState('');
   const [configTemp, setConfigTemp] = useState([]);
+  const [alertaRevisarOculta, setAlertaRevisarOculta] = useState(false);
+
+  useEffect(() => {
+    try {
+      const ocultaHasta = localStorage.getItem(CLAVE_ALERTA_REVISAR_OCULTA);
+      if (ocultaHasta && new Date() < new Date(ocultaHasta)) setAlertaRevisarOculta(true);
+    } catch {}
+  }, []);
+
+  function ocultarAlertaRevisar() {
+    const hoy = new Date();
+    const reaparece = new Date(hoy.getFullYear(), hoy.getMonth(), DIA_REAPARICION_ALERTA);
+    if (hoy.getDate() >= DIA_REAPARICION_ALERTA) reaparece.setMonth(reaparece.getMonth() + 1);
+    try { localStorage.setItem(CLAVE_ALERTA_REVISAR_OCULTA, reaparece.toISOString()); } catch {}
+    setAlertaRevisarOculta(true);
+    mostrarAviso('success', `✓ Ocultada — vuelve a aparecer el día ${reaparece.getDate()}/${reaparece.getMonth() + 1}`);
+  }
 
   const puedeVer = tienePermisoProductosVer(usuario);
   const puedeEditar = tienePermisoProductosEditar(usuario);
@@ -361,8 +390,7 @@ export default function ProductosValoresPage() {
   const productosVisibles = (productos || [])
     .filter((p) => mostrarVariantes || !p.esVariante)
     .filter((p) => filtroEstado === 'Archivado' ? p.archivado : (!p.archivado && (!filtroEstado || p.estado === filtroEstado)))
-    .filter((p) => !filtroModalidad || (filtroModalidad === 'Cursos' ? ['Sincrónico', 'On demand'].includes(p.modalidad) : p.modalidad === filtroModalidad))
-    .filter((p) => !filtroFormato || p.formato === filtroFormato);
+    .filter((p) => !filtroModalidad || (filtroModalidad === 'Cursos' ? ['Sincrónico', 'On demand'].includes(p.modalidad) : p.modalidad === filtroModalidad));
 
   const conteoPorEstado = ESTADOS.map((e) => ({
     estado: e, cantidad: productosSinArchivarNiVariantes.filter((p) => p.estado === e).length
@@ -372,9 +400,6 @@ export default function ProductosValoresPage() {
     modalidad: m, cantidad: productosSinArchivarNiVariantes.filter((p) => p.modalidad === m).length
   })).filter((m) => m.cantidad > 0);
   const cantidadCursos = productosSinArchivarNiVariantes.filter((p) => ['Sincrónico', 'On demand'].includes(p.modalidad)).length;
-  const conteoPorFormato = FORMATOS.map((f) => ({
-    formato: f, cantidad: productosSinArchivarNiVariantes.filter((p) => p.formato === f).length
-  })).filter((f) => f.cantidad > 0);
 
   return (
     <div>
@@ -415,12 +440,14 @@ export default function ProductosValoresPage() {
         )}
         <p className="text-textMuted text-xs mb-4">Precios, descuentos por nivel y botones de pago de cada curso.</p>
 
-        {productosParaRevisar.length > 0 && (
-          <div className="bg-warningBg border border-warningText/30 rounded-xl px-4 py-2.5 mb-4">
-            <p className="text-warningText text-sm font-semibold">
+        {productosParaRevisar.length > 0 && !alertaRevisarOculta && (
+          <div className="bg-warningBg border border-warningText/30 rounded-xl px-4 py-2.5 mb-4 relative">
+            <button onClick={ocultarAlertaRevisar} title={`Ocultar hasta el día ${DIA_REAPARICION_ALERTA}`}
+              className="absolute top-2 right-2.5 text-warningText/70 hover:text-warningText text-sm font-bold leading-none px-1">✕</button>
+            <p className="text-warningText text-sm font-semibold pr-6">
               ⚠️ {productosParaRevisar.length} producto{productosParaRevisar.length !== 1 ? 's' : ''} sin actualizar hace más de 30 días
             </p>
-            <p className="text-textMuted text-xs mt-0.5">{productosParaRevisar.map((p) => p.nombre).join(' · ')}</p>
+            <p className="text-textMuted text-xs mt-0.5 pr-6">{productosParaRevisar.map((p) => p.nombre).join(' · ')}</p>
           </div>
         )}
 
@@ -504,27 +531,27 @@ export default function ProductosValoresPage() {
           <p className="text-textMuted text-[11px] mt-2">Este % se usa en todo producto que no tenga un valor propio ("override") para ese nivel.</p>
         </div>
 
-        {/* FILTROS — 3 filas claramente separadas */}
+        {/* FILTROS — 2 filas claramente separadas */}
         <div className="flex items-center gap-1.5 flex-wrap mb-2">
           <button onClick={() => setFiltroEstado('')}
-            className={`text-xs px-3 py-1 rounded-full border transition-colors ${filtroEstado === '' ? 'bg-accentPurple border-accentPurple text-white' : 'bg-surface2 border-border text-textSec hover:text-text'}`}>
+            className={`text-xs px-3 py-1 rounded-full border transition-colors ${filtroEstado === '' ? claseChipEstado('') : 'bg-surface2 border-border text-textSec hover:text-text'}`}>
             Todos ({productosSinArchivarNiVariantes.length})
           </button>
           {conteoPorEstado.map((e) => (
             <button key={e.estado} onClick={() => setFiltroEstado(e.estado)}
-              className={`text-xs px-3 py-1 rounded-full border transition-colors ${filtroEstado === e.estado ? 'bg-accentPurple border-accentPurple text-white' : 'bg-surface2 border-border text-textSec hover:text-text'}`}>
+              className={`text-xs px-3 py-1 rounded-full border transition-colors ${filtroEstado === e.estado ? claseChipEstado(e.estado) : 'bg-surface2 border-border text-textSec hover:text-text'}`}>
               {e.estado === 'Activo' ? 'Activos' : e.estado === 'Pausado' ? 'Pausados' : 'Próximamente'} ({e.cantidad})
             </button>
           ))}
           {cantidadArchivados > 0 && (
             <button onClick={() => setFiltroEstado('Archivado')}
-              className={`text-xs px-3 py-1 rounded-full border transition-colors ${filtroEstado === 'Archivado' ? 'bg-accentPurple border-accentPurple text-white' : 'bg-surface2 border-border text-textSec hover:text-text'}`}>
+              className={`text-xs px-3 py-1 rounded-full border transition-colors ${filtroEstado === 'Archivado' ? claseChipEstado('Archivado') : 'bg-surface2 border-border text-textSec hover:text-text'}`}>
               Archivados ({cantidadArchivados})
             </button>
           )}
         </div>
 
-        <div className="flex items-center gap-1.5 flex-wrap mb-2">
+        <div className="flex items-center gap-1.5 flex-wrap mb-4">
           <button onClick={() => setFiltroModalidad('')}
             className={`text-xs px-3 py-1 rounded-full border transition-colors ${filtroModalidad === '' ? 'bg-accentTeal border-accentTeal text-white' : 'bg-surface2 border-border text-textSec hover:text-text'}`}>
             Todos los tipos
@@ -539,19 +566,6 @@ export default function ProductosValoresPage() {
             <button key={m.modalidad} onClick={() => setFiltroModalidad(filtroModalidad === m.modalidad ? '' : m.modalidad)}
               className={`text-xs px-3 py-1 rounded-full border transition-colors ${filtroModalidad === m.modalidad ? 'bg-accentTeal border-accentTeal text-white' : 'bg-surface2 border-border text-textSec hover:text-text'}`}>
               {m.modalidad} ({m.cantidad})
-            </button>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-1.5 flex-wrap mb-4">
-          <button onClick={() => setFiltroFormato('')}
-            className={`text-xs px-3 py-1 rounded-full border transition-colors ${filtroFormato === '' ? 'bg-accentMagenta border-accentMagenta text-white' : 'bg-surface2 border-border text-textSec hover:text-text'}`}>
-            Todos los formatos
-          </button>
-          {conteoPorFormato.map((f) => (
-            <button key={f.formato} onClick={() => setFiltroFormato(filtroFormato === f.formato ? '' : f.formato)}
-              className={`text-xs px-3 py-1 rounded-full border transition-colors ${filtroFormato === f.formato ? 'bg-accentMagenta border-accentMagenta text-white' : 'bg-surface2 border-border text-textSec hover:text-text'}`}>
-              {f.formato === 'Sincrónico' ? 'Sincrónicos' : f.formato === 'Asincrónico' ? 'Asincrónicos' : 'Híbridos'} ({f.cantidad})
             </button>
           ))}
         </div>
@@ -633,6 +647,7 @@ export default function ProductosValoresPage() {
                       <div className="text-right">
                         <p className="text-base font-bold">{precio(p.valorLista)}{!tieneEscalonadas && cantCuotas && cantCuotas > 1 ? <span className="text-xs font-normal text-textMuted"> /cuota</span> : null}</p>
                         <p className="text-textMuted text-[10px]">{!tieneEscalonadas && cantCuotas && cantCuotas > 1 ? `Valor de lista · ${cantCuotas} cuotas` : 'Valor de lista'}</p>
+                        {p.actualizado && <p className="text-textMuted text-[9px] mt-0.5">Última modif.: {p.actualizado}</p>}
                       </div>
                       <span className="text-textMuted text-lg">{abierto ? '▾' : '▸'}</span>
                     </div>
