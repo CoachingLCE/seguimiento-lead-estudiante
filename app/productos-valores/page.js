@@ -96,6 +96,26 @@ function claseChipEstado(estado) {
 // la cruz — se guarda en localStorage (por navegador) la fecha hasta la que hay que ocultarla.
 const CLAVE_ALERTA_REVISAR_OCULTA = 'productosValores_alertaRevisarOcultaHasta';
 const DIA_REAPARICION_ALERTA = 28;
+
+// Orden fijo de la lista de productos: primero cursos sincrónicos, después on demand, después
+// ebooks, y el resto (Comunidad, Servicio, Otro producto, etc.) al final, en el orden en que
+// vengan — Array.prototype.sort de JS es estable, así que dentro de cada grupo no se reordena.
+const ORDEN_MODALIDAD = { 'Sincrónico': 0, 'On demand': 1, 'Ebook': 2 };
+function prioridadModalidad(modalidad) { return ORDEN_MODALIDAD[modalidad] ?? 3; }
+
+// Un color propio para cada chip de "tipo" (antes todos usaban el mismo celeste y no se
+// distinguían entre sí cuando estaban seleccionados).
+const CLASE_CHIP_TIPO = {
+  '': 'bg-accentTeal border-accentTeal text-white', // "Todos los tipos"
+  Cursos: 'bg-accentPurple border-accentPurple text-white',
+  'Sincrónico': 'bg-accentMagenta border-accentMagenta text-white',
+  'On demand': 'bg-successText border-successText text-white',
+  Ebook: 'bg-warningText border-warningText text-[#1a1400]',
+  Comunidad: 'bg-infoText border-infoText text-white',
+  Servicio: 'bg-dangerText border-dangerText text-white',
+  'Otro producto': 'bg-textMuted border-textMuted text-white',
+};
+function claseChipTipo(modalidad) { return CLASE_CHIP_TIPO[modalidad] || CLASE_CHIP_TIPO['']; }
 // Para cursos (Sincrónico/On demand) muestra Sincrónico/Asincrónico/Híbrido — para el resto
 // (Ebook, Comunidad, Servicio, Otro producto) la modalidad ya es clara de por sí, así que se
 // muestra ESA en vez de forzar "Asincrónico" en algo que no es un curso.
@@ -130,6 +150,8 @@ export default function ProductosValoresPage() {
   const [seleccionados, setSeleccionados] = useState(new Set());
   const [quitandoDescuentos, setQuitandoDescuentos] = useState(false);
   const [confirmarQuitarDescuentos, setConfirmarQuitarDescuentos] = useState(false);
+  const [confirmarAplicarNivel, setConfirmarAplicarNivel] = useState(null); // { tierId, label }
+  const [aplicandoNivel, setAplicandoNivel] = useState(false);
   const [aviso, setAviso] = useState(null);
   const [linkCopiado, setLinkCopiado] = useState(null);
   const [editandoConfig, setEditandoConfig] = useState(false);
@@ -301,6 +323,48 @@ export default function ProductosValoresPage() {
     cargar();
   }
 
+  // Un beneficio en "Niveles de descuento (general)" solo aparece en la tarjeta de un producto
+  // si ESE producto lo tiene agregado en su propia lista de "Descuentos por nivel" — por eso un
+  // beneficio recién creado (ej. "Inscripción anticipada: débito automático") no aparece en
+  // ningún lado hasta que se agrega a cada producto. Esto lo agrega de una a todos los productos
+  // activos (no archivados, no variantes) que todavía no lo tengan, siguiendo el % general (sin
+  // "override"), sin inventar ningún valor propio para cada producto.
+  async function aplicarNivelATodos() {
+    if (!confirmarAplicarNivel) return;
+    const { tierId } = confirmarAplicarNivel;
+    setAplicandoNivel(true);
+    const candidatos = productosSinArchivarNiVariantes.filter((p) => !p.descuentos?.[tierId]);
+    let aplicados = 0, fallaron = 0;
+    for (const p of candidatos) {
+      try {
+        const res = await fetch('/api/productos-valores', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: p.id, nombre: p.nombre, modalidad: p.modalidad, formato: p.formato, estado: p.estado,
+            valorLista: p.valorLista, valorUnPago: p.valorUnPago, precioExterior: p.precioExterior,
+            margen: p.margen, duracion: p.duracion, descripcion: p.descripcion, publicoObjetivo: p.publicoObjetivo,
+            landing: p.landing, proximaActualizacion: p.proximaActualizacion, proximaEdicion: p.proximaEdicion,
+            descuentos: { ...p.descuentos, [tierId]: { pct: 0, override: false } },
+            cuotasEscalonadas: p.cuotasEscalonadas, mediosDePago: p.mediosDePago,
+            esVariante: p.esVariante, varianteDeId: p.varianteDeId, motivo: p.motivo,
+            sinNiveles: p.sinNiveles, archivado: p.archivado,
+            solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
+          })
+        });
+        if (res.ok) aplicados++; else fallaron++;
+      } catch {
+        fallaron++;
+      }
+    }
+    setConfirmarAplicarNivel(null);
+    setAplicandoNivel(false);
+    mostrarAviso(
+      fallaron === 0 ? 'success' : 'error',
+      fallaron === 0 ? `✓ Agregado a ${aplicados} producto${aplicados !== 1 ? 's' : ''}` : `✓ ${aplicados} agregado(s), ✕ ${fallaron} no se pudieron`
+    );
+    cargar();
+  }
+
   async function borrar(p) {
     try {
       const res = await fetch('/api/productos-valores', {
@@ -390,7 +454,8 @@ export default function ProductosValoresPage() {
   const productosVisibles = (productos || [])
     .filter((p) => mostrarVariantes || !p.esVariante)
     .filter((p) => filtroEstado === 'Archivado' ? p.archivado : (!p.archivado && (!filtroEstado || p.estado === filtroEstado)))
-    .filter((p) => !filtroModalidad || (filtroModalidad === 'Cursos' ? ['Sincrónico', 'On demand'].includes(p.modalidad) : p.modalidad === filtroModalidad));
+    .filter((p) => !filtroModalidad || (filtroModalidad === 'Cursos' ? ['Sincrónico', 'On demand'].includes(p.modalidad) : p.modalidad === filtroModalidad))
+    .sort((a, b) => prioridadModalidad(a.modalidad) - prioridadModalidad(b.modalidad));
 
   const conteoPorEstado = ESTADOS.map((e) => ({
     estado: e, cantidad: productosSinArchivarNiVariantes.filter((p) => p.estado === e).length
@@ -522,11 +587,26 @@ export default function ProductosValoresPage() {
               </div>
             </>
           ) : (
+            <>
             <div className="flex flex-wrap gap-2">
-              {config.filter((t) => t.tierId !== 'tipoDeCambio').map((t) => (
-                <span key={t.tierId} className="text-xs px-3 py-1 rounded-full bg-infoBg text-infoText font-medium">{t.label}: {t.pct}%</span>
-              ))}
+              {config.filter((t) => t.tierId !== 'tipoDeCambio').map((t) => {
+                const faltanEn = productosSinArchivarNiVariantes.filter((p) => !p.descuentos?.[t.tierId]).length;
+                return (
+                  <span key={t.tierId} className="text-xs px-3 py-1 rounded-full bg-infoBg text-infoText font-medium flex items-center gap-1.5">
+                    {t.label}: {t.pct}%
+                    {puedeEditar && faltanEn > 0 && (
+                      <button onClick={() => setConfirmarAplicarNivel({ tierId: t.tierId, label: t.label, faltanEn })}
+                        title={`Agregar este beneficio a los ${faltanEn} producto${faltanEn !== 1 ? 's' : ''} que todavía no lo tienen`}
+                        className="text-accentTeal font-semibold hover:underline">
+                        + aplicar a todos
+                      </button>
+                    )}
+                  </span>
+                );
+              })}
             </div>
+            <p className="text-textMuted text-[10px] mt-2">Un beneficio nuevo no aparece solo en los productos — usá "+ aplicar a todos" para agregarlo a los que todavía no lo tienen.</p>
+            </>
           )}
           <p className="text-textMuted text-[11px] mt-2">Este % se usa en todo producto que no tenga un valor propio ("override") para ese nivel.</p>
         </div>
@@ -553,18 +633,18 @@ export default function ProductosValoresPage() {
 
         <div className="flex items-center gap-1.5 flex-wrap mb-4">
           <button onClick={() => setFiltroModalidad('')}
-            className={`text-xs px-3 py-1 rounded-full border transition-colors ${filtroModalidad === '' ? 'bg-accentTeal border-accentTeal text-white' : 'bg-surface2 border-border text-textSec hover:text-text'}`}>
+            className={`text-xs px-3 py-1 rounded-full border transition-colors ${filtroModalidad === '' ? claseChipTipo('') : 'bg-surface2 border-border text-textSec hover:text-text'}`}>
             Todos los tipos
           </button>
           {cantidadCursos > 0 && (
             <button onClick={() => setFiltroModalidad(filtroModalidad === 'Cursos' ? '' : 'Cursos')}
-              className={`text-xs px-3 py-1 rounded-full border transition-colors ${filtroModalidad === 'Cursos' ? 'bg-accentTeal border-accentTeal text-white' : 'bg-surface2 border-border text-textSec hover:text-text'}`}>
+              className={`text-xs px-3 py-1 rounded-full border transition-colors ${filtroModalidad === 'Cursos' ? claseChipTipo('Cursos') : 'bg-surface2 border-border text-textSec hover:text-text'}`}>
               Cursos ({cantidadCursos})
             </button>
           )}
           {conteoPorModalidad.map((m) => (
             <button key={m.modalidad} onClick={() => setFiltroModalidad(filtroModalidad === m.modalidad ? '' : m.modalidad)}
-              className={`text-xs px-3 py-1 rounded-full border transition-colors ${filtroModalidad === m.modalidad ? 'bg-accentTeal border-accentTeal text-white' : 'bg-surface2 border-border text-textSec hover:text-text'}`}>
+              className={`text-xs px-3 py-1 rounded-full border transition-colors ${filtroModalidad === m.modalidad ? claseChipTipo(m.modalidad) : 'bg-surface2 border-border text-textSec hover:text-text'}`}>
               {m.modalidad} ({m.cantidad})
             </button>
           ))}
@@ -967,6 +1047,22 @@ export default function ProductosValoresPage() {
               <button onClick={quitarDescuentosDeSeleccionados} disabled={quitandoDescuentos}
                 className="text-xs px-3 py-2 rounded-lg bg-dangerText text-white font-semibold flex-1 disabled:opacity-60">
                 {quitandoDescuentos ? 'Quitando…' : 'Sí, quitar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmarAplicarNivel && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4" onClick={() => setConfirmarAplicarNivel(null)}>
+          <div className="bg-surface2 border border-border rounded-2xl p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+            <p className="text-sm font-semibold mb-2">¿Agregar "{confirmarAplicarNivel.label}" a {confirmarAplicarNivel.faltanEn} producto{confirmarAplicarNivel.faltanEn !== 1 ? 's' : ''}?</p>
+            <p className="text-textMuted text-xs mb-4">Se agrega ese beneficio a los productos activos que todavía no lo tienen, siguiendo el % general ({config.find((t) => t.tierId === confirmarAplicarNivel.tierId)?.pct}%). No se toca ningún otro dato.</p>
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmarAplicarNivel(null)} className="text-xs px-3 py-2 rounded-lg bg-surface border border-border flex-1">Cancelar</button>
+              <button onClick={aplicarNivelATodos} disabled={aplicandoNivel}
+                className="text-xs px-3 py-2 rounded-lg bg-accentPurple text-white font-semibold flex-1 disabled:opacity-60">
+                {aplicandoNivel ? 'Agregando…' : 'Sí, agregar'}
               </button>
             </div>
           </div>
