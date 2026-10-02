@@ -72,7 +72,13 @@ export default function InscritosPage() {
   const [filtroCurso, setFiltroCurso] = useState('');
   const [filtroEdicion, setFiltroEdicion] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('');
-  const [filtroMes, setFiltroMes] = useState('');
+  // Pedido de Diego (02/10/2026): que la vista arranque mostrando el mes actual en vez de
+  // "Todos los meses" — se calcula con la fecha LOCAL (no UTC) para que coincida con el mismo
+  // formato "YYYY-MM" que ya se usa para agrupar por mes más abajo.
+  const [filtroMes, setFiltroMes] = useState(() => {
+    const ahora = new Date();
+    return `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}`;
+  });
   const [ordenPor, setOrdenPor] = useState('FechaInscripcion');
   const [ordenDir, setOrdenDir] = useState('desc');
   const [pendientesOcultoHasta, setPendientesOcultoHasta] = useState(0);

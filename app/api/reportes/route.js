@@ -3,10 +3,15 @@ import { readSheet } from '../../../lib/sheets';
 import { findUsuario, tienePermisoReportes } from '../../../lib/auth';
 import { CURSOS, EQUIPO_VENTAS, RESULTADOS_FINALES } from '../../../lib/constants';
 
-function mesAnteriorDe(mes) {
+// Generaliza "mes anterior" a "n meses para atrás" — pedido de Diego (02/10/2026): sumar una
+// comparación con hace 2 meses, además de (no en reemplazo de) la de un mes atrás que ya existía.
+function mesDesplazado(mes, n) {
   const [y, m] = mes.split('-').map(Number);
-  const fecha = new Date(y, m - 2, 1); // m es 1-indexado; restamos 1 mes más
+  const fecha = new Date(y, m - 1 - n, 1); // m es 1-indexado
   return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+}
+function mesAnteriorDe(mes) {
+  return mesDesplazado(mes, 1);
 }
 
 function diasDelMes(mes) {
@@ -286,12 +291,14 @@ export async function GET(request) {
   }
   const mes = searchParams.get('mes');
   const mesAnterior = mesAnteriorDe(mes);
+  const mesHace2Meses = mesDesplazado(mes, 2);
 
   try {
     const [leads, seguimiento, auditoria] = await Promise.all([readSheet('Leads'), readSheet('Seguimiento'), readSheet('Auditoria')]);
 
   const leadsDelMes = leads.filter((l) => (l.FechaIngreso || '').slice(0, 7) === mes);
   const leadsMesAnterior = leads.filter((l) => (l.FechaIngreso || '').slice(0, 7) === mesAnterior);
+  const leadsHace2Meses = leads.filter((l) => (l.FechaIngreso || '').slice(0, 7) === mesHace2Meses);
 
   // Ventas REALES de cada mes — por FechaVenta, no por cuándo entró el lead. Así, alguien que
   // entró en julio y compró en agosto sí se cuenta en las ventas/facturación de agosto.
@@ -300,6 +307,9 @@ export async function GET(request) {
   );
   const ventasMesAnterior = leads.filter((l) =>
     l.Estado === 'Comprado' && l.Origen !== 'Carga manual (baja)' && (l.FechaVenta || '').slice(0, 7) === mesAnterior
+  );
+  const ventasHace2Meses = leads.filter((l) =>
+    l.Estado === 'Comprado' && l.Origen !== 'Carga manual (baja)' && (l.FechaVenta || '').slice(0, 7) === mesHace2Meses
   );
 
   // Objetivos adicionales: ventas por Débito automático (mismo criterio que ventasDelMes, filtrado
@@ -311,11 +321,16 @@ export async function GET(request) {
 
   const idsDelMes = new Set(leadsDelMes.map((l) => l.ID));
   const idsMesAnterior = new Set(leadsMesAnterior.map((l) => l.ID));
+  const idsHace2Meses = new Set(leadsHace2Meses.map((l) => l.ID));
   const seguimientoDelMes = seguimiento.filter((s) => idsDelMes.has(s.LeadID));
   const seguimientoMesAnterior = seguimiento.filter((s) => idsMesAnterior.has(s.LeadID));
+  const seguimientoHace2Meses = seguimiento.filter((s) => idsHace2Meses.has(s.LeadID));
 
   const actual = calcularBloque(mes, leadsDelMes, ventasDelMes, seguimientoDelMes);
   const anterior = calcularBloque(mesAnterior, leadsMesAnterior, ventasMesAnterior, seguimientoMesAnterior);
+  // Pedido de Diego (02/10/2026): comparación adicional con 2 meses atrás (no reemplaza la de
+  // "mes anterior" — se suma, en los gráficos que ya comparaban mes a mes y en el de vendedores).
+  const hace2Meses = calcularBloque(mesHace2Meses, leadsHace2Meses, ventasHace2Meses, seguimientoHace2Meses);
   const ingresosPorDia = calcularIngresosPorDia(mes, leads);
   const ingresosTotalesDelMes = ingresosPorDia.reduce((acc, d) => acc + d.monto, 0);
   const diaFiltroActividad = searchParams.get('dia') || '';
@@ -469,25 +484,31 @@ export async function GET(request) {
     if (!actual.vendedoresConVenta.includes(v) && actual.totalCompras > 0) alertas.push(`${v} sin ventas registradas este mes`);
   });
 
-  const compras = ventasDelMes.map((c) => ({
-    id: c.ID,
-    lead: `${c.Nombre} ${c.Apellido}`,
-    curso: c.Curso || 'sin curso',
-    edicion: c.Edicion || '',
-    docentes: c.Docentes || '',
-    origen: c.Origen,
-    fechaVenta: c.FechaVenta,
-    medioPago: c.MedioPago,
-    modalidad: c.Modalidad,
-    montoTotal: c.MontoTotal,
-    cargadoPor: c.CargadoPorNombre,
-    vendidoPor: c.VendidoPorNombre || '',
-    pais: c.Pais || '',
-    estado: c.Estado
-  }));
+  function aCompra(c) {
+    return {
+      id: c.ID,
+      lead: `${c.Nombre} ${c.Apellido}`,
+      curso: c.Curso || 'sin curso',
+      edicion: c.Edicion || '',
+      docentes: c.Docentes || '',
+      origen: c.Origen,
+      fechaVenta: c.FechaVenta,
+      medioPago: c.MedioPago,
+      modalidad: c.Modalidad,
+      montoTotal: c.MontoTotal,
+      cargadoPor: c.CargadoPorNombre,
+      vendidoPor: c.VendidoPorNombre || '',
+      pais: c.Pais || '',
+      estado: c.Estado
+    };
+  }
+  const compras = ventasDelMes.map(aCompra);
+  // Para "Comparación de vendedores por día" (pedido de Diego, 02/10/2026): el mismo detalle de
+  // ventas, pero de hace 2 meses, para poder armar la línea de comparación de cada vendedor.
+  const comprasHace2Meses = ventasHace2Meses.map(aCompra);
 
   return NextResponse.json({
-    mes, mesAnterior,
+    mes, mesAnterior, mesHace2Meses,
     ...actual,
     ingresosPorDia, ingresosTotalesDelMes,
     actividadPorPersona,
@@ -508,7 +529,10 @@ export async function GET(request) {
     movimientosPorPersona,
     retrasoPorLote,
     actividadPorLote,
-    serieDiariaMesAnterior: anterior.serieDiaria
+    serieDiariaMesAnterior: anterior.serieDiaria,
+    // Pedido de Diego (02/10/2026): comparación adicional con 2 meses atrás.
+    serieDiariaHace2Meses: hace2Meses.serieDiaria,
+    comprasHace2Meses
   });
   } catch (err) {
     console.error('Error generando reportes:', err);

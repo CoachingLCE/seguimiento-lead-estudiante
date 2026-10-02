@@ -126,7 +126,7 @@ export default function AuditoriaPage() {
       {!puedeVer ? (
         <AccesoDenegado seccion="Historial de acciones" />
       ) : (
-      <div className="max-w-[1600px] w-[88%] mx-auto pb-16">
+      <div className="max-w-[1900px] w-[94%] mx-auto pb-16">
         <div className="flex items-end gap-3 mb-4 flex-wrap no-print">
           <div>
             <label className="text-xs text-textSec block mb-1">Usuario</label>

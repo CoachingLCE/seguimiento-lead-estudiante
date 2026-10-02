@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { readSheet } from '../../../../lib/sheets';
 import { findUsuario } from '../../../../lib/auth';
 import { tienePermisoCrearLeads } from '../../../../lib/permisos';
-import { normalizarWhatsapp } from '../../../../lib/constants';
+import { normalizarWhatsapp, normalizarInstagram } from '../../../../lib/constants';
 
 // GET /api/leads/duplicados?nombre=...&whatsapp=...&email=...&solicitanteEmail=...
 // Devuelve solo lo mínimo necesario para mostrar el aviso de duplicado — no expone la lista completa
@@ -17,6 +17,11 @@ export async function GET(request) {
   const nombre = (searchParams.get('nombre') || '').trim().toLowerCase();
   const whatsapp = normalizarWhatsapp(searchParams.get('whatsapp'));
   const email = (searchParams.get('email') || '').trim().toLowerCase();
+  // Pedido de Diego (02/10/2026): la comprobación de duplicados no tenía en cuenta el usuario de
+  // Instagram — un lead cargado por un @ de Instagram, sin WhatsApp ni email (común en leads de
+  // Instagram), no detectaba que ya existía si el nombre cargado no era idéntico. Se normaliza
+  // sacando el "@" y pasando a minúsculas para que "@Anita.Biasutti" y "anita.biasutti" matcheen.
+  const instagram = normalizarInstagram(searchParams.get('instagram'));
 
   // Nombres "placeholder" (vacío, o el literal "sin nombre" que se usa para cargar un lead solo
   // con el número) NO deben contar como coincidencia de nombre — si no, dos leads sin nombre
@@ -25,16 +30,17 @@ export async function GET(request) {
   const NOMBRES_PLACEHOLDER = ['', 'sin nombre'];
   const nombreEsValido = nombre.length >= 3 && !NOMBRES_PLACEHOLDER.includes(nombre);
 
-  if (!nombreEsValido && !whatsapp && !email) {
+  if (!nombreEsValido && !whatsapp && !email && !instagram) {
     return NextResponse.json({ coincidencias: [] });
   }
 
-  // Fuerza de la coincidencia: WhatsApp/email (dato exacto) siempre pesa más que un nombre
-  // parecido (dato débil) — así, si hay varias coincidencias, la que se muestra primero
-  // (coincidencias[0] en el front) es siempre la más confiable, no la primera que aparezca
-  // en la hoja por casualidad de orden.
+  // Fuerza de la coincidencia: un dato exacto (WhatsApp, usuario de Instagram o email) siempre
+  // pesa más que un nombre parecido (dato débil) — así, si hay varias coincidencias, la que se
+  // muestra primero (coincidencias[0] en el front) es siempre la más confiable, no la primera que
+  // aparezca en la hoja por casualidad de orden.
   function fuerzaCoincidencia(l) {
-    if (whatsapp && whatsapp.length >= 6 && normalizarWhatsapp(l.WhatsApp) === whatsapp) return 3;
+    if (whatsapp && whatsapp.length >= 6 && normalizarWhatsapp(l.WhatsApp) === whatsapp) return 4;
+    if (instagram && instagram.length >= 3 && normalizarInstagram(l.InstagramUsuario) === instagram) return 3;
     if (email && email.length >= 5 && (l.EmailEstudiante || '').trim().toLowerCase() === email) return 2;
     if (nombreEsValido && (l.Nombre || '').trim().toLowerCase().includes(nombre)) return 1;
     return 0;
@@ -49,6 +55,7 @@ export async function GET(request) {
 
   function motivo(l) {
     if (whatsapp && whatsapp.length >= 6 && normalizarWhatsapp(l.WhatsApp) === whatsapp) return 'Mismo WhatsApp';
+    if (instagram && instagram.length >= 3 && normalizarInstagram(l.InstagramUsuario) === instagram) return 'Mismo usuario de Instagram/Facebook';
     if (email && email.length >= 5 && (l.EmailEstudiante || '').trim().toLowerCase() === email) return 'Mismo email';
     return 'Nombre parecido';
   }

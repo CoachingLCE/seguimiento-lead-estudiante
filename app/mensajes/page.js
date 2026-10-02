@@ -1,10 +1,27 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Nav from '../../components/Nav';
 import AccesoDenegado from '../../components/AccesoDenegado';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoMensajesVer, tienePermisoMensajesEscribir } from '../../lib/permisos';
+
+// Pedido de Diego (02/10/2026): mostrar "Nuevo" si se creó, o "Modificado" si se editó, en los
+// últimos 7 días. Si se editó DESPUÉS de crearse (no el mismo guardado inicial), manda "Modificado"
+// por sobre "Nuevo" — es la señal más reciente.
+const DIAS_RECIENTE = 7;
+function estadoReciente(m) {
+  const ahora = Date.now();
+  const dentroDeNDias = (fecha) => !!fecha && (ahora - new Date(fecha).getTime()) / 86400000 <= DIAS_RECIENTE;
+  const fueModificado = m.FechaModificacion && new Date(m.FechaModificacion) > new Date(m.FechaCreacion);
+  if (fueModificado && dentroDeNDias(m.FechaModificacion)) return 'modificado';
+  if (dentroDeNDias(m.FechaCreacion)) return 'nuevo';
+  return null;
+}
+
+function emailsFavoritos(m) {
+  return (m.Favoritos || '').split(',').map((e) => e.trim()).filter(Boolean);
+}
 
 export default function MensajesFrecuentesPage() {
   const { usuario, logout } = useSession();
@@ -24,6 +41,8 @@ export default function MensajesFrecuentesPage() {
   const [vistaCompacta, setVistaCompacta] = useState(true);
   const [expandidoId, setExpandidoId] = useState(null);
   const [arrastrandoId, setArrastrandoId] = useState(null);
+  const [soloFavoritos, setSoloFavoritos] = useState(false);
+  const textareaRef = useRef(null);
 
   const puedeVer = tienePermisoMensajesVer(usuario);
   const puedeEscribir = tienePermisoMensajesEscribir(usuario);
@@ -69,6 +88,51 @@ export default function MensajesFrecuentesPage() {
     setTituloForm(m.Titulo);
     setMensajeForm(m.Mensaje);
     setMostrarForm(true);
+  }
+
+  // Duplicar: no hace falta un endpoint propio — alcanza con precargar el formulario de "Nuevo
+  // mensaje" con el contenido de este, para que quien duplica pueda ajustar el título antes de
+  // guardar (ej. para una variante de la misma plantilla).
+  function duplicar(m) {
+    setEditandoRowIndex(null);
+    setTituloForm(`${m.Titulo} (copia)`);
+    setMensajeForm(m.Mensaje);
+    setMostrarForm(true);
+  }
+
+  // Negrita/cursiva estilo WhatsApp (*negrita*, _cursiva_) — Diego pidió poder aplicar formato
+  // antes de copiar el mensaje. Envuelve la selección actual del textarea con el marcador; si no
+  // hay nada seleccionado, inserta el par de marcadores y deja el cursor en el medio para escribir.
+  function aplicarFormatoWhatsapp(marcador) {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const inicio = ta.selectionStart;
+    const fin = ta.selectionEnd;
+    const seleccion = mensajeForm.slice(inicio, fin);
+    const nuevoTexto = mensajeForm.slice(0, inicio) + marcador + seleccion + marcador + mensajeForm.slice(fin);
+    setMensajeForm(nuevoTexto);
+    const nuevaPosicion = inicio + marcador.length;
+    requestAnimationFrame(() => {
+      ta.focus();
+      ta.selectionStart = nuevaPosicion;
+      ta.selectionEnd = nuevaPosicion + seleccion.length;
+    });
+  }
+
+  // Favorito: preferencia personal (no requiere permiso de escritura) — optimista en pantalla,
+  // se confirma contra el servidor en segundo plano.
+  async function alternarFavorito(m) {
+    setMensajes((prev) => prev.map((x) => {
+      if (x._rowIndex !== m._rowIndex) return x;
+      const emails = emailsFavoritos(x);
+      const yaEsta = emails.includes(usuario.email);
+      const nuevos = yaEsta ? emails.filter((e) => e !== usuario.email) : [...emails, usuario.email];
+      return { ...x, Favoritos: nuevos.join(',') };
+    }));
+    await fetch('/api/mensajes-frecuentes', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion: 'toggleFavorito', rowIndex: m._rowIndex, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
+    });
   }
 
   async function guardar() {
@@ -147,6 +211,10 @@ export default function MensajesFrecuentesPage() {
         <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
           <h3 className="text-lg font-bold">💬 Mensajes frecuentes</h3>
           <div className="flex items-center gap-2">
+            <button onClick={() => setSoloFavoritos((v) => !v)}
+              className={`text-xs px-3 py-2 rounded-lg border ${soloFavoritos ? 'bg-accentPurple/15 border-accentPurple text-accentPurple' : 'bg-surface2 border-border text-textSec'}`}>
+              {soloFavoritos ? '⭐ Solo favoritos' : '☆ Favoritos'}
+            </button>
             <button onClick={() => setVistaCompacta((v) => !v)}
               className="text-xs px-3 py-2 rounded-lg bg-surface2 border border-border text-textSec">
               {vistaCompacta ? '▤ Vista completa' : '☰ Vista compacta'}
@@ -171,7 +239,14 @@ export default function MensajesFrecuentesPage() {
               placeholder="Ej: Promo fin de mes — Coaching Ontológico"
               className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm mb-3" />
             <label className="text-xs text-textSec block mb-1">Mensaje</label>
-            <textarea rows={10} value={mensajeForm} onChange={(e) => setMensajeForm(e.target.value)}
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <button type="button" onClick={() => aplicarFormatoWhatsapp('*')} title="Negrita — así se ve en WhatsApp: *texto*"
+                className="text-xs font-bold w-7 h-7 flex items-center justify-center rounded-lg bg-surface2 border border-border hover:border-accentTeal">N</button>
+              <button type="button" onClick={() => aplicarFormatoWhatsapp('_')} title="Cursiva — así se ve en WhatsApp: _texto_"
+                className="text-xs italic w-7 h-7 flex items-center justify-center rounded-lg bg-surface2 border border-border hover:border-accentTeal">C</button>
+              <span className="text-textMuted text-[10.5px]">Seleccioná texto y aplicá el formato — se ve así en WhatsApp.</span>
+            </div>
+            <textarea ref={textareaRef} rows={10} value={mensajeForm} onChange={(e) => setMensajeForm(e.target.value)}
               placeholder={'Hola! Soy Maca de ILCE 👋\n\nA fin de mes te quería compartir una promo especial...'}
               className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm font-mono mb-3 whitespace-pre-wrap" />
             <div className="flex gap-2">
@@ -193,10 +268,22 @@ export default function MensajesFrecuentesPage() {
           <p className="text-textSec text-sm">Cargando…</p>
         ) : mensajes.length === 0 ? (
           <p className="text-textMuted text-sm">Todavía no hay mensajes guardados{puedeEscribir ? ' — usá "+ Nuevo mensaje" para arrancar.' : '.'}</p>
-        ) : (
+        ) : (() => {
+          // Favoritos primero (acceso rápido), respetando el orden ya elegido dentro de cada grupo —
+          // el sort de JS es estable, así que alcanza con comparar por "es favorito o no".
+          const propioFavorito = (m) => emailsFavoritos(m).includes(usuario.email);
+          const mensajesOrdenados = [...mensajes].sort((a, b) => (propioFavorito(b) ? 1 : 0) - (propioFavorito(a) ? 1 : 0));
+          const mensajesAMostrar = soloFavoritos ? mensajesOrdenados.filter(propioFavorito) : mensajesOrdenados;
+          if (mensajesAMostrar.length === 0) {
+            return <p className="text-textMuted text-sm">Todavía no marcaste ningún mensaje como favorito — tocá el ☆ de un mensaje para sumarlo acá.</p>;
+          }
+          return (
           <div className="space-y-3">
-            {mensajes.map((m) => {
+            {mensajesAMostrar.map((m) => {
               const estaExpandido = !vistaCompacta || expandidoId === m._rowIndex;
+              const esFavorito = propioFavorito(m);
+              const estado = estadoReciente(m);
+              const fueEditado = m.FechaModificacion && new Date(m.FechaModificacion) > new Date(m.FechaCreacion);
               return (
                 <div key={m._rowIndex}
                   draggable={puedeEscribir}
@@ -212,17 +299,24 @@ export default function MensajesFrecuentesPage() {
                           className="text-textMuted text-xs shrink-0">{estaExpandido ? '▼' : '▶'}</button>
                       )}
                       <p className="text-sm font-semibold truncate">{m.Titulo}</p>
+                      {estado === 'nuevo' && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-successBg text-successText shrink-0">Nuevo</span>}
+                      {estado === 'modificado' && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-infoBg text-infoText shrink-0">Modificado</span>}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
+                      <button onClick={() => alternarFavorito(m)} title={esFavorito ? 'Quitar de favoritos' : 'Marcar como favorito'}
+                        className={esFavorito ? 'text-base text-yellow-400' : 'text-base text-textMuted hover:text-yellow-400'}>
+                        {esFavorito ? '⭐' : '☆'}
+                      </button>
                       <button onClick={() => copiar(m.Mensaje, m._rowIndex)}
                         className="text-xs px-3 py-1.5 rounded-lg bg-accentPurple text-white font-semibold whitespace-nowrap">
                         {copiadoId === m._rowIndex ? '✓ Copiado' : '📋 Copiar'}
                       </button>
                       {puedeEscribir && (
-                        <>
-                          <button onClick={() => abrirEdicion(m)} className="text-xs text-accentTeal font-semibold">✏️</button>
-                          <button onClick={() => setConfirmarBorrar(m)} className="text-xs text-dangerText font-semibold">🗑</button>
-                        </>
+                        <div className="flex items-center gap-2 pl-2 border-l border-border">
+                          <button onClick={() => duplicar(m)} title="Duplicar" className="text-xs text-textSec hover:text-text font-semibold">📑</button>
+                          <button onClick={() => abrirEdicion(m)} title="Editar" className="text-xs text-accentTeal font-semibold">✏️</button>
+                          <button onClick={() => setConfirmarBorrar(m)} title="Eliminar" className="text-xs text-dangerText font-semibold">🗑</button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -230,7 +324,8 @@ export default function MensajesFrecuentesPage() {
                     <>
                       <p className="text-textSec text-[13px] whitespace-pre-wrap bg-bg/50 rounded-lg px-3 py-2.5">{m.Mensaje}</p>
                       <p className="text-textMuted text-[10.5px] mt-2">
-                        {m.CreadoPorNombre} · {new Date(m.FechaCreacion).toLocaleDateString('es-AR')}
+                        Creado por {m.CreadoPorNombre} · {new Date(m.FechaCreacion).toLocaleDateString('es-AR')}
+                        {fueEditado && <> · Editado por {m.UltimaModificacionPorNombre} · {new Date(m.FechaModificacion).toLocaleDateString('es-AR')}</>}
                       </p>
                     </>
                   )}
@@ -238,7 +333,8 @@ export default function MensajesFrecuentesPage() {
               );
             })}
           </div>
-        )}
+          );
+        })()}
       </div>
       )}
 

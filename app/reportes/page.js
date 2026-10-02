@@ -118,6 +118,12 @@ function TooltipVentasPorDia({ active, payload, label }) {
       <p style={{ color: '#cbd5e1' }} className="text-xs">Acumulado del mes: <b style={{ color: '#f9fafb' }}>{d.acumulado}</b></p>
       <p style={{ color: '#94a3b8', borderColor: '#262c4a' }} className="text-xs mt-1.5 pt-1.5 border-t">Mes anterior (mismo día): {d.ventasMesAnterior}</p>
       <p style={{ color: '#94a3b8' }} className="text-xs">Acumulado mes anterior: <b style={{ color: '#cbd5e1' }}>{d.acumuladoMesAnterior}</b></p>
+      {d.ventasHace2Meses !== undefined && (
+        <>
+          <p style={{ color: '#94a3b8', borderColor: '#262c4a' }} className="text-xs mt-1.5 pt-1.5 border-t">Hace 2 meses (mismo día): {d.ventasHace2Meses}</p>
+          <p style={{ color: '#94a3b8' }} className="text-xs">Acumulado hace 2 meses: <b style={{ color: '#cbd5e1' }}>{d.acumuladoHace2Meses}</b></p>
+        </>
+      )}
     </div>
   );
 }
@@ -1165,19 +1171,29 @@ export default function ReportesPage() {
                     onExportar={() => exportarGrafico('ventas-por-dia', (() => {
                       let acumulado = 0;
                       let acumuladoAnterior = 0;
+                      let acumuladoHace2Meses = 0;
                       const puntos = datos.serieDiaria.map((d, i) => {
                         acumulado += d.ventas;
                         const ventasMesAnterior = datos.serieDiariaMesAnterior?.[i]?.ventas ?? 0;
                         acumuladoAnterior += ventasMesAnterior;
-                        return { dia: d.dia, ventas: d.ventas, acumulado, ventasMesAnterior, acumuladoMesAnterior: acumuladoAnterior };
+                        const ventasHace2Meses = datos.serieDiariaHace2Meses?.[i]?.ventas ?? 0;
+                        acumuladoHace2Meses += ventasHace2Meses;
+                        return { dia: d.dia, ventas: d.ventas, acumulado, ventasMesAnterior, acumuladoMesAnterior: acumuladoAnterior, ventasHace2Meses, acumuladoHace2Meses };
                       });
-                      // Si el mes anterior tuvo mas dias que el actual (ej. agosto 31 vs septiembre 30), sumar
-                      // los dias sobrantes al ultimo punto para que el "acumulado mes anterior" refleje el TOTAL real.
+                      // Si el mes anterior (o el de hace 2 meses) tuvo mas dias que el actual (ej. agosto 31
+                      // vs septiembre 30), sumar los dias sobrantes al ultimo punto para que el acumulado
+                      // refleje el TOTAL real de ese mes.
                       const prevMes = datos.serieDiariaMesAnterior || [];
                       if (prevMes.length > datos.serieDiaria.length && puntos.length) {
                         const extra = prevMes.slice(datos.serieDiaria.length).reduce((a, x) => a + (x.ventas || 0), 0);
                         const u = puntos.length - 1;
                         puntos[u] = { ...puntos[u], acumuladoMesAnterior: puntos[u].acumuladoMesAnterior + extra };
+                      }
+                      const prevMes2 = datos.serieDiariaHace2Meses || [];
+                      if (prevMes2.length > datos.serieDiaria.length && puntos.length) {
+                        const extra2 = prevMes2.slice(datos.serieDiaria.length).reduce((a, x) => a + (x.ventas || 0), 0);
+                        const u = puntos.length - 1;
+                        puntos[u] = { ...puntos[u], acumuladoHace2Meses: puntos[u].acumuladoHace2Meses + extra2 };
                       }
                       return puntos;
                     })())}>
@@ -1185,19 +1201,29 @@ export default function ReportesPage() {
                       <LineChart data={(() => {
                         let acumulado = 0;
                         let acumuladoAnterior = 0;
+                        let acumuladoHace2Meses = 0;
                         const puntos = datos.serieDiaria.map((d, i) => {
                           acumulado += d.ventas;
                           const ventasMesAnterior = datos.serieDiariaMesAnterior?.[i]?.ventas ?? 0;
                           acumuladoAnterior += ventasMesAnterior;
-                          return { dia: d.dia, ventas: d.ventas, acumulado, ventasMesAnterior, acumuladoMesAnterior: acumuladoAnterior };
+                          const ventasHace2Meses = datos.serieDiariaHace2Meses?.[i]?.ventas ?? 0;
+                          acumuladoHace2Meses += ventasHace2Meses;
+                          return { dia: d.dia, ventas: d.ventas, acumulado, ventasMesAnterior, acumuladoMesAnterior: acumuladoAnterior, ventasHace2Meses, acumuladoHace2Meses };
                         });
-                        // Si el mes anterior tuvo mas dias que el actual (ej. agosto 31 vs septiembre 30), sumar
-                        // los dias sobrantes al ultimo punto para que el "acumulado mes anterior" refleje el TOTAL real.
+                        // Si el mes anterior (o el de hace 2 meses) tuvo mas dias que el actual (ej. agosto 31
+                        // vs septiembre 30), sumar los dias sobrantes al ultimo punto para que el acumulado
+                        // refleje el TOTAL real de ese mes.
                         const prevMes = datos.serieDiariaMesAnterior || [];
                         if (prevMes.length > datos.serieDiaria.length && puntos.length) {
                           const extra = prevMes.slice(datos.serieDiaria.length).reduce((a, x) => a + (x.ventas || 0), 0);
                           const u = puntos.length - 1;
                           puntos[u] = { ...puntos[u], acumuladoMesAnterior: puntos[u].acumuladoMesAnterior + extra };
+                        }
+                        const prevMes2 = datos.serieDiariaHace2Meses || [];
+                        if (prevMes2.length > datos.serieDiaria.length && puntos.length) {
+                          const extra2 = prevMes2.slice(datos.serieDiaria.length).reduce((a, x) => a + (x.ventas || 0), 0);
+                          const u = puntos.length - 1;
+                          puntos[u] = { ...puntos[u], acumuladoHace2Meses: puntos[u].acumuladoHace2Meses + extra2 };
                         }
                         return puntos;
                       })()}>
@@ -1205,13 +1231,14 @@ export default function ReportesPage() {
                         <XAxis dataKey="dia" stroke="#6b7299" fontSize={11} />
                         <YAxis stroke="#6b7299" fontSize={11} allowDecimals={false} />
                         <Tooltip content={<TooltipVentasPorDia />} />
-                        <Legend wrapperStyle={{ fontSize: 11 }} formatter={(v) => (v === 'ventas' ? 'Este mes' : 'Mes anterior')} />
+                        <Legend wrapperStyle={{ fontSize: 11 }} formatter={(v) => (v === 'ventas' ? 'Este mes' : v === 'ventasMesAnterior' ? 'Mes anterior' : 'Hace 2 meses')} />
                         {diaHoy && (
                           <ReferenceLine x={diaHoy} stroke="#f59e0b" strokeWidth={2}
                             label={{ value: 'Hoy', position: 'top', fill: '#f59e0b', fontSize: 11, fontWeight: 700 }} />
                         )}
                         <Line type="monotone" dataKey="ventas" stroke="#22d3ee" strokeWidth={2} dot={false} />
                         <Line type="monotone" dataKey="ventasMesAnterior" stroke="#6b7299" strokeWidth={2} dot={false} strokeDasharray="4 3" />
+                        <Line type="monotone" dataKey="ventasHace2Meses" stroke="#a78bfa" strokeWidth={2} dot={false} strokeDasharray="2 2" />
                       </LineChart>
                     </ResponsiveContainer>
                   </ChartCard>
@@ -1221,33 +1248,47 @@ export default function ReportesPage() {
                     valorGrande={`${datos.totalCompras} ventas`}
                     comparacion={<Flecha actual={datos.comparativa.ventas.actual} anterior={datos.comparativa.ventas.anterior} />}
                     onExportar={() => exportarGrafico('ventas-acumuladas', (() => {
-                      let ac = 0, acA = 0;
+                      let ac = 0, acA = 0, acH2 = 0;
                       const puntos = datos.serieDiaria.map((d, i) => {
                         ac += d.ventas;
                         const va = datos.serieDiariaMesAnterior?.[i]?.ventas ?? 0;
                         acA += va;
-                        return { dia: d.dia, acumulado: ac, acumuladoMesAnterior: acA };
+                        const vh2 = datos.serieDiariaHace2Meses?.[i]?.ventas ?? 0;
+                        acH2 += vh2;
+                        return { dia: d.dia, acumulado: ac, acumuladoMesAnterior: acA, acumuladoHace2Meses: acH2 };
                       });
                       const prevMes = datos.serieDiariaMesAnterior || [];
                       if (prevMes.length > datos.serieDiaria.length && puntos.length) {
                         const extra = prevMes.slice(datos.serieDiaria.length).reduce((a, x) => a + (x.ventas || 0), 0);
                         puntos[puntos.length - 1].acumuladoMesAnterior += extra;
                       }
+                      const prevMes2 = datos.serieDiariaHace2Meses || [];
+                      if (prevMes2.length > datos.serieDiaria.length && puntos.length) {
+                        const extra2 = prevMes2.slice(datos.serieDiaria.length).reduce((a, x) => a + (x.ventas || 0), 0);
+                        puntos[puntos.length - 1].acumuladoHace2Meses += extra2;
+                      }
                       return puntos;
                     })())}>
                     <ResponsiveContainer>
                       <LineChart data={(() => {
-                        let ac = 0, acA = 0;
+                        let ac = 0, acA = 0, acH2 = 0;
                         const puntos = datos.serieDiaria.map((d, i) => {
                           ac += d.ventas;
                           const va = datos.serieDiariaMesAnterior?.[i]?.ventas ?? 0;
                           acA += va;
-                          return { dia: d.dia, ventas: d.ventas, acumulado: ac, ventasMesAnterior: va, acumuladoMesAnterior: acA };
+                          const vh2 = datos.serieDiariaHace2Meses?.[i]?.ventas ?? 0;
+                          acH2 += vh2;
+                          return { dia: d.dia, ventas: d.ventas, acumulado: ac, ventasMesAnterior: va, acumuladoMesAnterior: acA, ventasHace2Meses: vh2, acumuladoHace2Meses: acH2 };
                         });
                         const prevMes = datos.serieDiariaMesAnterior || [];
                         if (prevMes.length > datos.serieDiaria.length && puntos.length) {
                           const extra = prevMes.slice(datos.serieDiaria.length).reduce((a, x) => a + (x.ventas || 0), 0);
                           puntos[puntos.length - 1].acumuladoMesAnterior += extra;
+                        }
+                        const prevMes2 = datos.serieDiariaHace2Meses || [];
+                        if (prevMes2.length > datos.serieDiaria.length && puntos.length) {
+                          const extra2 = prevMes2.slice(datos.serieDiaria.length).reduce((a, x) => a + (x.ventas || 0), 0);
+                          puntos[puntos.length - 1].acumuladoHace2Meses += extra2;
                         }
                         return puntos;
                       })()}>
@@ -1255,13 +1296,14 @@ export default function ReportesPage() {
                         <XAxis dataKey="dia" stroke="#6b7299" fontSize={11} />
                         <YAxis stroke="#6b7299" fontSize={11} allowDecimals={false} />
                         <Tooltip content={<TooltipVentasPorDia />} />
-                        <Legend wrapperStyle={{ fontSize: 11 }} formatter={(v) => (v === 'acumulado' ? 'Este mes' : 'Mes anterior')} />
+                        <Legend wrapperStyle={{ fontSize: 11 }} formatter={(v) => (v === 'acumulado' ? 'Este mes' : v === 'acumuladoMesAnterior' ? 'Mes anterior' : 'Hace 2 meses')} />
                         {diaHoy && (
                           <ReferenceLine x={diaHoy} stroke="#f59e0b" strokeWidth={2}
                             label={{ value: 'Hoy', position: 'top', fill: '#f59e0b', fontSize: 11, fontWeight: 700 }} />
                         )}
                         <Line type="monotone" dataKey="acumulado" stroke="#22d3ee" strokeWidth={2} dot={false} />
                         <Line type="monotone" dataKey="acumuladoMesAnterior" stroke="#6b7299" strokeWidth={2} dot={false} strokeDasharray="4 3" />
+                        <Line type="monotone" dataKey="acumuladoHace2Meses" stroke="#a78bfa" strokeWidth={2} dot={false} strokeDasharray="2 2" />
                       </LineChart>
                     </ResponsiveContainer>
                   </ChartCard>
@@ -1348,9 +1390,17 @@ export default function ReportesPage() {
                   if (vendedoresTop.length < 2) return null; // con 1 solo vendedor no hay nada que comparar
 
                   const diasEnMes = new Date(Number(mes.slice(0, 4)), Number(mes.slice(5, 7)), 0).getDate();
-                  const dataPorDia = Array.from({ length: diasEnMes }, (_, i) => {
+                  // Pedido de Diego (02/10/2026): sumar, para cada vendedor, la comparación con hace 2
+                  // meses (no reemplaza el día a día del mes actual). El mes de hace 2 meses puede tener
+                  // más o menos días que el actual — se usa el más largo de los dos para no cortar datos.
+                  const mesHace2Meses = datos.mesHace2Meses || '';
+                  const diasEnMesHace2 = mesHace2Meses
+                    ? new Date(Number(mesHace2Meses.slice(0, 4)), Number(mesHace2Meses.slice(5, 7)), 0).getDate()
+                    : 0;
+                  const diasTotal = Math.max(diasEnMes, diasEnMesHace2);
+                  const dataPorDia = Array.from({ length: diasTotal }, (_, i) => {
                     const fila = { dia: i + 1 };
-                    vendedoresTop.forEach((v) => { fila[v] = 0; });
+                    vendedoresTop.forEach((v) => { fila[v] = 0; fila[`${v}__hace2`] = 0; });
                     return fila;
                   });
                   datos.compras.forEach((c) => {
@@ -1358,9 +1408,14 @@ export default function ReportesPage() {
                     const dia = new Date(c.fechaVenta).getDate();
                     if (dataPorDia[dia - 1]) dataPorDia[dia - 1][c.vendidoPor]++;
                   });
+                  (datos.comprasHace2Meses || []).forEach((c) => {
+                    if (!vendedoresTop.includes(c.vendidoPor)) return;
+                    const dia = new Date(c.fechaVenta).getDate();
+                    if (dataPorDia[dia - 1]) dataPorDia[dia - 1][`${c.vendidoPor}__hace2`]++;
+                  });
 
                   return (
-                    <ChartCard titulo="Comparación de vendedores por día" subtitulo="Mes seleccionado — cuántas ventas cerró cada uno, día a día"
+                    <ChartCard titulo="Comparación de vendedores por día" subtitulo="Mes seleccionado — cuántas ventas cerró cada uno, día a día (líneas punteadas: hace 2 meses)"
                       valorGrande={`${vendedoresTop.length} vendedores`}
                       onExportar={() => exportarGrafico('vendedores-por-dia', dataPorDia)}>
                       <ResponsiveContainer>
@@ -1372,6 +1427,11 @@ export default function ReportesPage() {
                           <Legend wrapperStyle={{ fontSize: 11 }} />
                           {vendedoresTop.map((v, i) => (
                             <Line key={v} type="monotone" dataKey={v} stroke={COLORES_VENDEDOR[i % COLORES_VENDEDOR.length]} strokeWidth={2} dot={false} />
+                          ))}
+                          {vendedoresTop.map((v, i) => (
+                            <Line key={`${v}__hace2`} type="monotone" dataKey={`${v}__hace2`} name={`${v} (hace 2 meses)`}
+                              stroke={COLORES_VENDEDOR[i % COLORES_VENDEDOR.length]} strokeOpacity={0.55}
+                              strokeWidth={1.5} dot={false} strokeDasharray="3 3" legendType="none" />
                           ))}
                         </LineChart>
                       </ResponsiveContainer>

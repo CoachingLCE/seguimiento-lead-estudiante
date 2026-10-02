@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { readSheet, appendRow, updateRow, deleteRows } from '../../../lib/sheets';
 import { findUsuario, tienePermisoAcademico, tienePermisoAcademicoVer } from '../../../lib/auth';
 import { registrarAccion } from '../../../lib/auditoria';
+import { CURSOS } from '../../../lib/constants';
+
+const CURSOS_VALIDOS = new Set(CURSOS);
 
 // Este endpoint lee 4 hojas en paralelo (incluida Leads entera, que crece sin límite) — se le da
 // más margen que al default de la plataforma para que no la corte a mitad de camino.
@@ -36,9 +39,16 @@ export async function GET(request) {
     leads.forEach((l) => {
       const email = (l.EmailEstudiante || '').trim().toLowerCase();
       if (!email) return;
+      const cursoLead = (l.Curso || '').trim();
       leadPorEmail[email] = {
         nombreCompleto: `${l.Nombre || ''} ${l.Apellido || ''}`.trim(),
-        curso: (l.Curso || '').trim(),
+        // Pedido de Diego (02/10/2026): estaban apareciendo en Académico "cursos" con errores que
+        // él nunca cargó ahí (ej. un WhatsApp pegado en el campo Curso de un Lead, texto con
+        // "Edición" repetido). Venían de esta sincronización: antes traía CUALQUIER texto que
+        // tuviera el Curso del lead, sin validar que fuera un curso real. Ahora solo sincroniza si
+        // es uno de los cursos conocidos (CURSOS en lib/constants.js); si no, Académico conserva
+        // el Curso que ya tenía cargado, sin tocarlo.
+        curso: CURSOS_VALIDOS.has(cursoLead) ? cursoLead : '',
         edicion: (l.Edicion || '').trim()
       };
     });

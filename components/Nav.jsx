@@ -4,7 +4,13 @@ import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import ThemeSelector from './ThemeSelector';
 import Logo from './Logo';
-import { tienePermisoOperativo } from '../lib/permisos';
+import {
+  tienePermisoOperativo, tienePermisoEstudiantes, tienePermisoResumenEstudiantes,
+  tienePermisoAcademicoVer, tienePermisoDiplomas, tienePermisoComunidades,
+  tienePermisoReportes, tienePermisoResumenDiario, tienePermisoInformesRRSS,
+  tienePermisoAuditoria, tienePermisoBajas, tienePermisoAccesos,
+  tienePermisoProductosVer, tienePermisoMensajesVer, tienePermisoEmails
+} from '../lib/permisos';
 import { nombreVisibleRoles } from '../lib/constants';
 import { leerUsuarioReal, getVerComo, aplicarVerComo, quitarVerComo, EMAIL_VERCOMO } from '../lib/useSession';
 
@@ -12,6 +18,34 @@ import { leerUsuarioReal, getVerComo, aplicarVerComo, quitarVerComo, EMAIL_VERCO
 // — Dashboard y Seguimiento la usan como su chequeo real de acceso (ya no para ocultar del menú,
 // que ahora se muestra completo a cualquier usuario logueado).
 export const puedeVerOperativo = tienePermisoOperativo;
+
+// Pedido de Diego (02/10/2026): las opciones del menú para las que el usuario NO tiene acceso se
+// ven atenuadas (en vez de verse como un link normal más, que recién al hacer clic avisa "No
+// tenés acceso") — así se nota de entrada qué puede usar y qué no.
+const PERMISO_POR_RUTA = {
+  '/dashboard': tienePermisoOperativo,
+  '/seguimiento': tienePermisoOperativo,
+  '/inscritos': tienePermisoEstudiantes,
+  '/resumen-estudiantes': tienePermisoResumenEstudiantes,
+  '/academico': tienePermisoAcademicoVer,
+  '/diplomas': tienePermisoDiplomas,
+  '/comunidades': tienePermisoComunidades,
+  '/reportes': tienePermisoReportes,
+  '/resumen-diario': tienePermisoResumenDiario,
+  '/informes-rrss': tienePermisoInformesRRSS,
+  '/auditoria': tienePermisoAuditoria,
+  '/bajas': tienePermisoBajas,
+  '/accesos': tienePermisoAccesos,
+  '/productos-valores': tienePermisoProductosVer,
+  '/mensajes': tienePermisoMensajesVer,
+  '/emails': tienePermisoEmails,
+  '/fichas-enviadas': tienePermisoOperativo
+};
+// Rutas sin restricción conocida en esta tabla (ej: /buscador, /herramientas) quedan siempre habilitadas.
+function tieneAccesoARuta(href, usuario) {
+  const check = PERMISO_POR_RUTA[href];
+  return check ? !!check(usuario) : true;
+}
 
 const NAV_PRINCIPAL = [
   { href: '/dashboard', label: 'Dashboard' },
@@ -42,12 +76,14 @@ const CONFIGURACION = { label: 'Configuración', principal: null, items: [
 ] };
 
 // Chip individual — mismo look para todo (principal, ítems sueltos y de grupo).
-function Chip({ href, label, pathname, onClick, destacado }) {
+function Chip({ href, label, pathname, onClick, destacado, deshabilitado }) {
   const activo = pathname === href;
   return (
     <Link href={href} onClick={onClick}
+      title={deshabilitado ? 'No tenés acceso a esta sección' : undefined}
       className={`h-8 flex items-center px-3.5 rounded-lg text-[13px] font-medium whitespace-nowrap transition-colors ${
-        activo ? 'bg-accentPurple/15 text-accentPurple' : destacado ? 'text-text font-semibold hover:bg-surface2' : 'text-textSec hover:text-text hover:bg-surface2'
+        deshabilitado ? 'text-textMuted opacity-50 hover:opacity-70'
+        : activo ? 'bg-accentPurple/15 text-accentPurple' : destacado ? 'text-text font-semibold hover:bg-surface2' : 'text-textSec hover:text-text hover:bg-surface2'
       }`}>
       {label}
     </Link>
@@ -56,12 +92,12 @@ function Chip({ href, label, pathname, onClick, destacado }) {
 
 // Un grupo (Gestión / Reportes / Configuración): etiqueta chica + todos sus ítems ya abiertos,
 // nunca hay que clickear nada para verlos.
-function Grupo({ grupo, pathname, onClick }) {
+function Grupo({ grupo, pathname, onClick, usuario }) {
   return (
     <div className="flex items-center gap-2 flex-wrap">
       <span className="text-textMuted text-[11px] uppercase tracking-wide font-semibold mr-2.5">{grupo.label}</span>
-      {grupo.principal && <Chip href={grupo.principal} label="Ver todo" pathname={pathname} onClick={onClick} destacado />}
-      {grupo.items.map((it) => <Chip key={it.href} href={it.href} label={it.label} pathname={pathname} onClick={onClick} />)}
+      {grupo.principal && <Chip href={grupo.principal} label="Ver todo" pathname={pathname} onClick={onClick} destacado deshabilitado={!tieneAccesoARuta(grupo.principal, usuario)} />}
+      {grupo.items.map((it) => <Chip key={it.href} href={it.href} label={it.label} pathname={pathname} onClick={onClick} deshabilitado={!tieneAccesoARuta(it.href, usuario)} />)}
     </div>
   );
 }
@@ -157,13 +193,13 @@ export default function Nav({ usuario, onLogout }) {
             }`}>
             + Nuevo lead
           </Link>
-          {NAV_PRINCIPAL.map((item) => <Chip key={item.href} href={item.href} label={item.label} pathname={pathname} destacado />)}
+          {NAV_PRINCIPAL.map((item) => <Chip key={item.href} href={item.href} label={item.label} pathname={pathname} destacado deshabilitado={!tieneAccesoARuta(item.href, usuario)} />)}
           <Divisor />
-          <Grupo grupo={GESTION} pathname={pathname} />
+          <Grupo grupo={GESTION} pathname={pathname} usuario={usuario} />
           <Divisor />
-          <Grupo grupo={REPORTES} pathname={pathname} />
+          <Grupo grupo={REPORTES} pathname={pathname} usuario={usuario} />
           <Divisor />
-          <Grupo grupo={CONFIGURACION} pathname={pathname} />
+          <Grupo grupo={CONFIGURACION} pathname={pathname} usuario={usuario} />
         </nav>
       </div>
 
@@ -176,7 +212,7 @@ export default function Nav({ usuario, onLogout }) {
           </Link>
 
           <div className="flex flex-wrap gap-1.5">
-            {NAV_PRINCIPAL.map((item) => <Chip key={item.href} href={item.href} label={item.label} pathname={pathname} onClick={() => setMenuMovil(false)} destacado />)}
+            {NAV_PRINCIPAL.map((item) => <Chip key={item.href} href={item.href} label={item.label} pathname={pathname} onClick={() => setMenuMovil(false)} destacado deshabilitado={!tieneAccesoARuta(item.href, usuario)} />)}
           </div>
 
           {[GESTION, REPORTES, CONFIGURACION].map((grupo) => (
@@ -185,13 +221,21 @@ export default function Nav({ usuario, onLogout }) {
               <div className="flex flex-col gap-0.5">
                 {grupo.principal && (
                   <Link href={grupo.principal} onClick={() => setMenuMovil(false)}
-                    className={`px-3 py-2 rounded-lg text-sm ${pathname === grupo.principal ? 'bg-accentPurple/15 text-accentPurple font-semibold' : 'text-textSec hover:bg-surface2'}`}>
+                    title={!tieneAccesoARuta(grupo.principal, usuario) ? 'No tenés acceso a esta sección' : undefined}
+                    className={`px-3 py-2 rounded-lg text-sm ${
+                      !tieneAccesoARuta(grupo.principal, usuario) ? 'text-textMuted opacity-50'
+                      : pathname === grupo.principal ? 'bg-accentPurple/15 text-accentPurple font-semibold' : 'text-textSec hover:bg-surface2'
+                    }`}>
                     Ver todo
                   </Link>
                 )}
                 {grupo.items.map((it) => (
                   <Link key={it.href} href={it.href} onClick={() => setMenuMovil(false)}
-                    className={`px-3 py-2 rounded-lg text-sm ${pathname === it.href ? 'bg-accentPurple/15 text-accentPurple font-semibold' : 'text-textSec hover:bg-surface2'}`}>
+                    title={!tieneAccesoARuta(it.href, usuario) ? 'No tenés acceso a esta sección' : undefined}
+                    className={`px-3 py-2 rounded-lg text-sm ${
+                      !tieneAccesoARuta(it.href, usuario) ? 'text-textMuted opacity-50'
+                      : pathname === it.href ? 'bg-accentPurple/15 text-accentPurple font-semibold' : 'text-textSec hover:bg-surface2'
+                    }`}>
                     {it.label}
                   </Link>
                 ))}

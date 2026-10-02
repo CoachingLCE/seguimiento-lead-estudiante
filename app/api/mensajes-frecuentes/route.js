@@ -30,7 +30,8 @@ export async function GET(request) {
   }
 }
 
-// POST /api/mensajes-frecuentes -> crear un mensaje nuevo
+// POST /api/mensajes-frecuentes -> crear un mensaje nuevo (o duplicar uno existente, que en los
+// hechos es lo mismo: crear uno nuevo con el título/mensaje ya precargados desde el cliente)
 // body: { titulo, mensaje, solicitanteEmail, solicitanteNombre }
 export async function POST(request) {
   const body = await request.json();
@@ -46,8 +47,11 @@ export async function POST(request) {
   const existentes = await readSheet('MensajesFrecuentes');
   const maxOrden = existentes.reduce((acc, m) => Math.max(acc, Number(m.Orden) || 0), 0);
 
+  // Columnas G-J agregadas para última modificación y favoritos (pedido de Diego, 02/10/2026) —
+  // vacías al crear: todavía no fue editado ni marcado como favorito por nadie.
   await appendRow('MensajesFrecuentes', [
-    titulo, mensaje, body.solicitanteEmail, body.solicitanteNombre, new Date().toISOString(), maxOrden + 1
+    titulo, mensaje, body.solicitanteEmail, body.solicitanteNombre, new Date().toISOString(), maxOrden + 1,
+    '', '', '', ''
   ]);
 
   await registrarAccion(
@@ -58,12 +62,38 @@ export async function POST(request) {
   return NextResponse.json({ ok: true });
 }
 
-// PATCH /api/mensajes-frecuentes -> dos usos:
+// PATCH /api/mensajes-frecuentes -> tres usos:
 // 1) Editar un mensaje existente: { rowIndex, titulo, mensaje, solicitanteEmail, solicitanteNombre }
 // 2) Reordenar (arrastrar y soltar): { accion: 'reordenar', ordenes: [{rowIndex, orden}], solicitanteEmail, solicitanteNombre }
+// 3) Marcar/desmarcar favorito: { accion: 'toggleFavorito', rowIndex, solicitanteEmail, solicitanteNombre }
 export async function PATCH(request) {
   const body = await request.json();
   const solicitante = await findUsuario(body.solicitanteEmail);
+
+  // Favorito es una preferencia PERSONAL (no cambia el contenido compartido del mensaje), así que
+  // alcanza con poder VER los mensajes — no hace falta el permiso de escritura que sí se exige
+  // para editar/reordenar/crear/borrar. Se guarda como lista de emails separados por coma en la
+  // columna Favoritos (mismo patrón que los roles en lib/permisos.js).
+  if (body.accion === 'toggleFavorito') {
+    if (!tienePermisoMensajesVer(solicitante)) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    }
+    if (!body.rowIndex) return NextResponse.json({ error: 'Falta indicar qué mensaje' }, { status: 400 });
+    const mensajes = await readSheet('MensajesFrecuentes');
+    const fila = mensajes.find((m) => m._rowIndex === body.rowIndex);
+    if (!fila) return NextResponse.json({ error: 'No encontrado' }, { status: 404 });
+    const emailsActuales = (fila.Favoritos || '').split(',').map((e) => e.trim()).filter(Boolean);
+    const email = (body.solicitanteEmail || '').trim();
+    const yaEsFavorito = emailsActuales.includes(email);
+    const nuevosFavoritos = yaEsFavorito ? emailsActuales.filter((e) => e !== email) : [...emailsActuales, email];
+    await updateRow('MensajesFrecuentes', fila._rowIndex, [
+      fila.Titulo, fila.Mensaje, fila.CreadoPorEmail, fila.CreadoPorNombre, fila.FechaCreacion, fila.Orden,
+      fila.UltimaModificacionPorEmail || '', fila.UltimaModificacionPorNombre || '', fila.FechaModificacion || '',
+      nuevosFavoritos.join(',')
+    ]);
+    return NextResponse.json({ ok: true, favorito: !yaEsFavorito });
+  }
+
   if (!tienePermisoMensajesEscribir(solicitante)) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
   }
@@ -75,7 +105,8 @@ export async function PATCH(request) {
       const fila = mensajes.find((m) => m._rowIndex === rowIndex);
       if (!fila) continue;
       await updateRow('MensajesFrecuentes', fila._rowIndex, [
-        fila.Titulo, fila.Mensaje, fila.CreadoPorEmail, fila.CreadoPorNombre, fila.FechaCreacion, orden
+        fila.Titulo, fila.Mensaje, fila.CreadoPorEmail, fila.CreadoPorNombre, fila.FechaCreacion, orden,
+        fila.UltimaModificacionPorEmail || '', fila.UltimaModificacionPorNombre || '', fila.FechaModificacion || '', fila.Favoritos || ''
       ]);
     }
     return NextResponse.json({ ok: true });
@@ -85,9 +116,13 @@ export async function PATCH(request) {
   const fila = mensajes.find((m) => m._rowIndex === body.rowIndex);
   if (!fila) return NextResponse.json({ error: 'No encontrado' }, { status: 404 });
 
+  // Pedido de Diego (02/10/2026): mostrar quién hizo la última modificación y cuándo, además de
+  // quién lo creó originalmente (que no cambia).
   await updateRow('MensajesFrecuentes', fila._rowIndex, [
     body.titulo ?? fila.Titulo, body.mensaje ?? fila.Mensaje,
-    fila.CreadoPorEmail, fila.CreadoPorNombre, fila.FechaCreacion, fila.Orden
+    fila.CreadoPorEmail, fila.CreadoPorNombre, fila.FechaCreacion, fila.Orden,
+    body.solicitanteEmail, body.solicitanteNombre, new Date().toISOString(),
+    fila.Favoritos || ''
   ]);
 
   await registrarAccion(

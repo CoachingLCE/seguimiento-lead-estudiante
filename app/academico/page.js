@@ -506,6 +506,9 @@ export default function AcademicoPage() {
                 <p className="text-textMuted text-sm">Sin datos para este filtro.</p>
               ) : (
                 <div className="overflow-x-auto max-h-[480px] overflow-y-auto relative">
+                  <datalist id="lista-formadores">
+                    {docentesUnicos.map((d) => <option key={d} value={d} />)}
+                  </datalist>
                   <table className="w-full text-sm">
                     <thead className="sticky top-0 bg-surface z-10">
                       <tr className="text-textSec text-left border-b border-border">
@@ -533,27 +536,22 @@ export default function AcademicoPage() {
                           <td className="pr-3" onClick={(ev) => ev.stopPropagation()}>
                             {!puedeEditar ? (
                               <span className="text-textSec text-xs">{r.formador || '—'}</span>
-                            ) : (editandoFormadorEdicion === `${r.curso}|${r.edicion}` || editandoFormadorEdicion === `nuevo:${r.curso}|${r.edicion}`) ? (
-                              editandoFormadorEdicion === `nuevo:${r.curso}|${r.edicion}` ? (
-                                <input type="text" defaultValue={r.formador} placeholder="Nombre del formador" autoFocus
-                                  onBlur={(e) => guardarFormadorEdicion(r.curso, r.edicion, e.target.value)}
+                            ) : editandoFormadorEdicion === `${r.curso}|${r.edicion}` ? (
+                              // Antes era un <select> con docentes conocidos + una opción "Escribir otro
+                              // nombre…" que abría un segundo campo — confuso, y parece haber sido la causa
+                              // de que no se pudiera cargar un formador nuevo (Diego: "trato de guardar
+                              // formador y no me deja"). Ahora es un único campo de texto con autocompletado
+                              // (datalist) — sugiere los nombres ya conocidos, pero siempre se puede escribir
+                              // cualquier nombre nuevo y guardarlo con Enter o al hacer click afuera.
+                              <div className="flex items-center gap-1">
+                                <input type="text" list="lista-formadores" defaultValue={r.formador}
+                                  placeholder="Nombre del formador" autoFocus
+                                  onBlur={(e) => guardarFormadorEdicion(r.curso, r.edicion, e.target.value.trim())}
                                   onKeyDown={(e) => e.key === 'Enter' && e.target.blur()}
                                   className="bg-bg border border-border rounded px-1.5 py-0.5 text-xs w-32" />
-                              ) : (
-                                <div className="flex items-center gap-1">
-                                  <select autoFocus defaultValue={r.formador}
-                                    onChange={(e) => {
-                                      if (e.target.value === '__nuevo__') { setEditandoFormadorEdicion(`nuevo:${r.curso}|${r.edicion}`); return; }
-                                      guardarFormadorEdicion(r.curso, r.edicion, e.target.value);
-                                    }}
-                                    className="bg-bg border border-border rounded px-1.5 py-0.5 text-xs w-32">
-                                    <option value="">Sin definir</option>
-                                    {docentesUnicos.map((d) => <option key={d} value={d}>{d}</option>)}
-                                    <option value="__nuevo__">✏️ Escribir otro nombre…</option>
-                                  </select>
-                                  <button onClick={() => setEditandoFormadorEdicion(null)} className="text-textMuted text-xs" title="Cancelar">✕</button>
-                                </div>
-                              )
+                                <button onMouseDown={(e) => e.preventDefault()} onClick={() => setEditandoFormadorEdicion(null)}
+                                  className="text-textMuted text-xs" title="Cancelar">✕</button>
+                              </div>
                             ) : (
                               <button onClick={() => setEditandoFormadorEdicion(`${r.curso}|${r.edicion}`)} className="text-textSec text-xs hover:text-accentTeal">
                                 {r.formador || '✏️ Definir'}

@@ -281,7 +281,10 @@ export default function NuevoLeadPage() {
 
   function actualizarContacto(index, campo, valor) {
     setContactos((prev) => prev.map((c, i) => (i === index ? { ...c, [campo]: valor } : c)));
-    if (['raw', 'email'].includes(campo)) {
+    // "instagram" se suma a los campos que re-disparan la comprobación de duplicados (antes solo
+    // raw/email) — si no, cargar el @ de Instagram a mano (en vez de que lo detecte el parseo
+    // automático de "raw") no volvía a chequear si ya existía ese lead.
+    if (['raw', 'email', 'instagram'].includes(campo)) {
       setIgnorarDuplicado((prev) => ({ ...prev, [index]: false }));
       clearTimeout(timersDuplicados.current[index]);
       timersDuplicados.current[index] = setTimeout(() => verificarDuplicado(index), 500);
@@ -294,6 +297,7 @@ export default function NuevoLeadPage() {
     const p = parsearIngresoLibre(contacto.raw);
     const params = new URLSearchParams({
       nombre: p.nombre, whatsapp: p.whatsapp, email: p.email || contacto.email,
+      instagram: contacto.instagram || p.instagram || '',
       solicitanteEmail: usuario.email
     });
     const res = await fetch(`/api/leads/duplicados?${params}`);
@@ -665,6 +669,7 @@ export default function NuevoLeadPage() {
                         const m = (dup.motivo || '').toLowerCase();
                         const subtitulo = m.includes('email') ? 'Este email ya está asociado a un contacto.'
                           : m.includes('whatsapp') ? 'Este WhatsApp ya está asociado a un contacto.'
+                          : m.includes('instagram') ? 'Este usuario de Instagram/Facebook ya está asociado a un contacto.'
                           : `Coincidencia por: ${dup.motivo || 'datos similares'}.`;
                         return (
                           <div className="rounded-xl border border-warningText/30 bg-warningText/10 p-3.5 mb-3">
