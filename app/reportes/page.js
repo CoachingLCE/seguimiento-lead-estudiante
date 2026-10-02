@@ -34,24 +34,27 @@ function estadoObjetivo(pct) {
   return { icono: '🔴', label: 'Lejos del objetivo', clase: 'text-dangerText', barra: 'bg-dangerText' };
 }
 
+// Pedido de Diego (02/10/2026): "explicar esos porcentajes, ¿respecto a qué?" — antes la flecha
+// mostraba el % solo, sin decir contra qué se compara. Ahora siempre aclara "vs mes anterior" al
+// lado, en vez de dejarlo implícito (y solo visible si pasabas el mouse por un tooltip).
 function Flecha({ actual, anterior, invertido = false }) {
   if (!anterior) return <span className="text-textMuted text-xs">— sin dato previo</span>;
   const delta = ((actual - anterior) / anterior) * 100;
   const mejora = invertido ? delta < 0 : delta > 0;
-  if (Math.abs(delta) < 0.5) return <span className="text-textMuted text-xs">≈ sin cambios</span>;
+  if (Math.abs(delta) < 0.5) return <span className="text-textMuted text-xs">≈ sin cambios vs mes anterior</span>;
   // Si el mes anterior tenia base minima, el % se dispara (ej: 2 -> 929 = 46350%) y no dice nada.
   // En ese caso mostramos el cambio absoluto y aclaramos la base, que es mas honesto.
   if (Math.abs(delta) >= 1000) {
     const dif = actual - anterior;
     return (
       <span className={`text-xs font-semibold ${mejora ? 'text-successText' : 'text-dangerText'}`}>
-        {dif > 0 ? '▲' : '▼'} {Math.abs(Math.round(dif)).toLocaleString('es-AR')} <span className="text-textMuted font-normal">(mes ant.: {Math.round(anterior).toLocaleString('es-AR')})</span>
+        {dif > 0 ? '▲' : '▼'} {Math.abs(Math.round(dif)).toLocaleString('es-AR')} <span className="text-textMuted font-normal">vs mes anterior (fue {Math.round(anterior).toLocaleString('es-AR')})</span>
       </span>
     );
   }
   return (
     <span className={`text-xs font-semibold ${mejora ? 'text-successText' : 'text-dangerText'}`}>
-      {delta > 0 ? '▲' : '▼'} {Math.abs(delta).toFixed(1)}%
+      {delta > 0 ? '▲' : '▼'} {Math.abs(delta).toFixed(1)}% <span className="text-textMuted font-normal">vs mes anterior</span>
     </span>
   );
 }
@@ -1141,6 +1144,17 @@ export default function ReportesPage() {
                         </div>
                       )
                     )}
+                  </div>
+                )}
+
+                {/* Pedido de Diego (02/10/2026): "explicar esos porcentajes, ¿respecto a qué?" — si
+                    el mes elegido es el que está corriendo ahora mismo, los totales son parciales
+                    (ej: 2 de 31 días) pero se comparan contra TODO el mes anterior, así que las
+                    flechas en rojo no son necesariamente una caída real — es esperable que un mes
+                    recién empezado se vea muy por debajo de uno ya cerrado. */}
+                {mes === new Date().toISOString().slice(0, 7) && (
+                  <div className="bg-infoBg text-infoText rounded-lg px-3 py-2 text-xs">
+                    📅 {labelDeMes(mes)} todavía está en curso (día {new Date().getDate()} de {new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()}) — los números de abajo son parciales. Las comparaciones ("vs mes anterior") muestran el total acumulado hasta hoy contra el mes anterior COMPLETO, así que una flecha en rojo acá no significa necesariamente que esté yendo peor: compáralas recién cuando {labelDeMes(mes)} termine.
                   </div>
                 )}
 

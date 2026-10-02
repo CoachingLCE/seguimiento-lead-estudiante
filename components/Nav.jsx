@@ -131,15 +131,17 @@ export default function Nav({ usuario, onLogout }) {
   return (
     <div className="border-b border-border no-print">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
-        {/* Pedido de Diego (02/10/2026): el logo pasa a estar al costado de los links (en vez de
-            en su propia franja arriba) para ganar compacidad — ahora todo el header entra en una
-            sola franja en desktop, en vez de dos. Se mantiene buen espacio debajo (pb-6) para que
-            el contenido de cada pantalla no quede pegado al nav. */}
-        <div className="flex items-start justify-between gap-4 pt-3 pb-6">
+        {/* Pedido de Diego (02/10/2026): "compactar y reubicar los controles superiores" — el logo
+            pasa al extremo izquierdo de la MISMA línea que "+ Nuevo lead" y el resto del menú (en
+            vez de tener su propia franja arriba), y los controles de la derecha (buscador,
+            herramientas, tema, ver como, usuario) se achican para alinearse con esa primera línea
+            en vez de verse como una fila aparte. pb-6 mantiene el espacio contra el contenido de
+            abajo que ya se había pedido (antes "pegado al nav"). */}
+        <div className="flex items-start justify-between gap-3 pt-2.5 pb-6">
           {/* LOGO + NAV (desktop) */}
-          <div className="flex items-center gap-4 min-w-0 flex-wrap">
+          <div className="flex items-center gap-3 min-w-0 flex-wrap">
             <Link href="/dashboard" className="shrink-0">
-              <Logo height={30} />
+              <Logo height={28} />
             </Link>
             {/* NAV — desktop: todo a la vista, sin clics para desplegar nada */}
             <nav className="hidden lg:flex items-center gap-x-4 gap-y-3 flex-wrap">
@@ -162,17 +164,17 @@ export default function Nav({ usuario, onLogout }) {
           </div>
 
           {/* ACCIONES — buscador, herramientas y tema: SIEMPRE visibles (aunque la ventana sea
-              angosta, ej. usada al lado de WhatsApp Web) — antes se ocultaban del todo por debajo
-              de "lg" y solo quedaban accesibles abriendo el menú hamburguesa. */}
-          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+              angosta, ej. usada al lado de WhatsApp Web) — alineadas con la primera línea del
+              menú, achicadas (h-8, como los chips) para que no se vean como una fila aparte. */}
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 pt-0.5">
             <Link href="/buscador" title="Buscador"
-              className={`w-9 h-9 flex items-center justify-center rounded-lg text-base transition-colors ${
+              className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs transition-colors ${
                 pathname === '/buscador' ? 'bg-accentPurple text-white' : 'bg-surface2 border border-border text-textSec hover:text-text hover:border-accentTeal'
               }`}>
               🔍
             </Link>
             <Link href="/herramientas" title="Herramientas"
-              className={`w-9 h-9 flex items-center justify-center rounded-lg text-base transition-colors ${
+              className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs transition-colors ${
                 pathname === '/herramientas' ? 'bg-accentPurple text-white' : 'bg-surface2 border border-border text-textSec hover:text-text hover:border-accentTeal'
               }`}>
               ⚡
@@ -180,23 +182,23 @@ export default function Nav({ usuario, onLogout }) {
             <ThemeSelector />
             {puedeVerComo && (
               <select value={vc ? vc.email : ''} onChange={(e) => elegirVerComo(e.target.value)} title="Ver la app como otra persona (solo lectura)"
-                className="hidden md:block bg-surface2 border border-border rounded-lg text-[12px] px-2 h-9 text-textSec hover:border-accentTeal max-w-[170px]">
+                className="hidden md:block bg-surface2 border border-border rounded-lg text-[11px] px-1.5 h-7 text-textSec hover:border-accentTeal max-w-[150px]">
                 <option value="">👁 Ver como…</option>
                 {personas.map((p) => <option key={p.email} value={p.email}>{p.nombre}</option>)}
               </select>
             )}
             {usuario && (
-              <div className="hidden md:block text-right text-sm pl-2 border-l border-border">
+              <div className="hidden md:block text-right text-xs leading-tight pl-2 border-l border-border">
                 <p className="font-semibold leading-tight">{usuario.nombre}</p>
-                <p className="text-textSec text-[11px] leading-tight">{nombreVisibleRoles(usuario.roles)}</p>
-                <button onClick={onLogout} className="text-[11px] text-textMuted underline">Salir</button>
+                <p className="text-textSec text-[10px] leading-tight">{nombreVisibleRoles(usuario.roles)}</p>
+                <button onClick={onLogout} className="text-[10px] text-textMuted underline">Salir</button>
               </div>
             )}
           </div>
 
           {/* BOTÓN HAMBURGUESA — mobile/tablet */}
           <button onClick={() => setMenuMovil((v) => !v)}
-            className="lg:hidden w-9 h-9 flex items-center justify-center rounded-lg bg-surface2 border border-border text-lg shrink-0">
+            className="lg:hidden w-8 h-8 flex items-center justify-center rounded-lg bg-surface2 border border-border text-base shrink-0">
             {menuMovil ? '✕' : '☰'}
           </button>
         </div>

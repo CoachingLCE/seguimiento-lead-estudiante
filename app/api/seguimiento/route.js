@@ -54,8 +54,10 @@ export async function PATCH(request) {
 
   if (body.accion === 'nuevo_ciclo') {
     const solicitante = await findUsuario(body.solicitanteEmail);
+    // Pedido de Diego (02/10/2026): Inscripciones también puede iniciar un "Nuevo seguimiento
+    // comercial" (antes era solo Admin/Coordinador, igual que Reasignar/Deshacer).
     const puedeIniciar =
-      solicitante && (solicitante.roles.includes('Admin') || solicitante.roles.includes('Coordinador'));
+      solicitante && (solicitante.roles.includes('Admin') || solicitante.roles.includes('Coordinador') || solicitante.roles.includes('Inscripciones'));
     if (!puedeIniciar) {
       return NextResponse.json({ error: 'No autorizado para iniciar un nuevo seguimiento comercial' }, { status: 403 });
     }

@@ -11,14 +11,14 @@ export default function ThemeSelector() {
   const { preferencia, cambiarPreferencia } = useTheme();
 
   return (
-    <div className="flex items-center gap-1 bg-surface2 border border-border rounded-lg p-0.5">
+    <div className="flex items-center gap-0.5 bg-surface2 border border-border rounded-lg p-0.5">
       {OPCIONES.map((o) => (
         <button
           key={o.valor}
           type="button"
           title={o.titulo}
           onClick={() => cambiarPreferencia(o.valor)}
-          className={`w-7 h-7 flex items-center justify-center rounded-md text-xs transition-colors ${
+          className={`w-6 h-6 flex items-center justify-center rounded-md text-[11px] transition-colors ${
             preferencia === o.valor ? 'bg-accentPurple text-white' : 'text-textMuted hover:text-text'
           }`}
         >

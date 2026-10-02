@@ -414,6 +414,9 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
   const puedeEditarSoloContacto = !puedeEditar && tienePermisoEditarContactoEstudiante(usuario, lead);
   const [soloContacto, setSoloContacto] = useState(false);
   const puedeDeshacer = usuario?.roles?.includes('Admin') || usuario?.roles?.includes('Coordinador');
+  // Pedido de Diego (02/10/2026): Inscripciones también puede iniciar un "Nuevo seguimiento
+  // comercial" — es un permiso aparte de Reasignar/Deshacer, que siguen siendo solo Admin/Coordinador.
+  const puedeIniciarNuevoCiclo = puedeDeshacer || usuario?.roles?.includes('Inscripciones');
   const [deshaciendo, setDeshaciendo] = useState(null);
   const [registrandoResultadoLote, setRegistrandoResultadoLote] = useState(null);
   const [programandoLote, setProgramandoLote] = useState(null);
@@ -952,8 +955,8 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
             {/* "Nuevo seguimiento comercial" (pedido de Diego): para un lead que ya recorrió todo
                 su camino de seguimiento y volvió a escribir. Abre un ciclo nuevo (Lote 1 en
                 adelante) sin tocar ni borrar el historial del ciclo anterior — queda más abajo,
-                de solo lectura. Solo Admin/Coordinador, igual que Reasignar/Deshacer. */}
-            {puedeDeshacer && (
+                de solo lectura. Admin, Coordinador o Inscripciones. */}
+            {puedeIniciarNuevoCiclo && (
               confirmarNuevoCiclo ? (
                 <div className="flex items-center gap-2 bg-warningBg text-warningText rounded-lg px-3 py-1.5 text-xs flex-wrap">
                   <span>¿Iniciar un seguimiento nuevo? Lo anterior queda guardado como historial, no se borra.</span>
