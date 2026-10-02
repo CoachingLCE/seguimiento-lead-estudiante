@@ -92,13 +92,19 @@ function Chip({ href, label, pathname, onClick, destacado, deshabilitado }) {
 
 // Un grupo (Gestión / Reportes / Configuración): etiqueta chica + todos sus ítems ya abiertos,
 // nunca hay que clickear nada para verlos.
+// Pedido de Diego (02/10/2026): "no quiero que aproveches todo el ancho para los botones" / que
+// entre en pocas líneas — antes cada grupo vivía en su propio <div flex-wrap>, y al ser un único
+// "bloque" dentro del <nav> que lo contiene, el navegador lo mandaba ENTERO a una línea nueva en
+// vez de dejar que sus chips se acomodaran junto con los del grupo anterior (el mismo problema que
+// pasaba con el logo). Ahora el label y los chips son hijos directos del <nav> (vía Fragment), así
+// fluyen de verdad en el mismo renglón que venía llenándose, sin ensanchar ningún botón.
 function Grupo({ grupo, pathname, onClick, usuario }) {
   return (
-    <div className="flex items-center gap-2 flex-wrap">
-      <span className="text-textMuted text-[11px] uppercase tracking-wide font-semibold mr-2.5">{grupo.label}</span>
+    <>
+      <span className="text-textMuted text-[11px] uppercase tracking-wide font-semibold">{grupo.label}</span>
       {grupo.principal && <Chip href={grupo.principal} label="Ver todo" pathname={pathname} onClick={onClick} destacado deshabilitado={!tieneAccesoARuta(grupo.principal, usuario)} />}
       {grupo.items.map((it) => <Chip key={it.href} href={it.href} label={it.label} pathname={pathname} onClick={onClick} deshabilitado={!tieneAccesoARuta(it.href, usuario)} />)}
-    </div>
+    </>
   );
 }
 
@@ -131,37 +137,44 @@ export default function Nav({ usuario, onLogout }) {
   return (
     <div className="border-b border-border no-print">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
-        {/* Pedido de Diego (02/10/2026): "compactar y reubicar los controles superiores" — el logo
-            pasa al extremo izquierdo de la MISMA línea que "+ Nuevo lead" y el resto del menú (en
-            vez de tener su propia franja arriba), y los controles de la derecha (buscador,
-            herramientas, tema, ver como, usuario) se achican para alinearse con esa primera línea
-            en vez de verse como una fila aparte. pb-6 mantiene el espacio contra el contenido de
-            abajo que ya se había pedido (antes "pegado al nav"). */}
+        {/* Pedido de Diego (02/10/2026): "compactar y reubicar los controles superiores", "tiene
+            que quedar todo junto arriba como antes" — el logo entra como el PRIMER elemento del
+            mismo renglón que ya envuelve ("+ Nuevo lead", Dashboard, Seguimiento, etc.), en vez de
+            vivir en un contenedor aparte — así queda realmente en la misma línea de arriba, no
+            salta a su propia fila. Los controles de la derecha (buscador, herramientas, tema, ver
+            como, usuario) se achicaron para alinearse con esa primera línea en vez de verse como
+            una fila aparte. pb-6 mantiene el espacio contra el contenido de abajo que ya se había
+            pedido (antes "pegado al nav"). */}
         <div className="flex items-start justify-between gap-3 pt-2.5 pb-6">
-          {/* LOGO + NAV (desktop) */}
-          <div className="flex items-center gap-3 min-w-0 flex-wrap">
+          {/* LOGO — solo mobile/tablet (<lg): en desktop entra dentro del <nav> de abajo, como
+              parte del mismo renglón que envuelve. */}
+          <Link href="/dashboard" className="lg:hidden shrink-0">
+            <Logo height={28} />
+          </Link>
+
+          {/* NAV — desktop: todo a la vista, sin clics para desplegar nada. flex-1 + min-w-0 para
+              que ocupe todo el ancho disponible a la izquierda de las acciones, y el logo + los
+              links envuelvan juntos como un solo renglón que sigue en la línea de abajo si no entra. */}
+          <nav className="hidden lg:flex items-center gap-x-4 gap-y-3 flex-wrap flex-1 min-w-0">
             <Link href="/dashboard" className="shrink-0">
               <Logo height={28} />
             </Link>
-            {/* NAV — desktop: todo a la vista, sin clics para desplegar nada */}
-            <nav className="hidden lg:flex items-center gap-x-4 gap-y-3 flex-wrap">
-              <Link href="/nuevo-lead"
-                className={`h-8 flex items-center px-3.5 rounded-lg text-[13px] font-semibold whitespace-nowrap shadow-sm transition-all ${
-                  pathname === '/nuevo-lead'
-                    ? 'bg-gradient-to-r from-accentPurple to-accentMagenta text-white shadow-accentPurple/30'
-                    : 'bg-gradient-to-r from-accentPurple to-accentMagenta text-white opacity-90 hover:opacity-100'
-                }`}>
-                + Nuevo lead
-              </Link>
-              {NAV_PRINCIPAL.map((item) => <Chip key={item.href} href={item.href} label={item.label} pathname={pathname} destacado deshabilitado={!tieneAccesoARuta(item.href, usuario)} />)}
-              <Divisor />
-              <Grupo grupo={GESTION} pathname={pathname} usuario={usuario} />
-              <Divisor />
-              <Grupo grupo={REPORTES} pathname={pathname} usuario={usuario} />
-              <Divisor />
-              <Grupo grupo={CONFIGURACION} pathname={pathname} usuario={usuario} />
-            </nav>
-          </div>
+            <Link href="/nuevo-lead"
+              className={`h-8 flex items-center px-3.5 rounded-lg text-[13px] font-semibold whitespace-nowrap shadow-sm transition-all ${
+                pathname === '/nuevo-lead'
+                  ? 'bg-gradient-to-r from-accentPurple to-accentMagenta text-white shadow-accentPurple/30'
+                  : 'bg-gradient-to-r from-accentPurple to-accentMagenta text-white opacity-90 hover:opacity-100'
+              }`}>
+              + Nuevo lead
+            </Link>
+            {NAV_PRINCIPAL.map((item) => <Chip key={item.href} href={item.href} label={item.label} pathname={pathname} destacado deshabilitado={!tieneAccesoARuta(item.href, usuario)} />)}
+            <Divisor />
+            <Grupo grupo={GESTION} pathname={pathname} usuario={usuario} />
+            <Divisor />
+            <Grupo grupo={REPORTES} pathname={pathname} usuario={usuario} />
+            <Divisor />
+            <Grupo grupo={CONFIGURACION} pathname={pathname} usuario={usuario} />
+          </nav>
 
           {/* ACCIONES — buscador, herramientas y tema: SIEMPRE visibles (aunque la ventana sea
               angosta, ej. usada al lado de WhatsApp Web) — alineadas con la primera línea del
