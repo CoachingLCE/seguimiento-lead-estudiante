@@ -9,6 +9,7 @@ import CheckboxVisual from '../../components/CheckboxVisual';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoBuscador, tienePermisoEditarLead, tienePermisoEditarVenta, tienePermisoEditarContactoEstudiante } from '../../lib/permisos';
 import { ORIGENES, ORIGEN_OTRO, CURSOS, CURSO_OTROS, CURSO_SIN_DEFINIR, PAISES, RESULTADOS_CONTACTO, enlaceGmail, numeroDesdeSheet } from '../../lib/constants';
+import { filasVigentes, cicloDe } from '../../lib/seguimientoCiclos';
 
 const SEP_NOTAS = '\n@@\n';
 
@@ -399,7 +400,16 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
   });
   const [guardandoEdicion, setGuardandoEdicion] = useState(false);
 
-  const asignadoActual = seguimiento.find((s) => s.Lote === '1')?.AsignadoAEmail;
+  // "Nuevo seguimiento comercial": si este lead ya tuvo más de un ciclo, separamos el ciclo
+  // VIGENTE (el que se opera normalmente, con sus botones de acción) de los ciclos viejos, que se
+  // muestran como historial de solo lectura más abajo. Ver lib/seguimientoCiclos.js.
+  const seguimientoVigente = filasVigentes(seguimiento);
+  const seguimientoHistorico = seguimiento.filter((s) => s.Lote !== 'baja' && !seguimientoVigente.includes(s));
+  const cicloVigenteNro = seguimientoVigente.find((s) => s.Lote !== 'baja') ? cicloDe(seguimientoVigente.find((s) => s.Lote !== 'baja')) : 1;
+  const [iniciandoCiclo, setIniciandoCiclo] = useState(false);
+  const [confirmarNuevoCiclo, setConfirmarNuevoCiclo] = useState(false);
+
+  const asignadoActual = seguimientoVigente.find((s) => s.Lote === '1')?.AsignadoAEmail;
   const puedeEditar = tienePermisoEditarLead(usuario, lead, asignadoActual);
   const puedeEditarSoloContacto = !puedeEditar && tienePermisoEditarContactoEstudiante(usuario, lead);
   const [soloContacto, setSoloContacto] = useState(false);
@@ -412,6 +422,22 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
   const [verTanda, setVerTanda] = useState(false);
   const [tandaLeads, setTandaLeads] = useState(null);
   const [cargandoTanda, setCargandoTanda] = useState(false);
+
+  async function iniciarNuevoCiclo() {
+    setIniciandoCiclo(true);
+    await fetch('/api/seguimiento', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        accion: 'nuevo_ciclo', leadId: lead.ID,
+        nombreLead: `${lead.Nombre} ${lead.Apellido}`, cursoLead: lead.Curso || '',
+        solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
+      })
+    });
+    setIniciandoCiclo(false);
+    setConfirmarNuevoCiclo(false);
+    onActualizar?.();
+  }
 
   // Trae TODOS los leads históricos con el mismo Origen que este lead ("la tanda"), reutilizando
   // el mismo endpoint que ya usa el buscador general — así se puede ver desde la propia ficha
@@ -470,12 +496,16 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
     onActualizar?.();
   }
 
+  // Todas estas acciones operan sobre filas que se muestran en la pestaña Seguimiento, que son
+  // siempre las del ciclo VIGENTE (ver seguimientoVigente más arriba) — por eso alcanza con buscar
+  // ahí el Ciclo de la fila por su Lote, sin tener que pasarlo como parámetro en cada llamado.
   async function programarFecha(lote) {
+    const ciclo = seguimientoVigente.find((s) => s.Lote === String(lote))?.Ciclo;
     await fetch('/api/seguimiento', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        accion: 'programar', leadId: lead.ID, lote, fechaProgramada: fechaAProgramar,
+        accion: 'programar', leadId: lead.ID, lote, ciclo, fechaProgramada: fechaAProgramar,
         nombreLead: `${lead.Nombre} ${lead.Apellido}`, cursoLead: lead.Curso || '',
         solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
       })
@@ -486,11 +516,12 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
 
   async function deshacerResultado(lote) {
     setDeshaciendo(lote);
+    const ciclo = seguimientoVigente.find((s) => s.Lote === String(lote))?.Ciclo;
     await fetch('/api/seguimiento', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        accion: 'deshacer', leadId: lead.ID, lote,
+        accion: 'deshacer', leadId: lead.ID, lote, ciclo,
         nombreLead: `${lead.Nombre} ${lead.Apellido}`, cursoLead: lead.Curso || '',
         solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
       })
@@ -503,11 +534,12 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
   // Seguimiento — misma acción 'contactar' que ya usa el listado de lotes.
   async function registrarResultadoRapido(lote, resultado) {
     setRegistrandoResultadoLote(lote);
+    const ciclo = seguimientoVigente.find((s) => s.Lote === String(lote))?.Ciclo;
     await fetch('/api/seguimiento', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        accion: 'contactar', leadId: lead.ID, lote, resultado, observaciones: '', proximaAccion: '',
+        accion: 'contactar', leadId: lead.ID, lote, ciclo, resultado, observaciones: '', proximaAccion: '',
         nombreLead: `${lead.Nombre} ${lead.Apellido}`, cursoLead: lead.Curso || '',
         solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
       })
@@ -517,10 +549,11 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
   }
   const whatsappLimpio = (lead.WhatsApp || '').replace(/[^\d]/g, '');
 
-  // Derivados para KPIs / progreso / alertas
-  const contactadas = seguimiento.filter((s) => s.Contactado === 'TRUE');
+  // Derivados para KPIs / progreso / alertas — del ciclo VIGENTE, no de todo el historial: si se
+  // inició un "Nuevo seguimiento comercial", estos números tienen que reflejar la vuelta actual.
+  const contactadas = seguimientoVigente.filter((s) => s.Contactado === 'TRUE');
   const ultimoContacto = contactadas.sort((a, b) => new Date(b.FechaContacto) - new Date(a.FechaContacto))[0];
-  const responsableFila = [...seguimiento].sort((a, b) => new Date(b.FechaVence) - new Date(a.FechaVence)).find((s) => s.AsignadoANombre);
+  const responsableFila = [...seguimientoVigente].sort((a, b) => new Date(b.FechaVence) - new Date(a.FechaVence)).find((s) => s.AsignadoANombre);
   const diasSinContacto = ultimoContacto
     ? Math.floor((new Date() - new Date(ultimoContacto.FechaContacto)) / (24 * 60 * 60 * 1000))
     : Math.floor((new Date() - new Date(lead.FechaIngreso)) / (24 * 60 * 60 * 1000));
@@ -912,9 +945,33 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
 
       {tab === 'Seguimiento' && (
         <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm">
-          <p className="text-sm font-semibold mb-3">Seguimiento comercial</p>
+          <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+            <p className="text-sm font-semibold">
+              Seguimiento comercial{cicloVigenteNro > 1 && <span className="text-accentPurple"> · Ciclo {cicloVigenteNro}</span>}
+            </p>
+            {/* "Nuevo seguimiento comercial" (pedido de Diego): para un lead que ya recorrió todo
+                su camino de seguimiento y volvió a escribir. Abre un ciclo nuevo (Lote 1 en
+                adelante) sin tocar ni borrar el historial del ciclo anterior — queda más abajo,
+                de solo lectura. Solo Admin/Coordinador, igual que Reasignar/Deshacer. */}
+            {puedeDeshacer && (
+              confirmarNuevoCiclo ? (
+                <div className="flex items-center gap-2 bg-warningBg text-warningText rounded-lg px-3 py-1.5 text-xs flex-wrap">
+                  <span>¿Iniciar un seguimiento nuevo? Lo anterior queda guardado como historial, no se borra.</span>
+                  <button onClick={iniciarNuevoCiclo} disabled={iniciandoCiclo} className="font-semibold underline disabled:opacity-60">
+                    {iniciandoCiclo ? 'Iniciando…' : 'Sí, iniciar'}
+                  </button>
+                  <button onClick={() => setConfirmarNuevoCiclo(false)} className="text-textMuted">Cancelar</button>
+                </div>
+              ) : (
+                <button onClick={() => setConfirmarNuevoCiclo(true)}
+                  className="text-xs px-3 py-1.5 rounded-md bg-surface2 border border-border font-semibold text-accentPurple">
+                  🔄 Nuevo seguimiento comercial
+                </button>
+              )
+            )}
+          </div>
           {(() => {
-            const conFecha = seguimiento.filter((s) => s.FechaProgramada && s.Contactado !== 'TRUE');
+            const conFecha = seguimientoVigente.filter((s) => s.FechaProgramada && s.Contactado !== 'TRUE');
             if (conFecha.length === 0) return null;
             const yaDisponible = conFecha.filter((s) => new Date(s.FechaProgramada) <= new Date());
             const proximaFecha = [...conFecha].sort((a, b) => new Date(a.FechaProgramada) - new Date(b.FechaProgramada))[0];
@@ -926,8 +983,8 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
               </div>
             );
           })()}
-          {seguimiento.length === 0 ? <p className="text-textMuted text-sm">Sin seguimiento comercial.</p> : (
-            seguimiento.map((s) => (
+          {seguimientoVigente.length === 0 ? <p className="text-textMuted text-sm">Sin seguimiento comercial.</p> : (
+            seguimientoVigente.map((s) => (
               <div key={s.Lote} className="flex items-center justify-between gap-3 mb-1.5 flex-wrap">
                 <p className="text-sm text-textSec">
                   Lote {s.Lote}: {s.Contactado === 'TRUE'
@@ -979,6 +1036,26 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
           <p className="text-textMuted text-[11px] mt-2">
             "Deshacer" vuelve ese lote a pendiente — útil si se registró un resultado por error (ej: "Pago recibido" sin que corresponda). El lead vuelve a aparecer en Seguimiento.
           </p>
+
+          {/* Ciclos anteriores: historial de solo lectura, sin botones de acción — se conservan
+              tal cual quedaron cuando se inició el "Nuevo seguimiento comercial" más reciente. */}
+          {seguimientoHistorico.length > 0 && (
+            <div className="mt-5 pt-4 border-t border-border">
+              <p className="text-xs font-bold text-textMuted uppercase tracking-wide mb-2">Seguimientos anteriores (historial)</p>
+              {[...new Set(seguimientoHistorico.map((s) => cicloDe(s)))].sort((a, b) => b - a).map((ciclo) => (
+                <div key={ciclo} className="mb-3 last:mb-0">
+                  <p className="text-xs font-semibold text-textSec mb-1">Ciclo {ciclo}</p>
+                  {seguimientoHistorico.filter((s) => cicloDe(s) === ciclo).map((s) => (
+                    <p key={s.Lote} className="text-xs text-textMuted mb-1">
+                      Lote {s.Lote}: {s.Contactado === 'TRUE'
+                        ? `${s.Resultado || 'contactado'} (${tiempoRelativo(s.FechaContacto)}) — ${s.AsignadoANombre || 'No asignado'}`
+                        : 'Sin resultado'}
+                    </p>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

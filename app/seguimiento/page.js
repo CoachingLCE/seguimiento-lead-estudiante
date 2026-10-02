@@ -9,6 +9,7 @@ import ModalVenta from '../../components/ModalVenta';
 import { useToast } from '../../components/Toast';
 import { useSession } from '../../lib/useSession';
 import { RESULTADOS_CONTACTO, RESULTADOS_FINALES, RESULTADOS_PROGRESO, ACCIONES_POR_LOTE, enlaceGmail } from '../../lib/constants';
+import { filasVigentes } from '../../lib/seguimientoCiclos';
 
 const EMAILS_ASIGNABLES = [
   { email: 'jesabel.reigada@institutoilce.com', nombre: 'Jesabel Reigada' },
@@ -170,13 +171,17 @@ export default function SeguimientoPage() {
     if (mostrarSpinner) setCargando(false);
   }
 
-  async function registrarContacto(leadId, lote, resultado, observaciones, proximaAccion, fechaProgramada) {
+  // ciclo: a qué "ciclo" de seguimiento comercial pertenece la fila sobre la que se actúa (ver
+  // lib/seguimientoCiclos.js) — hace falta mandarlo porque un lead puede tener más de una fila con
+  // el mismo número de Lote (una por cada vez que se le inició un "Nuevo seguimiento comercial"),
+  // y sin esto el servidor podría actuar sobre la fila equivocada.
+  async function registrarContacto(leadId, lote, resultado, observaciones, proximaAccion, fechaProgramada, ciclo) {
     const lead = leads.find((l) => l.ID === leadId);
     await fetch('/api/seguimiento', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        accion: 'contactar', leadId, lote, resultado, observaciones, proximaAccion, fechaProgramada,
+        accion: 'contactar', leadId, lote, ciclo, resultado, observaciones, proximaAccion, fechaProgramada,
         nombreLead: lead ? `${lead.Nombre} ${lead.Apellido}` : '', cursoLead: lead?.Curso || '',
         solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
       })
@@ -185,19 +190,26 @@ export default function SeguimientoPage() {
     cargarDatos(false);
   }
 
-  async function reasignar(leadId, lote, nuevoEmail, nuevoNombre) {
+  async function reasignar(leadId, lote, nuevoEmail, nuevoNombre, ciclo) {
     const lead = leads.find((l) => l.ID === leadId);
     await fetch('/api/seguimiento', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        accion: 'reasignar', leadId, lote, nuevoEmail, nuevoNombre,
+        accion: 'reasignar', leadId, lote, ciclo, nuevoEmail, nuevoNombre,
         nombreLead: lead ? `${lead.Nombre} ${lead.Apellido}` : '', cursoLead: lead?.Curso || '',
         solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
       })
     });
     mostrarToast(`Reasignado a ${nuevoNombre}`);
     cargarDatos(false);
+  }
+
+  // Busca la fila VIGENTE (del ciclo activo) de un lead en un lote dado — las casillas de
+  // selección masiva solo pueden marcar filas que están mostrándose en pantalla, que siempre son
+  // las del ciclo vigente, así que esto siempre encuentra la fila correcta.
+  function filaVigenteDe(leadId, lote) {
+    return filasVigentes(seguimiento).find((s) => s.LeadID === leadId && s.Lote === String(lote));
   }
 
   async function reasignarMasivo(nuevoEmail, nuevoNombre) {
@@ -211,7 +223,7 @@ export default function SeguimientoPage() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          accion: 'reasignar', leadId: f.leadId, lote: f.lote, nuevoEmail, nuevoNombre,
+          accion: 'reasignar', leadId: f.leadId, lote: f.lote, ciclo: filaVigenteDe(f.leadId, f.lote)?.Ciclo, nuevoEmail, nuevoNombre,
           nombreLead: lead ? `${lead.Nombre} ${lead.Apellido}` : '', cursoLead: lead?.Curso || '',
           solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
         })
@@ -242,7 +254,7 @@ export default function SeguimientoPage() {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        accion: 'contactar', leadId, lote, resultado, observaciones: '', proximaAccion: '',
+        accion: 'contactar', leadId, lote, ciclo: filaVigenteDe(leadId, lote)?.Ciclo, resultado, observaciones: '', proximaAccion: '',
         nombreLead: lead ? `${lead.Nombre} ${lead.Apellido}` : '', cursoLead: lead?.Curso || '',
         solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre
       })
@@ -269,7 +281,7 @@ export default function SeguimientoPage() {
   }
 
   function exportarSeleccionados() {
-    const filas = seguimiento.filter((s) => seleccionados.has(`${s.LeadID}__${s.Lote}`));
+    const filas = seguimientoActivo.filter((s) => seleccionados.has(`${s.LeadID}__${s.Lote}`));
     exportarFilas(filas);
   }
 
@@ -328,8 +340,13 @@ export default function SeguimientoPage() {
   const ahora = new Date();
   const buscarLead = (leadId) => leads.find((l) => l.ID === leadId);
 
+  // Solo las filas del CICLO vigente de cada lead (+ las de Lote "baja", aparte) — si un lead tuvo
+  // un seguimiento viejo que terminó resuelto y después se le inició un "Nuevo seguimiento
+  // comercial", las filas del ciclo viejo no deben seguir contando acá. Ver lib/seguimientoCiclos.js.
+  const seguimientoActivo = filasVigentes(seguimiento);
+
   const leadsResueltos = new Set(
-    seguimiento.filter((s) => RESULTADOS_FINALES.includes(s.Resultado)).map((s) => s.LeadID)
+    seguimientoActivo.filter((s) => RESULTADOS_FINALES.includes(s.Resultado)).map((s) => s.LeadID)
   );
   const esValidoSinFiltro = (s) => {
     const l = buscarLead(s.LeadID);
@@ -375,23 +392,23 @@ export default function SeguimientoPage() {
     return f >= maniana && f < pasadoManiana;
   };
 
-  const lote0Todas = seguimiento.filter((s) => s.Lote === '1' && !vencido(s) && filaValida(s) && sinProgramar(s));
+  const lote0Todas = seguimientoActivo.filter((s) => s.Lote === '1' && !vencido(s) && filaValida(s) && sinProgramar(s));
   const lote0 = lote0Todas.filter(noContactada);
-  const lote1Todas = seguimiento.filter((s) => s.Lote === '1' && vencido(s) && filaValida(s) && sinProgramar(s));
+  const lote1Todas = seguimientoActivo.filter((s) => s.Lote === '1' && vencido(s) && filaValida(s) && sinProgramar(s));
   const lote1 = lote1Todas.filter(noContactada);
-  const lote2Todas = seguimiento.filter((s) => s.Lote === '2' && vencido(s) && filaValida(s) && sinProgramar(s));
+  const lote2Todas = seguimientoActivo.filter((s) => s.Lote === '2' && vencido(s) && filaValida(s) && sinProgramar(s));
   const lote2 = lote2Todas.filter(noContactada);
-  const lote3Todas = seguimiento.filter((s) => s.Lote === '3' && vencido(s) && filaValida(s) && sinProgramar(s));
+  const lote3Todas = seguimientoActivo.filter((s) => s.Lote === '3' && vencido(s) && filaValida(s) && sinProgramar(s));
   const lote3 = lote3Todas.filter(noContactada);
-  const lote4Todas = seguimiento.filter((s) => s.Lote === '4' && vencido(s) && filaValida(s) && sinProgramar(s));
+  const lote4Todas = seguimientoActivo.filter((s) => s.Lote === '4' && vencido(s) && filaValida(s) && sinProgramar(s));
   const lote4 = lote4Todas.filter(noContactada);
-  const lote5Todas = seguimiento.filter((s) => s.Lote === '5' && vencido(s) && filaValida(s) && sinProgramar(s));
+  const lote5Todas = seguimientoActivo.filter((s) => s.Lote === '5' && vencido(s) && filaValida(s) && sinProgramar(s));
   const lote5 = lote5Todas.filter(noContactada);
-  const lote6Todas = seguimiento.filter((s) => s.Lote === '6' && vencido(s) && filaValida(s) && sinProgramar(s));
+  const lote6Todas = seguimientoActivo.filter((s) => s.Lote === '6' && vencido(s) && filaValida(s) && sinProgramar(s));
   const lote6 = lote6Todas.filter(noContactada);
 
   const seAgreganManiana = (numeroLote) =>
-    seguimiento.filter((s) => s.Lote === numeroLote && !vencido(s) && venceManiana(s) && filaValida(s) && noContactada(s)).length;
+    seguimientoActivo.filter((s) => s.Lote === numeroLote && !vencido(s) && venceManiana(s) && filaValida(s) && noContactada(s)).length;
   const lote1Maniana = seAgreganManiana('1');
   const lote2Maniana = seAgreganManiana('2');
   const lote3Maniana = seAgreganManiana('3');
@@ -401,14 +418,14 @@ export default function SeguimientoPage() {
 
   // LOTE PROGRAMADO: cualquier fila (de cualquier lote) donde alguien pidió "contactame el [fecha]"
   // y esa fecha ya llegó — aparece acá aunque técnicamente esté "esperando" en su lote numérico.
-  const loteProgramadoTodas = seguimiento.filter((s) =>
+  const loteProgramadoTodas = seguimientoActivo.filter((s) =>
     s.FechaProgramada && new Date(s.FechaProgramada) <= ahora && filaValida(s)
   );
   const loteProgramado = loteProgramadoTodas.filter(noContactada);
 
   // LOTE BAJAS: alguien que se dio de baja de la cursada, 90 días después de la baja,
   // para ofrecerle volver a información y ver si se reincorpora.
-  const loteBajasTodas = seguimiento.filter((s) => s.Lote === 'baja' && vencido(s) && filaValida(s) && sinProgramar(s));
+  const loteBajasTodas = seguimientoActivo.filter((s) => s.Lote === 'baja' && vencido(s) && filaValida(s) && sinProgramar(s));
   const loteBajas = loteBajasTodas.filter(noContactada);
 
   // SIN LOTE: leads que ya no aparecen en ningún lote activo, y por qué (un resultado final como
@@ -422,13 +439,13 @@ export default function SeguimientoPage() {
       if (lead.Estado === 'Comprado') return null;
       if (!coincideBusquedaAmplia(lead, busqueda)) return null;
       if (!coincideFiltroRapido(lead)) return null;
-      const filasLead = seguimiento.filter((s) => s.LeadID === leadId && RESULTADOS_FINALES.includes(s.Resultado));
+      const filasLead = seguimientoActivo.filter((s) => s.LeadID === leadId && RESULTADOS_FINALES.includes(s.Resultado));
       const masReciente = filasLead.sort((a, b) => new Date(b.FechaContacto) - new Date(a.FechaContacto))[0];
       return { lead, resultado: masReciente?.Resultado, fecha: masReciente?.FechaContacto, quien: masReciente?.AsignadoANombre };
     })
     .filter(Boolean);
 
-  const todasLasFilasPendientes = seguimiento.filter((s) => esValidoSinFiltro(s));
+  const todasLasFilasPendientes = seguimientoActivo.filter((s) => esValidoSinFiltro(s));
   const leadIdsUnicos = [...new Set(todasLasFilasPendientes.map((s) => s.LeadID))];
   const contadoresPorCurso = { total: leadIdsUnicos.length, otros: 0 };
   FILTROS_RAPIDOS.forEach((c) => { contadoresPorCurso[c] = 0; });
@@ -446,7 +463,7 @@ export default function SeguimientoPage() {
   const propsComunes = {
     buscarLead, onContactar: registrarContacto, onReasignar: reasignar,
     onVerFicha: setFichaLeadId, onMarcarVenta: setLeadVenta, puedeReasignar,
-    seleccionados, onToggleSeleccion: toggleSeleccion, onAbrirReasignarModal: (leadId, lote) => setModalReasignar({ leadId, lote }),
+    seleccionados, onToggleSeleccion: toggleSeleccion, onAbrirReasignarModal: (leadId, lote, ciclo) => setModalReasignar({ leadId, lote, ciclo }),
     dimensionAgrupacion, ordenPor
   };
 
@@ -619,7 +636,7 @@ export default function SeguimientoPage() {
           onClose={() => setModalReasignar(null)}
           onConfirmar={(email, nombre) => {
             if (modalReasignar.masivo) reasignarMasivo(email, nombre);
-            else reasignar(modalReasignar.leadId, modalReasignar.lote, email, nombre);
+            else reasignar(modalReasignar.leadId, modalReasignar.lote, email, nombre, modalReasignar.ciclo);
             if (!modalReasignar.masivo) setModalReasignar(null);
           }}
         />
@@ -890,7 +907,7 @@ function FilaLote({
   }
 
   function confirmarResultado() {
-    onContactar(fila.LeadID, fila.Lote, resultadoElegido, observaciones, proximaAccion, fechaProgramada);
+    onContactar(fila.LeadID, fila.Lote, resultadoElegido, observaciones, proximaAccion, fechaProgramada, fila.Ciclo);
     if (resultadoElegido === 'Pago recibido' && fila.Lote !== 'baja') onMarcarVenta(lead);
     setResultadoElegido(null);
   }
@@ -972,7 +989,7 @@ function FilaLote({
               </span>
             )}
             {puedeReasignar && (
-              <button onClick={() => onAbrirReasignarModal(fila.LeadID, fila.Lote)}
+              <button onClick={() => onAbrirReasignarModal(fila.LeadID, fila.Lote, fila.Ciclo)}
                 className="text-accentTeal font-semibold">{sinAsignar ? 'Asignar' : 'Reasignar'}</button>
             )}
           </div>

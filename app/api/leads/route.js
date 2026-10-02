@@ -100,32 +100,36 @@ export async function POST(request) {
   // aparece en Lote 0 ni pide un primer contacto de nuevo), y se genera de una el Lote 2 —lo mismo
   // que pasaría si se marcara el contacto manualmente con un resultado no definitivo—, para no
   // perder el seguimiento a los 10 días.
+  // Ciclo 1: es el primer (y hasta ahora único) seguimiento comercial de este lead. Si más
+  // adelante vuelve a escribir después de haber quedado resuelto, se le puede iniciar un ciclo
+  // nuevo con el botón "Nuevo seguimiento comercial" en su ficha (ver /api/seguimiento, acción
+  // 'nuevo_ciclo', y lib/seguimientoCiclos.js).
   await appendRow('Seguimiento', [
     leadId, '1', vence1, body.cargadoPorEmail, body.cargadoPorNombre,
     body.yaContactado ? 'TRUE' : 'FALSE',
     body.yaContactado ? 'Contactado antes de cargar el lead' : '',
     body.yaContactado ? fechaIngreso : '',
-    '', '', '', body.yaContactado ? body.cargadoPorNombre : '', '', ''
+    '', '', '', body.yaContactado ? body.cargadoPorNombre : '', '', '', '1'
   ]);
   if (body.yaContactado) {
     await appendRow('Seguimiento', [
-      leadId, '2', vence2, body.cargadoPorEmail, body.cargadoPorNombre, 'FALSE', '', '', '', '', '', '', '', ''
+      leadId, '2', vence2, body.cargadoPorEmail, body.cargadoPorNombre, 'FALSE', '', '', '', '', '', '', '', '', '1'
     ]);
   }
   // Lote 2 (cuando no se marcó "ya contactado") no se crea todavía: se genera dinámicamente cuando
   // el Lote 1 se marca contactado sin conversión (ver PATCH en /api/seguimiento). Lotes 3, 4 y 5 sí
   // se pre-crean, "Sin asignación" (AsignadoA vacío).
   await appendRow('Seguimiento', [
-    leadId, '3', vence3, '', '', 'FALSE', '', '', '', '', '', '', '', ''
+    leadId, '3', vence3, '', '', 'FALSE', '', '', '', '', '', '', '', '', '1'
   ]);
   await appendRow('Seguimiento', [
-    leadId, '4', vence4, '', '', 'FALSE', '', '', '', '', '', '', '', ''
+    leadId, '4', vence4, '', '', 'FALSE', '', '', '', '', '', '', '', '', '1'
   ]);
   await appendRow('Seguimiento', [
-    leadId, '5', vence5, '', '', 'FALSE', '', '', '', '', '', '', '', ''
+    leadId, '5', vence5, '', '', 'FALSE', '', '', '', '', '', '', '', '', '1'
   ]);
   await appendRow('Seguimiento', [
-    leadId, '6', vence6, '', '', 'FALSE', '', '', '', '', '', '', '', ''
+    leadId, '6', vence6, '', '', 'FALSE', '', '', '', '', '', '', '', '', '1'
   ]);
 
   await registrarAccion(

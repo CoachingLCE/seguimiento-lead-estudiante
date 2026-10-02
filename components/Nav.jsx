@@ -131,11 +131,35 @@ export default function Nav({ usuario, onLogout }) {
   return (
     <div className="border-b border-border no-print">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
-        <div className="flex items-center justify-between gap-4 h-16">
-          {/* LOGO */}
-          <Link href="/dashboard" className="shrink-0">
-            <Logo height={36} />
-          </Link>
+        {/* Pedido de Diego (02/10/2026): el logo pasa a estar al costado de los links (en vez de
+            en su propia franja arriba) para ganar compacidad — ahora todo el header entra en una
+            sola franja en desktop, en vez de dos. Se mantiene buen espacio debajo (pb-6) para que
+            el contenido de cada pantalla no quede pegado al nav. */}
+        <div className="flex items-start justify-between gap-4 pt-3 pb-6">
+          {/* LOGO + NAV (desktop) */}
+          <div className="flex items-center gap-4 min-w-0 flex-wrap">
+            <Link href="/dashboard" className="shrink-0">
+              <Logo height={30} />
+            </Link>
+            {/* NAV — desktop: todo a la vista, sin clics para desplegar nada */}
+            <nav className="hidden lg:flex items-center gap-x-4 gap-y-3 flex-wrap">
+              <Link href="/nuevo-lead"
+                className={`h-8 flex items-center px-3.5 rounded-lg text-[13px] font-semibold whitespace-nowrap shadow-sm transition-all ${
+                  pathname === '/nuevo-lead'
+                    ? 'bg-gradient-to-r from-accentPurple to-accentMagenta text-white shadow-accentPurple/30'
+                    : 'bg-gradient-to-r from-accentPurple to-accentMagenta text-white opacity-90 hover:opacity-100'
+                }`}>
+                + Nuevo lead
+              </Link>
+              {NAV_PRINCIPAL.map((item) => <Chip key={item.href} href={item.href} label={item.label} pathname={pathname} destacado deshabilitado={!tieneAccesoARuta(item.href, usuario)} />)}
+              <Divisor />
+              <Grupo grupo={GESTION} pathname={pathname} usuario={usuario} />
+              <Divisor />
+              <Grupo grupo={REPORTES} pathname={pathname} usuario={usuario} />
+              <Divisor />
+              <Grupo grupo={CONFIGURACION} pathname={pathname} usuario={usuario} />
+            </nav>
+          </div>
 
           {/* ACCIONES — buscador, herramientas y tema: SIEMPRE visibles (aunque la ventana sea
               angosta, ej. usada al lado de WhatsApp Web) — antes se ocultaban del todo por debajo
@@ -183,27 +207,6 @@ export default function Nav({ usuario, onLogout }) {
             <button onClick={() => elegirVerComo('')} className="underline ml-auto whitespace-nowrap">Salir del modo vista</button>
           </div>
         )}
-        {/* NAV — desktop: todo a la vista, sin clics para desplegar nada */}
-        {/* Pedido de Diego (02/10/2026): "sigue muy pegado todo al nav" — se ve en CUALQUIER
-            pantalla porque todas comparten este componente, así que el espacio se agranda acá una
-            sola vez (pb-5 -> pb-7) en vez de parchear cada página por separado. */}
-        <nav className="hidden lg:flex items-center gap-x-4 gap-y-3.5 flex-wrap pt-1 pb-7">
-          <Link href="/nuevo-lead"
-            className={`h-8 flex items-center px-3.5 rounded-lg text-[13px] font-semibold whitespace-nowrap shadow-sm transition-all ${
-              pathname === '/nuevo-lead'
-                ? 'bg-gradient-to-r from-accentPurple to-accentMagenta text-white shadow-accentPurple/30'
-                : 'bg-gradient-to-r from-accentPurple to-accentMagenta text-white opacity-90 hover:opacity-100'
-            }`}>
-            + Nuevo lead
-          </Link>
-          {NAV_PRINCIPAL.map((item) => <Chip key={item.href} href={item.href} label={item.label} pathname={pathname} destacado deshabilitado={!tieneAccesoARuta(item.href, usuario)} />)}
-          <Divisor />
-          <Grupo grupo={GESTION} pathname={pathname} usuario={usuario} />
-          <Divisor />
-          <Grupo grupo={REPORTES} pathname={pathname} usuario={usuario} />
-          <Divisor />
-          <Grupo grupo={CONFIGURACION} pathname={pathname} usuario={usuario} />
-        </nav>
       </div>
 
       {/* MENÚ MOBILE — todo apilado */}

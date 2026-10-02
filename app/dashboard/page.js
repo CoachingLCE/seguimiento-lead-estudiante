@@ -10,6 +10,7 @@ import { useToast } from '../../components/Toast';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoEstudiantes } from '../../lib/permisos';
 import { RESULTADOS_FINALES, numeroDesdeSheet } from '../../lib/constants';
+import { filasVigentes } from '../../lib/seguimientoCiclos';
 
 const HORAS_ALTA_DEMORADA = 24;
 
@@ -76,12 +77,18 @@ export default function DashboardPage() {
   const leadsMes = leads.filter((l) => (l.FechaIngreso || '').slice(0, 7) === mesActual).length;
   const comprados = leads.filter((l) => l.Estado === 'Comprado').length;
 
+  // Solo las filas del CICLO vigente de cada lead (+ "baja", aparte) — si un lead tuvo un
+  // seguimiento viejo que terminó resuelto y después se le inició un "Nuevo seguimiento
+  // comercial" desde su ficha, las filas del ciclo viejo no deben seguir contando como
+  // pendientes acá. Ver lib/seguimientoCiclos.js.
+  const seguimientoActivo = filasVigentes(seguimiento);
+
   // Resumen del día: cuántos contactos pendientes (vencidos, sin programación) tiene ASIGNADOS
   // el usuario actual en cada lote — solo tiene sentido para quien hace contactos de verdad
   // (Lucila, Alex, Macarena); Diego y Jennifer no tienen asignaciones de lote.
   const ahoraParaResumen = new Date();
   const misPendientesPorLote = Array.from({ length: 7 }, (_, lote) => {
-    const pendientes = seguimiento.filter((s) =>
+    const pendientes = seguimientoActivo.filter((s) =>
       s.Lote === String(lote) && s.AsignadoAEmail === usuario?.email &&
       s.Contactado !== 'TRUE' && !s.FechaProgramada && new Date(s.FechaVence) <= ahoraParaResumen
     );
@@ -104,9 +111,9 @@ export default function DashboardPage() {
   }, [leads]);
 
   const leadsResueltos = new Set(
-    seguimiento.filter((s) => RESULTADOS_FINALES.includes(s.Resultado)).map((s) => s.LeadID)
+    seguimientoActivo.filter((s) => RESULTADOS_FINALES.includes(s.Resultado)).map((s) => s.LeadID)
   );
-  const pendientesHoy = seguimiento.filter((s) => {
+  const pendientesHoy = seguimientoActivo.filter((s) => {
     if (s.Contactado === 'TRUE') return false;
     if (new Date(s.FechaVence) > new Date()) return false;
     const l = leads.find((x) => x.ID === s.LeadID);
