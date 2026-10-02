@@ -192,10 +192,12 @@ export async function PATCH(request) {
   };
 
   const cambios = [];
+  const columnasCambiadas = new Set();
   Object.entries(CAMPOS_EDITABLES).forEach(([campoBody, { columna, label }]) => {
     if (body[campoBody] !== undefined && body[campoBody] !== valoresActuales[columna]) {
       cambios.push(`${label}: "${valoresActuales[columna] || '(vacío)'}" → "${body[campoBody] || '(vacío)'}"`);
       valoresActuales[columna] = body[campoBody];
+      columnasCambiadas.add(columna);
     }
   });
 
@@ -213,6 +215,31 @@ export async function PATCH(request) {
     valoresActuales.Docentes, valoresActuales.DetalleCuotas, valoresActuales.VendidoPorNombre,
     valoresActuales.Pais, valoresActuales.Prioridad
   ]);
+
+  // Sincronizar con Inscritos, si este lead ya generó su registro de estudiante: la fila de
+  // Inscritos copia Nombre/Curso/Email UNA SOLA VEZ al crearse (ver /api/cron/generar-estudiantes)
+  // y nunca se vuelve a leer desde Leads — sin este paso, corregir acá el nombre/curso/email se
+  // veía reflejado en la Ficha pero /inscritos se quedaba mostrando el dato viejo para siempre.
+  if (columnasCambiadas.has('Nombre') || columnasCambiadas.has('Curso') || columnasCambiadas.has('EmailEstudiante')) {
+    const inscritos = await readSheet('Inscritos');
+    const inscrito = inscritos.find((i) => i.LeadId === lead.ID);
+    if (inscrito) {
+      const actualizado = {
+        ...inscrito,
+        NombreEstudiante: `${valoresActuales.Nombre} ${valoresActuales.Apellido}`.trim(),
+        Curso: valoresActuales.Curso,
+        EmailEstudiante: valoresActuales.EmailEstudiante
+      };
+      await updateRow('Inscritos', inscrito._rowIndex, [
+        actualizado.ID, actualizado.LeadId, actualizado.NombreEstudiante, actualizado.EmailEstudiante,
+        actualizado.Curso, actualizado.Edicion, actualizado.FechaInscripcion,
+        actualizado.AltaPlataforma, actualizado.AltaPorEmail, actualizado.AltaPorNombre, actualizado.FechaAlta,
+        actualizado.BienvenidaEnviada, actualizado.BienvenidaPorEmail, actualizado.BienvenidaPorNombre, actualizado.FechaBienvenida,
+        actualizado.AbonoTotalidad, actualizado.Docentes, actualizado.ConfirmoRecepcion, actualizado.GrupoWhatsApp,
+        actualizado.ConfirmoAlta || ''
+      ]);
+    }
+  }
 
   await registrarAccion(
     body.solicitanteEmail, body.solicitanteNombre,

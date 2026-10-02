@@ -162,7 +162,7 @@ export default function InscritosPage() {
   // que alterna el valor actual) — pensado para el botón de la alerta "Sin confirmar recepción".
   async function reenviarAlta(inscrito) {
     setEnviandoAltaId(inscrito.ID);
-    await fetch('/api/inscritos', {
+    const res = await fetch('/api/inscritos', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -171,8 +171,13 @@ export default function InscritosPage() {
       })
     });
     setEnviandoAltaId(null);
-    mostrarToast('Alta reenviada');
-    cargarInscritos(true);
+    // Antes esto se daba por hecho sin chequear la respuesta: si el pedido fallaba, el estudiante
+    // se quedaba pegado en la alerta "Sin confirmar recepción" sin ningún aviso de que algo salió
+    // mal (a diferencia de "Reenviar bienvenida", que si fallaba al menos no mentía diciendo que
+    // se había reenviado). Ahora se comporta igual que bienvenida: solo avisa éxito y refresca la
+    // lista si la respuesta vino OK.
+    if (res.ok) { mostrarToast('Alta reenviada'); cargarInscritos(true); }
+    else { const r = await res.json().catch(() => ({})); mostrarToast(r.error || 'No se pudo reenviar el alta'); }
   }
 
   async function toggleCampoSimple(inscrito, campo, etiqueta) {
