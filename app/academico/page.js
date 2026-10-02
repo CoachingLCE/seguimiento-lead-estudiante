@@ -335,7 +335,17 @@ export default function AcademicoPage() {
     if (!a.fechaInicio && !b.fechaInicio) return 0;
     if (!a.fechaInicio) return 1;
     if (!b.fechaInicio) return -1;
-    return new Date(b.fechaInicio) - new Date(a.fechaInicio);
+    // Pendiente de una sesión anterior (Diego: "el orden de ediciones debe ser de más nueva a más
+    // vieja, actualmente no está así"): usaba new Date() directo, que rompe con fechas tipeadas
+    // "20/01/2026" (día/mes/año) — JS las lee como mes/día/año y "20" no es un mes válido, da
+    // Invalid Date (NaN), así que el orden quedaba básicamente al azar para esas filas. Con
+    // parsearFechaFlexible (ya definido en este archivo) entiende ambos formatos.
+    const fa = parsearFechaFlexible(a.fechaInicio);
+    const fb = parsearFechaFlexible(b.fechaInicio);
+    if (!fa && !fb) return 0;
+    if (!fa) return 1;
+    if (!fb) return -1;
+    return fb - fa;
   });
 
   const totInscritos = resumenFiltrado.reduce((acc, r) => acc + r.inscritos, 0);

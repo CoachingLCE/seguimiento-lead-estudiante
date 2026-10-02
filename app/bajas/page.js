@@ -291,7 +291,7 @@ export default function BajasPage() {
       {!puedeVer ? (
         <AccesoDenegado seccion="Bajas" />
       ) : (
-      <div className="max-w-[1700px] mx-auto px-6 pt-6 pb-16">
+      <div className="max-w-[1700px] mx-auto px-6 pb-16">
 
         {/* ENCABEZADO */}
         <div className="flex items-start justify-between flex-wrap gap-4 mb-6">

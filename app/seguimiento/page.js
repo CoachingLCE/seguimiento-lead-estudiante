@@ -555,12 +555,12 @@ export default function SeguimientoPage() {
             <SeccionLote
               titulo="📅 LOTE PROGRAMADO" subtitulo={`${loteProgramado.length} lead(s) que pidieron ser contactados en una fecha puntual, y esa fecha ya llegó`}
               explicacion={<>Aparece acá cualquier lead (esté en el lote que esté) al que le registraste "contactame el [fecha]" y esa fecha ya se cumplió. No reemplaza su lote normal, es un recordatorio extra.</>}
-              filas={loteProgramado} filasTotales={loteProgramadoTodas} sinAsignarPorDefecto {...propsComunes}
+              filas={loteProgramado} filasTotales={loteProgramadoTodas} sinAsignarPorDefecto colorBorde="border-l-4 border-l-infoText" {...propsComunes}
             />
             <SeccionLote
               titulo="🔴 LOTE BAJAS" subtitulo={`${loteBajas.length} estudiante(s) que se dieron de baja hace 90 días — momento de re-ofrecerles información`}
               explicacion={<>Cuando alguien se da de baja de la cursada, se marca desde su ficha (pestaña Alumno). A los 90 días aparece acá, para contactarlo y ver si quiere reincorporarse.</>}
-              filas={loteBajas} filasTotales={loteBajasTodas} sinAsignarPorDefecto {...propsComunes}
+              filas={loteBajas} filasTotales={loteBajasTodas} sinAsignarPorDefecto colorBorde="border-l-4 border-l-dangerText" {...propsComunes}
             />
 
             <SeccionSinLote sinLote={sinLote} onVerFicha={setFichaLeadId} />
@@ -771,16 +771,31 @@ function AccionSugerida({ accion }) {
   );
 }
 
-function SeccionLote({ titulo, subtitulo, explicacion, filas, filasTotales, buscarLead, ultima, dimensionAgrupacion, ordenPor, numeroLote, ...propsFila }) {
+// Pedido de Diego (02/10/2026): "los lotes, hacerles una pequeña diferencia de colores" — antes
+// todas las tarjetas se veían exactamente iguales (mismo borde gris), costaba distinguir de un
+// vistazo en qué lote estás parado. Un acento de color en el borde izquierdo alcanza, sin tocar el
+// resto del diseño. Se reutilizan los colores que ya existen en la app (no son nuevos).
+const COLOR_BORDE_LOTE = {
+  0: 'border-l-4 border-l-accentTeal',
+  1: 'border-l-4 border-l-accentPurple',
+  2: 'border-l-4 border-l-accentMagenta',
+  3: 'border-l-4 border-l-successText',
+  4: 'border-l-4 border-l-warningText',
+  5: 'border-l-4 border-l-infoText',
+  6: 'border-l-4 border-l-dangerText'
+};
+
+function SeccionLote({ titulo, subtitulo, explicacion, filas, filasTotales, buscarLead, ultima, dimensionAgrupacion, ordenPor, numeroLote, colorBorde, ...propsFila }) {
   const [abierta, setAbierta] = useState(false);
   const grupos = agruparYOrdenar(filas, buscarLead, dimensionAgrupacion, ordenPor);
   const total = (filasTotales || filas).length;
   const pendientes = filas.length;
   const contactadas = total - pendientes;
   const accion = numeroLote ? ACCIONES_POR_LOTE[numeroLote] : null;
+  const acentoBorde = colorBorde || (numeroLote !== undefined && COLOR_BORDE_LOTE[numeroLote]) || '';
 
   return (
-    <div className={`bg-surface border border-border rounded-2xl p-5 transition-all ${ultima ? '' : 'mb-4'}`}>
+    <div className={`bg-surface border border-border ${acentoBorde} rounded-2xl p-5 transition-all ${ultima ? '' : 'mb-4'}`}>
       <button onClick={() => setAbierta(!abierta)} className="w-full flex items-start justify-between text-left">
         <div>
           <p className="text-sm font-semibold mb-1">{titulo}</p>

@@ -1,5 +1,4 @@
 import './globals.css';
-import ComoFuncionaGate from '../components/ComoFuncionaGate';
 import VersionBadge from '../components/VersionBadge';
 import TourGuiado from '../components/TourGuiado';
 import ErrorBoundary from '../components/ErrorBoundary';
@@ -36,7 +35,10 @@ export default function RootLayout({ children }) {
         <ErrorBoundary>
           <ThemeProvider>
             {children}
-            <ComoFuncionaGate />
+            {/* Pedido de Diego (02/10/2026): "sacarlo ya que tenemos el necesito ayuda" — los
+                paneles "❓ Ayuda: [pantalla]" quedaban duplicados con el botón flotante de abajo
+                a la derecha (TourGuiado), que ya cubre lo mismo. Se saca este gate; el componente
+                ComoFunciona queda sin usar pero no se borra, por si hace falta volver atrás. */}
             <VersionBadge />
             <TourGuiado />
           </ThemeProvider>

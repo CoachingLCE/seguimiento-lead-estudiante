@@ -548,66 +548,70 @@ export default function NuevoLeadPage() {
               Podés cargar varios contactos de una — comparten curso y origen. Atajos: Ctrl+Enter guardar · Ctrl+N nuevo contacto · Ctrl+D duplicar.
             </p>
 
+            {/* Pedido de Diego (02/10/2026): "hacer un poco más compacto" — Producto y Cómo llegaron
+                apilados a la izquierda, y los cursos adicionales (opcional) a la derecha, más chico
+                — antes eran 2 bloques de ancho completo, uno abajo del otro, y ocupaban más alto. */}
             <div className="grid grid-cols-2 gap-4 mb-3">
-              <div>
-                <label className="text-[13px] font-medium text-textSec block mb-1">
-                  Producto (para toda la tanda)
-                  {cursoAutocompletado && <span className="text-infoText font-normal ml-1.5">· recordado de la carga anterior</span>}
-                </label>
-                <select value={curso} onChange={(e) => { setCurso(e.target.value); setCursoAutocompletado(false); setCursosAdicionales([]); }} className={inputClsBg}>
-                  <option value={CURSO_SIN_DEFINIR}>{CURSO_SIN_DEFINIR}</option>
-                  {CURSOS.map((c) => <option key={c}>{c}</option>)}
-                  <option value={CURSO_OTROS}>{CURSO_OTROS}</option>
-                </select>
-                {curso === CURSO_SIN_DEFINIR && (
-                  <p className="text-textMuted text-[12px] mt-1 flex items-center gap-1"><span>ℹ️</span> Podrás modificar esta información más adelante.</p>
-                )}
-                {curso === CURSO_OTROS && (
-                  <input required value={cursoPersonalizado} onChange={(e) => setCursoPersonalizado(e.target.value)}
-                    placeholder="Escribí el nombre del curso" className={`${inputClsBg} mt-2`} />
-                )}
+              <div className="space-y-3">
+                <div>
+                  <label className="text-[13px] font-medium text-textSec block mb-1">
+                    Producto (para toda la tanda)
+                    {cursoAutocompletado && <span className="text-infoText font-normal ml-1.5">· recordado de la carga anterior</span>}
+                  </label>
+                  <select value={curso} onChange={(e) => { setCurso(e.target.value); setCursoAutocompletado(false); setCursosAdicionales([]); }} className={inputClsBg}>
+                    <option value={CURSO_SIN_DEFINIR}>{CURSO_SIN_DEFINIR}</option>
+                    {CURSOS.map((c) => <option key={c}>{c}</option>)}
+                    <option value={CURSO_OTROS}>{CURSO_OTROS}</option>
+                  </select>
+                  {curso === CURSO_SIN_DEFINIR && (
+                    <p className="text-textMuted text-[12px] mt-1 flex items-center gap-1"><span>ℹ️</span> Podrás modificar esta información más adelante.</p>
+                  )}
+                  {curso === CURSO_OTROS && (
+                    <input required value={cursoPersonalizado} onChange={(e) => setCursoPersonalizado(e.target.value)}
+                      placeholder="Escribí el nombre del curso" className={`${inputClsBg} mt-2`} />
+                  )}
+                </div>
+                <div>
+                  <label className="text-[13px] font-medium text-textSec block mb-1">
+                    Cómo llegaron (para toda la tanda)
+                    {origenAutocompletado && <span className="text-infoText font-normal ml-1.5">· recordado de la carga anterior</span>}
+                  </label>
+                  <select value={origen} onChange={(e) => { setOrigen(e.target.value); setOrigenAutocompletado(false); }} className={inputClsBg}>
+                    <option value={ORIGEN_SIN_DEFINIR}>{ORIGEN_SIN_DEFINIR}</option>
+                    {ORIGENES.map((o) => <option key={o}>{o}</option>)}
+                    <option value={ORIGEN_OTRO}>{ORIGEN_OTRO}</option>
+                  </select>
+                  {origen === ORIGEN_SIN_DEFINIR && (
+                    <p className="text-textMuted text-[12px] mt-1 flex items-center gap-1"><span>ℹ️</span> Podrás modificar esta información más adelante.</p>
+                  )}
+                  {origen === ORIGEN_OTRO && (
+                    <input required value={origenPersonalizado} onChange={(e) => setOrigenPersonalizado(e.target.value)}
+                      placeholder="Escribí el origen" className={`${inputClsBg} mt-2`} />
+                  )}
+                </div>
               </div>
               <div>
-                <label className="text-[13px] font-medium text-textSec block mb-1">
-                  Cómo llegaron (para toda la tanda)
-                  {origenAutocompletado && <span className="text-infoText font-normal ml-1.5">· recordado de la carga anterior</span>}
+                <label className="text-[12px] font-medium text-textSec block mb-1.5">
+                  ¿Les interesan otros cursos también? <span className="text-textMuted font-normal">(opcional, aplica a toda la tanda)</span>
                 </label>
-                <select value={origen} onChange={(e) => { setOrigen(e.target.value); setOrigenAutocompletado(false); }} className={inputClsBg}>
-                  <option value={ORIGEN_SIN_DEFINIR}>{ORIGEN_SIN_DEFINIR}</option>
-                  {ORIGENES.map((o) => <option key={o}>{o}</option>)}
-                  <option value={ORIGEN_OTRO}>{ORIGEN_OTRO}</option>
-                </select>
-                {origen === ORIGEN_SIN_DEFINIR && (
-                  <p className="text-textMuted text-[12px] mt-1 flex items-center gap-1"><span>ℹ️</span> Podrás modificar esta información más adelante.</p>
-                )}
-                {origen === ORIGEN_OTRO && (
-                  <input required value={origenPersonalizado} onChange={(e) => setOrigenPersonalizado(e.target.value)}
-                    placeholder="Escribí el origen" className={`${inputClsBg} mt-2`} />
-                )}
+                <div className="flex flex-wrap gap-1.5">
+                  {CURSOS.filter((c) => c !== curso).map((c) => {
+                    const activo = cursosAdicionales.includes(c);
+                    return (
+                      <button type="button" key={c} onClick={() => toggleCursoAdicional(c)}
+                        className={`text-[11.5px] px-2.5 py-1 rounded-full border transition-colors ${
+                          activo ? 'bg-accentPurple border-accentPurple text-white font-medium'
+                                 : 'bg-surface2 border-border text-textSec hover:border-accentTeal hover:text-text'
+                        }`}>
+                        {c}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
             <hr className="border-border mb-3" />
-
-            <div className="mb-4">
-              <label className="text-[13px] font-medium text-textSec block mb-1.5">
-                ¿Les interesan otros cursos también? <span className="text-textMuted font-normal">(opcional, aplica a toda la tanda)</span>
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {CURSOS.filter((c) => c !== curso).map((c) => {
-                  const activo = cursosAdicionales.includes(c);
-                  return (
-                    <button type="button" key={c} onClick={() => toggleCursoAdicional(c)}
-                      className={`text-[13px] px-3 py-1.5 rounded-full border transition-colors ${
-                        activo ? 'bg-accentPurple border-accentPurple text-white font-medium'
-                               : 'bg-surface2 border-border text-textSec hover:border-accentTeal hover:text-text'
-                      }`}>
-                      {c}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
 
             {/* CONTACTOS */}
             {contactos.map((contacto, index) => {
