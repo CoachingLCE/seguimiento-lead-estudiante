@@ -179,7 +179,7 @@ export default function EmailsPage() {
       {!puedeVer ? (
         <AccesoDenegado seccion="Emails" />
       ) : (
-      <div className="max-w-[1100px] mx-auto px-4 sm:px-6 pb-16">
+      <div className="max-w-[1450px] mx-auto px-4 sm:px-6 pb-16">
         <h3 className="text-lg font-bold mb-1">✉️ Emails</h3>
         <p className="text-textMuted text-xs mb-5">Qué mails automáticos manda el sistema, y el registro real de cada envío.</p>
 

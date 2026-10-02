@@ -119,6 +119,15 @@ export default function MensajesFrecuentesPage() {
     });
   }
 
+  // Atajos de teclado (pedido de Diego, 02/10/2026): Ctrl/Cmd+B para negrita, Ctrl/Cmd+I para
+  // cursiva — el estándar que ya usan Word/Gmail/WhatsApp web, para no tener que ir al mouse.
+  function manejarAtajoFormato(e) {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    const tecla = e.key.toLowerCase();
+    if (tecla === 'b') { e.preventDefault(); aplicarFormatoWhatsapp('*'); }
+    else if (tecla === 'i') { e.preventDefault(); aplicarFormatoWhatsapp('_'); }
+  }
+
   // Favorito: preferencia personal (no requiere permiso de escritura) — optimista en pantalla,
   // se confirma contra el servidor en segundo plano.
   async function alternarFavorito(m) {
@@ -240,13 +249,13 @@ export default function MensajesFrecuentesPage() {
               className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm mb-3" />
             <label className="text-xs text-textSec block mb-1">Mensaje</label>
             <div className="flex items-center gap-1.5 mb-1.5">
-              <button type="button" onClick={() => aplicarFormatoWhatsapp('*')} title="Negrita — así se ve en WhatsApp: *texto*"
+              <button type="button" onClick={() => aplicarFormatoWhatsapp('*')} title="Negrita (Ctrl+B) — así se ve en WhatsApp: *texto*"
                 className="text-xs font-bold w-7 h-7 flex items-center justify-center rounded-lg bg-surface2 border border-border hover:border-accentTeal">N</button>
-              <button type="button" onClick={() => aplicarFormatoWhatsapp('_')} title="Cursiva — así se ve en WhatsApp: _texto_"
+              <button type="button" onClick={() => aplicarFormatoWhatsapp('_')} title="Cursiva (Ctrl+I) — así se ve en WhatsApp: _texto_"
                 className="text-xs italic w-7 h-7 flex items-center justify-center rounded-lg bg-surface2 border border-border hover:border-accentTeal">C</button>
-              <span className="text-textMuted text-[10.5px]">Seleccioná texto y aplicá el formato — se ve así en WhatsApp.</span>
+              <span className="text-textMuted text-[10.5px]">Seleccioná texto y aplicá el formato (o Ctrl+B / Ctrl+I) — se ve así en WhatsApp.</span>
             </div>
-            <textarea ref={textareaRef} rows={10} value={mensajeForm} onChange={(e) => setMensajeForm(e.target.value)}
+            <textarea ref={textareaRef} rows={10} value={mensajeForm} onChange={(e) => setMensajeForm(e.target.value)} onKeyDown={manejarAtajoFormato}
               placeholder={'Hola! Soy Maca de ILCE 👋\n\nA fin de mes te quería compartir una promo especial...'}
               className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm font-mono mb-3 whitespace-pre-wrap" />
             <div className="flex gap-2">
@@ -292,11 +301,17 @@ export default function MensajesFrecuentesPage() {
                   onDrop={onDrop}
                   className={`bg-surface border border-border rounded-2xl p-4 transition-opacity ${arrastrandoId === m._rowIndex ? 'opacity-40' : ''}`}>
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      {puedeEscribir && <span className="text-textMuted cursor-grab shrink-0" title="Arrastrar para reordenar">⠿</span>}
+                    {/* Pedido de Diego (02/10/2026): "si ya hago clic acá en el medio que se abra" —
+                        antes solo el iconito ▶/▼ togglaba, y hacer clic en el título (al lado) no
+                        hacía nada. Ahora todo este bloque es clickeable en vista compacta. */}
+                    <div className={`flex items-center gap-2 min-w-0 ${vistaCompacta ? 'cursor-pointer' : ''}`}
+                      onClick={() => vistaCompacta && setExpandidoId(expandidoId === m._rowIndex ? null : m._rowIndex)}>
+                      {puedeEscribir && (
+                        <span className="text-textMuted cursor-grab shrink-0" title="Arrastrar para reordenar"
+                          onClick={(e) => e.stopPropagation()}>⠿</span>
+                      )}
                       {vistaCompacta && (
-                        <button onClick={() => setExpandidoId(expandidoId === m._rowIndex ? null : m._rowIndex)}
-                          className="text-textMuted text-xs shrink-0">{estaExpandido ? '▼' : '▶'}</button>
+                        <span className="text-textMuted text-xs shrink-0">{estaExpandido ? '▼' : '▶'}</span>
                       )}
                       <p className="text-sm font-semibold truncate">{m.Titulo}</p>
                       {estado === 'nuevo' && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-successBg text-successText shrink-0">Nuevo</span>}

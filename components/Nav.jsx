@@ -184,7 +184,10 @@ export default function Nav({ usuario, onLogout }) {
           </div>
         )}
         {/* NAV — desktop: todo a la vista, sin clics para desplegar nada */}
-        <nav className="hidden lg:flex items-center gap-x-4 gap-y-3.5 flex-wrap pt-1 pb-5">
+        {/* Pedido de Diego (02/10/2026): "sigue muy pegado todo al nav" — se ve en CUALQUIER
+            pantalla porque todas comparten este componente, así que el espacio se agranda acá una
+            sola vez (pb-5 -> pb-7) en vez de parchear cada página por separado. */}
+        <nav className="hidden lg:flex items-center gap-x-4 gap-y-3.5 flex-wrap pt-1 pb-7">
           <Link href="/nuevo-lead"
             className={`h-8 flex items-center px-3.5 rounded-lg text-[13px] font-semibold whitespace-nowrap shadow-sm transition-all ${
               pathname === '/nuevo-lead'
