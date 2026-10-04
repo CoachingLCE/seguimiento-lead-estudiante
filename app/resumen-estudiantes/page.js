@@ -149,6 +149,7 @@ export default function ResumenEstudiantesPage() {
 
             <div className="bg-surface border border-border rounded-2xl p-5">
               <p className="text-sm font-semibold mb-3">Actividad por usuario</p>
+              <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-textSec text-left border-b border-border">
@@ -165,6 +166,7 @@ export default function ResumenEstudiantesPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           </>
         )}

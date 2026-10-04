@@ -105,12 +105,12 @@ function TarjetaResultado({ r, q, router }) {
       <p className="text-textSec text-xs mb-1">
         <Resaltado texto={r.curso} q={q} />{r.edicion && <> · Edición {r.edicion}</>}
       </p>
-      <p className="text-textMuted text-[11px] mb-1">
+      <p className="text-textMuted text-[12px] mb-1">
         {r.responsable && <>Responsable: <Resaltado texto={r.responsable} q={q} /> · </>}
         {r.ultimoContacto ? `Último contacto: ${tiempoRelativo(r.ultimoContacto.fecha)} (${r.ultimoContacto.resultado})` : 'Sin contacto registrado'}
       </p>
       {r.coincidencias?.length > 0 && (
-        <p className="text-infoText text-[10.5px] mb-2">🔎 Encontrado en: {r.coincidencias.join(', ')}</p>
+        <p className="text-infoText text-[12px] mb-2">🔎 Encontrado en: {r.coincidencias.join(', ')}</p>
       )}
       <div className="flex items-center gap-2 flex-wrap mt-2">
         <Link href={`/buscador?leadId=${r.id}`}
@@ -282,7 +282,7 @@ function BuscadorContent() {
                             <td className="pr-3 text-textSec">{r.curso}</td>
                             <td className="pr-3 text-textSec whitespace-nowrap">{new Date(r.fechaIngreso).toLocaleDateString('es-AR')}</td>
                             <td className="pr-3">
-                              <span className={`text-[11px] px-2 py-0.5 rounded-full ${r.estado === 'Comprado' ? 'bg-successBg text-successText' : 'bg-surface2 text-textMuted'}`}>{r.estado}</span>
+                              <span className={`text-[12px] px-2 py-0.5 rounded-full ${r.estado === 'Comprado' ? 'bg-successBg text-successText' : 'bg-surface2 text-textMuted'}`}>{r.estado}</span>
                             </td>
                             <td className="text-textSec whitespace-nowrap">{r.cargadoPorNombre || '—'}</td>
                           </tr>
@@ -345,7 +345,7 @@ function BuscadorContent() {
                     <Link key={v.id} href={`/buscador?leadId=${v.id}`}
                       className="text-left bg-surface border border-border rounded-xl p-3 hover:border-accentTeal transition-colors block">
                       <p className="text-sm font-semibold">{v.nombre}</p>
-                      <p className="text-textMuted text-[11px]">{v.curso} · {tiempoRelativo(v.fecha)}</p>
+                      <p className="text-textMuted text-[12px]">{v.curso} · {tiempoRelativo(v.fecha)}</p>
                     </Link>
                   ))}
                 </div>
@@ -380,7 +380,7 @@ function Badge({ children, tono = 'info' }) {
     success: 'bg-successBg text-successText', warning: 'bg-warningBg text-warningText',
     danger: 'bg-dangerBg text-dangerText', info: 'bg-infoBg text-infoText'
   }[tono];
-  return <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${clases}`}>{children}</span>;
+  return <span className={`text-[12px] font-semibold px-2.5 py-1 rounded-full ${clases}`}>{children}</span>;
 }
 
 function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
@@ -909,7 +909,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
                             <td className="pr-3 text-textSec">{r.curso}</td>
                             <td className="pr-3 text-textSec whitespace-nowrap">{new Date(r.fechaIngreso).toLocaleDateString('es-AR')}</td>
                             <td className="pr-3">
-                              <span className={`text-[11px] px-2 py-0.5 rounded-full ${r.estado === 'Comprado' ? 'bg-successBg text-successText' : 'bg-surface2 text-textMuted'}`}>{r.estado}</span>
+                              <span className={`text-[12px] px-2 py-0.5 rounded-full ${r.estado === 'Comprado' ? 'bg-successBg text-successText' : 'bg-surface2 text-textMuted'}`}>{r.estado}</span>
                             </td>
                             <td className="text-textSec whitespace-nowrap">{r.cargadoPorNombre || '—'}</td>
                           </tr>
@@ -935,7 +935,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
                 return (
                   <div key={i} className="relative pb-4 last:pb-0">
                     <div className={`absolute -left-6 top-0 w-6 h-6 rounded-full bg-surface border-2 ${color} flex items-center justify-center text-xs`}>{icono}</div>
-                    <p className="text-textMuted text-[11px]">{tiempoRelativo(h.Fecha)} · {fechaLarga(h.Fecha)}</p>
+                    <p className="text-textMuted text-[12px]">{tiempoRelativo(h.Fecha)} · {fechaLarga(h.Fecha)}</p>
                     <p className="text-sm font-medium">{h.Accion}</p>
                     <p className="text-textSec text-xs">{h.Detalle} — <span className="text-textMuted">{h.UsuarioNombre}</span></p>
                   </div>
@@ -1036,7 +1036,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
               </div>
             ))
           )}
-          <p className="text-textMuted text-[11px] mt-2">
+          <p className="text-textMuted text-[12px] mt-2">
             "Deshacer" vuelve ese lote a pendiente — útil si se registró un resultado por error (ej: "Pago recibido" sin que corresponda). El lead vuelve a aparecer en Seguimiento.
           </p>
 
@@ -1118,7 +1118,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
                     className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
                 </div>
               </div>
-              <p className="text-textMuted text-[11px] mt-2">
+              <p className="text-textMuted text-[12px] mt-2">
                 El detalle de cuotas variables (si lo hay) no se edita desde acá todavía — solo estos campos.
               </p>
               <div className="flex items-center gap-3 mt-3">
@@ -1150,7 +1150,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
           {bajaExistente ? (
             <div className="border-t border-border pt-4">
               <p className="text-warningText text-sm">🔴 {bajaExistente.Observaciones}</p>
-              <p className="text-textMuted text-[11px] mt-1">
+              <p className="text-textMuted text-[12px] mt-1">
                 Va a reaparecer en el "LOTE BAJAS" de Seguimiento el {new Date(bajaExistente.FechaVence).toLocaleDateString('es-AR')}.
               </p>
             </div>
@@ -1163,14 +1163,14 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
               ) : (
                 <div className="bg-bg border border-border rounded-lg p-3">
                   <p className="text-xs font-semibold mb-2">Registrar baja de la cursada</p>
-                  <label className="text-[11px] text-textMuted block mb-1">Fecha de baja</label>
+                  <label className="text-[12px] text-textMuted block mb-1">Fecha de baja</label>
                   <input type="date" value={fechaBaja} onChange={(e) => setFechaBaja(e.target.value)}
                     className="bg-surface2 border border-border rounded px-2 py-1 text-xs mb-2" />
-                  <label className="text-[11px] text-textMuted block mb-1">Motivo (opcional)</label>
+                  <label className="text-[12px] text-textMuted block mb-1">Motivo (opcional)</label>
                   <textarea rows={2} value={motivoBaja} onChange={(e) => setMotivoBaja(e.target.value)}
                     placeholder="Ej: Problemas de horario, motivos personales…"
                     className="w-full bg-surface2 border border-border rounded px-2 py-1.5 text-xs mb-2" />
-                  <p className="text-textMuted text-[11px] mb-2">A los 90 días de esta fecha, va a aparecer en el "LOTE BAJAS" de Seguimiento para volver a contactarlo.</p>
+                  <p className="text-textMuted text-[12px] mb-2">A los 90 días de esta fecha, va a aparecer en el "LOTE BAJAS" de Seguimiento para volver a contactarlo.</p>
                   <div className="flex gap-2">
                     <button onClick={() => setMostrarFormBaja(false)} className="text-xs px-3 py-1 rounded bg-surface2 border border-border">Cancelar</button>
                     <button onClick={registrarBaja} disabled={guardandoBaja}
@@ -1202,7 +1202,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
             <div className="space-y-3 border-t border-border pt-3">
               {notas.map((n, i) => (
                 <div key={i} className="text-sm">
-                  {n.fecha && <p className="text-textMuted text-[11px]">{fechaLarga(n.fecha)} · {n.autor}</p>}
+                  {n.fecha && <p className="text-textMuted text-[12px]">{fechaLarga(n.fecha)} · {n.autor}</p>}
                   <p className="text-textSec">{n.texto}</p>
                 </div>
               ))}
@@ -1219,7 +1219,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
 function Kpi({ label, valor, grande }) {
   return (
     <div className="bg-surface border border-border rounded-xl p-3 shadow-sm">
-      <p className="text-textMuted text-[10.5px] mb-1">{label}</p>
+      <p className="text-textMuted text-[12px] mb-1">{label}</p>
       <p className={`font-bold ${grande ? 'text-lg' : 'text-sm'}`}>{valor}</p>
     </div>
   );

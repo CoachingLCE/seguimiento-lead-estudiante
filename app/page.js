@@ -52,10 +52,12 @@ export default function LoginPage() {
       <div className="fixed top-4 right-4"><ThemeSelector /></div>
       <div className="w-80 bg-surface2 border border-border rounded-2xl p-7">
         <div className="flex justify-center mb-3"><Logo height={44} /></div>
-        <p className="text-center text-textSec text-sm mb-5">Ingresá con tu usuario y contraseña</p>
+        <h1 className="text-center text-lg font-bold text-text leading-tight">Gestión</h1>
+        <p className="text-center text-textSec text-[13px] mb-5 mt-0.5">Ingresá con tu usuario y contraseña</p>
         <form onSubmit={handleSubmit}>
-          <label className="text-xs text-textSec block mb-1">Email</label>
+          <label htmlFor="login-email" className="text-[13px] font-semibold text-textSec block mb-1">Email</label>
           <input
+            id="login-email"
             type="email"
             required
             value={email}
@@ -63,9 +65,10 @@ export default function LoginPage() {
             placeholder="nombre@institutoilce.com"
             className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm mb-3"
           />
-          <label className="text-xs text-textSec block mb-1">Contraseña</label>
+          <label htmlFor="login-password" className="text-[13px] font-semibold text-textSec block mb-1">Contraseña</label>
           <div className="relative mb-3">
             <input
+              id="login-password"
               type={verPassword ? 'text' : 'password'}
               required
               value={password}
@@ -74,14 +77,19 @@ export default function LoginPage() {
               className="w-full bg-bg border border-border rounded-lg px-3 py-2 pr-9 text-sm"
             />
             <button type="button" onClick={() => setVerPassword(!verPassword)}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-textMuted hover:text-text text-sm"
+              className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-md text-textMuted hover:text-text"
+              aria-label={verPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
               title={verPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}>
-              {verPassword ? '🙈' : '👁️'}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                {verPassword
+                  ? <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24M10.73 5.08A10.4 10.4 0 0 1 12 5c7 0 10 7 10 7a13.2 13.2 0 0 1-1.67 2.68M6.61 6.61A13.5 13.5 0 0 0 2 12s3 7 10 7a9.7 9.7 0 0 0 5.39-1.61M2 2l20 20" />
+                  : <><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></>}
+              </svg>
             </button>
           </div>
-          {error && <p className="text-warningText text-xs mb-3">{error}</p>}
-          <label className="flex items-center gap-2 text-xs text-textSec mb-4 cursor-pointer">
-            <input type="checkbox" checked={mantenerSesion} onChange={(e) => setMantenerSesion(e.target.checked)} />
+          {error && <p role="alert" className="text-warningText text-[13px] mb-3">{error}</p>}
+          <label className="flex items-center gap-2 text-[13px] text-textSec mb-4 cursor-pointer">
+            <input type="checkbox" className="accent-accentMagenta w-4 h-4" checked={mantenerSesion} onChange={(e) => setMantenerSesion(e.target.checked)} />
             Mantener sesión abierta
           </label>
           <button
@@ -92,8 +100,8 @@ export default function LoginPage() {
             {cargando ? 'Ingresando…' : 'Ingresar'}
           </button>
         </form>
-        <p className="text-textMuted text-xs text-center mt-3">
-          ¿No tenés contraseña todavía? Pedile a Diego que te la asigne desde "Accesos".
+        <p className="text-textMuted text-[13px] text-center mt-3">
+          ¿No tenés contraseña todavía? Pedísela a un administrador.
         </p>
       </div>
     </div>

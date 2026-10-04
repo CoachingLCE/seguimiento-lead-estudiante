@@ -53,7 +53,7 @@ export default function ComunidadesPage() {
             <p className="text-dangerText text-sm">{error}</p>
           ) : (
             <>
-              <div className="grid grid-cols-4 gap-3 mb-5">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
                 <Stat label="Ventas totales" value={ventas.length} />
                 <Stat label="Ventas este mes" value={ventasEsteMes.length} />
                 <Stat label="Monto total" value={`$${montoTotal.toLocaleString('es-AR')}`} />
@@ -110,7 +110,7 @@ export default function ComunidadesPage() {
 function Stat({ label, value }) {
   return (
     <div className="bg-surface border border-border rounded-xl p-3.5">
-      <p className="text-textSec text-[11px] mb-1">{label}</p>
+      <p className="text-textSec text-[12px] mb-1">{label}</p>
       <p className="text-xl font-bold">{value}</p>
     </div>
   );

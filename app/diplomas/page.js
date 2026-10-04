@@ -71,11 +71,11 @@ export default function DiplomasPage() {
         <AccesoDenegado seccion="Diplomas" />
       ) : (
       <div className="max-w-5xl mx-auto px-6 pb-16">
-        <div className="flex items-center justify-between mb-3 gap-3">
+        <div className="flex flex-wrap items-center justify-between mb-3 gap-3">
           <p className="text-textMuted text-xs">
             Marcá acá qué estudiantes ya abonaron la totalidad de la cursada (habilita el diploma).
           </p>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 max-w-full">
             <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
               placeholder="🔍 Buscar…" className="bg-bg border border-border rounded-lg px-3 py-2 text-sm w-44" />
             <button onClick={exportarExcel} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm">
@@ -87,6 +87,7 @@ export default function DiplomasPage() {
           {cargando ? (
             <p className="text-textSec text-sm">Cargando…</p>
           ) : (
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-textSec text-left border-b border-border">
@@ -113,6 +114,7 @@ export default function DiplomasPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       </div>

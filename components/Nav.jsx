@@ -101,7 +101,7 @@ function Chip({ href, label, pathname, onClick, destacado, deshabilitado }) {
 function Grupo({ grupo, pathname, onClick, usuario }) {
   return (
     <>
-      <span className="text-textMuted text-[11px] uppercase tracking-wide font-semibold">{grupo.label}</span>
+      <span className="text-textMuted text-[12px] uppercase tracking-wide font-semibold">{grupo.label}</span>
       {grupo.principal && <Chip href={grupo.principal} label="Ver todo" pathname={pathname} onClick={onClick} destacado deshabilitado={!tieneAccesoARuta(grupo.principal, usuario)} />}
       {grupo.items.map((it) => <Chip key={it.href} href={it.href} label={it.label} pathname={pathname} onClick={onClick} deshabilitado={!tieneAccesoARuta(it.href, usuario)} />)}
     </>
@@ -195,7 +195,7 @@ export default function Nav({ usuario, onLogout }) {
             <ThemeSelector />
             {puedeVerComo && (
               <select value={vc ? vc.email : ''} onChange={(e) => elegirVerComo(e.target.value)} title="Ver la app como otra persona (solo lectura)"
-                className="hidden md:block bg-surface2 border border-border rounded-lg text-[11px] px-1.5 h-7 text-textSec hover:border-accentTeal max-w-[150px]">
+                className="hidden md:block bg-surface2 border border-border rounded-lg text-[12px] px-1.5 h-7 text-textSec hover:border-accentTeal max-w-[150px]">
                 <option value="">👁 Ver como…</option>
                 {personas.map((p) => <option key={p.email} value={p.email}>{p.nombre}</option>)}
               </select>
@@ -203,8 +203,8 @@ export default function Nav({ usuario, onLogout }) {
             {usuario && (
               <div className="hidden md:block text-right text-xs leading-tight pl-2 border-l border-border">
                 <p className="font-semibold leading-tight">{usuario.nombre}</p>
-                <p className="text-textSec text-[10px] leading-tight">{nombreVisibleRoles(usuario.roles)}</p>
-                <button onClick={onLogout} className="text-[10px] text-textMuted underline">Salir</button>
+                <p className="text-textSec text-[12px] leading-tight">{nombreVisibleRoles(usuario.roles)}</p>
+                <button onClick={onLogout} className="text-[12px] text-textMuted underline">Salir</button>
               </div>
             )}
           </div>
@@ -238,7 +238,7 @@ export default function Nav({ usuario, onLogout }) {
 
           {[GESTION, REPORTES, CONFIGURACION].map((grupo) => (
             <div key={grupo.label}>
-              <p className="text-textMuted text-[11px] uppercase tracking-wide font-semibold mb-1.5">{grupo.label}</p>
+              <p className="text-textMuted text-[12px] uppercase tracking-wide font-semibold mb-1.5">{grupo.label}</p>
               <div className="flex flex-col gap-0.5">
                 {grupo.principal && (
                   <Link href={grupo.principal} onClick={() => setMenuMovil(false)}
@@ -270,8 +270,8 @@ export default function Nav({ usuario, onLogout }) {
             <div className="flex items-center justify-end pt-3 border-t border-border md:hidden">
               <div className="text-right text-sm">
                 <p className="font-semibold leading-tight">{usuario.nombre}</p>
-                <p className="text-textSec text-[11px] leading-tight">{nombreVisibleRoles(usuario.roles)}</p>
-                <button onClick={onLogout} className="text-[11px] text-textMuted underline">Salir</button>
+                <p className="text-textSec text-[12px] leading-tight">{nombreVisibleRoles(usuario.roles)}</p>
+                <button onClick={onLogout} className="text-[12px] text-textMuted underline">Salir</button>
               </div>
             </div>
           )}

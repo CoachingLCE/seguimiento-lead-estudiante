@@ -99,7 +99,7 @@ function ModalVerMail({ automatizacion, onClose }) {
             <p><span className="text-textMuted">CC:</span> {automatizacion.cc}</p>
             <p><span className="text-textMuted">Asunto:</span> {automatizacion.asunto}</p>
           </div>
-          <p className="text-[11px] text-textMuted mt-1">Vista previa con datos de ejemplo — el contenido real varía según el estudiante/lead.</p>
+          <p className="text-[12px] text-textMuted mt-1">Vista previa con datos de ejemplo — el contenido real varía según el estudiante/lead.</p>
         </div>
         {/* El cuerpo ocupa todo el espacio que sobra del modal (en vez de una altura fija chica),
             para que se vea la mayor cantidad de contenido posible sin tener que scrollear de más. */}
@@ -207,7 +207,7 @@ export default function EmailsPage() {
                       {a.remitente}{a.cc && a.cc !== '—' ? <span className="text-textMuted"> · cc {a.cc}</span> : ''}
                     </td>
                     <td className="pr-4 text-textSec whitespace-nowrap">{a.asunto}</td>
-                    <td><span className="text-[11px] px-2.5 py-1 rounded-full bg-infoBg text-infoText whitespace-nowrap">{a.tipo}</span></td>
+                    <td><span className="text-[12px] px-2.5 py-1 rounded-full bg-infoBg text-infoText whitespace-nowrap">{a.tipo}</span></td>
                     <td>
                       <button type="button" onClick={(e) => { e.stopPropagation(); setMailAVer(a); }}
                         className="text-accentTeal text-xs font-semibold whitespace-nowrap">Ver mail →</button>
@@ -274,11 +274,11 @@ export default function EmailsPage() {
                   {filtrados.map((e, i) => (
                     <tr key={i} className="border-b border-border last:border-b-0">
                       <td className="py-2 pr-3 text-textSec whitespace-nowrap">{fechaAmigable(e.fecha)}</td>
-                      <td className="pr-3 whitespace-nowrap"><span className="text-[11px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted">{e.tipo}</span></td>
+                      <td className="pr-3 whitespace-nowrap"><span className="text-[12px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted">{e.tipo}</span></td>
                       <td className="pr-3 text-textSec">{e.para}</td>
                       <td className="pr-3">{e.asunto}</td>
                       <td>
-                        <span className={`text-[11px] px-2 py-0.5 rounded-full whitespace-nowrap ${e.estado === 'Enviado' ? 'bg-successBg text-successText' : 'bg-dangerBg text-dangerText'}`}>
+                        <span className={`text-[12px] px-2 py-0.5 rounded-full whitespace-nowrap ${e.estado === 'Enviado' ? 'bg-successBg text-successText' : 'bg-dangerBg text-dangerText'}`}>
                           {e.estado === 'Enviado' ? '✓ Enviado' : '✕ Falló'}
                         </span>
                       </td>

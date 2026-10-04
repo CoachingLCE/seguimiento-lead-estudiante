@@ -195,6 +195,7 @@ export default function AuditoriaPage() {
           ) : registrosFiltrados.length === 0 ? (
             <p className="text-textMuted text-sm">Sin registros para este filtro.</p>
           ) : (
+            <div className="overflow-x-auto">
             <table className="w-full text-sm table-fixed">
               <colgroup>
                 <col className="w-[150px]" />
@@ -231,7 +232,7 @@ export default function AuditoriaPage() {
                           r.Detalle
                         )}
                         {lead && (
-                          <p className="text-textMuted text-[11px] mt-0.5">
+                          <p className="text-textMuted text-[12px] mt-0.5">
                             {lead.Email && `✉️ ${lead.Email}`}{lead.Email && lead.WhatsApp && ' · '}{lead.WhatsApp && `📱 ${lead.WhatsApp}`}
                           </p>
                         )}
@@ -241,6 +242,7 @@ export default function AuditoriaPage() {
                 })}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       </div>

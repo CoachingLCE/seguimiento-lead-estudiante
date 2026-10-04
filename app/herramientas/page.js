@@ -78,7 +78,7 @@ export default function HerramientasPage() {
                 </span>
                 <div>
                   <p className="text-sm font-semibold text-textMuted">{r.nombre}</p>
-                  <p className="text-[10px] text-textMuted">🔒 Próximamente</p>
+                  <p className="text-[12px] text-textMuted">🔒 Próximamente</p>
                 </div>
               </div>
             )

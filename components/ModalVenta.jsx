@@ -153,7 +153,7 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
           <input type="checkbox" checked={becado} onChange={(e) => setBecado(e.target.checked)} />
           🎓 Venta 100% becada (sin costo)
         </label>
-        <p className="text-textMuted text-[11px] mb-3">
+        <p className="text-textMuted text-[12px] mb-3">
           {becado ? 'Se va a registrar con Monto total = $0, sin cuotas.' : '\u00A0'}
         </p>
 
@@ -176,7 +176,7 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
         </div>
 
         {modalidad === 'cuotas-variables' && (
-          <p className="text-textMuted text-[11px] mb-2">
+          <p className="text-textMuted text-[12px] mb-2">
             Para cuotas que aumentan progresivamente (ej: Coaching Ontológico Profesional) o con un valor especial en alguna cuota puntual.
           </p>
         )}
@@ -198,24 +198,24 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
         ) : modalidad === 'cuotas-variables' ? (
           <div className="mb-3">
             <label className="text-xs text-textSec block mb-1">Agregar cuotas por rango</label>
-            <p className="text-textMuted text-[10.5px] mb-2">Para cuotas que se repiten en tramos (ej: cuota 1 a 4 = $42.000 cada una).</p>
+            <p className="text-textMuted text-[12px] mb-2">Para cuotas que se repiten en tramos (ej: cuota 1 a 4 = $42.000 cada una).</p>
             <div className="flex items-end gap-2 mb-3">
               <div>
-                <span className="text-[10.5px] text-textMuted block mb-1">Cuota desde</span>
+                <span className="text-[12px] text-textMuted block mb-1">Cuota desde</span>
                 <select value={rangoDesde} onChange={(e) => setRangoDesde(Number(e.target.value))}
                   className="bg-bg border border-border rounded-lg px-2 py-1.5 text-sm w-16">
                   {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n}</option>)}
                 </select>
               </div>
               <div>
-                <span className="text-[10.5px] text-textMuted block mb-1">Hasta</span>
+                <span className="text-[12px] text-textMuted block mb-1">Hasta</span>
                 <select value={rangoHasta} onChange={(e) => setRangoHasta(Number(e.target.value))}
                   className="bg-bg border border-border rounded-lg px-2 py-1.5 text-sm w-16">
                   {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n}</option>)}
                 </select>
               </div>
               <div className="flex-1">
-                <span className="text-[10.5px] text-textMuted block mb-1">Valor de cada una</span>
+                <span className="text-[12px] text-textMuted block mb-1">Valor de cada una</span>
                 <input type="text" inputMode="numeric" value={rangoValor} onChange={(e) => setRangoValor(limpiarMonto(e.target.value))}
                   placeholder="Ej: 42000"
                   className="w-full bg-bg border border-border rounded-lg px-2 py-1.5 text-sm" />
@@ -241,7 +241,7 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
             </div>
             <button type="button" onClick={agregarCuotaVariable}
               className="text-accentTeal text-xs font-semibold mt-2">+ Agregar cuota individual</button>
-            <p className="text-textMuted text-[11px] mt-2">
+            <p className="text-textMuted text-[12px] mt-2">
               Total: ${cuotasVariables.filter((v) => v !== '').reduce((acc, v) => acc + Number(v), 0).toLocaleString('es-AR')}
             </p>
           </div>

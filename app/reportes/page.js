@@ -13,6 +13,7 @@ import AccesoDenegado from '../../components/AccesoDenegado';
 import FichaDrawer from '../../components/FichaDrawer';
 import { tienePermisoReportes } from '../../lib/permisos';
 import { useSession } from '../../lib/useSession';
+import { useDialogos } from '../../components/Dialogos';
 
 const PALETA = ['#7c3aed', '#22d3ee', '#c026d3', '#4ade80', '#fbbf24', '#60a5fa', '#f87171', '#a78bfa'];
 
@@ -65,7 +66,7 @@ function Kpi({ label, valor, sub, activo, onClick, tooltip }) {
       className={`text-left bg-surface border rounded-xl p-4 transition-all hover:border-accentTeal ${
         activo ? 'border-accentTeal shadow-lg shadow-accentTeal/10' : 'border-border'
       }`}>
-      <p className="text-textMuted text-[11px] mb-1">{label}</p>
+      <p className="text-textMuted text-[12px] mb-1">{label}</p>
       <p className="text-xl font-bold">{valor}</p>
       {sub && <div className="mt-1">{sub}</div>}
     </button>
@@ -99,7 +100,7 @@ function TickCursoDosLineas({ x, y, payload }) {
   return (
     <g transform={`translate(${x},${y})`}>
       {lineas.map((linea, i) => (
-        <text key={i} x={0} y={0} dy={(i - (lineas.length - 1) / 2) * 13 + 4} textAnchor="end" fill="#9aa1c2" fontSize={11}>
+        <text key={i} x={0} y={0} dy={(i - (lineas.length - 1) / 2) * 13 + 4} textAnchor="end" fill="#9aa1c2" fontSize={12}>
           {linea}
         </text>
       ))}
@@ -141,7 +142,7 @@ function TooltipDiasConversion({ active, payload }) {
       <p style={{ color: '#f9fafb' }} className="text-xs font-semibold mb-1">{d.nombre}</p>
       <p style={{ color: '#cbd5e1' }} className="text-xs mb-1.5">{d.cantidad} venta{d.cantidad !== 1 ? 's' : ''} ({d.porcentaje.toFixed(1)}%)</p>
       {porVendedor.length > 0 && (
-        <div style={{ color: '#94a3b8', borderColor: '#262c4a' }} className="text-[11px] leading-relaxed border-t pt-1.5 space-y-0.5">
+        <div style={{ color: '#94a3b8', borderColor: '#262c4a' }} className="text-[12px] leading-relaxed border-t pt-1.5 space-y-0.5">
           {porVendedor.map((v) => (
             <div key={v.nombre} className="flex justify-between gap-3">
               <span>{v.nombre}</span>
@@ -161,11 +162,11 @@ function ChartCard({ titulo, subtitulo, valorGrande, comparacion, tooltip, onExp
       <div className="flex items-start justify-between mb-1 gap-2">
         <div>
           <p className="text-sm font-semibold" title={tooltip}>{titulo}</p>
-          <p className="text-textMuted text-[10.5px]">{subtitulo || 'Mes seleccionado'}</p>
+          <p className="text-textMuted text-[12px]">{subtitulo || 'Mes seleccionado'}</p>
         </div>
         {onExportar && (
           <button onClick={onExportar}
-            className="text-textMuted hover:text-accentTeal text-[11px] shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+            className="text-textMuted hover:text-accentTeal text-[12px] shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
             ⬇ Exportar
           </button>
         )}
@@ -221,7 +222,7 @@ function SeccionAlertas({ alertasGenerales, alertasCursos, mes, setFiltro }) {
                     <p className="text-sm font-semibold">
                       {estilo.icono} {a.curso} <span className="text-textMuted font-normal text-xs">— {estilo.label}</span>
                     </p>
-                    <p className="text-textMuted text-[11px] mt-0.5">
+                    <p className="text-textMuted text-[12px] mt-0.5">
                       Ventas este mes: <b className="text-text">{a.ventasActual}</b>
                       {' · '}Mes anterior: <b className="text-text">{a.ventasMesAnterior}</b>
                       {' · '}Leads activos: <b className="text-text">{a.leadsActivos}</b>
@@ -229,15 +230,15 @@ function SeccionAlertas({ alertasGenerales, alertasCursos, mes, setFiltro }) {
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button onClick={() => setFiltro('curso', a.curso)}
-                      className="text-[11px] px-2.5 py-1 rounded-lg bg-surface2 border border-border hover:border-accentTeal">
+                      className="text-[12px] px-2.5 py-1 rounded-lg bg-surface2 border border-border hover:border-accentTeal">
                       Ver ventas
                     </button>
                     <button onClick={() => router.push(`/buscador?q=${encodeURIComponent(a.curso)}`)}
-                      className="text-[11px] px-2.5 py-1 rounded-lg bg-surface2 border border-border hover:border-accentTeal">
+                      className="text-[12px] px-2.5 py-1 rounded-lg bg-surface2 border border-border hover:border-accentTeal">
                       Ver leads
                     </button>
                     <button onClick={() => setFiltro('curso', a.curso)}
-                      className="text-[11px] px-2.5 py-1 rounded-lg bg-accentPurple text-white font-semibold">
+                      className="text-[12px] px-2.5 py-1 rounded-lg bg-accentPurple text-white font-semibold">
                       Analizar
                     </button>
                   </div>
@@ -274,7 +275,7 @@ function GraficoDona({ datos, onClickItem, activo }) {
         </ResponsiveContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
           <p className="text-xl font-bold">{principal ? `${principal.porcentaje.toFixed(0)}%` : '0%'}</p>
-          <p className="text-textMuted text-[10px]">{total} en total</p>
+          <p className="text-textMuted text-[12px]">{total} en total</p>
         </div>
       </div>
       <div className="flex-1 space-y-2 overflow-y-auto max-h-[160px] pr-1">
@@ -321,7 +322,7 @@ function Ranking({ titulo, items, unidad = 'ventas', onClickItem, activo }) {
 }
 
 function Badge({ children, color }) {
-  return <span className="text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ background: `${color}22`, color }}>{children}</span>;
+  return <span className="text-[12px] font-medium px-2 py-0.5 rounded-full" style={{ background: `${color}22`, color }}>{children}</span>;
 }
 function colorParaTexto(texto) {
   const n = (texto || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0);
@@ -381,12 +382,12 @@ function TarjetaObjetivo({ label, actual, meta, unidad, formatear }) {
   const f = formatear || ((v) => v);
   return (
     <div className="bg-surface border border-border rounded-2xl p-4">
-      <p className="text-textMuted text-[11px] uppercase tracking-wide mb-1">{label}</p>
+      <p className="text-textMuted text-[12px] uppercase tracking-wide mb-1">{label}</p>
       <p className="text-lg font-bold mb-1">{f(actual)} <span className="text-textMuted font-normal text-sm">/ {f(meta)}</span></p>
       <p className={`text-sm font-bold mb-1.5 ${estado.clase}`}>{pct.toFixed(0)}%</p>
       <BarraObjetivo pct={pct} colorClase={estado.barra} />
       <p className={`text-xs mt-2 ${estado.clase}`}>{estado.icono} {pct > 100 ? 'Superó el objetivo' : estado.label}</p>
-      <p className="text-textMuted text-[11px] mt-1.5">{mensajeObjetivo({ label, pct, actual, meta, unidad })}</p>
+      <p className="text-textMuted text-[12px] mt-1.5">{mensajeObjetivo({ label, pct, actual, meta, unidad })}</p>
     </div>
   );
 }
@@ -549,7 +550,7 @@ function SeccionObjetivos({ datos, mes, usuario }) {
           {PROYECCIONES.length > 0 && (
             <div className="bg-surface border border-infoText/30 rounded-2xl p-5 shadow-sm">
               <p className="text-sm font-semibold mb-1">📈 Proyección al cierre del mes</p>
-              <p className="text-textMuted text-[11px] mb-3">
+              <p className="text-textMuted text-[12px] mb-3">
                 Estimación en base al ritmo actual (día {diasTranscurridos} de {diasDelMes}) — no es un dato confirmado.
               </p>
               <div className="grid md:grid-cols-3 gap-3">
@@ -558,12 +559,12 @@ function SeccionObjetivos({ datos, mes, usuario }) {
                   const estado = estadoObjetivo(pctProyectado);
                   return (
                     <div key={p.label} className="bg-bg border border-border rounded-xl p-3">
-                      <p className="text-textMuted text-[11px] mb-1">{p.label}</p>
+                      <p className="text-textMuted text-[12px] mb-1">{p.label}</p>
                       <p className="text-xs text-textSec">Actual: <b className="text-text">{p.formatear(p.actual)}</b></p>
                       <p className="text-xs text-textSec">Proyección: <b className="text-text">{p.formatear(p.proyectado)}</b></p>
                       <p className="text-xs text-textSec mb-1.5">Objetivo: <b className="text-text">{p.formatear(p.meta)}</b></p>
                       <p className={`text-xs font-bold ${estado.clase}`}>{estado.icono} Proyección: {pctProyectado.toFixed(0)}% de cumplimiento</p>
-                      <p className="text-textMuted text-[11px] mt-1">
+                      <p className="text-textMuted text-[12px] mt-1">
                         {pctProyectado >= 100 ? 'Al ritmo actual, cerrarías el mes por encima del objetivo.' : 'Al ritmo actual, no alcanzarías el objetivo.'}
                       </p>
                     </div>
@@ -658,43 +659,43 @@ function SeccionObjetivos({ datos, mes, usuario }) {
             <>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
                 <div>
-                  <label className="text-[11px] text-textSec block mb-1">Meta facturación ($)</label>
+                  <label className="text-[12px] text-textSec block mb-1">Meta facturación ($)</label>
                   <input type="text" inputMode="numeric" value={form.metaFacturacion}
                     onChange={(e) => setForm((f) => ({ ...f, metaFacturacion: e.target.value.replace(/\./g, '') }))}
                     className="w-full bg-bg border border-border rounded-lg px-2 py-1.5 text-sm" />
                 </div>
                 <div>
-                  <label className="text-[11px] text-textSec block mb-1">Meta ventas</label>
+                  <label className="text-[12px] text-textSec block mb-1">Meta ventas</label>
                   <input type="text" inputMode="numeric" value={form.metaVentas}
                     onChange={(e) => setForm((f) => ({ ...f, metaVentas: e.target.value }))}
                     className="w-full bg-bg border border-border rounded-lg px-2 py-1.5 text-sm" />
                 </div>
                 <div>
-                  <label className="text-[11px] text-textSec block mb-1">Meta leads</label>
+                  <label className="text-[12px] text-textSec block mb-1">Meta leads</label>
                   <input type="text" inputMode="numeric" value={form.metaLeads}
                     onChange={(e) => setForm((f) => ({ ...f, metaLeads: e.target.value }))}
                     className="w-full bg-bg border border-border rounded-lg px-2 py-1.5 text-sm" />
                 </div>
                 <div>
-                  <label className="text-[11px] text-textSec block mb-1">Meta conversión (%)</label>
+                  <label className="text-[12px] text-textSec block mb-1">Meta conversión (%)</label>
                   <input type="text" inputMode="numeric" value={form.metaConversion}
                     onChange={(e) => setForm((f) => ({ ...f, metaConversion: e.target.value }))}
                     className="w-full bg-bg border border-border rounded-lg px-2 py-1.5 text-sm" />
                 </div>
                 <div>
-                  <label className="text-[11px] text-textSec block mb-1">Meta ticket promedio ($)</label>
+                  <label className="text-[12px] text-textSec block mb-1">Meta ticket promedio ($)</label>
                   <input type="text" inputMode="numeric" value={form.metaTicketPromedio}
                     onChange={(e) => setForm((f) => ({ ...f, metaTicketPromedio: e.target.value.replace(/\./g, '') }))}
                     className="w-full bg-bg border border-border rounded-lg px-2 py-1.5 text-sm" />
                 </div>
                 <div>
-                  <label className="text-[11px] text-textSec block mb-1">Meta ventas débito automático</label>
+                  <label className="text-[12px] text-textSec block mb-1">Meta ventas débito automático</label>
                   <input type="text" inputMode="numeric" value={form.metaVentasDebito}
                     onChange={(e) => setForm((f) => ({ ...f, metaVentasDebito: e.target.value }))}
                     className="w-full bg-bg border border-border rounded-lg px-2 py-1.5 text-sm" />
                 </div>
                 <div>
-                  <label className="text-[11px] text-textSec block mb-1">Meta contactos de bajas</label>
+                  <label className="text-[12px] text-textSec block mb-1">Meta contactos de bajas</label>
                   <input type="text" inputMode="numeric" value={form.metaContactosBajas}
                     onChange={(e) => setForm((f) => ({ ...f, metaContactosBajas: e.target.value }))}
                     className="w-full bg-bg border border-border rounded-lg px-2 py-1.5 text-sm" />
@@ -705,7 +706,7 @@ function SeccionObjetivos({ datos, mes, usuario }) {
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
                 {datos.rankingCursos.map((c) => (
                   <div key={c.nombre} className="flex items-center gap-2">
-                    <label className="text-[11px] text-textSec flex-1 truncate" title={c.nombre}>{c.nombre}</label>
+                    <label className="text-[12px] text-textSec flex-1 truncate" title={c.nombre}>{c.nombre}</label>
                     <input type="text" inputMode="numeric" value={formPorCurso[c.nombre] ?? ''}
                       onChange={(e) => setFormPorCurso((f) => ({ ...f, [c.nombre]: e.target.value }))}
                       placeholder="—" className="w-16 bg-bg border border-border rounded-lg px-2 py-1 text-xs" />
@@ -722,11 +723,11 @@ function SeccionObjetivos({ datos, mes, usuario }) {
                   const estado = pct !== null ? estadoObjetivo(pct) : null;
                   return (
                     <div key={nombre} className="flex items-center gap-2 bg-bg border border-border rounded-lg px-2.5 py-1.5">
-                      <label className="text-[11px] text-textSec flex-1 truncate" title={nombre}>{nombre}</label>
+                      <label className="text-[12px] text-textSec flex-1 truncate" title={nombre}>{nombre}</label>
                       <input type="text" inputMode="numeric" value={formPorVendedor[nombre] ?? ''}
                         onChange={(e) => setFormPorVendedor((f) => ({ ...f, [nombre]: e.target.value }))}
                         placeholder="Meta" className="w-16 bg-surface border border-border rounded-lg px-2 py-1 text-xs shrink-0" />
-                      <span className="text-[11px] text-textMuted shrink-0 w-24 text-right">
+                      <span className="text-[12px] text-textMuted shrink-0 w-24 text-right">
                         {pct !== null
                           ? <span className={`font-semibold ${estado.clase}`}>{ventasActuales} ventas · {pct.toFixed(0)}%</span>
                           : `${ventasActuales} ventas`}
@@ -746,7 +747,7 @@ function SeccionObjetivos({ datos, mes, usuario }) {
             </>
           )}
           {!editando && objetivos && (
-            <p className="text-textMuted text-[11px]">
+            <p className="text-textMuted text-[12px]">
               Última actualización: {objetivos.actualizadoPorNombre} — {new Date(objetivos.fechaActualizacion).toLocaleDateString('es-AR')}
             </p>
           )}
@@ -868,6 +869,7 @@ function SeccionEscalaInscripciones({ usuario }) {
 }
 
 export default function ReportesPage() {
+  const { avisar } = useDialogos();
   const { usuario, logout } = useSession();
   const router = useRouter();
   const [tab, setTab] = useState('general');
@@ -1046,7 +1048,7 @@ export default function ReportesPage() {
     setCorrigiendo(false);
     setMontosRotos(null);
     cargarDatos(mes);
-    alert(`✓ Se corrigieron ${r.corregidos} monto(s) automáticamente.`);
+    avisar(`Se corrigieron ${r.corregidos} monto(s) automáticamente.`);
   }
 
   function exportarGrafico(nombreArchivo, filas) {
@@ -1242,13 +1244,13 @@ export default function ReportesPage() {
                         return puntos;
                       })()}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#262c4a" />
-                        <XAxis dataKey="dia" stroke="#6b7299" fontSize={11} />
-                        <YAxis stroke="#6b7299" fontSize={11} allowDecimals={false} />
+                        <XAxis dataKey="dia" stroke="#6b7299" fontSize={12} />
+                        <YAxis stroke="#6b7299" fontSize={12} allowDecimals={false} />
                         <Tooltip content={<TooltipVentasPorDia />} />
-                        <Legend wrapperStyle={{ fontSize: 11 }} formatter={(v) => (v === 'ventas' ? 'Este mes' : v === 'ventasMesAnterior' ? 'Mes anterior' : 'Hace 2 meses')} />
+                        <Legend wrapperStyle={{ fontSize: 12 }} formatter={(v) => (v === 'ventas' ? 'Este mes' : v === 'ventasMesAnterior' ? 'Mes anterior' : 'Hace 2 meses')} />
                         {diaHoy && (
                           <ReferenceLine x={diaHoy} stroke="#f59e0b" strokeWidth={2}
-                            label={{ value: 'Hoy', position: 'top', fill: '#f59e0b', fontSize: 11, fontWeight: 700 }} />
+                            label={{ value: 'Hoy', position: 'top', fill: '#f59e0b', fontSize: 12, fontWeight: 700 }} />
                         )}
                         <Line type="monotone" dataKey="ventas" stroke="#22d3ee" strokeWidth={2} dot={false} />
                         <Line type="monotone" dataKey="ventasMesAnterior" stroke="#6b7299" strokeWidth={2} dot={false} strokeDasharray="4 3" />
@@ -1307,13 +1309,13 @@ export default function ReportesPage() {
                         return puntos;
                       })()}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#262c4a" />
-                        <XAxis dataKey="dia" stroke="#6b7299" fontSize={11} />
-                        <YAxis stroke="#6b7299" fontSize={11} allowDecimals={false} />
+                        <XAxis dataKey="dia" stroke="#6b7299" fontSize={12} />
+                        <YAxis stroke="#6b7299" fontSize={12} allowDecimals={false} />
                         <Tooltip content={<TooltipVentasPorDia />} />
-                        <Legend wrapperStyle={{ fontSize: 11 }} formatter={(v) => (v === 'acumulado' ? 'Este mes' : v === 'acumuladoMesAnterior' ? 'Mes anterior' : 'Hace 2 meses')} />
+                        <Legend wrapperStyle={{ fontSize: 12 }} formatter={(v) => (v === 'acumulado' ? 'Este mes' : v === 'acumuladoMesAnterior' ? 'Mes anterior' : 'Hace 2 meses')} />
                         {diaHoy && (
                           <ReferenceLine x={diaHoy} stroke="#f59e0b" strokeWidth={2}
-                            label={{ value: 'Hoy', position: 'top', fill: '#f59e0b', fontSize: 11, fontWeight: 700 }} />
+                            label={{ value: 'Hoy', position: 'top', fill: '#f59e0b', fontSize: 12, fontWeight: 700 }} />
                         )}
                         <Line type="monotone" dataKey="acumulado" stroke="#22d3ee" strokeWidth={2} dot={false} />
                         <Line type="monotone" dataKey="acumuladoMesAnterior" stroke="#6b7299" strokeWidth={2} dot={false} strokeDasharray="4 3" />
@@ -1334,19 +1336,19 @@ export default function ReportesPage() {
                         dia: d.dia, facturacion: d.monto, ingresos: datos.ingresosPorDia[i]?.monto || 0
                       }))}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#262c4a" />
-                        <XAxis dataKey="dia" stroke="#6b7299" fontSize={11} />
-                        <YAxis stroke="#6b7299" fontSize={11} tickFormatter={(v) => `$${v / 1000}k`} />
+                        <XAxis dataKey="dia" stroke="#6b7299" fontSize={12} />
+                        <YAxis stroke="#6b7299" fontSize={12} tickFormatter={(v) => `$${v / 1000}k`} />
                         <Tooltip formatter={(v) => money(v)} contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} itemStyle={{ color: '#e5e7eb' }} labelStyle={{ color: '#e5e7eb' }} />
-                        <Legend wrapperStyle={{ fontSize: 11 }} formatter={(v) => (v === 'facturacion' ? 'Facturación' : 'Ingresos (estimado)')} />
+                        <Legend wrapperStyle={{ fontSize: 12 }} formatter={(v) => (v === 'facturacion' ? 'Facturación' : 'Ingresos (estimado)')} />
                         {diaHoy && (
                           <ReferenceLine x={diaHoy} stroke="#f59e0b" strokeWidth={2}
-                            label={{ value: 'Hoy', position: 'top', fill: '#f59e0b', fontSize: 11, fontWeight: 700 }} />
+                            label={{ value: 'Hoy', position: 'top', fill: '#f59e0b', fontSize: 12, fontWeight: 700 }} />
                         )}
                         <Line type="monotone" dataKey="facturacion" stroke="#7c3aed" strokeWidth={2} dot={false} />
                         <Line type="monotone" dataKey="ingresos" stroke="#4ade80" strokeWidth={2} dot={false} strokeDasharray="4 3" />
                       </LineChart>
                     </ResponsiveContainer>
-                    <p className="text-textMuted text-[10.5px] mt-1.5">
+                    <p className="text-textMuted text-[12px] mt-1.5">
                       🟢 Ingresos es una estimación (cuotas cada 30 días desde la venta) — no es un dato confirmado de cobro real.
                     </p>
                   </ChartCard>
@@ -1357,8 +1359,8 @@ export default function ReportesPage() {
                     <ResponsiveContainer>
                       <BarChart data={datos.rankingCursos} layout="vertical" margin={{ left: 40 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#262c4a" />
-                        <XAxis type="number" stroke="#6b7299" fontSize={11} allowDecimals={false} />
-                        <YAxis type="category" dataKey="nombre" stroke="#6b7299" fontSize={10} width={110} />
+                        <XAxis type="number" stroke="#6b7299" fontSize={12} allowDecimals={false} />
+                        <YAxis type="category" dataKey="nombre" stroke="#6b7299" fontSize={12} width={110} />
                         <Tooltip contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} itemStyle={{ color: '#e5e7eb' }} labelStyle={{ color: '#e5e7eb' }} />
                         <Bar dataKey="cantidad" fill="#22d3ee" radius={[0, 4, 4, 0]} onClick={(d) => setFiltro('curso', d.nombre)} cursor="pointer" />
                       </BarChart>
@@ -1374,7 +1376,7 @@ export default function ReportesPage() {
                     <ResponsiveContainer>
                       <BarChart data={datos.leadsPorCurso} layout="vertical" margin={{ left: 50, top: 5, bottom: 5 }} barCategoryGap="30%">
                         <CartesianGrid strokeDasharray="3 3" stroke="#262c4a" />
-                        <XAxis type="number" stroke="#6b7299" fontSize={11} allowDecimals={false} />
+                        <XAxis type="number" stroke="#6b7299" fontSize={12} allowDecimals={false} />
                         <YAxis type="category" dataKey="nombre" stroke="#6b7299" width={140}
                           tick={<TickCursoDosLineas />} interval={0} />
                         <Tooltip contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} itemStyle={{ color: '#e5e7eb' }} labelStyle={{ color: '#e5e7eb' }} />
@@ -1389,8 +1391,8 @@ export default function ReportesPage() {
                     <ResponsiveContainer>
                       <BarChart data={datos.rankingVendedores}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#262c4a" />
-                        <XAxis dataKey="nombre" stroke="#6b7299" fontSize={10} />
-                        <YAxis stroke="#6b7299" fontSize={11} allowDecimals={false} />
+                        <XAxis dataKey="nombre" stroke="#6b7299" fontSize={12} />
+                        <YAxis stroke="#6b7299" fontSize={12} allowDecimals={false} />
                         <Tooltip contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} itemStyle={{ color: '#e5e7eb' }} labelStyle={{ color: '#e5e7eb' }} />
                         <Bar dataKey="cantidad" fill="#4ade80" radius={[4, 4, 0, 0]} onClick={(d) => setFiltro('vendedor', d.nombre)} cursor="pointer" />
                       </BarChart>
@@ -1435,10 +1437,10 @@ export default function ReportesPage() {
                       <ResponsiveContainer>
                         <LineChart data={dataPorDia}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#262c4a" />
-                          <XAxis dataKey="dia" stroke="#6b7299" fontSize={11} />
-                          <YAxis stroke="#6b7299" fontSize={11} allowDecimals={false} />
+                          <XAxis dataKey="dia" stroke="#6b7299" fontSize={12} />
+                          <YAxis stroke="#6b7299" fontSize={12} allowDecimals={false} />
                           <Tooltip contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} itemStyle={{ color: '#e5e7eb' }} labelStyle={{ color: '#e5e7eb' }} />
-                          <Legend wrapperStyle={{ fontSize: 11 }} />
+                          <Legend wrapperStyle={{ fontSize: 12 }} />
                           {vendedoresTop.map((v, i) => (
                             <Line key={v} type="monotone" dataKey={v} stroke={COLORES_VENDEDOR[i % COLORES_VENDEDOR.length]} strokeWidth={2} dot={false} />
                           ))}
@@ -1475,9 +1477,9 @@ export default function ReportesPage() {
                       return (
                         <div key={e.etapa} className="flex items-center gap-2">
                           <div className="text-center bg-bg border border-border rounded-xl px-5 py-3" style={{ opacity: 1 - i * 0.12 }}>
-                            <p className="text-textMuted text-[11px]">{e.etapa}</p>
+                            <p className="text-textMuted text-[12px]">{e.etapa}</p>
                             <p className="text-lg font-bold">{e.cantidad}</p>
-                            {i > 0 && <p className="text-textMuted text-[10px]">{pct.toFixed(0)}%</p>}
+                            {i > 0 && <p className="text-textMuted text-[12px]">{pct.toFixed(0)}%</p>}
                           </div>
                           {i < datos.embudo.length - 1 && <span className="text-textMuted">→</span>}
                         </div>
@@ -1494,8 +1496,8 @@ export default function ReportesPage() {
                     <ResponsiveContainer>
                       <BarChart data={datos.diasHastaConversion} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#262c4a" vertical={false} />
-                        <XAxis dataKey="nombre" stroke="#6b7299" fontSize={10} interval={0} angle={-15} textAnchor="end" height={40} />
-                        <YAxis stroke="#6b7299" fontSize={11} allowDecimals={false} />
+                        <XAxis dataKey="nombre" stroke="#6b7299" fontSize={12} interval={0} angle={-15} textAnchor="end" height={40} />
+                        <YAxis stroke="#6b7299" fontSize={12} allowDecimals={false} />
                         <Tooltip content={<TooltipDiasConversion />} />
                         <Bar dataKey="cantidad" fill="#22c55e" radius={[4, 4, 0, 0]} />
                       </BarChart>
@@ -1635,7 +1637,7 @@ export default function ReportesPage() {
                         <div className="grid grid-cols-3 gap-2 text-xs">
                           {[['Hoy', periodos.hoy], ['Esta semana', periodos.semana], ['Este mes', periodos.mes]].map(([etiqueta, m]) => (
                             <div key={etiqueta}>
-                              <p className="text-textMuted text-[10.5px] uppercase tracking-wide mb-0.5">{etiqueta}</p>
+                              <p className="text-textMuted text-[12px] uppercase tracking-wide mb-0.5">{etiqueta}</p>
                               {(m.editoMensajes + m.eliminoMensajes + m.postergoContactos) === 0 ? (
                                 <p className="text-textMuted">—</p>
                               ) : (
@@ -1665,8 +1667,8 @@ export default function ReportesPage() {
                     <ResponsiveContainer>
                       <BarChart data={datos.rankingCursos} layout="vertical" margin={{ left: 40 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#262c4a" />
-                        <XAxis type="number" stroke="#6b7299" fontSize={11} tickFormatter={(v) => `$${v / 1000}k`} />
-                        <YAxis type="category" dataKey="nombre" stroke="#6b7299" fontSize={10} width={110} />
+                        <XAxis type="number" stroke="#6b7299" fontSize={12} tickFormatter={(v) => `$${v / 1000}k`} />
+                        <YAxis type="category" dataKey="nombre" stroke="#6b7299" fontSize={12} width={110} />
                         <Tooltip formatter={(v) => money(v)} contentStyle={{ background: '#181d35', border: '1px solid #262c4a', borderRadius: 8 }} itemStyle={{ color: '#e5e7eb' }} labelStyle={{ color: '#e5e7eb' }} />
                         <Bar dataKey="monto" fill="#7c3aed" radius={[0, 4, 4, 0]} onClick={(d) => setFiltro('curso', d.nombre)} cursor="pointer" />
                       </BarChart>
@@ -1741,7 +1743,7 @@ export default function ReportesPage() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {Object.entries(filtros).filter(([, v]) => v).map(([k, v]) => (
-                      <span key={k} className="text-[11px] px-2.5 py-1 rounded-full bg-infoBg text-infoText flex items-center gap-1.5">
+                      <span key={k} className="text-[12px] px-2.5 py-1 rounded-full bg-infoBg text-infoText flex items-center gap-1.5">
                         {k}: {v} <button onClick={() => setFiltro(k, v)} className="font-bold">✕</button>
                       </span>
                     ))}
@@ -1837,7 +1839,7 @@ export default function ReportesPage() {
                         </td>
                         <td className="pr-3 text-textSec whitespace-nowrap">{new Date(l.fechaIngreso).toLocaleDateString('es-AR')}</td>
                         <td className="pr-3">
-                          <span className={`text-[11px] px-2 py-0.5 rounded-full ${l.estado === 'Comprado' ? 'bg-successBg text-successText' : 'bg-surface2 text-textMuted'}`}>{l.estado}</span>
+                          <span className={`text-[12px] px-2 py-0.5 rounded-full ${l.estado === 'Comprado' ? 'bg-successBg text-successText' : 'bg-surface2 text-textMuted'}`}>{l.estado}</span>
                         </td>
                         <td className="text-textSec">{l.origen || '—'}</td>
                       </tr>

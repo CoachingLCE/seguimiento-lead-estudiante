@@ -503,7 +503,7 @@ export default function SeguimientoPage() {
                 { k: 'altaPrioridad', l: '⭐ Alta prioridad' }, { k: 'hoy', l: '⏰ Vence hoy' }, { k: 'atrasados', l: '🔴 Atrasados' }
               ].map(({ k, l }) => (
                 <button key={k} onClick={() => toggleFiltroExtra(k)}
-                  className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors ${
+                  className={`text-[12px] px-2.5 py-1 rounded-full border transition-colors ${
                     filtrosExtra.includes(k) ? 'bg-infoBg border-infoText/40 text-infoText' : 'bg-surface2 border-border text-textMuted hover:text-textSec'
                   }`}>
                   {l}
@@ -512,18 +512,18 @@ export default function SeguimientoPage() {
 
               <span className="w-px h-4 bg-border mx-1" />
 
-              <label className="text-[11px] text-textMuted">Agrupar por</label>
+              <label className="text-[12px] text-textMuted">Agrupar por</label>
               <select value={dimensionAgrupacion} onChange={(e) => setDimensionAgrupacion(e.target.value)}
-                className="bg-surface2 border border-border rounded-md px-2 py-1 text-[11px]">
+                className="bg-surface2 border border-border rounded-md px-2 py-1 text-[12px]">
                 <option value="curso">Curso</option>
                 <option value="responsable">Responsable</option>
                 <option value="pais">País</option>
                 <option value="origen">Origen</option>
               </select>
 
-              <label className="text-[11px] text-textMuted">Ordenar</label>
+              <label className="text-[12px] text-textMuted">Ordenar</label>
               <select value={ordenPor} onChange={(e) => setOrdenPor(e.target.value)}
-                className="bg-surface2 border border-border rounded-md px-2 py-1 text-[11px]">
+                className="bg-surface2 border border-border rounded-md px-2 py-1 text-[12px]">
                 <option value="antiguos">Más antiguos primero</option>
                 <option value="atrasado">Más atrasado</option>
                 <option value="reciente">Más reciente</option>
@@ -712,7 +712,7 @@ function ModalReasignar({ onClose, onConfirmar }) {
           {filtradas.map((p) => (
             <button key={p.email} onClick={() => onConfirmar(p.email, p.nombre)}
               className="w-full flex items-center gap-2 text-left px-2 py-2 rounded-lg hover:bg-bg text-sm">
-              <span className={`w-6 h-6 rounded-full ${colorAvatar(p.nombre)} text-white text-[10px] flex items-center justify-center font-bold`}>
+              <span className={`w-6 h-6 rounded-full ${colorAvatar(p.nombre)} text-white text-[12px] flex items-center justify-center font-bold`}>
                 {iniciales(p.nombre)}
               </span>
               {p.nombre}
@@ -818,7 +818,7 @@ function SeccionLote({ titulo, subtitulo, explicacion, filas, filasTotales, busc
           <p className="text-sm font-semibold mb-1">{titulo}</p>
           <p className="text-textMuted text-xs">{subtitulo}</p>
           {total > 0 && (
-            <p className="text-textMuted text-[11px] mt-0.5">
+            <p className="text-textMuted text-[12px] mt-0.5">
               Total {total} · Contactados {contactadas} ·{' '}
               {pendientes > 0 ? (
                 <span className="text-warningText font-semibold drop-shadow-[0_0_6px_rgba(251,191,36,0.55)]">
@@ -835,7 +835,7 @@ function SeccionLote({ titulo, subtitulo, explicacion, filas, filasTotales, busc
       {accion && <AccionSugerida accion={accion} />}
       {abierta && (
         <>
-          <p className="text-textMuted text-[11px] mt-1 mb-3">{explicacion}</p>
+          <p className="text-textMuted text-[12px] mt-1 mb-3">{explicacion}</p>
           {filas.length === 0 ? (
             <p className="text-textMuted text-sm">Nada pendiente en este lote.</p>
           ) : (
@@ -940,7 +940,7 @@ function FilaLote({
                       <button onClick={() => { navigator.clipboard.writeText(lead.WhatsApp); setMenuWhatsapp(false); }}
                         className="block w-full text-left text-xs px-2 py-1.5 rounded hover:bg-bg">Copiar teléfono</button>
                       <hr className="border-border my-1" />
-                      <p className="text-[10px] text-textMuted px-2 mb-1">Mensaje predefinido</p>
+                      <p className="text-[12px] text-textMuted px-2 mb-1">Mensaje predefinido</p>
                       {PLANTILLAS_WHATSAPP.map((pl) => (
                         <a key={pl.label} href={`https://wa.me/${whatsappLimpio}?text=${encodeURIComponent(pl.texto)}`}
                           target="_blank" rel="noopener noreferrer"
@@ -982,7 +982,7 @@ function FilaLote({
               <span className="text-warningText font-semibold">Sin asignación</span>
             ) : (
               <span className="inline-flex items-center gap-1.5">
-                <span className={`w-5 h-5 rounded-full ${colorAvatar(fila.AsignadoANombre)} text-white text-[9px] flex items-center justify-center font-bold`}>
+                <span className={`w-5 h-5 rounded-full ${colorAvatar(fila.AsignadoANombre)} text-white text-[12px] flex items-center justify-center font-bold`}>
                   {iniciales(fila.AsignadoANombre)}
                 </span>
                 {fila.AsignadoANombre || '—'}
@@ -1012,7 +1012,7 @@ function FilaLote({
                 <div className="flex gap-1.5 flex-wrap mb-2">
                   {SUGERENCIAS_PROXIMA_ACCION[resultadoElegido].map((s) => (
                     <button key={s} type="button" onClick={() => setProximaAccion(s)}
-                      className={`text-[11px] px-2 py-1 rounded-full border ${
+                      className={`text-[12px] px-2 py-1 rounded-full border ${
                         proximaAccion === s ? 'bg-accentPurple border-accentPurple text-white' : 'bg-surface2 border-border text-textSec'
                       }`}>{s}</button>
                   ))}
@@ -1020,7 +1020,7 @@ function FilaLote({
               )}
               {!RESULTADOS_FINALES.includes(resultadoElegido) && (
                 <div className="mb-2">
-                  <label className="text-[11px] text-textMuted block mb-1">📅 ¿Te pidió que lo contactes en una fecha puntual? (opcional)</label>
+                  <label className="text-[12px] text-textMuted block mb-1">📅 ¿Te pidió que lo contactes en una fecha puntual? (opcional)</label>
                   <input type="date" value={fechaProgramada} onChange={(e) => setFechaProgramada(e.target.value)}
                     className="bg-surface2 border border-border rounded px-2 py-1 text-xs" />
                 </div>

@@ -253,7 +253,7 @@ export default function MensajesFrecuentesPage() {
                 className="text-xs font-bold w-7 h-7 flex items-center justify-center rounded-lg bg-surface2 border border-border hover:border-accentTeal">N</button>
               <button type="button" onClick={() => aplicarFormatoWhatsapp('_')} title="Cursiva (Ctrl+I) — así se ve en WhatsApp: _texto_"
                 className="text-xs italic w-7 h-7 flex items-center justify-center rounded-lg bg-surface2 border border-border hover:border-accentTeal">C</button>
-              <span className="text-textMuted text-[10.5px]">Seleccioná texto y aplicá el formato (o Ctrl+B / Ctrl+I) — se ve así en WhatsApp.</span>
+              <span className="text-textMuted text-[12px]">Seleccioná texto y aplicá el formato (o Ctrl+B / Ctrl+I) — se ve así en WhatsApp.</span>
             </div>
             <textarea ref={textareaRef} rows={10} value={mensajeForm} onChange={(e) => setMensajeForm(e.target.value)} onKeyDown={manejarAtajoFormato}
               placeholder={'Hola! Soy Maca de ILCE 👋\n\nA fin de mes te quería compartir una promo especial...'}
@@ -314,8 +314,8 @@ export default function MensajesFrecuentesPage() {
                         <span className="text-textMuted text-xs shrink-0">{estaExpandido ? '▼' : '▶'}</span>
                       )}
                       <p className="text-sm font-semibold truncate">{m.Titulo}</p>
-                      {estado === 'nuevo' && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-successBg text-successText shrink-0">Nuevo</span>}
-                      {estado === 'modificado' && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-infoBg text-infoText shrink-0">Modificado</span>}
+                      {estado === 'nuevo' && <span className="text-[12px] font-semibold px-1.5 py-0.5 rounded-full bg-successBg text-successText shrink-0">Nuevo</span>}
+                      {estado === 'modificado' && <span className="text-[12px] font-semibold px-1.5 py-0.5 rounded-full bg-infoBg text-infoText shrink-0">Modificado</span>}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <button onClick={() => alternarFavorito(m)} title={esFavorito ? 'Quitar de favoritos' : 'Marcar como favorito'}
@@ -338,7 +338,7 @@ export default function MensajesFrecuentesPage() {
                   {estaExpandido && (
                     <>
                       <p className="text-textSec text-[13px] whitespace-pre-wrap bg-bg/50 rounded-lg px-3 py-2.5">{m.Mensaje}</p>
-                      <p className="text-textMuted text-[10.5px] mt-2">
+                      <p className="text-textMuted text-[12px] mt-2">
                         Creado por {m.CreadoPorNombre} · {new Date(m.FechaCreacion).toLocaleDateString('es-AR')}
                         {fueEditado && <> · Editado por {m.UltimaModificacionPorNombre} · {new Date(m.FechaModificacion).toLocaleDateString('es-AR')}</>}
                       </p>

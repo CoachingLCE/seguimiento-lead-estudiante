@@ -88,6 +88,7 @@ export default function ResumenDiarioPage() {
               {datos.leadsDelDia.length === 0 ? (
                 <p className="text-textMuted text-sm">Sin leads cargados este día.</p>
               ) : (
+                <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-textSec text-left border-b border-border">
@@ -106,6 +107,7 @@ export default function ResumenDiarioPage() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               )}
             </Seccion>
 
@@ -113,6 +115,7 @@ export default function ResumenDiarioPage() {
               {datos.contactosDelDia.length === 0 ? (
                 <p className="text-textMuted text-sm">Sin contactos registrados este día.</p>
               ) : (
+                <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-textSec text-left border-b border-border">
@@ -130,6 +133,7 @@ export default function ResumenDiarioPage() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               )}
             </Seccion>
 
@@ -137,6 +141,7 @@ export default function ResumenDiarioPage() {
               {datos.inscritosDelDia.length === 0 ? (
                 <p className="text-textMuted text-sm">Sin inscritos cargados este día.</p>
               ) : (
+                <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-textSec text-left border-b border-border">
@@ -157,6 +162,7 @@ export default function ResumenDiarioPage() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               )}
             </Seccion>
           </>

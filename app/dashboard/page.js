@@ -266,7 +266,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="bg-surface border border-dangerText/30 rounded-2xl p-4 mb-5 overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm tabla-tarjetas">
                   <thead>
                     <tr className="text-textSec text-left border-b border-border">
                       <th className="py-1.5 pr-2 whitespace-nowrap">Prioridad</th><th className="pr-2 whitespace-nowrap">Tipo</th><th className="pr-2 whitespace-nowrap">Quién</th>
@@ -276,12 +276,12 @@ export default function DashboardPage() {
                   <tbody>
                     {altasDemoradas.map((i) => (
                       <tr key={`alta-${i.ID}`} className="border-b border-border">
-                        <td className="py-1.5 pr-2 whitespace-nowrap"><Pill tono="danger">🔴 Urgente</Pill></td>
-                        <td className="pr-2 whitespace-nowrap"><Pill tono="info">🎓 Estudiante</Pill></td>
-                        <td className="pr-2 whitespace-nowrap">{i.NombreEstudiante}</td>
-                        <td className="pr-2 whitespace-nowrap">Alta demorada</td>
-                        <td className="pr-2 whitespace-nowrap">{i.Curso || '—'} · <Pill tono="danger">{horasDesde(i.FechaInscripcion)}hs</Pill></td>
-                        <td className="flex items-center gap-2 whitespace-nowrap">
+                        <td data-label="Prioridad" className="py-1.5 pr-2 whitespace-nowrap"><Pill tono="danger">🔴 Urgente</Pill></td>
+                        <td data-label="Tipo" className="pr-2 whitespace-nowrap"><Pill tono="info">🎓 Estudiante</Pill></td>
+                        <td data-label="Quién" className="pr-2 whitespace-nowrap">{i.NombreEstudiante}</td>
+                        <td data-label="Motivo" className="pr-2 whitespace-nowrap">Alta demorada</td>
+                        <td data-label="Detalle" className="pr-2 whitespace-nowrap">{i.Curso || '—'} · <Pill tono="danger">{horasDesde(i.FechaInscripcion)}hs</Pill></td>
+                        <td data-label="Acción" className="flex items-center gap-2 whitespace-nowrap">
                           <button disabled={procesandoId === i.ID} onClick={() => toggleAltaInline(i)}
                             className="text-xs px-3 py-1 rounded-md bg-surface2 border border-border disabled:opacity-60">
                             {procesandoId === i.ID ? '...' : '✓ Marcar alta'}
@@ -292,12 +292,12 @@ export default function DashboardPage() {
                     ))}
                     {bienvenidasPendientes.map((i) => (
                       <tr key={`bien-${i.ID}`} className="border-b border-border">
-                        <td className="py-1.5 pr-2 whitespace-nowrap"><Pill tono="warning">🟡 Hoy</Pill></td>
-                        <td className="pr-2 whitespace-nowrap"><Pill tono="info">🎓 Estudiante</Pill></td>
-                        <td className="pr-2 whitespace-nowrap">{i.NombreEstudiante}</td>
-                        <td className="pr-2 whitespace-nowrap">Bienvenida sin enviar</td>
-                        <td className="pr-2 whitespace-nowrap">{i.EmailEstudiante || 'Falta email del estudiante'}</td>
-                        <td className="flex items-center gap-2 whitespace-nowrap">
+                        <td data-label="Prioridad" className="py-1.5 pr-2 whitespace-nowrap"><Pill tono="warning">🟡 Hoy</Pill></td>
+                        <td data-label="Tipo" className="pr-2 whitespace-nowrap"><Pill tono="info">🎓 Estudiante</Pill></td>
+                        <td data-label="Quién" className="pr-2 whitespace-nowrap">{i.NombreEstudiante}</td>
+                        <td data-label="Motivo" className="pr-2 whitespace-nowrap">Bienvenida sin enviar</td>
+                        <td data-label="Detalle" className="pr-2 whitespace-nowrap">{i.EmailEstudiante || 'Falta email del estudiante'}</td>
+                        <td data-label="Acción" className="flex items-center gap-2 whitespace-nowrap">
                           {pidiendoEmailPara === i.ID ? (
                             <div className="flex items-center gap-1.5">
                               <input type="email" autoFocus placeholder="email@mail.com" value={emailTemporal}
@@ -320,12 +320,12 @@ export default function DashboardPage() {
                       const l = leads.find((x) => x.ID === s.LeadID);
                       return (
                         <tr key={`seg-${i2}`} className="border-b border-border">
-                          <td className="py-1.5 pr-2 whitespace-nowrap"><Pill tono="warning">🟡 Hoy</Pill></td>
-                          <td className="pr-2 whitespace-nowrap"><Pill tono="warning">📩 Lead</Pill></td>
-                          <td className="pr-2 whitespace-nowrap">{l ? `${l.Nombre} ${l.Apellido}` : s.LeadID}</td>
-                          <td className="pr-2 whitespace-nowrap">Lead sin contactar</td>
-                          <td className="pr-2 whitespace-nowrap">Lote {s.Lote} · asignado a {s.AsignadoANombre || 'sin asignar'}</td>
-                          <td className="flex items-center gap-2 whitespace-nowrap">
+                          <td data-label="Prioridad" className="py-1.5 pr-2 whitespace-nowrap"><Pill tono="warning">🟡 Hoy</Pill></td>
+                          <td data-label="Tipo" className="pr-2 whitespace-nowrap"><Pill tono="warning">📩 Lead</Pill></td>
+                          <td data-label="Quién" className="pr-2 whitespace-nowrap">{l ? `${l.Nombre} ${l.Apellido}` : s.LeadID}</td>
+                          <td data-label="Motivo" className="pr-2 whitespace-nowrap">Lead sin contactar</td>
+                          <td data-label="Detalle" className="pr-2 whitespace-nowrap">Lote {s.Lote} · asignado a {s.AsignadoANombre || 'sin asignar'}</td>
+                          <td data-label="Acción" className="flex items-center gap-2 whitespace-nowrap">
                             {l?.WhatsApp && (
                               <a href={linkWhatsapp(l.WhatsApp)} target="_blank" rel="noopener noreferrer"
                                 className="w-6 h-6 flex items-center justify-center rounded-md border border-border" title="WhatsApp">💬</a>
@@ -341,7 +341,7 @@ export default function DashboardPage() {
               </div>
             ))}
 
-            <div className={`grid gap-3 mb-5 ${verEstudiantes ? 'grid-cols-5' : 'grid-cols-3'}`}>
+            <div className={`grid gap-3 mb-5 ${verEstudiantes ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5' : 'grid-cols-3'}`}>
               <Stat label="Leads hoy" value={leadsHoy} />
               <Stat label="Leads este mes" value={leadsMes} />
               <Stat label="Comprados" value={comprados} />
@@ -400,6 +400,7 @@ export default function DashboardPage() {
 
             <div className="bg-surface border border-border rounded-2xl p-5">
               <p className="text-sm font-semibold mb-3">Últimos leads</p>
+              <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-textSec text-left border-b border-border">
@@ -433,6 +434,7 @@ export default function DashboardPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           </>
         )}
@@ -452,7 +454,7 @@ function Stat({ label, value, tono }) {
       {tono && (
         <span className={`absolute top-3 right-3 w-2 h-2 rounded-full ${tono === 'danger' ? 'bg-dangerText' : 'bg-warningText'}`} />
       )}
-      <p className="text-textSec text-[11px] mb-1">{label}</p>
+      <p className="text-textSec text-[12px] mb-1">{label}</p>
       <p className="text-xl font-bold">{value}</p>
     </div>
   );
@@ -462,5 +464,5 @@ function Pill({ children, tono }) {
   const clases = tono === 'danger' ? 'bg-dangerBg text-dangerText'
     : tono === 'warning' ? 'bg-warningBg text-warningText'
     : 'bg-infoBg text-infoText';
-  return <span className={`text-[10.5px] px-2.5 py-0.5 rounded-full font-semibold whitespace-nowrap ${clases}`}>{children}</span>;
+  return <span className={`text-[12px] px-2.5 py-0.5 rounded-full font-semibold whitespace-nowrap ${clases}`}>{children}</span>;
 }

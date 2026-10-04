@@ -599,7 +599,7 @@ export default function NuevoLeadPage() {
                     const activo = cursosAdicionales.includes(c);
                     return (
                       <button type="button" key={c} onClick={() => toggleCursoAdicional(c)}
-                        className={`text-[11.5px] px-2.5 py-1 rounded-full border transition-colors ${
+                        className={`text-[12px] px-2.5 py-1 rounded-full border transition-colors ${
                           activo ? 'bg-accentPurple border-accentPurple text-white font-medium'
                                  : 'bg-surface2 border-border text-textSec hover:border-accentTeal hover:text-text'
                         }`}>
@@ -637,15 +637,15 @@ export default function NuevoLeadPage() {
                       )}
                       <span className="text-[14px]">👤</span>
                       <span className="text-[14px] font-semibold text-text">Contacto {index + 1}</span>
-                      <span className={`text-[11px] font-medium ${estilo.texto}`}>
+                      <span className={`text-[12px] font-medium ${estilo.texto}`}>
                         {estilo.badge} {estado === 'error' ? motivoError(contacto, p) : estilo.label}
                       </span>
-                      <label className="flex items-center gap-1 text-[11px] text-textMuted ml-1" title="Para cargar el lead solo con el número/usuario, cuando no tenemos el nombre de quien escribió">
+                      <label className="flex items-center gap-1 text-[12px] text-textMuted ml-1" title="Para cargar el lead solo con el número/usuario, cuando no tenemos el nombre de quien escribió">
                         <input type="checkbox" checked={!!contacto.sinNombre}
                           onChange={(e) => actualizarContacto(index, 'sinNombre', e.target.checked)} />
                         Sin nombre
                       </label>
-                      <label className="flex items-center gap-1 text-[11px] text-textMuted ml-1" title="Marcalo si ya lo contactaste por fuera de la app antes de cargarlo — así el Lote 0 queda solo para los que todavía nadie contactó">
+                      <label className="flex items-center gap-1 text-[12px] text-textMuted ml-1" title="Marcalo si ya lo contactaste por fuera de la app antes de cargarlo — así el Lote 0 queda solo para los que todavía nadie contactó">
                         <input type="checkbox" checked={!!contacto.yaContactado}
                           onChange={(e) => actualizarContacto(index, 'yaContactado', e.target.checked)} />
                         Ya contactado
@@ -791,7 +791,7 @@ export default function NuevoLeadPage() {
                           </label>
                           <input value={contacto.instagram || p.instagram} placeholder="@juanperez"
                             onChange={(e) => actualizarContacto(index, 'instagram', e.target.value)} className={inputCls} />
-                          <p className="text-textMuted text-[11px] mt-1">Usalo también para el nuevo @usuario de WhatsApp cuando no haya número.</p>
+                          <p className="text-textMuted text-[12px] mt-1">Usalo también para el nuevo @usuario de WhatsApp cuando no haya número.</p>
                         </div>
                       </div>
 
@@ -852,7 +852,7 @@ export default function NuevoLeadPage() {
                 <div className="h-full bg-gradient-to-r from-accentPurple to-accentMagenta transition-all"
                   style={{ width: `${contactos.length ? (listosParaGuardar / contactos.length) * 100 : 0}%` }} />
               </div>
-              <p className="text-textMuted text-[11px] mt-1">{listosParaGuardar} de {contactos.length} listos para guardar</p>
+              <p className="text-textMuted text-[12px] mt-1">{listosParaGuardar} de {contactos.length} listos para guardar</p>
             </div>
 
             <button type="submit" disabled={guardando}

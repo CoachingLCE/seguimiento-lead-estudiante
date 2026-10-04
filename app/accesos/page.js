@@ -162,6 +162,7 @@ export default function AccesosPage() {
       <div className="max-w-5xl mx-auto px-6 pb-16">
         <div className="bg-surface border border-border rounded-2xl p-5 mb-4">
           <p className="text-sm font-bold mb-3">🔐 Permisos por rol — quién ve qué</p>
+          <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
               <tr className="text-textMuted text-left border-b border-border">
@@ -199,9 +200,10 @@ export default function AccesosPage() {
               </tr>
             </tbody>
           </table>
-          <p className="text-textMuted text-[11px] mt-3">⚡ Herramientas (accesos rápidos) está disponible para todos los roles, sin restricción.</p>
-          <p className="text-textMuted text-[11px] mt-1">🎓 Académico: hoy en la práctica queda para Diego (Admin), Lourdes y Victoria (Estudiantes), Sofía (Coordinadora académica) y Jennifer (Coordinadora de MKT).</p>
-          <p className="text-textMuted text-[11px] mt-1">📋 Diplomas, Historial de acciones y Accesos son exclusivos de Admin — ningún otro rol los ve, se combine como se combine.</p>
+          </div>
+          <p className="text-textMuted text-[12px] mt-3">⚡ Herramientas (accesos rápidos) está disponible para todos los roles, sin restricción.</p>
+          <p className="text-textMuted text-[12px] mt-1">🎓 Académico: hoy en la práctica queda para Diego (Admin), Lourdes y Victoria (Estudiantes), Sofía (Coordinadora académica) y Jennifer (Coordinadora de MKT).</p>
+          <p className="text-textMuted text-[12px] mt-1">📋 Diplomas, Historial de acciones y Accesos son exclusivos de Admin — ningún otro rol los ve, se combine como se combine.</p>
         </div>
 
         <div className="bg-surface border border-border rounded-2xl p-6">
@@ -215,8 +217,8 @@ export default function AccesosPage() {
           ) : (
             <div className="mb-5">
               {usuarios.map((u, i) => (
-                <div key={i} className={`flex items-center gap-3 py-2.5 border-b border-border text-sm ${!u.Activo ? 'opacity-50' : ''}`}>
-                  <div className="flex-1">
+                <div key={i} className={`flex flex-wrap items-center gap-x-3 gap-y-2 py-2.5 border-b border-border text-sm ${!u.Activo ? 'opacity-50' : ''}`}>
+                  <div className="flex-1 min-w-[160px]">
                     <p className="font-semibold">{u.Nombre}</p>
                     <p className="text-textMuted text-xs">{u.Email}</p>
                   </div>

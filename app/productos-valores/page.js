@@ -81,7 +81,7 @@ function BadgeEstado({ estado }) {
   const clases = estado === 'Activo' ? 'bg-successBg text-successText'
     : estado === 'Pausado' ? 'bg-warningBg text-warningText'
     : 'bg-infoBg text-infoText';
-  return <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${clases}`}>{estado}</span>;
+  return <span className={`text-[12px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${clases}`}>{estado}</span>;
 }
 // Mismos colores que BadgeEstado, pero como "chip" sólido (para el filtro de estado) en vez de
 // la versión tenue del badge — así el filtro "Activos" se ve del mismo color que el badge
@@ -126,7 +126,7 @@ function BadgeFormato({ formato, modalidad }) {
     : formato === 'Sincrónico' ? 'bg-accentPurple/20 text-accentPurple'
     : formato === 'Asincrónico' ? 'bg-accentTeal/20 text-accentTeal'
     : 'bg-accentMagenta/20 text-accentMagenta';
-  return <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${clases}`}>{texto}</span>;
+  return <span className={`text-[12px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${clases}`}>{texto}</span>;
 }
 
 export default function ProductosValoresPage() {
@@ -529,7 +529,7 @@ export default function ProductosValoresPage() {
               className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${mostrarUSD ? 'bg-accentPurple text-white' : 'bg-surface2 border border-border text-textSec'}`}>
               USD
             </button>
-            {!tipoDeCambio && <span className="text-textMuted text-[11px]">Cargá un tipo de cambio para poder ver los precios en USD</span>}
+            {!tipoDeCambio && <span className="text-textMuted text-[12px]">Cargá un tipo de cambio para poder ver los precios en USD</span>}
           </div>
           {puedeEditar && (
             editandoTC ? (
@@ -563,13 +563,13 @@ export default function ProductosValoresPage() {
                 {configTemp.map((t, i) => (
                   <div key={t.tierId || `nuevo-${i}`} className="flex items-end gap-2">
                     <div className="flex-1">
-                      <label className="text-[11px] text-textSec block mb-1">{t.esNuevo ? 'Beneficio nuevo — nombre' : 'Nombre'}</label>
+                      <label className="text-[12px] text-textSec block mb-1">{t.esNuevo ? 'Beneficio nuevo — nombre' : 'Nombre'}</label>
                       <input type="text" value={t.label} placeholder={t.esNuevo ? 'Ej: Inscripción anticipada débito automático' : ''}
                         onChange={(e) => setConfigTemp((prev) => prev.map((x, idx) => idx === i ? { ...x, label: e.target.value } : x))}
                         className="w-full bg-bg border border-border rounded-lg px-2 py-1.5 text-sm" />
                     </div>
                     <div className="w-20 shrink-0">
-                      <label className="text-[11px] text-textSec block mb-1">%</label>
+                      <label className="text-[12px] text-textSec block mb-1">%</label>
                       <input type="text" inputMode="decimal" value={t.pct}
                         onChange={(e) => setConfigTemp((prev) => prev.map((x, idx) => idx === i ? { ...x, pct: e.target.value } : x))}
                         className="w-full bg-bg border border-border rounded-lg px-2 py-1.5 text-sm" />
@@ -609,10 +609,10 @@ export default function ProductosValoresPage() {
                 );
               })}
             </div>
-            <p className="text-textMuted text-[10px] mt-2">Un beneficio nuevo no aparece solo en los productos — usá "+ aplicar a todos" para agregarlo a los que todavía no lo tienen.</p>
+            <p className="text-textMuted text-[12px] mt-2">Un beneficio nuevo no aparece solo en los productos — usá "+ aplicar a todos" para agregarlo a los que todavía no lo tienen.</p>
             </>
           )}
-          <p className="text-textMuted text-[11px] mt-2">Este % se usa en todo producto que no tenga un valor propio ("override") para ese nivel.</p>
+          <p className="text-textMuted text-[12px] mt-2">Este % se usa en todo producto que no tenga un valor propio ("override") para ese nivel.</p>
         </div>
 
         {/* FILTROS — 2 filas claramente separadas */}
@@ -718,9 +718,9 @@ export default function ProductosValoresPage() {
                         <p className="text-sm font-semibold truncate">{p.nombre}</p>
                         <BadgeEstado estado={p.estado} />
                         <BadgeFormato formato={p.formato} modalidad={p.modalidad} />
-                        {p.esVariante && <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted">Variante</span>}
+                        {p.esVariante && <span className="text-[12px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted">Variante</span>}
                         {necesitaRevision(p) && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide bg-dangerBg text-dangerText" title="Hace más de 30 días que no se actualiza (o ya pasó la fecha de revisión indicada)">
+                          <span className="text-[12px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide bg-dangerBg text-dangerText" title="Hace más de 30 días que no se actualiza (o ya pasó la fecha de revisión indicada)">
                             ⚠️ Revisar valor
                           </span>
                         )}
@@ -730,8 +730,8 @@ export default function ProductosValoresPage() {
                     <div className="flex items-center gap-3 shrink-0">
                       <div className="text-right">
                         <p className="text-base font-bold">{precio(p.valorLista)}{!tieneEscalonadas && cantCuotas && cantCuotas > 1 ? <span className="text-xs font-normal text-textMuted"> /cuota</span> : null}</p>
-                        <p className="text-textMuted text-[10px]">{!tieneEscalonadas && cantCuotas && cantCuotas > 1 ? `Valor de lista · ${cantCuotas} cuotas` : 'Valor de lista'}</p>
-                        {p.actualizado && <p className="text-textMuted text-[9px] mt-0.5">Última modif.: {p.actualizado}</p>}
+                        <p className="text-textMuted text-[12px]">{!tieneEscalonadas && cantCuotas && cantCuotas > 1 ? `Valor de lista · ${cantCuotas} cuotas` : 'Valor de lista'}</p>
+                        {p.actualizado && <p className="text-textMuted text-[12px] mt-0.5">Última modif.: {p.actualizado}</p>}
                       </div>
                       <span className="text-textMuted text-lg">{abierto ? '▾' : '▸'}</span>
                     </div>
@@ -742,7 +742,7 @@ export default function ProductosValoresPage() {
                       {p.descripcion && <p className="text-textSec text-xs mb-3">{p.descripcion}</p>}
 
                       {p.esVariante && (
-                        <p className="text-textMuted text-[11px] mb-3">
+                        <p className="text-textMuted text-[12px] mb-3">
                           {productoPadre ? `Variante de: ${productoPadre.nombre}` : ''}{p.motivo ? ` — ${p.motivo}` : ''}
                         </p>
                       )}
@@ -771,7 +771,7 @@ export default function ProductosValoresPage() {
                             </div>
                           )}
                           {p.valorUnPago ? <p className="text-textSec text-xs mt-1.5">Pago único (total): <b className="text-text">{precio(p.valorUnPago)}</b></p> : null}
-                          {p.precioExterior ? <p className="text-textMuted text-[11px] mt-1">Exterior: USD {p.precioExterior}</p> : null}
+                          {p.precioExterior ? <p className="text-textMuted text-[12px] mt-1">Exterior: USD {p.precioExterior}</p> : null}
                         </div>
                       )}
 
@@ -798,7 +798,7 @@ export default function ProductosValoresPage() {
                                         <p className="font-bold text-successText whitespace-nowrap">
                                           {conCuotas ? `${cantCuotas} cuotas de ${precio(f.valorCuota)}` : precio(f.valorCuota)}
                                         </p>
-                                        {conCuotas && <p className="text-textMuted text-[10px]">Total: {precio(total)}</p>}
+                                        {conCuotas && <p className="text-textMuted text-[12px]">Total: {precio(total)}</p>}
                                       </td>
                                       <td>
                                         {mediosDisponibles.length > 0 ? (
@@ -808,11 +808,11 @@ export default function ProductosValoresPage() {
                                               return (
                                                 <span key={clave} className="inline-flex items-center gap-1">
                                                   <a href={m.link} target="_blank" rel="noopener noreferrer"
-                                                    className="text-[10px] px-2 py-0.5 rounded-full bg-infoBg text-infoText font-semibold whitespace-nowrap">
+                                                    className="text-[12px] px-2 py-0.5 rounded-full bg-infoBg text-infoText font-semibold whitespace-nowrap">
                                                     {MEDIOS_CONOCIDOS.find(([k]) => k === clave)?.[1] || clave}
                                                   </a>
                                                   <button onClick={() => copiarLink(m.link, idUnico)} title="Copiar link"
-                                                    className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface2 border border-border text-textMuted hover:text-text">
+                                                    className="text-[12px] px-1.5 py-0.5 rounded-full bg-surface2 border border-border text-textMuted hover:text-text">
                                                     {linkCopiado === idUnico ? '✓' : '📋'}
                                                   </button>
                                                 </span>
@@ -820,7 +820,7 @@ export default function ProductosValoresPage() {
                                             })}
                                           </div>
                                         ) : (
-                                          <span className="text-textMuted text-[11px]">Sin medio de pago cargado</span>
+                                          <span className="text-textMuted text-[12px]">Sin medio de pago cargado</span>
                                         )}
                                       </td>
                                     </tr>
@@ -844,11 +844,11 @@ export default function ProductosValoresPage() {
                               return (
                                 <span key={clave} className="inline-flex items-center gap-1">
                                   <a href={m.link} target="_blank" rel="noopener noreferrer"
-                                    className="text-[11px] px-2.5 py-1 rounded-full bg-infoBg text-infoText font-semibold whitespace-nowrap">
+                                    className="text-[12px] px-2.5 py-1 rounded-full bg-infoBg text-infoText font-semibold whitespace-nowrap">
                                     {MEDIOS_CONOCIDOS.find(([k]) => k === clave)?.[1] || clave}{m.valor ? ` (USD ${m.valor})` : ''}
                                   </a>
                                   <button onClick={() => copiarLink(m.link, idUnico)} title="Copiar link"
-                                    className="text-[11px] px-2 py-1 rounded-full bg-surface2 border border-border text-textMuted hover:text-text">
+                                    className="text-[12px] px-2 py-1 rounded-full bg-surface2 border border-border text-textMuted hover:text-text">
                                     {linkCopiado === idUnico ? '✓' : '📋'}
                                   </button>
                                 </span>
@@ -882,26 +882,26 @@ export default function ProductosValoresPage() {
 
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div className="col-span-2">
-                <label className="text-[11px] text-textSec block mb-1">Nombre</label>
+                <label className="text-[12px] text-textSec block mb-1">Nombre</label>
                 <input value={form.nombre} onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
                   className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
               </div>
               <div>
-                <label className="text-[11px] text-textSec block mb-1">Modalidad (tipo de producto)</label>
+                <label className="text-[12px] text-textSec block mb-1">Modalidad (tipo de producto)</label>
                 <select value={form.modalidad} onChange={(e) => setForm((f) => ({ ...f, modalidad: e.target.value }))}
                   className="w-full bg-bg border border-border rounded-lg px-2 py-2 text-sm">
                   {MODALIDADES.map((m) => <option key={m} value={m}>{m}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-[11px] text-textSec block mb-1">Formato (badge visible)</label>
+                <label className="text-[12px] text-textSec block mb-1">Formato (badge visible)</label>
                 <select value={form.formato} onChange={(e) => setForm((f) => ({ ...f, formato: e.target.value }))}
                   className="w-full bg-bg border border-border rounded-lg px-2 py-2 text-sm">
                   {FORMATOS.map((f2) => <option key={f2} value={f2}>{f2}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-[11px] text-textSec block mb-1">Estado</label>
+                <label className="text-[12px] text-textSec block mb-1">Estado</label>
                 <select value={form.estado} onChange={(e) => setForm((f) => ({ ...f, estado: e.target.value }))}
                   className="w-full bg-bg border border-border rounded-lg px-2 py-2 text-sm">
                   {ESTADOS.map((e2) => <option key={e2} value={e2}>{e2}</option>)}
@@ -911,31 +911,31 @@ export default function ProductosValoresPage() {
 
             <div className="grid grid-cols-3 gap-3 mb-3">
               <div>
-                <label className="text-[11px] text-textSec block mb-1">Valor de lista ($)</label>
+                <label className="text-[12px] text-textSec block mb-1">Valor de lista ($)</label>
                 <input type="text" inputMode="decimal" value={form.valorLista} onChange={(e) => setForm((f) => ({ ...f, valorLista: e.target.value }))}
                   className="w-full bg-bg border border-border rounded-lg px-2 py-2 text-sm" />
               </div>
               <div>
-                <label className="text-[11px] text-textSec block mb-1">Pago único ($, opcional)</label>
+                <label className="text-[12px] text-textSec block mb-1">Pago único ($, opcional)</label>
                 <input type="text" inputMode="decimal" value={form.valorUnPago} onChange={(e) => setForm((f) => ({ ...f, valorUnPago: e.target.value }))}
                   className="w-full bg-bg border border-border rounded-lg px-2 py-2 text-sm" />
               </div>
               <div>
-                <label className="text-[11px] text-textSec block mb-1">Precio exterior (USD, opcional)</label>
+                <label className="text-[12px] text-textSec block mb-1">Precio exterior (USD, opcional)</label>
                 <input type="text" inputMode="decimal" value={form.precioExterior} onChange={(e) => setForm((f) => ({ ...f, precioExterior: e.target.value }))}
                   className="w-full bg-bg border border-border rounded-lg px-2 py-2 text-sm" />
               </div>
             </div>
 
-            <label className="text-[11px] text-textSec block mb-1">Duración (texto libre, ej: "4 cuotas · 8 semanas")</label>
+            <label className="text-[12px] text-textSec block mb-1">Duración (texto libre, ej: "4 cuotas · 8 semanas")</label>
             <input value={form.duracion} onChange={(e) => setForm((f) => ({ ...f, duracion: e.target.value }))}
               className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm mb-3" />
 
-            <label className="text-[11px] text-textSec block mb-1">Descripción</label>
+            <label className="text-[12px] text-textSec block mb-1">Descripción</label>
             <textarea rows={2} value={form.descripcion} onChange={(e) => setForm((f) => ({ ...f, descripcion: e.target.value }))}
               className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm mb-3" />
 
-            <label className="text-[11px] text-textSec block mb-1">Landing (link, opcional)</label>
+            <label className="text-[12px] text-textSec block mb-1">Landing (link, opcional)</label>
             <input value={form.landing} onChange={(e) => setForm((f) => ({ ...f, landing: e.target.value }))}
               placeholder="https://..." className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm mb-4" />
 
@@ -946,7 +946,7 @@ export default function ProductosValoresPage() {
                   <span className="text-xs w-28 shrink-0">{config.find((t) => t.tierId === tierId)?.label || tierId}</span>
                   <input type="text" inputMode="decimal" value={d.pct} onChange={(e) => setDescuento(tierId, 'pct', e.target.value)}
                     disabled={!d.override} className="w-16 bg-surface2 border border-border rounded px-2 py-1 text-xs disabled:opacity-50" />
-                  <label className="flex items-center gap-1 text-[11px] text-textSec">
+                  <label className="flex items-center gap-1 text-[12px] text-textSec">
                     <input type="checkbox" checked={d.override} onChange={(e) => setDescuento(tierId, 'override', e.target.checked)} />
                     Fijo (no seguir el general)
                   </label>
@@ -956,14 +956,14 @@ export default function ProductosValoresPage() {
             </div>
             <div className="flex gap-1.5 flex-wrap mb-4">
               {config.filter((t) => t.tierId !== 'tipoDeCambio' && !form.descuentos[t.tierId]).map((t) => (
-                <button key={t.tierId} onClick={() => agregarDescuento(t.tierId)} className="text-[11px] px-2.5 py-1 rounded-full bg-surface2 border border-border text-textSec">+ {t.label}</button>
+                <button key={t.tierId} onClick={() => agregarDescuento(t.tierId)} className="text-[12px] px-2.5 py-1 rounded-full bg-surface2 border border-border text-textSec">+ {t.label}</button>
               ))}
             </div>
 
             <p className="text-xs font-semibold text-textSec mb-2">Cuotas escalonadas (opcional)</p>
             <div className="space-y-1.5 mb-2">
               {form.cuotasEscalonadas.map((t, i) => (
-                <div key={i} className="grid grid-cols-4 gap-1.5 items-center">
+                <div key={i} className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 items-center">
                   <input value={t.tramo} onChange={(e) => editarTramo(i, 'tramo', e.target.value)} placeholder="Tramo (ej: Cuota 1)"
                     className="bg-bg border border-border rounded px-2 py-1.5 text-xs col-span-2" />
                   <input type="text" inputMode="decimal" value={t.pctDto} onChange={(e) => editarTramo(i, 'pctDto', e.target.value)} placeholder="% dto"
@@ -976,7 +976,7 @@ export default function ProductosValoresPage() {
                 </div>
               ))}
             </div>
-            <button onClick={agregarTramo} className="text-[11px] px-2.5 py-1 rounded-full bg-surface2 border border-border text-textSec mb-4">+ Agregar tramo</button>
+            <button onClick={agregarTramo} className="text-[12px] px-2.5 py-1 rounded-full bg-surface2 border border-border text-textSec mb-4">+ Agregar tramo</button>
 
             <p className="text-xs font-semibold text-textSec mb-2">Medios de pago</p>
             <div className="space-y-1.5 mb-2">
@@ -995,7 +995,7 @@ export default function ProductosValoresPage() {
             </div>
             <div className="flex gap-1.5 flex-wrap mb-4">
               {MEDIOS_CONOCIDOS.filter(([k]) => !form.mediosDePago[k]).map(([k, label]) => (
-                <button key={k} onClick={() => setMedio(k, 'link', '')} className="text-[11px] px-2.5 py-1 rounded-full bg-surface2 border border-border text-textSec">+ {label}</button>
+                <button key={k} onClick={() => setMedio(k, 'link', '')} className="text-[12px] px-2.5 py-1 rounded-full bg-surface2 border border-border text-textSec">+ {label}</button>
               ))}
             </div>
 

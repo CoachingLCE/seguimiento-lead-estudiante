@@ -85,7 +85,7 @@ export default function FichaDrawer({ leadId, usuario, onClose }) {
                 <a href={enlaceGmail(lead.EmailEstudiante)} target="_blank" rel="noopener noreferrer"
                   className="text-xs px-3 py-1.5 rounded-md bg-surface border border-border">✉ Email</a>
               )}
-              <span className={`ml-auto text-[10.5px] px-2.5 py-1 rounded-full font-semibold ${
+              <span className={`ml-auto text-[12px] px-2.5 py-1 rounded-full font-semibold ${
                 lead.Estado === 'Comprado' ? 'bg-successBg text-successText' : 'bg-warningBg text-warningText'
               }`}>
                 {lead.Estado}
@@ -114,16 +114,16 @@ export default function FichaDrawer({ leadId, usuario, onClose }) {
                     }`}>
                       {iconoPara(ev.accion)}
                     </div>
-                    <p className="text-textMuted text-[10.5px]">{new Date(ev.fecha).toLocaleString('es-AR', { hour12: false })}</p>
+                    <p className="text-textMuted text-[12px]">{new Date(ev.fecha).toLocaleString('es-AR', { hour12: false })}</p>
                     <p className="text-xs font-semibold flex items-center gap-1.5">
                       {ev.accion}
                       {ev.automatico && (
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-infoBg text-infoText uppercase tracking-wide">
+                        <span className="text-[12px] font-bold px-1.5 py-0.5 rounded-full bg-infoBg text-infoText uppercase tracking-wide">
                           Automático
                         </span>
                       )}
                     </p>
-                    {ev.detalle && <p className="text-textSec text-[11px]">{ev.detalle}</p>}
+                    {ev.detalle && <p className="text-textSec text-[12px]">{ev.detalle}</p>}
                   </div>
                 ))}
               </div>

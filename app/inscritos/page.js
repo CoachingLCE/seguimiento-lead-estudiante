@@ -10,6 +10,7 @@ import { useToast } from '../../components/Toast';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoEstudiantes } from '../../lib/permisos';
 import { colorParaCurso, normalizarEdicion, horasHabilesTranscurridas, CURSOS } from '../../lib/constants';
+import { useDialogos } from '../../components/Dialogos';
 
 // Los 5 pasos que definen una inscripción "completa": Bienvenida, Confirmó recepción,
 // Alta en plataforma, Confirmó Alta y Grupo de WhatsApp.
@@ -54,6 +55,7 @@ function antiguedad(fecha) {
 }
 
 export default function InscritosPage() {
+  const { confirmar } = useDialogos();
   const { usuario, logout } = useSession();
   const router = useRouter();
   const { toast, mostrarToast } = useToast();
@@ -214,7 +216,7 @@ export default function InscritosPage() {
   }
 
   async function omitirBienvenida(inscrito) {
-    if (!confirm(`¿Omitir el envío de la bienvenida a ${inscrito.NombreEstudiante}? Se va a marcar "Confirmó recepción" como completado.`)) return;
+    if (!(await confirmar({ titulo: 'Omitir bienvenida', mensaje: `¿Omitir el envío de la bienvenida a ${inscrito.NombreEstudiante}?\n\nSe va a marcar "Confirmó recepción" como completado.`, textoConfirmar: 'Omitir envío' }))) return;
     const res = await fetch('/api/inscritos', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -371,7 +373,7 @@ export default function InscritosPage() {
             <div className="bg-surface border border-border rounded-2xl p-5">
               <p className="text-sm font-semibold mb-1">📩 Sin confirmar recepción — hace 48hs hábiles o más</p>
               <p className="text-textMuted text-xs mb-1">Se les envió Bienvenida o Alta en plataforma, pero todavía no confirmaron que lo recibieron. Convendría reforzar con ellos.</p>
-              <p className="text-textMuted text-[11px] mb-3 italic">Los días viernes a las 8 AM se manda un mail con este resumen.</p>
+              <p className="text-textMuted text-[12px] mb-3 italic">Los días viernes a las 8 AM se manda un mail con este resumen.</p>
               {alertasConfirmacion.length === 0 ? (
                 <p className="text-textMuted text-sm">Sin alertas — todos confirmaron o todavía no pasaron las 48hs hábiles.</p>
               ) : (
@@ -452,7 +454,7 @@ export default function InscritosPage() {
             El estudiante aparece acá solo, al día siguiente de confirmarse la venta (a las 7 AM) — no hace falta cargarlo a mano.
             <br />La lista se actualiza automáticamente todos los días a las 7:00 AM.
           </p>
-          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap max-w-full">
             <select value={filtroCurso} onChange={(e) => setFiltroCurso(e.target.value)}
               className="bg-bg border border-border rounded-lg px-3 py-2 text-sm">
               <option value="">Todas las formaciones</option>
@@ -578,7 +580,7 @@ export default function InscritosPage() {
                           {i.BienvenidaEnviada === 'TRUE' ? (
                             <>
                               <span>✓</span>
-                              <p className="text-textMuted text-[11px] mt-1 whitespace-nowrap">
+                              <p className="text-textMuted text-[12px] mt-1 whitespace-nowrap">
                                 {i.BienvenidaPorNombre}<br/>{new Date(i.FechaBienvenida).toLocaleDateString('es-AR')}
                               </p>
                             </>
@@ -627,7 +629,7 @@ export default function InscritosPage() {
                             <CheckboxVisual marcado={i.AltaPlataforma === 'TRUE'} />
                           </button>
                           {i.AltaPlataforma === 'TRUE' && (
-                            <p className="text-textMuted text-[11px] mt-1 whitespace-nowrap">
+                            <p className="text-textMuted text-[12px] mt-1 whitespace-nowrap">
                               {i.AltaPorNombre}<br/>{new Date(i.FechaAlta).toLocaleDateString('es-AR')}
                             </p>
                           )}

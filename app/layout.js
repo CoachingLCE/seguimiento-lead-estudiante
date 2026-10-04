@@ -4,6 +4,8 @@ import TourGuiado from '../components/TourGuiado';
 import ErrorBoundary from '../components/ErrorBoundary';
 import RecuperadorDeChunks from '../components/RecuperadorDeChunks';
 import { ThemeProvider } from '../lib/ThemeContext';
+import EscCierraModales from '../components/EscCierraModales';
+import { DialogosProvider } from '../components/Dialogos';
 
 export const metadata = {
   title: 'ILCE Gestión',
@@ -34,6 +36,8 @@ export default function RootLayout({ children }) {
         <RecuperadorDeChunks />
         <ErrorBoundary>
           <ThemeProvider>
+            <DialogosProvider>
+            <EscCierraModales />
             {children}
             {/* Pedido de Diego (02/10/2026): "sacarlo ya que tenemos el necesito ayuda" — los
                 paneles "❓ Ayuda: [pantalla]" quedaban duplicados con el botón flotante de abajo
@@ -41,6 +45,7 @@ export default function RootLayout({ children }) {
                 ComoFunciona queda sin usar pero no se borra, por si hace falta volver atrás. */}
             <VersionBadge />
             <TourGuiado />
+            </DialogosProvider>
           </ThemeProvider>
         </ErrorBoundary>
       </body>

@@ -6,6 +6,7 @@ import AccesoDenegado from '../../components/AccesoDenegado';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoBajas } from '../../lib/permisos';
 import { CURSOS } from '../../lib/constants';
+import { useDialogos } from '../../components/Dialogos';
 
 // Cada persona es un bloque separado por una línea en blanco, con campos "Etiqueta: valor"
 // en cualquier orden — todos opcionales, con al menos uno para poder identificarla.
@@ -125,6 +126,7 @@ function parsearBloquesBajas(texto) {
 }
 
 export default function BajasPage() {
+  const { avisar } = useDialogos();
   const { usuario, logout } = useSession();
   const router = useRouter();
 
@@ -226,11 +228,11 @@ export default function BajasPage() {
         })
       });
       const r = await res.json();
-      if (!res.ok) { alert(r.error || 'No se pudo guardar.'); setGuardandoCurso(false); return; }
+      if (!res.ok) { avisar(r.error || 'No se pudo guardar.', 'error'); setGuardandoCurso(false); return; }
       setEditandoCursoDe(null);
       cargarDatosBajas();
     } catch {
-      alert('No se pudo conectar con el servidor.');
+      avisar('No se pudo conectar con el servidor.', 'error');
     }
     setGuardandoCurso(false);
   }
@@ -244,7 +246,7 @@ export default function BajasPage() {
     });
     setEnviandoMensajeId(null);
     if (res.ok) { cargarDatosBajas(); }
-    else { const r = await res.json(); alert(r.error || 'No se pudo enviar el mensaje'); }
+    else { const r = await res.json(); avisar(r.error || 'No se pudo enviar el mensaje', 'error'); }
   }
 
   if (!usuario) return null;
@@ -312,7 +314,7 @@ export default function BajasPage() {
         <div className="bg-surface border border-border rounded-2xl p-5 sm:p-6 mb-4">
           <p className="text-base font-semibold mb-0.5">Cargar bajas</p>
           <p className="text-textMuted text-xs mb-3">Pegá un bloque por persona, separados por una línea en blanco.</p>
-          <p className="text-textMuted text-[11px] mb-3 bg-bg border border-border rounded-lg px-3 py-2 inline-block">
+          <p className="text-textMuted text-[12px] mb-3 bg-bg border border-border rounded-lg px-3 py-2 inline-block">
             Nombre · Curso · Email · WhatsApp · Fecha · Motivo
           </p>
           <textarea rows={8} value={textoBajasMasivas} onChange={(e) => setTextoBajasMasivas(e.target.value)}
@@ -321,7 +323,7 @@ export default function BajasPage() {
 
           {textoBajasMasivas.trim() && (
             <div className="mb-4 space-y-2">
-              <p className="text-textMuted text-[11px]">👀 Se van a cargar {previewBajas.length} persona{previewBajas.length !== 1 ? 's' : ''}</p>
+              <p className="text-textMuted text-[12px]">👀 Se van a cargar {previewBajas.length} persona{previewBajas.length !== 1 ? 's' : ''}</p>
               {previewBajas.map((p, i) => (
                 <div key={i} className="bg-bg border border-border rounded-xl p-3 text-[12px] flex flex-wrap gap-x-4 gap-y-1.5">
                   <span className={p.nombre ? 'text-successText' : 'text-dangerText'}>{p.nombre ? '✓' : '✗'} {p.nombre || 'Nombre (falta)'}</span>
@@ -461,7 +463,7 @@ export default function BajasPage() {
                             ) : (
                               <>
                                 <td className="px-2 text-textSec cursor-pointer hover:text-text hover:underline" onClick={() => abrirEdicionCurso(b)} title="Editar curso">
-                                  {b.curso} <span className="text-textMuted text-[10px]">✏️</span>
+                                  {b.curso} <span className="text-textMuted text-[12px]">✏️</span>
                                 </td>
                                 <td className="px-2 text-textSec cursor-pointer hover:text-text hover:underline" onClick={() => abrirEdicionCurso(b)} title="Editar edición">
                                   {b.edicion || '—'}
@@ -521,7 +523,7 @@ function IndicadorResumen({ valor, label, colorClase }) {
   return (
     <div className="bg-surface border border-border rounded-xl px-4 py-2.5 text-center min-w-[110px]">
       <p className={`text-xl font-bold ${colorClase || 'text-text'}`}>{valor}</p>
-      <p className="text-textMuted text-[11px] whitespace-nowrap">{label}</p>
+      <p className="text-textMuted text-[12px] whitespace-nowrap">{label}</p>
     </div>
   );
 }
@@ -543,23 +545,23 @@ function ChipResultado({ color, icono, texto }) {
 // Mismos estados y condiciones que antes — la diferencia es que "Listo para enviar" ahora es
 // directamente un botón que dispara la misma acción que antes vivía en "Acciones pendientes".
 function BadgeReactivacion({ b, enviandoMensajeId, onEnviar }) {
-  if (b.confirmoRecepcionBaja) return <span className="text-[11px] px-2 py-0.5 rounded-full bg-successBg text-successText whitespace-nowrap">🟢 Confirmó</span>;
-  if (b.mensajeEnviado) return <span className="text-[11px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted whitespace-nowrap">⚪ Enviado</span>;
+  if (b.confirmoRecepcionBaja) return <span className="text-[12px] px-2 py-0.5 rounded-full bg-successBg text-successText whitespace-nowrap">🟢 Confirmó</span>;
+  if (b.mensajeEnviado) return <span className="text-[12px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted whitespace-nowrap">⚪ Enviado</span>;
   if (b.listaParaReactivacion) {
-    if (!b.email) return <span className="text-[11px] px-2 py-0.5 rounded-full bg-warningBg text-warningText whitespace-nowrap">Sin email cargado</span>;
+    if (!b.email) return <span className="text-[12px] px-2 py-0.5 rounded-full bg-warningBg text-warningText whitespace-nowrap">Sin email cargado</span>;
     return (
       <button onClick={() => onEnviar(b)} disabled={enviandoMensajeId === b.leadId}
-        className="text-[11px] px-2.5 py-1 rounded-full bg-accentPurple text-white font-semibold disabled:opacity-60 whitespace-nowrap">
+        className="text-[12px] px-2.5 py-1 rounded-full bg-accentPurple text-white font-semibold disabled:opacity-60 whitespace-nowrap">
         {enviandoMensajeId === b.leadId ? 'Enviando…' : '📩 Enviar mail'}
       </button>
     );
   }
   const faltan = 85 - Math.floor((new Date() - new Date(b.fechaBaja)) / 86400000);
-  return <span className="text-[11px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted whitespace-nowrap">Faltan {faltan} días</span>;
+  return <span className="text-[12px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted whitespace-nowrap">Faltan {faltan} días</span>;
 }
 
 function BadgeSeguimiento({ b }) {
-  if (b.contactado) return <span className="text-[11px] px-2 py-0.5 rounded-full bg-infoBg text-infoText whitespace-nowrap">🔵 Contactado</span>;
-  if (b.disponibleAhora) return <span className="text-[11px] px-2 py-0.5 rounded-full bg-warningBg text-warningText whitespace-nowrap">🟠 En Lote Bajas</span>;
-  return <span className="text-[11px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted whitespace-nowrap">Faltan {b.diasFaltantes} días</span>;
+  if (b.contactado) return <span className="text-[12px] px-2 py-0.5 rounded-full bg-infoBg text-infoText whitespace-nowrap">🔵 Contactado</span>;
+  if (b.disponibleAhora) return <span className="text-[12px] px-2 py-0.5 rounded-full bg-warningBg text-warningText whitespace-nowrap">🟠 En Lote Bajas</span>;
+  return <span className="text-[12px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted whitespace-nowrap">Faltan {b.diasFaltantes} días</span>;
 }

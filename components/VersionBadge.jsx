@@ -25,6 +25,13 @@ export default function VersionBadge() {
     } catch { /* localStorage no disponible: el botón simplemente no parpadea */ }
   }, []);
 
+  // "Novedades" también se abre desde el botón de Ayuda (en celular el badge flotante no se muestra).
+  useEffect(() => {
+    const abrirDesdeAyuda = () => abrir();
+    window.addEventListener('ilce:novedades', abrirDesdeAyuda);
+    return () => window.removeEventListener('ilce:novedades', abrirDesdeAyuda);
+  });
+
   function abrir() {
     setAbierto(true);
     setHayNovedades(false);
@@ -49,7 +56,7 @@ export default function VersionBadge() {
       <button
         onClick={abrir}
         className={
-          'fixed bottom-3 right-4 text-[11px] text-textMuted bg-surface2/80 border border-border rounded-full px-3 py-1 z-40 no-print hover:text-text hover:border-accentTeal transition-colors' +
+          'hidden md:block fixed bottom-3 right-4 text-[12px] text-textMuted bg-surface2/80 border border-border rounded-full px-3 py-1 z-40 no-print hover:text-text hover:border-accentTeal transition-colors' +
           (hayNovedades ? ' version-badge-novedad' : '')
         }
         title="Ver novedades"

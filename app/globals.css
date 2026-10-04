@@ -12,9 +12,9 @@
   --color-border: 38 44 74;
   --color-text: 238 240 248;
   --color-textSec: 154 161 194;
-  --color-textMuted: 107 114 153;
+  --color-textMuted: 152 161 198;   /* #98a1c6: contraste AA (antes #6b7299, 3,8:1) */
   --color-accentTeal: 34 211 238;
-  --color-accentPurple: 124 58 237;
+  --color-accentPurple: 122 31 150;   /* #7a1f96: violeta de marca */
   --color-accentMagenta: 192 38 211;
   --color-successBg: 15 46 34;
   --color-successText: 74 222 128;
@@ -35,10 +35,10 @@
   --color-border: 226 232 240;
   --color-text: 15 23 42;
   --color-textSec: 71 85 105;
-  --color-textMuted: 148 163 184;
-  --color-accentTeal: 8 145 178;
-  --color-accentPurple: 124 58 237;
-  --color-accentMagenta: 162 28 175;
+  --color-textMuted: 86 104 119;     /* #566877: contraste AA (antes #94a3b8, 2,6:1) */
+  --color-accentTeal: 3 115 139;     /* #03738b: teal de marca (antes #0891b2) */
+  --color-accentPurple: 112 22 141;   /* #70168d: violeta de marca (antes #7c3aed) */
+  --color-accentMagenta: 150 25 143;  /* #96198f: magenta de marca (antes #a21caf) */
   --color-successBg: 220 252 231;
   --color-successText: 21 128 61;
   --color-warningBg: 254 243 199;
@@ -48,6 +48,14 @@
   --color-dangerBg: 254 226 226;
   --color-dangerText: 185 28 28;
 }
+@layer base {
+  /* Foco visible para quien navega con teclado */
+  :focus-visible {
+    outline: 2px solid rgb(var(--color-accentTeal));
+    outline-offset: 2px;
+  }
+}
+
 
 body {
   background-color: rgb(var(--color-bg));
@@ -120,3 +128,13 @@ body {
 /* Desplegables nativos: el navegador pintaba el popup de opciones en blanco aun con
    color-scheme. Estilamos las <option> con las variables del tema para que se vean bien. */
 select, option { background-color: rgb(var(--color-surface)); color: rgb(var(--color-text)); }
+
+/* Tablas que en celular pasan a tarjetas: cada fila es una tarjeta y cada dato lleva su etiqueta
+   de columna al lado (en lugar de una tabla que se corta y esconde "Motivo", "Detalle" y "Acción"). */
+@media (max-width:640px) {
+  .tabla-tarjetas thead { display: none; }
+  .tabla-tarjetas, .tabla-tarjetas tbody { display: block; }
+  .tabla-tarjetas tr { display: block; padding: 10px 12px; margin-bottom: 8px; border: 1px solid rgb(var(--color-border)); border-radius: 12px; background: rgb(var(--color-surface2) / .6); }
+  .tabla-tarjetas td { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 3px 0 !important; white-space: normal !important; border: 0; }
+  .tabla-tarjetas td::before { content: attr(data-label); min-width: 78px; font-size: 12px; font-weight: 600; color: rgb(var(--color-textMuted)); }
+}

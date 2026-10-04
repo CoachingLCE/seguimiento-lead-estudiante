@@ -18,7 +18,7 @@ export default function ThemeSelector() {
           type="button"
           title={o.titulo}
           onClick={() => cambiarPreferencia(o.valor)}
-          className={`w-6 h-6 flex items-center justify-center rounded-md text-[11px] transition-colors ${
+          className={`w-6 h-6 flex items-center justify-center rounded-md text-[12px] transition-colors ${
             preferencia === o.valor ? 'bg-accentPurple text-white' : 'text-textMuted hover:text-text'
           }`}
         >

@@ -7,6 +7,7 @@ import Nav from '../../components/Nav';
 import AccesoDenegado from '../../components/AccesoDenegado';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoAcademico, tienePermisoAcademicoVer } from '../../lib/permisos';
+import { useDialogos } from '../../components/Dialogos';
 
 const SITUACIONES = ['', 'Certificado', 'No se certificó', 'Baja', 'Cambio de cursada'];
 const COLOR_SITUACION = {
@@ -110,6 +111,7 @@ const FILTROS_RAPIDOS = ['Todas', 'Activas', 'Finalizadas', 'Con altas bajas', '
 const TODOS = '__TODOS_LOS_CURSOS__';
 
 export default function AcademicoPage() {
+  const { avisar } = useDialogos();
   const { usuario, logout } = useSession();
   const router = useRouter();
 
@@ -252,7 +254,7 @@ export default function AcademicoPage() {
     setEditandoFormadorEdicion(null);
     if (!res.ok) {
       const r = await res.json().catch(() => ({}));
-      alert(r.error || 'No se pudo guardar el formador. Probá de nuevo.');
+      avisar(r.error || 'No se pudo guardar el formador. Probá de nuevo.', 'error');
       return;
     }
     cargarTodo();
@@ -456,7 +458,7 @@ export default function AcademicoPage() {
                   )}
                 </>
               )}
-              <p className="text-textMuted text-[11px] w-full">
+              <p className="text-textMuted text-[12px] w-full">
                 Se usa solo si una edición puntual no tiene su propio formador definido. Para cursos con varios formadores (ej: Oratoria), definilo edición por edición en la tabla de abajo, columna "Formador".
               </p>
             </div>
@@ -519,6 +521,7 @@ export default function AcademicoPage() {
                   <datalist id="lista-formadores">
                     {docentesUnicos.map((d) => <option key={d} value={d} />)}
                   </datalist>
+                  <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="sticky top-0 bg-surface z-10">
                       <tr className="text-textSec text-left border-b border-border">
@@ -599,9 +602,10 @@ export default function AcademicoPage() {
                       ))}
                     </tbody>
                   </table>
+                  </div>
                 </div>
               )}
-              <p className="text-textMuted text-[11px] mt-2">💡 Tocá una fila para ver la ficha detallada de esa edición.</p>
+              <p className="text-textMuted text-[12px] mt-2">💡 Tocá una fila para ver la ficha detallada de esa edición.</p>
             </div>
 
             {cursoActual === TODOS ? (
@@ -715,7 +719,7 @@ export default function AcademicoPage() {
 function TarjetaResumen({ label, valor, colorClase }) {
   return (
     <div className="bg-bg border border-border rounded-xl px-3 py-2.5">
-      <p className="text-textMuted text-[11px] mb-0.5">{label}</p>
+      <p className="text-textMuted text-[12px] mb-0.5">{label}</p>
       <p className={`text-xl font-bold ${colorClase || 'text-text'}`}>{valor}</p>
     </div>
   );
@@ -724,7 +728,7 @@ function TarjetaResumen({ label, valor, colorClase }) {
 function Sparkline({ titulo, datos, campo, color }) {
   return (
     <div className="bg-bg border border-border rounded-lg px-3 py-2">
-      <p className="text-textMuted text-[10.5px] mb-1">{titulo}</p>
+      <p className="text-textMuted text-[12px] mb-1">{titulo}</p>
       <div style={{ height: 36 }}>
         <ResponsiveContainer>
           <LineChart data={datos} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
@@ -781,7 +785,7 @@ function FichaEdicionModal({ info, estudiantes, pagosPorEmail, onEditarCampo, on
                     </td>
                     <td className="pr-2">
                       <select value={e.SituacionAcademica || ''} onChange={(ev) => onEditarCampo(e._rowIndex, 'SituacionAcademica', ev.target.value)}
-                        className={`text-[11px] px-1.5 py-1 rounded-md border-none ${COLOR_SITUACION[e.SituacionAcademica] || COLOR_SITUACION['']}`}>
+                        className={`text-[12px] px-1.5 py-1 rounded-md border-none ${COLOR_SITUACION[e.SituacionAcademica] || COLOR_SITUACION['']}`}>
                         {SITUACIONES.map((s) => <option key={s} value={s}>{s || 'Sin definir'}</option>)}
                       </select>
                     </td>
@@ -798,7 +802,7 @@ function FichaEdicionModal({ info, estudiantes, pagosPorEmail, onEditarCampo, on
                     <td>
                       <input defaultValue={e.Observaciones || ''} placeholder="—"
                         onBlur={(ev) => ev.target.value !== (e.Observaciones || '') && onEditarCampo(e._rowIndex, 'Observaciones', ev.target.value)}
-                        className="w-full bg-bg border border-border rounded px-1.5 py-1 text-[11px]" />
+                        className="w-full bg-bg border border-border rounded px-1.5 py-1 text-[12px]" />
                     </td>
                   </tr>
                 );

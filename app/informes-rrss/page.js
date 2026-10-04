@@ -126,13 +126,13 @@ function Delta({ actual, anterior, esPuntos }) {
   if (anterior === null || anterior === undefined || actual === null || actual === undefined) return null;
   if (esPuntos) {
     const diff = actual - anterior;
-    if (Math.abs(diff) < 0.05) return <span className="text-textMuted text-[11px]">= sin cambios</span>;
-    return <span className={`text-[11px] font-semibold ${diff > 0 ? 'text-successText' : 'text-dangerText'}`}>{diff > 0 ? '↑' : '↓'} {diff > 0 ? '+' : ''}{diff.toFixed(1)} puntos</span>;
+    if (Math.abs(diff) < 0.05) return <span className="text-textMuted text-[12px]">= sin cambios</span>;
+    return <span className={`text-[12px] font-semibold ${diff > 0 ? 'text-successText' : 'text-dangerText'}`}>{diff > 0 ? '↑' : '↓'} {diff > 0 ? '+' : ''}{diff.toFixed(1)} puntos</span>;
   }
   if (anterior === 0) return null; // división por cero — no se puede mostrar % de crecimiento
   const pct = ((actual - anterior) / anterior) * 100;
-  if (Math.abs(pct) < 0.5) return <span className="text-textMuted text-[11px]">= sin cambios</span>;
-  return <span className={`text-[11px] font-semibold ${pct > 0 ? 'text-successText' : 'text-dangerText'}`}>{pct > 0 ? '↑' : '↓'} {pct > 0 ? '+' : ''}{pct.toFixed(0)}%</span>;
+  if (Math.abs(pct) < 0.5) return <span className="text-textMuted text-[12px]">= sin cambios</span>;
+  return <span className={`text-[12px] font-semibold ${pct > 0 ? 'text-successText' : 'text-dangerText'}`}>{pct > 0 ? '↑' : '↓'} {pct > 0 ? '+' : ''}{pct.toFixed(0)}%</span>;
 }
 function Skeleton({ h = 'h-24' }) {
   return <div className={`bg-surface2 animate-pulse rounded-2xl ${h}`} />;
@@ -190,7 +190,7 @@ function GraficoEvolucion({ etiquetas, puntos, color = '#8C52FF', alto = 90 }) {
         ))}
       </svg>
       {hover !== null && coords[hover] && (
-        <div className="absolute pointer-events-none z-10 -translate-x-1/2 -translate-y-full bg-surface2 border border-border rounded-lg px-2 py-1 text-[11px] shadow-lg whitespace-nowrap"
+        <div className="absolute pointer-events-none z-10 -translate-x-1/2 -translate-y-full bg-surface2 border border-border rounded-lg px-2 py-1 text-[12px] shadow-lg whitespace-nowrap"
           style={{ left: `${(hover / Math.max(puntos.length - 1, 1)) * 100}%`, top: `${(coords[hover][1] / alto) * 100}%`, marginTop: -6 }}>
           <span className="text-textMuted">{etiquetas && etiquetas[hover] ? etiquetas[hover] + ': ' : ''}</span><b>{fmtNum(puntos[hover])}</b>
         </div>
@@ -749,19 +749,19 @@ export default function InformesRRSSPage() {
                 <>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                     <div className="bg-bg border border-border rounded-xl p-3">
-                      <p className="text-textMuted text-[11px] mb-1">Alcance acumulado</p>
+                      <p className="text-textMuted text-[12px] mb-1">Alcance acumulado</p>
                       <p className="text-lg font-bold">{fmt(anual.totalReach)}</p>
                     </div>
                     <div className="bg-bg border border-border rounded-xl p-3">
-                      <p className="text-textMuted text-[11px] mb-1">Leads calificados</p>
+                      <p className="text-textMuted text-[12px] mb-1">Leads calificados</p>
                       <p className="text-lg font-bold">{fmt(anual.totalLeads)}</p>
                     </div>
                     <div className="bg-bg border border-border rounded-xl p-3">
-                      <p className="text-textMuted text-[11px] mb-1">Contenido destacado</p>
+                      <p className="text-textMuted text-[12px] mb-1">Contenido destacado</p>
                       <p className="text-lg font-bold">{anual.totalPiezas}</p>
                     </div>
                     <div className="bg-bg border border-border rounded-xl p-3">
-                      <p className="text-textMuted text-[11px] mb-1">Crecimiento de seguidores</p>
+                      <p className="text-textMuted text-[12px] mb-1">Crecimiento de seguidores</p>
                       <p className="text-lg font-bold">{anual.crecimientoSeguidores !== null ? (anual.crecimientoSeguidores >= 0 ? '+' : '') + fmt(anual.crecimientoSeguidores) : '—'}</p>
                     </div>
                   </div>
@@ -780,9 +780,9 @@ export default function InformesRRSSPage() {
                     )}
                   </div>
                   <div className="mt-4">
-                    <p className="text-textMuted text-[11px] mb-1">Alcance mes a mes</p>
+                    <p className="text-textMuted text-[12px] mb-1">Alcance mes a mes</p>
                     <GraficoEvolucion etiquetas={anual.porMes.map((m) => labelCortoDeMes(m.mes))} puntos={anual.porMes.map((m) => m.reach)} color="#5CE1E6" />
-                    <div className="flex justify-between text-[10px] text-textMuted mt-1">
+                    <div className="flex justify-between text-[12px] text-textMuted mt-1">
                       {anual.porMes.map((m) => <span key={m.mes}>{labelCortoDeMes(m.mes)}</span>)}
                     </div>
                   </div>
@@ -819,13 +819,13 @@ export default function InformesRRSSPage() {
                   ['Leads calificados', totales.qualifiedLeads, totalesAnterior.qualifiedLeads, false]
                 ].map(([label, valor, anterior, puntos]) => (
                   <div key={label} className="bg-bg border border-border rounded-xl p-3">
-                    <p className="text-textMuted text-[11px] mb-1">{label}</p>
+                    <p className="text-textMuted text-[12px] mb-1">{label}</p>
                     <p className="text-lg font-bold">{fmt(valor)}</p>
                     {hayDatosMesAnterior && <Delta actual={valor} anterior={anterior} esPuntos={puntos} />}
                   </div>
                 ))}
                 <div className="bg-bg border border-border rounded-xl p-3">
-                  <p className="text-textMuted text-[11px] mb-1">Contenidos cargados</p>
+                  <p className="text-textMuted text-[12px] mb-1">Contenidos cargados</p>
                   <p className="text-lg font-bold">{piezas.length}</p>
                 </div>
               </div>
@@ -838,7 +838,7 @@ export default function InformesRRSSPage() {
                 </p>
               )}
               {!hayDatosMesAnterior && (
-                <p className="text-textMuted text-[11px] mt-2 italic">Sin datos de {labelDeMes(mesAnteriorDe(mes))} todavía — no se puede comparar.</p>
+                <p className="text-textMuted text-[12px] mt-2 italic">Sin datos de {labelDeMes(mesAnteriorDe(mes))} todavía — no se puede comparar.</p>
               )}
             </div>
 
@@ -889,7 +889,7 @@ export default function InformesRRSSPage() {
                           {conDatos.length > 0 && <p className="text-sm font-bold">{fmt(conDatos[conDatos.length - 1])}</p>}
                         </div>
                         <GraficoEvolucion etiquetas={mesesEvolucion.map(labelCortoDeMes)} puntos={serie} color={color} />
-                        <div className="flex justify-between text-[10px] text-textMuted mt-1">
+                        <div className="flex justify-between text-[12px] text-textMuted mt-1">
                           {mesesEvolucion.map((m) => <span key={m}>{labelCortoDeMes(m)}</span>)}
                         </div>
                       </div>
@@ -938,7 +938,7 @@ export default function InformesRRSSPage() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
                     {CAMPOS_METRICA.map(([campo, label]) => (
                       <div key={campo}>
-                        <label className="text-[11px] text-textSec block mb-1">{label}</label>
+                        <label className="text-[12px] text-textSec block mb-1">{label}</label>
                         <input type="text" inputMode="decimal" value={formMetrica[campo] ?? ''}
                           onChange={(e) => setFormMetrica((f) => ({ ...f, [campo]: e.target.value }))}
                           className="w-full bg-bg border border-border rounded-lg px-2 py-1.5 text-sm" />
@@ -968,7 +968,7 @@ export default function InformesRRSSPage() {
                 <div className="bg-bg border border-warningText/40 rounded-xl p-3 mb-3">
                   <p className="text-warningText text-xs font-semibold mb-1">🏆 Mejor contenido del mes</p>
                   <p className="text-sm font-medium">{mejorPieza.Titulo}</p>
-                  <p className="text-textMuted text-[11px]">Engagement: {mejorPieza._engagement.toFixed(1)}%</p>
+                  <p className="text-textMuted text-[12px]">Engagement: {mejorPieza._engagement.toFixed(1)}%</p>
                 </div>
               )}
 
@@ -976,28 +976,28 @@ export default function InformesRRSSPage() {
                 <div className="bg-bg border border-border rounded-xl p-4 mb-4">
                   <div className="grid grid-cols-2 gap-3 mb-3">
                     <div>
-                      <label className="text-[11px] text-textSec block mb-1">Plataforma</label>
+                      <label className="text-[12px] text-textSec block mb-1">Plataforma</label>
                       <select value={formPieza.plataforma} onChange={(e) => setFormPieza((f) => ({ ...f, plataforma: e.target.value }))}
                         className="w-full bg-surface border border-border rounded-lg px-2 py-1.5 text-sm">
                         {PLATAFORMAS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="text-[11px] text-textSec block mb-1">Tipo</label>
+                      <label className="text-[12px] text-textSec block mb-1">Tipo</label>
                       <select value={formPieza.tipo} onChange={(e) => setFormPieza((f) => ({ ...f, tipo: e.target.value }))}
                         className="w-full bg-surface border border-border rounded-lg px-2 py-1.5 text-sm">
                         {TIPOS_PIEZA.map((t) => <option key={t} value={t}>{t}</option>)}
                       </select>
                     </div>
                   </div>
-                  <label className="text-[11px] text-textSec block mb-1">Título</label>
+                  <label className="text-[12px] text-textSec block mb-1">Título</label>
                   <input value={formPieza.titulo} onChange={(e) => setFormPieza((f) => ({ ...f, titulo: e.target.value }))}
                     placeholder="Ej: 3 señales de que tu equipo necesita coaching"
                     className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm mb-3" />
                   <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-3">
                     {[['views', 'Views'], ['likes', 'Likes'], ['comments', 'Comments'], ['saves', 'Saves'], ['shares', 'Shares'], ['leads', 'Leads']].map(([campo, label]) => (
                       <div key={campo}>
-                        <label className="text-[11px] text-textSec block mb-1">{label}</label>
+                        <label className="text-[12px] text-textSec block mb-1">{label}</label>
                         <input type="text" inputMode="numeric" value={formPieza[campo]}
                           onChange={(e) => setFormPieza((f) => ({ ...f, [campo]: e.target.value }))}
                           className="w-full bg-surface border border-border rounded-lg px-2 py-1.5 text-xs" />
@@ -1008,10 +1008,10 @@ export default function InformesRRSSPage() {
                     const eng = engagementDePieza(formPieza);
                     return eng !== null ? <p className="text-accentTeal text-xs mb-3">Engagement calculado: {eng.toFixed(1)}%</p> : null;
                   })()}
-                  <label className="text-[11px] text-textSec block mb-1">Guion / copy (opcional)</label>
+                  <label className="text-[12px] text-textSec block mb-1">Guion / copy (opcional)</label>
                   <textarea rows={3} value={formPieza.guion} onChange={(e) => setFormPieza((f) => ({ ...f, guion: e.target.value }))}
                     className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm mb-3" />
-                  <label className="text-[11px] text-textSec block mb-1">¿Por qué funcionó? (opcional)</label>
+                  <label className="text-[12px] text-textSec block mb-1">¿Por qué funcionó? (opcional)</label>
                   <textarea rows={2} value={formPieza.notaIA} onChange={(e) => setFormPieza((f) => ({ ...f, notaIA: e.target.value }))}
                     className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm mb-3" />
                   {errorFormPieza && <p className="text-dangerText text-xs mb-3">✕ {errorFormPieza}</p>}
@@ -1033,9 +1033,9 @@ export default function InformesRRSSPage() {
                     <div key={p.PiezaID || p._rowIndex} className={`bg-bg border rounded-xl p-3.5 ${mejorPieza && (mejorPieza.PiezaID || mejorPieza._rowIndex) === (p.PiezaID || p._rowIndex) ? 'border-warningText/50' : 'border-border'}`}>
                       <div className="flex items-start justify-between gap-2 mb-1.5">
                         <div className="flex flex-wrap gap-1">
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted">{PLATAFORMAS.find((pl) => pl.id === p.Plataforma)?.label || p.Plataforma}</span>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted">{p.Tipo}</span>
-                          {p._engagement !== null && <span className="text-[10px] px-2 py-0.5 rounded-full bg-accentTeal/20 text-accentTeal font-medium">{p._engagement.toFixed(1)}% eng.</span>}
+                          <span className="text-[12px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted">{PLATAFORMAS.find((pl) => pl.id === p.Plataforma)?.label || p.Plataforma}</span>
+                          <span className="text-[12px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted">{p.Tipo}</span>
+                          {p._engagement !== null && <span className="text-[12px] px-2 py-0.5 rounded-full bg-accentTeal/20 text-accentTeal font-medium">{p._engagement.toFixed(1)}% eng.</span>}
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <button onClick={() => abrirEdicionPieza(p)} className="text-xs text-accentTeal">✏️</button>
@@ -1043,7 +1043,7 @@ export default function InformesRRSSPage() {
                         </div>
                       </div>
                       <p className="text-sm font-medium mb-2">{p.Titulo}</p>
-                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-textSec">
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-textSec">
                         {p.Views !== '' && <span>👁 {fmt(p.Views)}</span>}
                         {p.Likes !== '' && <span>❤️ {fmt(p.Likes)}</span>}
                         {p.Comments !== '' && <span>💬 {fmt(p.Comments)}</span>}
@@ -1051,7 +1051,7 @@ export default function InformesRRSSPage() {
                         {p.Shares !== '' && <span>🔁 {fmt(p.Shares)}</span>}
                         {p.Leads && p.Leads !== '' && <span>🎯 {fmt(p.Leads)} leads</span>}
                       </div>
-                      {p.NotaIA && <p className="text-textMuted text-[11px] mt-2 italic border-l-2 border-accentPurple pl-2">{p.NotaIA}</p>}
+                      {p.NotaIA && <p className="text-textMuted text-[12px] mt-2 italic border-l-2 border-accentPurple pl-2">{p.NotaIA}</p>}
                     </div>
                   ))}
                 </div>
@@ -1065,7 +1065,7 @@ export default function InformesRRSSPage() {
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {topContenidos.map(([label, pieza, campo]) => (
                     <div key={label} className="bg-bg border border-border rounded-xl p-3">
-                      <p className="text-textMuted text-[11px] mb-1">{label}</p>
+                      <p className="text-textMuted text-[12px] mb-1">{label}</p>
                       <p className="text-sm font-semibold truncate">{pieza.Titulo}</p>
                       <p className="text-accentTeal text-xs font-bold mt-1">
                         {campo === '_engagement' ? `${pieza._engagement.toFixed(1)}%` : fmt(pieza[campo])}
@@ -1084,7 +1084,7 @@ export default function InformesRRSSPage() {
                   {rendimientoPorTipo.map((t) => (
                     <div key={t.clave} className="bg-bg border border-border rounded-xl p-3">
                       <p className="text-sm font-semibold mb-2">{t.clave}</p>
-                      <p className="text-textMuted text-[11px]">{t.cantidad} publicacion{t.cantidad !== 1 ? 'es' : ''}</p>
+                      <p className="text-textMuted text-[12px]">{t.cantidad} publicacion{t.cantidad !== 1 ? 'es' : ''}</p>
                       <p className="text-textSec text-xs mt-1">Alcance promedio: <b className="text-text">{fmt(t.alcancePromedio)}</b></p>
                       {t.engagementProm !== null && <p className="text-textSec text-xs">Engagement: <b className="text-text">{t.engagementProm.toFixed(1)}%</b></p>}
                       {t.leads > 0 && <p className="text-textSec text-xs">Leads: <b className="text-text">{t.leads}</b></p>}
@@ -1125,7 +1125,7 @@ export default function InformesRRSSPage() {
             {frasesAnalisisAuto.length > 0 && (
               <div className="bg-surface border border-accentTeal/30 rounded-2xl p-4 sm:p-5">
                 <p className="text-sm font-semibold mb-2">🤖 Resumen automático del mes</p>
-                <p className="text-textMuted text-[11px] mb-3">Generado solo a partir de los datos cargados — no es un texto genérico.</p>
+                <p className="text-textMuted text-[12px] mb-3">Generado solo a partir de los datos cargados — no es un texto genérico.</p>
                 <p className="text-textSec text-sm leading-relaxed">{frasesAnalisisAuto.join(' ')}</p>
               </div>
             )}
@@ -1140,16 +1140,16 @@ export default function InformesRRSSPage() {
               </div>
               {editandoAnalisis ? (
                 <>
-                  <label className="text-[11px] text-textSec block mb-0.5">Resumen</label>
-                  <p className="text-textMuted text-[11px] mb-1">¿Qué pasó este mes?</p>
+                  <label className="text-[12px] text-textSec block mb-0.5">Resumen</label>
+                  <p className="text-textMuted text-[12px] mb-1">¿Qué pasó este mes?</p>
                   <textarea rows={3} value={formAnalisis.resumen} onChange={(e) => setFormAnalisis((f) => ({ ...f, resumen: e.target.value }))}
                     className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm mb-3" />
-                  <label className="text-[11px] text-textSec block mb-0.5">Causas</label>
-                  <p className="text-textMuted text-[11px] mb-1">¿Por qué creemos que ocurrió?</p>
+                  <label className="text-[12px] text-textSec block mb-0.5">Causas</label>
+                  <p className="text-textMuted text-[12px] mb-1">¿Por qué creemos que ocurrió?</p>
                   <textarea rows={3} value={formAnalisis.causas} onChange={(e) => setFormAnalisis((f) => ({ ...f, causas: e.target.value }))}
                     className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm mb-3" />
-                  <label className="text-[11px] text-textSec block mb-0.5">Propuestas</label>
-                  <p className="text-textMuted text-[11px] mb-1">¿Qué vamos a hacer el próximo mes?</p>
+                  <label className="text-[12px] text-textSec block mb-0.5">Propuestas</label>
+                  <p className="text-textMuted text-[12px] mb-1">¿Qué vamos a hacer el próximo mes?</p>
                   <textarea rows={3} value={formAnalisis.propuestas} onChange={(e) => setFormAnalisis((f) => ({ ...f, propuestas: e.target.value }))}
                     className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm mb-3" />
                   {errorFormAnalisis && <p className="text-dangerText text-xs mb-3">✕ {errorFormAnalisis}</p>}
@@ -1165,9 +1165,9 @@ export default function InformesRRSSPage() {
                 <p className="text-textMuted text-sm">Todavía no hay análisis cargado para este mes.</p>
               ) : (
                 <div className="space-y-3 text-sm">
-                  {analisis.resumen && <div><p className="text-textMuted text-[11px] uppercase mb-1">Resumen</p><p className="text-textSec whitespace-pre-wrap">{analisis.resumen}</p></div>}
-                  {analisis.causas && <div><p className="text-textMuted text-[11px] uppercase mb-1">Causas</p><p className="text-textSec whitespace-pre-wrap">{analisis.causas}</p></div>}
-                  {analisis.propuestas && <div><p className="text-textMuted text-[11px] uppercase mb-1">Propuestas</p><p className="text-textSec whitespace-pre-wrap">{analisis.propuestas}</p></div>}
+                  {analisis.resumen && <div><p className="text-textMuted text-[12px] uppercase mb-1">Resumen</p><p className="text-textSec whitespace-pre-wrap">{analisis.resumen}</p></div>}
+                  {analisis.causas && <div><p className="text-textMuted text-[12px] uppercase mb-1">Causas</p><p className="text-textSec whitespace-pre-wrap">{analisis.causas}</p></div>}
+                  {analisis.propuestas && <div><p className="text-textMuted text-[12px] uppercase mb-1">Propuestas</p><p className="text-textSec whitespace-pre-wrap">{analisis.propuestas}</p></div>}
                 </div>
               )}
             </div>
