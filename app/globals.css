@@ -60,7 +60,7 @@
 body {
   background-color: rgb(var(--color-bg));
   color: rgb(var(--color-text));
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-texto);
   transition: background-color .25s ease, color .25s ease;
 }
 
@@ -147,4 +147,28 @@ select, option { background-color: rgb(var(--color-surface)); color: rgb(var(--c
 
 @media (max-width:640px) {
   .tabla-tarjetas.tarjetas-etiquetas-largas td::before { min-width: 140px; }
+}
+
+/* ===== Tipografía de marca (manual de ILCE): Dosis para el texto y TeX Gyre Adventor para los títulos.
+   Las fuentes están dentro de la app (carpeta public/fonts): no se piden a Google, así se ven igual en
+   todos los dispositivos. Dosis es más baja y angosta que una letra de sistema, por eso lleva
+   size-adjust (se agranda un 8 % para que se lea del mismo tamaño que antes). ===== */
+@font-face{font-family:'Dosis';src:url('/fonts/dosis-400.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;size-adjust:108%}
+@font-face{font-family:'Dosis';src:url('/fonts/dosis-500.woff2') format('woff2');font-weight:500;font-style:normal;font-display:swap;size-adjust:108%}
+@font-face{font-family:'Dosis';src:url('/fonts/dosis-600.woff2') format('woff2');font-weight:600;font-style:normal;font-display:swap;size-adjust:108%}
+@font-face{font-family:'Dosis';src:url('/fonts/dosis-700.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;size-adjust:108%}
+@font-face{font-family:'TeX Gyre Adventor';src:url('/fonts/adventor-400.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'TeX Gyre Adventor';src:url('/fonts/adventor-700.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap}
+:root{--font-texto:'Dosis',system-ui,-apple-system,'Segoe UI',sans-serif;--font-titulo:'TeX Gyre Adventor','Century Gothic','Avant Garde',system-ui,sans-serif}
+h1,h2,.font-display{font-family:var(--font-titulo)}
+button,input,select,textarea{font-family:inherit}
+
+/* Barra lateral de navegación (escritorio): el contenido deja lugar a la izquierda. */
+@media (min-width:1024px){ body.con-menu-lateral{ padding-left:248px; } }
+
+/* Tablas en escritorio: la fila bajo el mouse se resalta y los encabezados se leen como encabezados. */
+@media (min-width:641px){
+  table thead th{font-weight:600;font-size:12.5px;color:rgb(var(--color-textMuted))}
+  table tbody tr{transition:background-color .12s ease}
+  table tbody tr:hover{background-color:rgb(var(--color-surface2) / .55)}
 }
