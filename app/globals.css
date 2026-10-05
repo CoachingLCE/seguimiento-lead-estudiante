@@ -188,3 +188,12 @@ button,input,select,textarea{font-family:inherit}
 @font-face{font-family:'Dosis';src:url('/fonts/iconos.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;unicode-range:U+E000-F8FF}
 @font-face{font-family:'TeX Gyre Adventor';src:url('/fonts/iconos.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;unicode-range:U+E000-F8FF}
 @font-face{font-family:'TeX Gyre Adventor';src:url('/fonts/iconos.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;unicode-range:U+E000-F8FF}
+
+/* ===== Ventanas (overlays hechos a mano): red de seguridad para pantallas chicas =====
+   Hallazgo (05/10/2026): una ventana de formulario más alta que la pantalla del celular quedaba con el título fuera de
+   vista y el botón "Guardar" inalcanzable (el fondo es fijo y no se desplaza), y las de ancho fijo (w-96) se achicaban
+   hasta pegarse a los dos bordes. Estas reglas dan 12 px de margen a los costados y, si la ventana no entra, scroll
+   interno. NO tocan los paneles laterales (drawer / h-full), ni los globos posicionados con fixed (recorrido guiado), ni las ventanas que ya definen su propia altura (h-[..],
+   max-h-..): esas se arreglan solas. */
+div.fixed.inset-0 > div[class*="rounded-2xl"]:not([class*="h-full"]):not([class*="h-["]):not(.drawer-in):not(.fixed){max-width:calc(100vw - 24px)}
+div.fixed.inset-0 > div[class*="rounded-2xl"]:not([class*="h-full"]):not([class*="h-["]):not([class*="max-h-"]):not(.drawer-in):not(.fixed){max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain}
