@@ -6,7 +6,7 @@ const KEY_VISTO = 'ilce-leads-tutorial-visto';
 
 const PASOS = [
   {
-    titulo: '¡Bienvenido/a! 👋',
+    titulo: '¡Bienvenido/a! ',
     texto:
       'Antes de arrancar, te mostramos rápido cómo funciona esta app. Son solo 5 pasos — mirá el tutorial o tocá "Omitir" para empezar directo.'
   },
@@ -28,7 +28,7 @@ const PASOS = [
   {
     titulo: '¿Te perdiste algo?',
     texto:
-      'Al pie de cada pantalla hay una sección "📖 Cómo funciona esta app" con el detalle completo. Y podés volver a ver este tutorial tocando el botón 💡 en cualquier momento.'
+      'Al pie de cada pantalla hay una sección " Cómo funciona esta app" con el detalle completo. Y podés volver a ver este tutorial tocando el botón  en cualquier momento.'
   }
 ];
 
@@ -66,7 +66,7 @@ export default function TutorialHandbook() {
         onClick={abrirDeNuevo}
         className="fixed bottom-3 left-4 flex items-center gap-1.5 text-xs text-textSec bg-surface2 border border-border rounded-full px-3 py-1.5 z-40 hover:border-accentTeal hover:text-text no-print"
       >
-        💡 ¿Cómo funciona esta app?
+         ¿Cómo funciona esta app?
       </button>
 
       {abierto && (

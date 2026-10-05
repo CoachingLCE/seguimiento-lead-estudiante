@@ -44,7 +44,7 @@ export default function ComunidadesPage() {
         <AccesoDenegado seccion="Comunidades" />
       ) : (
         <div className="max-w-[1100px] mx-auto px-6 pb-16">
-          <h3 className="text-lg font-bold mb-1">🌐 Comunidades</h3>
+          <h3 className="text-lg font-bold mb-1"> Comunidades</h3>
           <p className="text-textSec text-sm mb-5">Ventas reales del curso "Comunidades" — se toman directo de Leads, igual que cualquier otro curso.</p>
 
           {cargando ? (
@@ -61,7 +61,7 @@ export default function ComunidadesPage() {
               </div>
 
               <div className="bg-surface border border-border rounded-2xl p-5">
-                <p className="text-sm font-semibold mb-3">💰 Listado de ventas</p>
+                <p className="text-sm font-semibold mb-3"> Listado de ventas</p>
                 {ventas.length === 0 ? (
                   <p className="text-textMuted text-sm">Sin ventas registradas todavía.</p>
                 ) : (

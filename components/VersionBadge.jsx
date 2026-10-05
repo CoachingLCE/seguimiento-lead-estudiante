@@ -68,8 +68,8 @@ export default function VersionBadge() {
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setAbierto(false)}>
           <div className="bg-surface2 border border-border rounded-2xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <p className="text-base font-bold">📋 Novedades de la app</p>
-              <button onClick={() => setAbierto(false)} className="text-textMuted hover:text-text">✕</button>
+              <p className="text-base font-bold"> Novedades de la app</p>
+              <button onClick={() => setAbierto(false)} className="text-textMuted hover:text-text"></button>
             </div>
             <div className="space-y-5">
               {paraMostrar.map((entrada) => (

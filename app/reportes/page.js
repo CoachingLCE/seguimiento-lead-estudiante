@@ -167,7 +167,7 @@ function ChartCard({ titulo, subtitulo, valorGrande, comparacion, tooltip, onExp
         {onExportar && (
           <button onClick={onExportar}
             className="text-textMuted hover:text-accentTeal text-[12px] shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-            ⬇ Exportar
+             Exportar
           </button>
         )}
       </div>
@@ -202,7 +202,7 @@ function SeccionAlertas({ alertasGenerales, alertasCursos, mes, setFiltro }) {
   return (
     <div className="bg-surface border border-warningText/20 rounded-2xl p-4">
       <p className="text-warningText text-sm font-semibold mb-3">
-        ⚠ Alertas de {labelDeMes(mes).split(' ')[0]} — {totalAlertas}
+         Alertas de {labelDeMes(mes).split(' ')[0]} — {totalAlertas}
       </p>
 
       {alertasGenerales.length > 0 && (
@@ -330,14 +330,14 @@ function colorParaTexto(texto) {
 }
 
 const TABS = [
-  { id: 'general', label: '📊 General' },
-  { id: 'alertas', label: '⚠️ Alertas' },
-  { id: 'objetivos', label: '🎯 Objetivos' },
-  { id: 'embudo', label: '🔻 Embudo' },
-  { id: 'actividad', label: '👤 Actividad' },
-  { id: 'analisis', label: '📈 Análisis' },
-  { id: 'compras', label: '🧾 Compras' },
-  { id: 'escala', label: '📐 Escala Inscripciones' }
+  { id: 'general', label: ' General' },
+  { id: 'alertas', label: ' Alertas' },
+  { id: 'objetivos', label: ' Objetivos' },
+  { id: 'embudo', label: ' Embudo' },
+  { id: 'actividad', label: ' Actividad' },
+  { id: 'analisis', label: ' Análisis' },
+  { id: 'compras', label: ' Compras' },
+  { id: 'escala', label: ' Escala Inscripciones' }
 ];
 
 function TabBar({ tab, setTab }) {
@@ -368,7 +368,7 @@ function BarraObjetivo({ pct, colorClase }) {
 function mensajeObjetivo({ label, pct, actual, meta, unidad }) {
   if (pct >= 100) {
     const excedente = unidad === '$' ? money(actual - meta) : Math.round(actual - meta);
-    return pct > 105 ? `🚀 Vas por encima del objetivo (+${excedente} de excedente).` : '✅ Objetivo cumplido.';
+    return pct > 105 ? ` Vas por encima del objetivo (+${excedente} de excedente).` : ' Objetivo cumplido.';
   }
   const falta = unidad === '$' ? money(meta - actual) : Math.round(meta - actual);
   if (pct >= 70) return `🟡 Te faltan ${falta} para llegar a la meta de ${label.toLowerCase()}.`;
@@ -549,7 +549,7 @@ function SeccionObjetivos({ datos, mes, usuario }) {
           {/* PROYECCIÓN AL CIERRE DEL MES */}
           {PROYECCIONES.length > 0 && (
             <div className="bg-surface border border-infoText/30 rounded-2xl p-5 shadow-sm">
-              <p className="text-sm font-semibold mb-1">📈 Proyección al cierre del mes</p>
+              <p className="text-sm font-semibold mb-1"> Proyección al cierre del mes</p>
               <p className="text-textMuted text-[12px] mb-3">
                 Estimación en base al ritmo actual (día {diasTranscurridos} de {diasDelMes}) — no es un dato confirmado.
               </p>
@@ -591,7 +591,7 @@ function SeccionObjetivos({ datos, mes, usuario }) {
                     <span className="font-medium">{o.curso}</span>
                     <span className={`font-bold ${estado.clase}`}>
                       {ventasActuales} / {o.meta} · {pct.toFixed(0)}%
-                      {' — '}{pct >= 100 ? '✅ Cumplido' : `faltan ${Math.ceil(o.meta - ventasActuales)}`}
+                      {' — '}{pct >= 100 ? ' Cumplido' : `faltan ${Math.ceil(o.meta - ventasActuales)}`}
                     </span>
                   </div>
                   <BarraObjetivo pct={pct} colorClase={estado.barra} />
@@ -617,7 +617,7 @@ function SeccionObjetivos({ datos, mes, usuario }) {
                     <span className="font-medium">{o.vendedor}</span>
                     <span className={`font-bold ${estado.clase}`}>
                       {ventasActuales} / {o.meta} · {pct.toFixed(0)}%
-                      {' — '}{pct >= 100 ? '✅ Cumplido' : `faltan ${Math.ceil(o.meta - ventasActuales)}`}
+                      {' — '}{pct >= 100 ? ' Cumplido' : `faltan ${Math.ceil(o.meta - ventasActuales)}`}
                     </span>
                   </div>
                   <BarraObjetivo pct={pct} colorClase={estado.barra} />
@@ -626,7 +626,7 @@ function SeccionObjetivos({ datos, mes, usuario }) {
             })}
           </div>
 
-          <p className="text-xs font-semibold text-textSec mt-5 mb-2.5">📊 Comparación con el mes anterior</p>
+          <p className="text-xs font-semibold text-textSec mt-5 mb-2.5"> Comparación con el mes anterior</p>
           <div className="space-y-2">
             {objetivosPorVendedor.filter((o) => !EXCLUIDOS_METAS_VENDEDOR.includes(o.vendedor)).map((o) => {
               const ventasActuales = datos.rankingVendedores.find((r) => r.nombre === o.vendedor)?.cantidad || 0;
@@ -650,9 +650,9 @@ function SeccionObjetivos({ datos, mes, usuario }) {
       {puedeEditar && (
         <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-semibold">⚙️ Configurar objetivos de {labelDeMes(mes)}</p>
+            <p className="text-sm font-semibold"> Configurar objetivos de {labelDeMes(mes)}</p>
             {!editando && objetivos && (
-              <button onClick={() => setEditando(true)} className="text-xs text-accentTeal font-semibold">✏️ Editar</button>
+              <button onClick={() => setEditando(true)} className="text-xs text-accentTeal font-semibold"> Editar</button>
             )}
           </div>
           {editando && (
@@ -802,9 +802,9 @@ function SeccionEscalaInscripciones({ usuario }) {
   return (
     <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm">
       <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
-        <p className="text-sm font-semibold">📐 Escala de Inscripciones</p>
+        <p className="text-sm font-semibold"> Escala de Inscripciones</p>
         {esAdmin && !editando && (
-          <button onClick={() => setEditando(true)} className="text-xs text-accentTeal font-semibold">✏️ Editar</button>
+          <button onClick={() => setEditando(true)} className="text-xs text-accentTeal font-semibold"> Editar</button>
         )}
       </div>
       <p className="text-textMuted text-xs mb-4">
@@ -1096,7 +1096,7 @@ export default function ReportesPage() {
           </div>
           <div className="flex-1 min-w-[200px]">
             <label className="text-xs text-textSec block mb-1">Buscar venta o estudiante</label>
-            <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="🔍 Nombre, curso, origen…"
+            <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder=" Nombre, curso, origen…"
               className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
           </div>
         </div>
@@ -1105,7 +1105,7 @@ export default function ReportesPage() {
 
         {error ? (
           <div className="bg-dangerBg border border-dangerText/30 rounded-2xl p-6 text-center">
-            <p className="text-dangerText text-sm font-semibold mb-3">⚠️ {error}</p>
+            <p className="text-dangerText text-sm font-semibold mb-3"> {error}</p>
             <button onClick={() => cargarDatos(mes)} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">
               Reintentar
             </button>
@@ -1121,12 +1121,12 @@ export default function ReportesPage() {
                 {usuario?.roles?.includes('Admin') && (
                   <div className="bg-surface border border-border rounded-2xl p-4">
                     <div className="flex items-center justify-between flex-wrap gap-2">
-                      <p className="text-xs font-semibold text-textSec">🔧 Diagnóstico: montos inválidos ("$NaN")</p>
+                      <p className="text-xs font-semibold text-textSec"> Diagnóstico: montos inválidos ("$NaN")</p>
                       <button onClick={verMontosRotos} className="text-xs px-3 py-1.5 rounded-lg bg-surface2 border border-border">Buscar</button>
                     </div>
                     {montosRotos && (
                       montosRotos.length === 0 ? (
-                        <p className="text-successText text-xs mt-2">✓ No hay montos rotos en toda la base.</p>
+                        <p className="text-successText text-xs mt-2"> No hay montos rotos en toda la base.</p>
                       ) : (
                         <div className="mt-3 space-y-1.5">
                           {montosRotos.map((m) => (
@@ -1156,7 +1156,7 @@ export default function ReportesPage() {
                     recién empezado se vea muy por debajo de uno ya cerrado. */}
                 {mes === new Date().toISOString().slice(0, 7) && (
                   <div className="bg-infoBg text-infoText rounded-lg px-3 py-2 text-xs">
-                    📅 {labelDeMes(mes)} todavía está en curso (día {new Date().getDate()} de {new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()}) — los números de abajo son parciales. Las comparaciones ("vs mes anterior") muestran el total acumulado hasta hoy contra el mes anterior COMPLETO, así que una flecha en rojo acá no significa necesariamente que esté yendo peor: compáralas recién cuando {labelDeMes(mes)} termine.
+                     {labelDeMes(mes)} todavía está en curso (día {new Date().getDate()} de {new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()}) — los números de abajo son parciales. Las comparaciones ("vs mes anterior") muestran el total acumulado hasta hoy contra el mes anterior COMPLETO, así que una flecha en rojo acá no significa necesariamente que esté yendo peor: compáralas recién cuando {labelDeMes(mes)} termine.
                   </div>
                 )}
 
@@ -1507,7 +1507,7 @@ export default function ReportesPage() {
 
                 {datos.retrasoPorLote?.length > 0 && (
                   <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm">
-                    <p className="text-sm font-semibold mb-1">⏱ Retraso por lote</p>
+                    <p className="text-sm font-semibold mb-1"> Retraso por lote</p>
                     <p className="text-textMuted text-xs mb-4">
                       Pendientes de contactar en cada lote (vencidos, sin programación), y hace cuántos días en promedio esperan — estado actual, no se acota al mes seleccionado.
                     </p>
@@ -1534,7 +1534,7 @@ export default function ReportesPage() {
             {tab === 'actividad' && (
               <>
               <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm mb-4">
-                <p className="text-sm font-semibold mb-1">📦 Actividad por lote</p>
+                <p className="text-sm font-semibold mb-1"> Actividad por lote</p>
                 <p className="text-textMuted text-xs mb-4">
                   Toques (contactos) hechos este mes en cada lote, y cuántos quedan atrasados ahora mismo (vencidos, sin resolver).
                 </p>
@@ -1548,7 +1548,7 @@ export default function ReportesPage() {
                       {r.atrasados > 0 ? (
                         <p className="text-xs">
                           <span className={r.diasPromedioRetraso >= 3 ? 'text-dangerText' : 'text-warningText'}>
-                            ⚠️ {r.atrasados} atrasado{r.atrasados !== 1 ? 's' : ''} ({r.diasPromedioRetraso} día{r.diasPromedioRetraso !== 1 ? 's' : ''} en promedio)
+                             {r.atrasados} atrasado{r.atrasados !== 1 ? 's' : ''} ({r.diasPromedioRetraso} día{r.diasPromedioRetraso !== 1 ? 's' : ''} en promedio)
                           </span>
                         </p>
                       ) : (
@@ -1561,7 +1561,7 @@ export default function ReportesPage() {
 
               <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm">
                 <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
-                  <p className="text-sm font-semibold">👤 Actividad por persona</p>
+                  <p className="text-sm font-semibold"> Actividad por persona</p>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <button onClick={filtrarHoy} className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${rangoDesde === formatoFecha(new Date()) && rangoHasta === rangoDesde ? 'bg-accentPurple border-accentPurple text-white' : 'bg-surface2 border-border text-textSec hover:text-text'}`}>Hoy</button>
                     <button onClick={filtrarAyer} className="text-xs px-2.5 py-1 rounded-full border bg-surface2 border-border text-textSec hover:text-text">Ayer</button>
@@ -1628,7 +1628,7 @@ export default function ReportesPage() {
 
               {Object.keys(datos.movimientosPorPersona || {}).length > 0 && (
                 <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm mt-4">
-                  <p className="text-sm font-semibold mb-1">📋 Resumen de movimientos</p>
+                  <p className="text-sm font-semibold mb-1"> Resumen de movimientos</p>
                   <p className="text-textMuted text-xs mb-3">Mensajes frecuentes editados/eliminados y contactos reprogramados, por persona — hoy, esta semana y en el mes elegido.</p>
                   <div className="space-y-3">
                     {Object.entries(datos.movimientosPorPersona).map(([nombre, periodos]) => (
@@ -1642,9 +1642,9 @@ export default function ReportesPage() {
                                 <p className="text-textMuted">—</p>
                               ) : (
                                 <div className="text-textSec space-y-0.5">
-                                  {m.editoMensajes > 0 && <p>✏️ {m.editoMensajes} editado{m.editoMensajes !== 1 ? 's' : ''}</p>}
-                                  {m.eliminoMensajes > 0 && <p>🗑️ {m.eliminoMensajes} eliminado{m.eliminoMensajes !== 1 ? 's' : ''}</p>}
-                                  {m.postergoContactos > 0 && <p>📅 {m.postergoContactos} postergado{m.postergoContactos !== 1 ? 's' : ''}</p>}
+                                  {m.editoMensajes > 0 && <p> {m.editoMensajes} editado{m.editoMensajes !== 1 ? 's' : ''}</p>}
+                                  {m.eliminoMensajes > 0 && <p> {m.eliminoMensajes} eliminado{m.eliminoMensajes !== 1 ? 's' : ''}</p>}
+                                  {m.postergoContactos > 0 && <p> {m.postergoContactos} postergado{m.postergoContactos !== 1 ? 's' : ''}</p>}
                                 </div>
                               )}
                             </div>
@@ -1702,11 +1702,11 @@ export default function ReportesPage() {
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-4">
-                  <Ranking titulo="🏆 Top vendedores" items={datos.rankingVendedores} onClickItem={(n) => setFiltro('vendedor', n)} activo={filtros.vendedor} />
-                  <Ranking titulo="🎓 Top cursos" items={datos.rankingCursos} onClickItem={(n) => setFiltro('curso', n)} activo={filtros.curso} />
-                  <Ranking titulo="📣 Top orígenes" items={datos.rankingOrigenes} onClickItem={(n) => setFiltro('origen', n)} activo={filtros.origen} />
-                  <Ranking titulo="👩‍🏫 Top docentes" items={datos.rankingDocentes} />
-                  <Ranking titulo="📚 Top ediciones" items={datos.rankingEdiciones} />
+                  <Ranking titulo=" Top vendedores" items={datos.rankingVendedores} onClickItem={(n) => setFiltro('vendedor', n)} activo={filtros.vendedor} />
+                  <Ranking titulo=" Top cursos" items={datos.rankingCursos} onClickItem={(n) => setFiltro('curso', n)} activo={filtros.curso} />
+                  <Ranking titulo=" Top orígenes" items={datos.rankingOrigenes} onClickItem={(n) => setFiltro('origen', n)} activo={filtros.origen} />
+                  <Ranking titulo=" Top docentes" items={datos.rankingDocentes} />
+                  <Ranking titulo=" Top ediciones" items={datos.rankingEdiciones} />
                 </div>
               </>
             )}
@@ -1714,9 +1714,9 @@ export default function ReportesPage() {
             {tab === 'compras' && (
               <>
                 <div className="flex justify-end gap-2">
-                  <button onClick={exportarExcel} className="text-sm px-3 py-2 rounded-lg bg-surface2 border border-border">⬇ Excel</button>
-                  <button onClick={exportarCSV} className="text-sm px-3 py-2 rounded-lg bg-surface2 border border-border">⬇ CSV</button>
-                  <button onClick={exportarPDF} className="text-sm px-3 py-2 rounded-lg bg-surface2 border border-border">⬇ PDF</button>
+                  <button onClick={exportarExcel} className="text-sm px-3 py-2 rounded-lg bg-surface2 border border-border"> Excel</button>
+                  <button onClick={exportarCSV} className="text-sm px-3 py-2 rounded-lg bg-surface2 border border-border"> CSV</button>
+                  <button onClick={exportarPDF} className="text-sm px-3 py-2 rounded-lg bg-surface2 border border-border"> PDF</button>
                 </div>
 
                 {/* FILTROS EXTENDIDOS */}
@@ -1744,7 +1744,7 @@ export default function ReportesPage() {
                   <div className="flex flex-wrap gap-2">
                     {Object.entries(filtros).filter(([, v]) => v).map(([k, v]) => (
                       <span key={k} className="text-[12px] px-2.5 py-1 rounded-full bg-infoBg text-infoText flex items-center gap-1.5">
-                        {k}: {v} <button onClick={() => setFiltro(k, v)} className="font-bold">✕</button>
+                        {k}: {v} <button onClick={() => setFiltro(k, v)} className="font-bold"></button>
                       </span>
                     ))}
                     {Object.values(filtros).every((v) => !v) && <span className="text-textMuted text-xs">Ningún filtro aplicado — clickeá un gráfico o ranking para filtrar.</span>}
@@ -1814,7 +1814,7 @@ export default function ReportesPage() {
           <div className="bg-surface2 border border-border rounded-2xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <p className="text-sm font-semibold">{detalleCurso.curso} <span className="text-textMuted font-normal">— {labelDeMes(mes)}</span></p>
-              <button onClick={() => setDetalleCurso(null)} className="text-textMuted hover:text-text text-xl leading-none">✕</button>
+              <button onClick={() => setDetalleCurso(null)} className="text-textMuted hover:text-text text-xl leading-none"></button>
             </div>
             {detalleCurso.leads === null ? (
               <p className="text-textSec text-sm">Cargando…</p>

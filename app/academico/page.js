@@ -376,7 +376,7 @@ export default function AcademicoPage() {
         <AccesoDenegado seccion="Académico" />
       ) : (
       <div className="max-w-[1400px] mx-auto px-6 pb-16">
-        <h3 className="text-lg font-bold mb-1">🎓 Académico</h3>
+        <h3 className="text-lg font-bold mb-1"> Académico</h3>
         <p className="text-textMuted text-xs mb-5">
           Listado de estudiantes con situación académica, y reporte institucional por edición (todos los cursos juntos). Se carga a mano.
         </p>
@@ -395,9 +395,9 @@ export default function AcademicoPage() {
           )}
           {estudiantesFiltrados.length > 0 && (
             <>
-            <button onClick={exportarExcel} className="text-sm px-4 py-2 rounded-lg bg-surface2 border border-border">⬇ Excel</button>
+            <button onClick={exportarExcel} className="text-sm px-4 py-2 rounded-lg bg-surface2 border border-border"> Excel</button>
             <button onClick={exportarCSV} title="El CSV se importa perfecto en Google Sheets (Archivo > Importar)"
-              className="text-sm px-4 py-2 rounded-lg bg-surface2 border border-border">⬇ CSV (para Sheets)</button>
+              className="text-sm px-4 py-2 rounded-lg bg-surface2 border border-border"> CSV (para Sheets)</button>
             </>
           )}
         </div>
@@ -420,7 +420,7 @@ export default function AcademicoPage() {
               placeholder={'Alejandra Veron\tejandra_veron_@hotmail.com\tCertificado\t1'}
               className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm font-mono mb-2" />
             {textoCarga.trim() && (
-              <p className="text-textMuted text-xs mb-2">👀 Se van a cargar {previewCarga.length} estudiante(s).</p>
+              <p className="text-textMuted text-xs mb-2"> Se van a cargar {previewCarga.length} estudiante(s).</p>
             )}
             <button onClick={confirmarCarga} disabled={cargandoImport || previewCarga.length === 0 || ((!cursoActual || cursoActual === TODOS) && !nuevoCursoTexto.trim())}
               className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-50">
@@ -431,7 +431,7 @@ export default function AcademicoPage() {
 
         {errorCarga ? (
           <div className="bg-dangerBg border border-dangerText/30 rounded-2xl p-6 text-center">
-            <p className="text-dangerText text-sm font-semibold mb-3">⚠️ {errorCarga}</p>
+            <p className="text-dangerText text-sm font-semibold mb-3"> {errorCarga}</p>
             <button onClick={cargarTodo} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">Reintentar</button>
           </div>
         ) : cargando ? (
@@ -442,7 +442,7 @@ export default function AcademicoPage() {
           <>
             {cursoActual !== TODOS && (
             <div className="bg-surface border border-border rounded-2xl p-4 mb-4 flex items-center gap-3 flex-wrap">
-              <p className="text-sm font-semibold">👩‍🏫 Formador/a por defecto de {cursoActual}:</p>
+              <p className="text-sm font-semibold"> Formador/a por defecto de {cursoActual}:</p>
               {editandoFormador ? (
                 <>
                   <input value={formadorTemp} onChange={(e) => setFormadorTemp(e.target.value)}
@@ -454,7 +454,7 @@ export default function AcademicoPage() {
                 <>
                   <p className="text-sm text-textSec">{formadorActual || 'Sin definir'}</p>
                   {puedeEditar && (
-                    <button onClick={() => { setFormadorTemp(formadorActual); setEditandoFormador(true); }} className="text-xs text-accentTeal font-semibold">✏️ Editar</button>
+                    <button onClick={() => { setFormadorTemp(formadorActual); setEditandoFormador(true); }} className="text-xs text-accentTeal font-semibold"> Editar</button>
                   )}
                 </>
               )}
@@ -467,7 +467,7 @@ export default function AcademicoPage() {
             <div className="bg-surface border border-border rounded-2xl p-5 mb-4">
               <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
                 <p className="text-sm font-semibold">
-                  📊 Reporte por edición <span className="text-textMuted font-normal">({cursoActual === TODOS ? 'todos los cursos' : cursoActual})</span>
+                   Reporte por edición <span className="text-textMuted font-normal">({cursoActual === TODOS ? 'todos los cursos' : cursoActual})</span>
                 </p>
                 <select value={filtroDocente} onChange={(e) => setFiltroDocente(e.target.value)}
                   className="bg-bg border border-border rounded-lg px-2 py-1.5 text-xs">
@@ -563,18 +563,18 @@ export default function AcademicoPage() {
                                   onKeyDown={(e) => e.key === 'Enter' && e.target.blur()}
                                   className="bg-bg border border-border rounded px-1.5 py-0.5 text-xs w-32" />
                                 <button onMouseDown={(e) => e.preventDefault()} onClick={() => setEditandoFormadorEdicion(null)}
-                                  className="text-textMuted text-xs" title="Cancelar">✕</button>
+                                  className="text-textMuted text-xs" title="Cancelar"></button>
                               </div>
                             ) : (
                               <button onClick={() => setEditandoFormadorEdicion(`${r.curso}|${r.edicion}`)} className="text-textSec text-xs hover:text-accentTeal">
-                                {r.formador || '✏️ Definir'}
+                                {r.formador || ' Definir'}
                               </button>
                             )}
                           </td>
                           <td className="pr-3" onClick={(ev) => ev.stopPropagation()}>
                             {!puedeEditar ? (
                               <span className="text-textSec text-xs">
-                                {r.fechaInicio ? (parsearFechaFlexible(r.fechaInicio)?.toLocaleDateString('es-AR') || '⚠️ Fecha inválida') : '—'}
+                                {r.fechaInicio ? (parsearFechaFlexible(r.fechaInicio)?.toLocaleDateString('es-AR') || ' Fecha inválida') : '—'}
                               </span>
                             ) : editandoFecha === `${r.curso}|${r.edicion}` ? (
                               <input type="date" defaultValue={r.fechaInicio ? (() => { const f = parsearFechaFlexible(r.fechaInicio); return f ? fechaAISO(f) : ''; })() : ''}
@@ -582,7 +582,7 @@ export default function AcademicoPage() {
                                 className="bg-bg border border-border rounded px-1.5 py-0.5 text-xs" autoFocus />
                             ) : (
                               <button onClick={() => setEditandoFecha(`${r.curso}|${r.edicion}`)} className="text-textSec text-xs hover:text-accentTeal">
-                                {r.fechaInicio ? (parsearFechaFlexible(r.fechaInicio)?.toLocaleDateString('es-AR') || '⚠️ Fecha inválida') : '📅 Definir'}
+                                {r.fechaInicio ? (parsearFechaFlexible(r.fechaInicio)?.toLocaleDateString('es-AR') || ' Fecha inválida') : ' Definir'}
                               </button>
                             )}
                           </td>
@@ -605,7 +605,7 @@ export default function AcademicoPage() {
                   </div>
                 </div>
               )}
-              <p className="text-textMuted text-[12px] mt-2">💡 Tocá una fila para ver la ficha detallada de esa edición.</p>
+              <p className="text-textMuted text-[12px] mt-2"> Tocá una fila para ver la ficha detallada de esa edición.</p>
             </div>
 
             {cursoActual === TODOS ? (
@@ -617,7 +617,7 @@ export default function AcademicoPage() {
               <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
                 <p className="text-sm font-semibold">Listado de estudiantes de {cursoActual} ({estudiantesFiltrados.length})</p>
                 <div className="flex items-center gap-2">
-                  <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="🔍 Buscar…"
+                  <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder=" Buscar…"
                     className="bg-bg border border-border rounded-lg px-2 py-1.5 text-xs w-40" />
                   <select value={filtroEdicion} onChange={(e) => setFiltroEdicion(e.target.value)}
                     className="bg-bg border border-border rounded-lg px-2 py-1.5 text-xs">
@@ -626,7 +626,7 @@ export default function AcademicoPage() {
                   </select>
                   {puedeEditar && seleccionadas.size > 0 && (
                     <button onClick={eliminarSeleccionados} className="text-xs px-2.5 py-1.5 rounded bg-dangerText text-white font-semibold">
-                      🗑 Eliminar ({seleccionadas.size})
+                       Eliminar ({seleccionadas.size})
                     </button>
                   )}
                 </div>
@@ -748,11 +748,11 @@ function FichaEdicionModal({ info, estudiantes, pagosPorEmail, onEditarCampo, on
           <div>
             <p className="text-lg font-bold">{info.curso} — Edición {info.edicion}</p>
             <p className="text-textMuted text-xs">
-              Formador/a: {info.formador || 'sin definir'} · Inicio: {info.fechaInicio ? (parsearFechaFlexible(info.fechaInicio)?.toLocaleDateString('es-AR') || '⚠️ Fecha inválida') : 'sin definir'} ·{' '}
+              Formador/a: {info.formador || 'sin definir'} · Inicio: {info.fechaInicio ? (parsearFechaFlexible(info.fechaInicio)?.toLocaleDateString('es-AR') || ' Fecha inválida') : 'sin definir'} ·{' '}
               <span className={info.cursada === 'Curso cerrado' ? 'text-dangerText' : info.cursada === 'En curso' ? 'text-successText' : 'text-textMuted'}>{info.cursada}</span>
             </p>
           </div>
-          <button onClick={onClose} className="text-textMuted hover:text-text text-xl leading-none">✕</button>
+          <button onClick={onClose} className="text-textMuted hover:text-text text-xl leading-none"></button>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 my-4">

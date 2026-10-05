@@ -10,7 +10,7 @@ const ESTADOS = ['Activo', 'Pausado', 'Próximamente'];
 const MODALIDADES = ['Sincrónico', 'On demand', 'Ebook', 'Comunidad', 'Servicio', 'Otro producto'];
 const FORMATOS = ['Sincrónico', 'Asincrónico', 'Híbrido'];
 const MEDIOS_CONOCIDOS = [
-  ['contado', '💳 Contado (MercadoPago)'], ['debitoAutomatico', '🔄 Débito automático (MercadoPago)'], ['exterior', '🌎 PayPal (USD)']
+  ['contado', ' Contado (MercadoPago)'], ['debitoAutomatico', ' Débito automático (MercadoPago)'], ['exterior', ' PayPal (USD)']
 ];
 
 function num(v) { const n = Number(v); return Number.isFinite(n) ? n : 0; }
@@ -174,7 +174,7 @@ export default function ProductosValoresPage() {
     if (hoy.getDate() >= DIA_REAPARICION_ALERTA) reaparece.setMonth(reaparece.getMonth() + 1);
     try { localStorage.setItem(CLAVE_ALERTA_REVISAR_OCULTA, reaparece.toISOString()); } catch {}
     setAlertaRevisarOculta(true);
-    mostrarAviso('success', `✓ Ocultada — vuelve a aparecer el día ${reaparece.getDate()}/${reaparece.getMonth() + 1}`);
+    mostrarAviso('success', ` Ocultada — vuelve a aparecer el día ${reaparece.getDate()}/${reaparece.getMonth() + 1}`);
   }
 
   const puedeVer = tienePermisoProductosVer(usuario);
@@ -279,7 +279,7 @@ export default function ProductosValoresPage() {
       const r = await res.json();
       if (!res.ok || r.error) { setErrorForm(r.error || 'No se pudo guardar.'); setGuardando(false); return; }
       setEditando(null);
-      mostrarAviso('success', '✓ Guardado correctamente');
+      mostrarAviso('success', ' Guardado correctamente');
       cargar();
     } catch (err) {
       setErrorForm('No se pudo conectar con el servidor.');
@@ -319,7 +319,7 @@ export default function ProductosValoresPage() {
     setModoSeleccion(false);
     setSeleccionados(new Set());
     setQuitandoDescuentos(false);
-    mostrarAviso(fallaron === 0 ? 'success' : 'error', fallaron === 0 ? '✓ Descuentos quitados' : `✕ ${fallaron} no se pudieron actualizar`);
+    mostrarAviso(fallaron === 0 ? 'success' : 'error', fallaron === 0 ? ' Descuentos quitados' : ` ${fallaron} no se pudieron actualizar`);
     cargar();
   }
 
@@ -362,7 +362,7 @@ export default function ProductosValoresPage() {
     setAplicandoNivel(false);
     mostrarAviso(
       fallaron === 0 ? 'success' : 'error',
-      fallaron === 0 ? `✓ Agregado a ${aplicados} producto${aplicados !== 1 ? 's' : ''}` : `✓ ${aplicados} agregado(s), ✕ ${fallaron} no se pudieron`
+      fallaron === 0 ? ` Agregado a ${aplicados} producto${aplicados !== 1 ? 's' : ''}` : ` ${aplicados} agregado(s),  ${fallaron} no se pudieron`
     );
     cargar();
   }
@@ -375,12 +375,12 @@ export default function ProductosValoresPage() {
       });
       const r = await res.json();
       setConfirmarBorrar(null);
-      if (!res.ok || r.error) { mostrarAviso('error', `✕ ${r.error || 'No se pudo eliminar.'}`); return; }
-      mostrarAviso('success', '✓ Eliminado');
+      if (!res.ok || r.error) { mostrarAviso('error', ` ${r.error || 'No se pudo eliminar.'}`); return; }
+      mostrarAviso('success', ' Eliminado');
       cargar();
     } catch (err) {
       setConfirmarBorrar(null);
-      mostrarAviso('error', '✕ No se pudo conectar con el servidor.');
+      mostrarAviso('error', ' No se pudo conectar con el servidor.');
     }
   }
 
@@ -408,10 +408,10 @@ export default function ProductosValoresPage() {
         });
       }
       setEditandoConfig(false);
-      mostrarAviso('success', '✓ Niveles actualizados');
+      mostrarAviso('success', ' Niveles actualizados');
       cargar();
     } catch (err) {
-      mostrarAviso('error', '✕ No se pudo guardar.');
+      mostrarAviso('error', ' No se pudo guardar.');
     }
     setGuardando(false);
   }
@@ -432,10 +432,10 @@ export default function ProductosValoresPage() {
         })
       });
       setEditandoTC(false);
-      mostrarAviso('success', '✓ Tipo de cambio actualizado');
+      mostrarAviso('success', ' Tipo de cambio actualizado');
       cargar();
     } catch (err) {
-      mostrarAviso('error', '✕ No se pudo guardar.');
+      mostrarAviso('error', ' No se pudo guardar.');
     }
     setGuardando(false);
   }
@@ -485,12 +485,12 @@ export default function ProductosValoresPage() {
         )}
 
         <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
-          <h3 className="text-lg font-bold">💲 Productos y Valores</h3>
+          <h3 className="text-lg font-bold"> Productos y Valores</h3>
           {puedeEditar && (
             <div className="flex items-center gap-2">
               <button onClick={() => { setModoSeleccion((v) => !v); setSeleccionados(new Set()); }}
                 className={`text-sm px-4 py-2 rounded-lg font-semibold ${modoSeleccion ? 'bg-dangerText text-white' : 'bg-surface2 border border-border text-textSec'}`}>
-                {modoSeleccion ? 'Cancelar selección' : '☑️ Seleccionar varios'}
+                {modoSeleccion ? 'Cancelar selección' : ' Seleccionar varios'}
               </button>
               <button onClick={abrirNuevo} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">+ Nuevo producto</button>
             </div>
@@ -501,7 +501,7 @@ export default function ProductosValoresPage() {
             <p className="text-warningText text-sm font-medium">{seleccionados.size} producto{seleccionados.size !== 1 ? 's' : ''} seleccionado{seleccionados.size !== 1 ? 's' : ''}</p>
             <button onClick={() => setConfirmarQuitarDescuentos(true)} disabled={seleccionados.size === 0}
               className="text-xs px-3 py-1.5 rounded-lg bg-dangerText text-white font-semibold disabled:opacity-40">
-              🗑 Quitar descuentos de los seleccionados
+               Quitar descuentos de los seleccionados
             </button>
           </div>
         )}
@@ -510,9 +510,9 @@ export default function ProductosValoresPage() {
         {productosParaRevisar.length > 0 && !alertaRevisarOculta && (
           <div className="bg-warningBg border border-warningText/30 rounded-xl px-4 py-2.5 mb-4 relative">
             <button onClick={ocultarAlertaRevisar} title={`Ocultar hasta el día ${DIA_REAPARICION_ALERTA}`}
-              className="absolute top-2 right-2.5 text-warningText/70 hover:text-warningText text-sm font-bold leading-none px-1">✕</button>
+              className="absolute top-2 right-2.5 text-warningText/70 hover:text-warningText text-sm font-bold leading-none px-1"></button>
             <p className="text-warningText text-sm font-semibold pr-6">
-              ⚠️ {productosParaRevisar.length} producto{productosParaRevisar.length !== 1 ? 's' : ''} sin actualizar hace más de 30 días
+               {productosParaRevisar.length} producto{productosParaRevisar.length !== 1 ? 's' : ''} sin actualizar hace más de 30 días
             </p>
             <p className="text-textMuted text-xs mt-0.5 pr-6">{productosParaRevisar.map((p) => p.nombre).join(' · ')}</p>
           </div>
@@ -545,7 +545,7 @@ export default function ProductosValoresPage() {
               </div>
             ) : (
               <button onClick={abrirEdicionTC} className="text-xs text-accentTeal font-semibold">
-                {tipoDeCambio ? `✏️ Tipo de cambio: $${tipoDeCambio}/USD` : '+ Cargar tipo de cambio'}
+                {tipoDeCambio ? ` Tipo de cambio: $${tipoDeCambio}/USD` : '+ Cargar tipo de cambio'}
               </button>
             )
           )}
@@ -555,7 +555,7 @@ export default function ProductosValoresPage() {
         <div className="bg-surface border border-border rounded-2xl p-4 mb-4">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-semibold">Niveles de descuento (general)</p>
-            {puedeEditar && !editandoConfig && <button onClick={abrirEdicionConfig} className="text-xs text-accentTeal font-semibold">✏️ Editar</button>}
+            {puedeEditar && !editandoConfig && <button onClick={abrirEdicionConfig} className="text-xs text-accentTeal font-semibold"> Editar</button>}
           </div>
           {editandoConfig ? (
             <>
@@ -575,7 +575,7 @@ export default function ProductosValoresPage() {
                         className="w-full bg-bg border border-border rounded-lg px-2 py-1.5 text-sm" />
                     </div>
                     {t.esNuevo && (
-                      <button onClick={() => quitarNivelTemp(i)} title="Quitar" className="text-dangerText text-xs px-2 py-1.5 shrink-0">✕</button>
+                      <button onClick={() => quitarNivelTemp(i)} title="Quitar" className="text-dangerText text-xs px-2 py-1.5 shrink-0"></button>
                     )}
                   </div>
                 ))}
@@ -661,7 +661,7 @@ export default function ProductosValoresPage() {
 
         {errorCarga ? (
           <div className="bg-dangerBg border border-dangerText/30 rounded-2xl p-6 text-center">
-            <p className="text-dangerText text-sm font-semibold mb-3">✕ {errorCarga}</p>
+            <p className="text-dangerText text-sm font-semibold mb-3"> {errorCarga}</p>
             <button onClick={cargar} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">Reintentar</button>
           </div>
         ) : productos === null ? (
@@ -721,7 +721,7 @@ export default function ProductosValoresPage() {
                         {p.esVariante && <span className="text-[12px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted">Variante</span>}
                         {necesitaRevision(p) && (
                           <span className="text-[12px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide bg-dangerBg text-dangerText" title="Hace más de 30 días que no se actualiza (o ya pasó la fecha de revisión indicada)">
-                            ⚠️ Revisar valor
+                             Revisar valor
                           </span>
                         )}
                       </div>
@@ -813,7 +813,7 @@ export default function ProductosValoresPage() {
                                                   </a>
                                                   <button onClick={() => copiarLink(m.link, idUnico)} title="Copiar link"
                                                     className="text-[12px] px-1.5 py-0.5 rounded-full bg-surface2 border border-border text-textMuted hover:text-text">
-                                                    {linkCopiado === idUnico ? '✓' : '📋'}
+                                                    {linkCopiado === idUnico ? '' : ''}
                                                   </button>
                                                 </span>
                                               );
@@ -849,7 +849,7 @@ export default function ProductosValoresPage() {
                                   </a>
                                   <button onClick={() => copiarLink(m.link, idUnico)} title="Copiar link"
                                     className="text-[12px] px-2 py-1 rounded-full bg-surface2 border border-border text-textMuted hover:text-text">
-                                    {linkCopiado === idUnico ? '✓' : '📋'}
+                                    {linkCopiado === idUnico ? '' : ''}
                                   </button>
                                 </span>
                               );
@@ -860,8 +860,8 @@ export default function ProductosValoresPage() {
 
                       {puedeEditar && (
                         <div className="flex items-center gap-2 pt-2">
-                          <button onClick={() => abrirEdicion(p)} className="text-xs text-accentTeal font-semibold">✏️ Editar</button>
-                          <button onClick={() => setConfirmarBorrar(p)} className="text-xs text-dangerText font-semibold">🗑 Eliminar</button>
+                          <button onClick={() => abrirEdicion(p)} className="text-xs text-accentTeal font-semibold"> Editar</button>
+                          <button onClick={() => setConfirmarBorrar(p)} className="text-xs text-dangerText font-semibold"> Eliminar</button>
                         </div>
                       )}
                     </div>
@@ -950,7 +950,7 @@ export default function ProductosValoresPage() {
                     <input type="checkbox" checked={d.override} onChange={(e) => setDescuento(tierId, 'override', e.target.checked)} />
                     Fijo (no seguir el general)
                   </label>
-                  <button onClick={() => quitarDescuento(tierId)} className="text-dangerText text-xs ml-auto">✕</button>
+                  <button onClick={() => quitarDescuento(tierId)} className="text-dangerText text-xs ml-auto"></button>
                 </div>
               ))}
             </div>
@@ -971,7 +971,7 @@ export default function ProductosValoresPage() {
                   <div className="flex gap-1">
                     <input type="text" inputMode="decimal" value={t.valor} onChange={(e) => editarTramo(i, 'valor', e.target.value)} placeholder="Valor $"
                       className="bg-bg border border-border rounded px-2 py-1.5 text-xs flex-1" />
-                    <button onClick={() => quitarTramo(i)} className="text-dangerText text-xs shrink-0">✕</button>
+                    <button onClick={() => quitarTramo(i)} className="text-dangerText text-xs shrink-0"></button>
                   </div>
                 </div>
               ))}
@@ -989,7 +989,7 @@ export default function ProductosValoresPage() {
                     <input type="text" inputMode="decimal" value={m.valor ?? ''} onChange={(e) => setMedio(clave, 'valor', e.target.value)} placeholder="USD"
                       className="w-16 bg-surface2 border border-border rounded px-2 py-1 text-xs" />
                   )}
-                  <button onClick={() => quitarMedio(clave)} className="text-dangerText text-xs">✕</button>
+                  <button onClick={() => quitarMedio(clave)} className="text-dangerText text-xs"></button>
                 </div>
               ))}
             </div>
@@ -1017,7 +1017,7 @@ export default function ProductosValoresPage() {
               Archivado (oculto por defecto del listado)
             </label>
 
-            {errorForm && <p className="text-dangerText text-xs mb-3">✕ {errorForm}</p>}
+            {errorForm && <p className="text-dangerText text-xs mb-3"> {errorForm}</p>}
             <div className="flex gap-2">
               <button onClick={() => setEditando(null)} className="text-sm px-4 py-2 rounded-lg bg-surface border border-border flex-1">Cancelar</button>
               <button onClick={guardar} disabled={guardando} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold flex-1 disabled:opacity-60">

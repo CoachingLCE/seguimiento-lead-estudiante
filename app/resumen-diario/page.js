@@ -66,11 +66,11 @@ export default function ResumenDiarioPage() {
           </div>
           <div className="flex gap-2">
             <button onClick={exportarExcel} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm">
-              ⬇ Exportar a Excel
+               Exportar a Excel
             </button>
             <button onClick={() => window.print()}
               className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm">
-              🖨️ Imprimir / Exportar a PDF
+               Imprimir / Exportar a PDF
             </button>
           </div>
         </div>
@@ -155,8 +155,8 @@ export default function ResumenDiarioPage() {
                         <td className="py-1.5">{e.estudiante}</td>
                         <td>{e.curso}</td>
                         <td>{e.edicion}</td>
-                        <td>{e.altaPlataforma ? '✓' : '—'}</td>
-                        <td>{e.bienvenidaEnviada ? '✓' : '—'}</td>
+                        <td>{e.altaPlataforma ? '' : '—'}</td>
+                        <td>{e.bienvenidaEnviada ? '' : '—'}</td>
                         <td>{e.cargadoPor}</td>
                       </tr>
                     ))}

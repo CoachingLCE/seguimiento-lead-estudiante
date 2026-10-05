@@ -2,9 +2,9 @@
 import { useTheme } from '../lib/ThemeContext';
 
 const OPCIONES = [
-  { valor: 'claro', icono: '☀️', titulo: 'Modo claro' },
-  { valor: 'oscuro', icono: '🌙', titulo: 'Modo oscuro' },
-  { valor: 'auto', icono: '🕒', titulo: 'Automático (según la hora)' }
+  { valor: 'claro', icono: '', titulo: 'Modo claro' },
+  { valor: 'oscuro', icono: '', titulo: 'Modo oscuro' },
+  { valor: 'auto', icono: '', titulo: 'Automático (según la hora)' }
 ];
 
 export default function ThemeSelector() {

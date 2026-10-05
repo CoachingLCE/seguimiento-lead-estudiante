@@ -29,14 +29,14 @@ function colorPorUsuario(nombre) {
 // Categoriza cada acción del historial — se usa tanto para los chips de filtro como para el
 // color/ícono de cada fila, así ambos quedan siempre coherentes entre sí.
 const CATEGORIAS_ACCION = [
-  { id: 'venta', label: '💰 Venta', icono: '💰 ', clase: 'text-successText font-semibold', test: (a) => a === 'Registró una venta' },
-  { id: 'lead', label: '📩 Lead', icono: '📩 ', clase: 'text-accentPurpleTxt font-medium', test: (a) => a === 'Creó un lead' },
-  { id: 'grupoWhatsapp', label: '💬 Grupo WhatsApp', icono: '💬 ', clase: 'text-accentTeal font-medium', test: (a) => a.toLowerCase().includes('grupo de whatsapp') || a.toLowerCase().includes('grupo whatsapp') },
-  { id: 'mensajeFrecuente', label: '📝 Mensaje frecuente', icono: '📝 ', clase: 'text-accentMagenta font-medium', test: (a) => a.toLowerCase().includes('mensaje frecuente') },
-  { id: 'login', label: '🔑 Login', icono: '🔑 ', clase: 'text-infoText font-medium', test: (a) => a === 'Inició sesión' },
-  { id: 'loginFallido', label: '⚠️ Login fallido', icono: '⚠️ ', clase: 'text-dangerText font-medium', test: (a) => a.toLowerCase().includes('login fallido') || a.toLowerCase().includes('login rechazado') },
-  { id: 'eliminar', label: '🗑️ Eliminó', icono: '🗑️ ', clase: 'text-dangerText font-semibold', test: (a) => a.toLowerCase().includes('eliminó') || a.toLowerCase().includes('eliminado') },
-  { id: 'editar', label: '✏️ Editó', icono: '✏️ ', clase: 'text-warningText font-medium', test: (a) => a.toLowerCase().includes('editó') || a.toLowerCase().includes('corrigió') }
+  { id: 'venta', label: ' Venta', icono: ' ', clase: 'text-successText font-semibold', test: (a) => a === 'Registró una venta' },
+  { id: 'lead', label: ' Lead', icono: ' ', clase: 'text-accentPurpleTxt font-medium', test: (a) => a === 'Creó un lead' },
+  { id: 'grupoWhatsapp', label: ' Grupo WhatsApp', icono: ' ', clase: 'text-accentTeal font-medium', test: (a) => a.toLowerCase().includes('grupo de whatsapp') || a.toLowerCase().includes('grupo whatsapp') },
+  { id: 'mensajeFrecuente', label: ' Mensaje frecuente', icono: ' ', clase: 'text-accentMagenta font-medium', test: (a) => a.toLowerCase().includes('mensaje frecuente') },
+  { id: 'login', label: ' Login', icono: ' ', clase: 'text-infoText font-medium', test: (a) => a === 'Inició sesión' },
+  { id: 'loginFallido', label: ' Login fallido', icono: ' ', clase: 'text-dangerText font-medium', test: (a) => a.toLowerCase().includes('login fallido') || a.toLowerCase().includes('login rechazado') },
+  { id: 'eliminar', label: ' Eliminó', icono: ' ', clase: 'text-dangerText font-semibold', test: (a) => a.toLowerCase().includes('eliminó') || a.toLowerCase().includes('eliminado') },
+  { id: 'editar', label: ' Editó', icono: ' ', clase: 'text-warningText font-medium', test: (a) => a.toLowerCase().includes('editó') || a.toLowerCase().includes('corrigió') }
 ];
 function categoriaAccion(accion) {
   const a = accion || '';
@@ -149,14 +149,14 @@ export default function AuditoriaPage() {
           <div>
             <label className="text-xs text-textSec block mb-1">Buscar</label>
             <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="🔍 Nombre, acción, email o WhatsApp…"
+              placeholder=" Nombre, acción, email o WhatsApp…"
               className="bg-bg border border-border rounded-lg px-3 py-2 text-sm w-64" />
           </div>
           <button onClick={exportarExcel} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm">
-            ⬇ Exportar a Excel
+             Exportar a Excel
           </button>
           <button onClick={() => window.print()} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm">
-            🖨️ Imprimir
+             Imprimir
           </button>
         </div>
 
@@ -185,7 +185,7 @@ export default function AuditoriaPage() {
         <div className="bg-surface border border-border rounded-2xl p-5 print-section">
           {errorCarga ? (
             <div className="bg-dangerBg border border-dangerText/30 rounded-2xl p-6 text-center">
-              <p className="text-dangerText text-sm font-semibold mb-3">⚠️ {errorCarga}</p>
+              <p className="text-dangerText text-sm font-semibold mb-3"> {errorCarga}</p>
               <button onClick={cargarRegistros} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">
                 Reintentar
               </button>
@@ -233,7 +233,7 @@ export default function AuditoriaPage() {
                         )}
                         {lead && (
                           <p className="text-textMuted text-[12px] mt-0.5">
-                            {lead.Email && `✉️ ${lead.Email}`}{lead.Email && lead.WhatsApp && ' · '}{lead.WhatsApp && `📱 ${lead.WhatsApp}`}
+                            {lead.Email && ` ${lead.Email}`}{lead.Email && lead.WhatsApp && ' · '}{lead.WhatsApp && ` ${lead.WhatsApp}`}
                           </p>
                         )}
                       </td>

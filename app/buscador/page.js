@@ -40,15 +40,15 @@ function fechaLarga(fecha) {
 
 function iconoAccion(accion) {
   const a = (accion || '').toLowerCase();
-  if (a.includes('creó un lead')) return { icono: '📩', color: 'border-accentTeal' };
-  if (a.includes('venta')) return { icono: '💰', color: 'border-successText' };
-  if (a.includes('alumno creado')) return { icono: '🤖', color: 'border-infoText' };
-  if (a.includes('alta en plataforma') || a.includes('alta')) return { icono: '🎓', color: 'border-accentPurple' };
-  if (a.includes('bienvenida')) return { icono: '👋', color: 'border-accentMagenta' };
-  if (a.includes('diploma') || a.includes('abon')) return { icono: '📄', color: 'border-successText' };
-  if (a.includes('contraseñ')) return { icono: '🔑', color: 'border-warningText' };
-  if (a.includes('editó') || a.includes('curso') || a.includes('reasign')) return { icono: '✏️', color: 'border-textMuted' };
-  if (a.includes('resultado') || a.includes('contact')) return { icono: '📞', color: 'border-infoText' };
+  if (a.includes('creó un lead')) return { icono: '', color: 'border-accentTeal' };
+  if (a.includes('venta')) return { icono: '', color: 'border-successText' };
+  if (a.includes('alumno creado')) return { icono: '', color: 'border-infoText' };
+  if (a.includes('alta en plataforma') || a.includes('alta')) return { icono: '', color: 'border-accentPurple' };
+  if (a.includes('bienvenida')) return { icono: '', color: 'border-accentMagenta' };
+  if (a.includes('diploma') || a.includes('abon')) return { icono: '', color: 'border-successText' };
+  if (a.includes('contraseñ')) return { icono: '', color: 'border-warningText' };
+  if (a.includes('editó') || a.includes('curso') || a.includes('reasign')) return { icono: '', color: 'border-textMuted' };
+  if (a.includes('resultado') || a.includes('contact')) return { icono: '', color: 'border-infoText' };
   return { icono: '•', color: 'border-border' };
 }
 
@@ -110,7 +110,7 @@ function TarjetaResultado({ r, q, router }) {
         {r.ultimoContacto ? `Último contacto: ${tiempoRelativo(r.ultimoContacto.fecha)} (${r.ultimoContacto.resultado})` : 'Sin contacto registrado'}
       </p>
       {r.coincidencias?.length > 0 && (
-        <p className="text-infoText text-[12px] mb-2">🔎 Encontrado en: {r.coincidencias.join(', ')}</p>
+        <p className="text-infoText text-[12px] mb-2"> Encontrado en: {r.coincidencias.join(', ')}</p>
       )}
       <div className="flex items-center gap-2 flex-wrap mt-2">
         <Link href={`/buscador?leadId=${r.id}`}
@@ -242,7 +242,7 @@ function BuscadorContent() {
             />
 
             <div className="mb-4">
-              <p className="text-textMuted text-xs mb-1.5">📊 Ver todos los leads históricos por origen:</p>
+              <p className="text-textMuted text-xs mb-1.5"> Ver todos los leads históricos por origen:</p>
               <div className="flex flex-wrap gap-1.5">
                 {ORIGENES.map((o) => (
                   <button key={o} onClick={() => buscarPorOrigen(origenBuscado === o ? '' : o)}
@@ -311,7 +311,7 @@ function BuscadorContent() {
 
         {errorCarga && (
           <div className="bg-dangerBg border border-dangerText/30 rounded-2xl p-6 text-center mb-4">
-            <p className="text-dangerText text-sm font-semibold mb-3">⚠️ {errorCarga}</p>
+            <p className="text-dangerText text-sm font-semibold mb-3"> {errorCarga}</p>
             <button onClick={() => (leadId ? cargarFicha() : buscar(q))} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">
               Reintentar
             </button>
@@ -329,14 +329,14 @@ function BuscadorContent() {
                   {busquedasRecientes.map((b) => (
                     <button key={b} onClick={() => setQ(b)}
                       className="text-xs px-3 py-1.5 rounded-full bg-surface2 border border-border text-textSec hover:text-text">
-                      🔍 {b}
+                       {b}
                     </button>
                   ))}
                 </div>
               </div>
             )}
             <div>
-              <p className="text-xs font-semibold text-textSec mb-2">👁️ Últimos alumnos vistos</p>
+              <p className="text-xs font-semibold text-textSec mb-2"> Últimos alumnos vistos</p>
               {vistosRecientes.length === 0 ? (
                 <p className="text-textMuted text-xs">Todavía no viste ninguna ficha.</p>
               ) : (
@@ -672,14 +672,14 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
             {!editando ? (
-              <p className="text-xl font-bold flex items-center gap-2">👤 {lead.Nombre} {lead.Apellido}</p>
+              <p className="text-xl font-bold flex items-center gap-2"> {lead.Nombre} {lead.Apellido}</p>
             ) : (
               <input value={datos.nombre} onChange={(e) => actualizarDato('nombre', e.target.value)}
                 className="text-xl font-bold bg-bg border border-border rounded-lg px-2 py-1" />
             )}
             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
               <Badge tono={lead.Estado === 'Comprado' ? 'success' : 'warning'}>
-                {lead.Estado === 'Comprado' ? (inscrito ? '🟢 Alumno activo' : '💰 Comprado') : '⚪ Lead'}
+                {lead.Estado === 'Comprado' ? (inscrito ? '🟢 Alumno activo' : ' Comprado') : '⚪ Lead'}
               </Badge>
               {lead.Prioridad && (
                 <Badge tono={lead.Prioridad === 'Alta' ? 'danger' : lead.Prioridad === 'Media' ? 'warning' : 'success'}>
@@ -695,25 +695,25 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
           <div className="flex items-center gap-2 flex-wrap">
             {lead.WhatsApp && (
               <a href={`https://wa.me/${whatsappLimpio}`} target="_blank" rel="noopener noreferrer"
-                className="text-xs px-3 py-1.5 rounded-lg bg-surface2 border border-border">💬 WhatsApp</a>
+                className="text-xs px-3 py-1.5 rounded-lg bg-surface2 border border-border"> WhatsApp</a>
             )}
             {lead.EmailEstudiante && (
-              <a href={enlaceGmail(lead.EmailEstudiante)} target="_blank" rel="noopener noreferrer" className="text-xs px-3 py-1.5 rounded-lg bg-surface2 border border-border">✉ Email</a>
+              <a href={enlaceGmail(lead.EmailEstudiante)} target="_blank" rel="noopener noreferrer" className="text-xs px-3 py-1.5 rounded-lg bg-surface2 border border-border"> Email</a>
             )}
             {lead.WhatsApp && (
-              <a href={`tel:${whatsappLimpio}`} className="text-xs px-3 py-1.5 rounded-lg bg-surface2 border border-border">📞 Llamar</a>
+              <a href={`tel:${whatsappLimpio}`} className="text-xs px-3 py-1.5 rounded-lg bg-surface2 border border-border"> Llamar</a>
             )}
             {lead.Estado !== 'Comprado' && (
-              <button onClick={() => setMostrarModalVenta(true)} className="text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-accentPurple to-accentMagenta text-white font-semibold">💰 Marcar venta</button>
+              <button onClick={() => setMostrarModalVenta(true)} className="text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-accentPurple to-accentMagenta text-white font-semibold"> Marcar venta</button>
             )}
             {puedeEditar && !editando && (
-              <button onClick={() => { setSoloContacto(false); setEditando(true); }} className="text-xs px-3 py-1.5 rounded-lg bg-accentPurple text-white font-semibold">✏️ Editar</button>
+              <button onClick={() => { setSoloContacto(false); setEditando(true); }} className="text-xs px-3 py-1.5 rounded-lg bg-accentPurple text-white font-semibold"> Editar</button>
             )}
             {puedeEditarSoloContacto && !editando && (
-              <button onClick={() => { setSoloContacto(true); setEditando(true); }} className="text-xs px-3 py-1.5 rounded-lg bg-accentPurple text-white font-semibold">✏️ Editar contacto</button>
+              <button onClick={() => { setSoloContacto(true); setEditando(true); }} className="text-xs px-3 py-1.5 rounded-lg bg-accentPurple text-white font-semibold"> Editar contacto</button>
             )}
             {usuario.roles?.includes('Admin') && (
-              <button onClick={() => setConfirmarEliminarLead(true)} className="text-xs px-3 py-1.5 rounded-lg bg-dangerBg text-dangerText font-semibold">🗑 Eliminar</button>
+              <button onClick={() => setConfirmarEliminarLead(true)} className="text-xs px-3 py-1.5 rounded-lg bg-dangerBg text-dangerText font-semibold"> Eliminar</button>
             )}
           </div>
         </div>
@@ -725,7 +725,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
               <p className="text-textMuted text-xs mb-4">
                 {lead.Estado === 'Comprado'
                   ? (usuario.roles?.includes('Admin')
-                      ? '⚠️ Este lead tiene una venta confirmada. Por seguridad está protegido — pero como Admin podés eliminarlo igual si estás seguro. Esta acción no se puede deshacer.'
+                      ? ' Este lead tiene una venta confirmada. Por seguridad está protegido — pero como Admin podés eliminarlo igual si estás seguro. Esta acción no se puede deshacer.'
                       : 'Este lead tiene una venta confirmada — no se puede eliminar, está protegido.')
                   : 'Se borra el lead y todo su historial de seguimiento. Esta acción no se puede deshacer.'}
               </p>
@@ -811,9 +811,9 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
       {/* ALERTAS */}
       {alertas.length > 0 && (
         <div className="bg-warningBg border border-warningText/30 rounded-2xl p-4">
-          <p className="text-warningText text-sm font-semibold mb-1.5">⚠ Atención</p>
+          <p className="text-warningText text-sm font-semibold mb-1.5"> Atención</p>
           <ul className="text-warningText text-sm space-y-0.5">
-            {alertas.map((a) => <li key={a}>⬜ {a}</li>)}
+            {alertas.map((a) => <li key={a}> {a}</li>)}
           </ul>
         </div>
       )}
@@ -968,7 +968,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
               ) : (
                 <button onClick={() => setConfirmarNuevoCiclo(true)}
                   className="text-xs px-3 py-1.5 rounded-md bg-surface2 border border-border font-semibold text-accentPurpleTxt">
-                  🔄 Nuevo seguimiento comercial
+                   Nuevo seguimiento comercial
                 </button>
               )
             )}
@@ -981,8 +981,8 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
             return (
               <div className={`rounded-lg px-3 py-2 mb-3 text-sm ${yaDisponible.length > 0 ? 'bg-warningBg text-warningText' : 'bg-infoBg text-infoText'}`}>
                 {yaDisponible.length > 0
-                  ? `📅 Ya está en el "LOTE PROGRAMADO" de Seguimiento desde el ${new Date(yaDisponible[0].FechaProgramada).toLocaleDateString('es-AR')}.`
-                  : `📅 Va a aparecer en el "LOTE PROGRAMADO" de Seguimiento el ${new Date(proximaFecha.FechaProgramada).toLocaleDateString('es-AR')}.`}
+                  ? ` Ya está en el "LOTE PROGRAMADO" de Seguimiento desde el ${new Date(yaDisponible[0].FechaProgramada).toLocaleDateString('es-AR')}.`
+                  : ` Va a aparecer en el "LOTE PROGRAMADO" de Seguimiento el ${new Date(proximaFecha.FechaProgramada).toLocaleDateString('es-AR')}.`}
               </div>
             );
           })()}
@@ -994,7 +994,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
                     ? `${s.Resultado} (${tiempoRelativo(s.FechaContacto)}) — responsable: ${s.AsignadoANombre || 'No asignado'}`
                     : `Pendiente — asignado a: ${s.AsignadoANombre || 'No asignado'}`}
                   {s.FechaProgramada && (
-                    <span className="text-infoText"> · 📅 Programado para el {new Date(s.FechaProgramada).toLocaleDateString('es-AR')}</span>
+                    <span className="text-infoText"> ·  Programado para el {new Date(s.FechaProgramada).toLocaleDateString('es-AR')}</span>
                   )}
                 </p>
                 <div className="flex items-center gap-2 shrink-0">
@@ -1003,7 +1003,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
                     <button onClick={() => registrarResultadoRapido(s.Lote, 'Ficha enviada')}
                       disabled={registrandoResultadoLote === s.Lote}
                       className="text-xs px-2.5 py-1 rounded-md bg-accentPurple text-white font-semibold disabled:opacity-60">
-                      {registrandoResultadoLote === s.Lote ? '…' : '📄 Ficha enviada'}
+                      {registrandoResultadoLote === s.Lote ? '…' : ' Ficha enviada'}
                     </button>
                     <select value="" disabled={registrandoResultadoLote === s.Lote}
                       onChange={(e) => e.target.value && registrarResultadoRapido(s.Lote, e.target.value)}
@@ -1023,13 +1023,13 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
                       </>
                     ) : (
                       <button onClick={() => { setProgramandoLote(s.Lote); setFechaAProgramar(s.FechaProgramada || ''); }}
-                        className="text-xs text-infoText font-semibold">📅 {s.FechaProgramada ? 'Cambiar fecha' : 'Programar contacto'}</button>
+                        className="text-xs text-infoText font-semibold"> {s.FechaProgramada ? 'Cambiar fecha' : 'Programar contacto'}</button>
                     )
                   )}
                   {s.Contactado === 'TRUE' && puedeDeshacer && (
                     <button onClick={() => deshacerResultado(s.Lote)} disabled={deshaciendo === s.Lote}
                       className="text-xs text-warningText font-semibold">
-                      {deshaciendo === s.Lote ? 'Deshaciendo…' : '↩ Deshacer'}
+                      {deshaciendo === s.Lote ? 'Deshaciendo…' : ' Deshacer'}
                     </button>
                   )}
                 </div>
@@ -1067,7 +1067,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-bold text-textMuted uppercase tracking-wide">Venta</p>
             {lead.Estado === 'Comprado' && puedeEditarVenta && !editandoVenta && (
-              <button onClick={() => setEditandoVenta(true)} className="text-accentTeal text-xs font-semibold">✏️ Editar</button>
+              <button onClick={() => setEditandoVenta(true)} className="text-accentTeal text-xs font-semibold"> Editar</button>
             )}
           </div>
           {lead.Estado !== 'Comprado' ? (

@@ -174,3 +174,17 @@ button,input,select,textarea{font-family:inherit}
   table tbody tr{transition:background-color .12s ease}
   table tbody tr:hover{background-color:rgb(var(--color-surface2) / .55)}
 }
+
+/* ===== Íconos de trazo uniforme (Lucide, licencia ISC) — iguales en todas las apps de ILCE =====
+   Reemplazan a los emoji de la interfaz. Cada ícono es un carácter del rango privado U+E000–U+F8FF que el
+   navegador dibuja con esta fuente (/fonts/iconos.woff2), del color y tamaño del texto que lo rodea.
+   IMPORTANTE: cada cara de íconos lleva el MISMO peso que la cara de texto con la que se combina (400, 500, 600, 700).
+   Si se declarara con un rango (100 900) el navegador elige una sola de las dos y los íconos no se dibujan.
+   NO usar estos caracteres en lo que sale de la app (mails, Excel, PDF, portapapeles, WhatsApp, tooltips, listas
+   desplegables): ahí se usa el emoji original o nada. Qué ícono es cada carácter: ver iconos.js */
+@font-face{font-family:'Dosis';src:url('/fonts/iconos.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;unicode-range:U+E000-F8FF}
+@font-face{font-family:'Dosis';src:url('/fonts/iconos.woff2') format('woff2');font-weight:500;font-style:normal;font-display:swap;unicode-range:U+E000-F8FF}
+@font-face{font-family:'Dosis';src:url('/fonts/iconos.woff2') format('woff2');font-weight:600;font-style:normal;font-display:swap;unicode-range:U+E000-F8FF}
+@font-face{font-family:'Dosis';src:url('/fonts/iconos.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;unicode-range:U+E000-F8FF}
+@font-face{font-family:'TeX Gyre Adventor';src:url('/fonts/iconos.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;unicode-range:U+E000-F8FF}
+@font-face{font-family:'TeX Gyre Adventor';src:url('/fonts/iconos.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;unicode-range:U+E000-F8FF}

@@ -340,7 +340,7 @@ export default function InscritosPage() {
             <div className="bg-warningBg border border-warningText/30 rounded-xl px-4 py-2.5 mb-4 no-print flex items-start justify-between gap-3">
               <div>
                 <p className="text-warningText text-sm font-semibold">
-                  ⚠️ {totalAcciones} acción{totalAcciones !== 1 ? 'es' : ''} pendiente{totalAcciones !== 1 ? 's' : ''} por realizar
+                   {totalAcciones} acción{totalAcciones !== 1 ? 'es' : ''} pendiente{totalAcciones !== 1 ? 's' : ''} por realizar
                 </p>
                 <p className="text-textMuted text-xs mt-0.5">
                   {conteos.filter((c) => c.cantidad > 0).map((c) => `${c.cantidad} ${c.label}`).join(' · ')}
@@ -348,7 +348,7 @@ export default function InscritosPage() {
               </div>
               <button onClick={cerrarPendientesPor24hs} title="Ocultar por 24hs"
                 className="text-warningText/70 hover:text-warningText text-sm px-1.5 flex-none">
-                ✕
+                
               </button>
             </div>
           );
@@ -364,14 +364,14 @@ export default function InscritosPage() {
             className={`text-sm px-4 py-2 rounded-lg font-semibold transition-colors ${
               tab === 'alertas' ? 'bg-accentPurple text-white' : 'bg-surface2 border border-border text-textSec'
             }`}>
-            🔔 Alertas {totalAlertas > 0 && <span className="ml-1 text-warningText">({totalAlertas})</span>}
+             Alertas {totalAlertas > 0 && <span className="ml-1 text-warningText">({totalAlertas})</span>}
           </button>
         </div>
 
         {tab === 'alertas' ? (
           <div className="space-y-4">
             <div className="bg-surface border border-border rounded-2xl p-5">
-              <p className="text-sm font-semibold mb-1">📩 Sin confirmar recepción — hace 48hs hábiles o más</p>
+              <p className="text-sm font-semibold mb-1"> Sin confirmar recepción — hace 48hs hábiles o más</p>
               <p className="text-textMuted text-xs mb-1">Se les envió Bienvenida o Alta en plataforma, pero todavía no confirmaron que lo recibieron. Convendría reforzar con ellos.</p>
               <p className="text-textMuted text-[12px] mb-3 italic">Los días viernes a las 8 AM se manda un mail con este resumen.</p>
               {alertasConfirmacion.length === 0 ? (
@@ -395,7 +395,7 @@ export default function InscritosPage() {
                             ) : (
                               <button onClick={() => clickEnviarBienvenida(i)} disabled={enviandoBienvenidaId === i.ID}
                                 className="text-xs px-2.5 py-1 rounded-md bg-accentPurple text-white font-semibold disabled:opacity-60">
-                                {enviandoBienvenidaId === i.ID ? 'Enviando…' : '🔄 Reenviar bienvenida'}
+                                {enviandoBienvenidaId === i.ID ? 'Enviando…' : ' Reenviar bienvenida'}
                               </button>
                             )
                           ) : (
@@ -404,7 +404,7 @@ export default function InscritosPage() {
                             ) : (
                               <button onClick={() => reenviarAlta(i)} disabled={enviandoAltaId === i.ID}
                                 className="text-xs px-2.5 py-1 rounded-md bg-accentPurple text-white font-semibold disabled:opacity-60">
-                                {enviandoAltaId === i.ID ? 'Enviando…' : '🔄 Reenviar alta'}
+                                {enviandoAltaId === i.ID ? 'Enviando…' : ' Reenviar alta'}
                               </button>
                             )
                           )}
@@ -418,7 +418,7 @@ export default function InscritosPage() {
             </div>
 
             <div className="bg-surface border border-border rounded-2xl p-5">
-              <p className="text-sm font-semibold mb-1">👋 Bienvenida pendiente — hace 48hs hábiles o más</p>
+              <p className="text-sm font-semibold mb-1"> Bienvenida pendiente — hace 48hs hábiles o más</p>
               <p className="text-textMuted text-xs mb-3">Ingresaron hace 48hs hábiles o más y todavía no se les envió el mail de Bienvenida.</p>
               {alertasBienvenidaPendiente.length === 0 ? (
                 <p className="text-textMuted text-sm">Sin alertas — todos con Bienvenida enviada, o todavía no pasaron las 48hs hábiles.</p>
@@ -436,7 +436,7 @@ export default function InscritosPage() {
                         ) : (
                           <button onClick={() => clickEnviarBienvenida(i)} disabled={enviandoBienvenidaId === i.ID}
                             className="text-xs px-2.5 py-1 rounded-md bg-accentPurple text-white font-semibold disabled:opacity-60">
-                            {enviandoBienvenidaId === i.ID ? 'Enviando…' : '📩 Enviar bienvenida'}
+                            {enviandoBienvenidaId === i.ID ? 'Enviando…' : ' Enviar bienvenida'}
                           </button>
                         )}
                         <button onClick={() => setFichaLeadId(i.LeadId)} className="text-accentTeal text-xs font-semibold">Ver ficha</button>
@@ -466,9 +466,9 @@ export default function InscritosPage() {
               {edicionesUnicas.map((e) => <option key={e} value={e}>{e}</option>)}
             </select>
             <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="🔍 Buscar…" className="bg-bg border border-border rounded-lg px-3 py-2 text-sm w-40" />
+              placeholder=" Buscar…" className="bg-bg border border-border rounded-lg px-3 py-2 text-sm w-40" />
             <button onClick={exportarExcel} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm">
-              ⬇ Exportar a Excel
+               Exportar a Excel
             </button>
           </div>
         </div>
@@ -516,7 +516,7 @@ export default function InscritosPage() {
           </div>
           {errorCarga ? (
             <div className="bg-dangerBg border border-dangerText/30 rounded-2xl p-6 text-center">
-              <p className="text-dangerText text-sm font-semibold mb-3">⚠️ {errorCarga}</p>
+              <p className="text-dangerText text-sm font-semibold mb-3"> {errorCarga}</p>
               <button onClick={cargarInscritos} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">
                 Reintentar
               </button>
@@ -571,7 +571,7 @@ export default function InscritosPage() {
                               title={esAdmin ? 'Click para corregir el curso' : undefined}>
                               <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color }} />
                               {i.Curso || 'Sin curso'}
-                              {esAdmin && ' ✏️'}
+                              {esAdmin && ' '}
                             </span>
                           )}
                         </td>
@@ -579,7 +579,7 @@ export default function InscritosPage() {
                         <td data-label="Bienvenida" className="py-3 pr-4">
                           {i.BienvenidaEnviada === 'TRUE' ? (
                             <>
-                              <span>✓</span>
+                              <span></span>
                               <p className="text-textMuted text-[12px] mt-1 whitespace-nowrap">
                                 {i.BienvenidaPorNombre}<br/>{new Date(i.FechaBienvenida).toLocaleDateString('es-AR')}
                               </p>
@@ -613,7 +613,7 @@ export default function InscritosPage() {
                                   title="Omitir el envío de la bienvenida y marcar la confirmación de recepción"
                                   className="text-xs px-1.5 py-1 rounded-md text-textMuted hover:text-warningText"
                                 >
-                                  ⏭️
+                                  
                                 </button>
                               )}
                             </div>
@@ -651,7 +651,7 @@ export default function InscritosPage() {
                           <div className="flex items-center gap-2">
                             <button onClick={() => setFichaLeadId(i.LeadId)} className="text-accentTeal text-xs font-semibold whitespace-nowrap">Ver ficha</button>
                             {esAdmin && (
-                              <button onClick={() => setConfirmarEliminar(i)} className="text-xs text-dangerText font-semibold">🗑</button>
+                              <button onClick={() => setConfirmarEliminar(i)} className="text-xs text-dangerText font-semibold"></button>
                             )}
                           </div>
                         </td>

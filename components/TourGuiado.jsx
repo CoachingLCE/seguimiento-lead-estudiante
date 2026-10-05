@@ -39,7 +39,7 @@ const PASOS = [
   { id: 'emails', ruta: '/emails', selector: null, requiere: 'emails', titulo: 'Configuración → Emails', texto: 'Los correos automáticos que envía el sistema y el registro de envíos.' },
   { id: 'fichas-enviadas', ruta: '/fichas-enviadas', selector: null, requiere: 'operativo', titulo: 'Configuración → Fichas enviadas', texto: 'Registro de las fichas de estudiante que se compartieron, y con quién.' },
   { id: 'buscador', ruta: '/buscador', selector: 'a[href="/buscador"]', requiere: 'buscador', titulo: 'Buscador', texto: 'Buscá a cualquier lead o estudiante por nombre, WhatsApp o email y entrá directo a su ficha.' },
-  { id: 'fin', ruta: null, selector: null, titulo: '¡Listo!', texto: 'Eso es lo principal. Podés volver a abrir esta ayuda cuando quieras, desde el botón “❓ Necesito ayuda”.' }
+  { id: 'fin', ruta: null, selector: null, titulo: '¡Listo!', texto: 'Eso es lo principal. Podés volver a abrir esta ayuda cuando quieras, desde el botón “ Necesito ayuda”.' }
 ];
 const TAREAS = [
   { id: 't-lead', pasoInicial: 'nuevo-lead', requiere: 'leads', label: '¿Cómo cargo un lead nuevo?' },
@@ -238,7 +238,7 @@ function TourOverlay({ paso, idx, total, rect, buscando, modoTarea, onSiguiente,
           <button className="text-xs text-textMuted" onClick={onSalir}>Salir</button>
           <div className="flex gap-1.5">
             {idx > 0 && !modoTarea && (
-              <button className="bg-transparent text-textSec border border-border rounded-lg px-2.5 py-1.5 text-xs" onClick={onAnterior}>← Atrás</button>
+              <button className="bg-transparent text-textSec border border-border rounded-lg px-2.5 py-1.5 text-xs" onClick={onAnterior}> Atrás</button>
             )}
             <button className="bg-gradient-to-r from-accentPurple to-accentMagenta text-white rounded-lg px-3 py-1.5 text-xs font-semibold" onClick={onSiguiente}>
               {esFinal || modoTarea ? 'Listo' : 'Siguiente →'}

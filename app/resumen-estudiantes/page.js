@@ -70,14 +70,14 @@ export default function ResumenEstudiantesPage() {
               <h3 className="text-lg font-bold">Reportes Inscripciones</h3>
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-2 bg-surface border border-border rounded-xl px-3 py-2">
-                  <span className="text-textMuted text-sm">📅</span>
+                  <span className="text-textMuted text-sm"></span>
                   <select value={mes} onChange={(e) => setMes(e.target.value)} className="bg-transparent text-sm font-medium focus:outline-none capitalize">
                     <option value="">Todos los meses</option>
                     {datos.mesesDisponibles.map((m) => <option key={m} value={m} className="capitalize">{labelDeMes(m)}</option>)}
                   </select>
                 </div>
                 <button onClick={exportarExcel} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm">
-                  ⬇ Exportar a Excel
+                   Exportar a Excel
                 </button>
               </div>
             </div>
@@ -114,7 +114,7 @@ export default function ResumenEstudiantesPage() {
 
             <div className="grid md:grid-cols-2 gap-4 mb-4">
               <div className="bg-surface border border-border rounded-2xl p-5">
-                <p className="text-sm font-semibold mb-3">🎓 Estudiantes por curso</p>
+                <p className="text-sm font-semibold mb-3"> Estudiantes por curso</p>
                 {porCursoFiltrado.length === 0 ? <p className="text-textMuted text-sm">Sin datos.</p> : (
                   <div className="space-y-2">
                     {porCursoFiltrado.map((c) => (
@@ -131,7 +131,7 @@ export default function ResumenEstudiantesPage() {
               </div>
 
               <div className="bg-surface border border-border rounded-2xl p-5">
-                <p className="text-sm font-semibold mb-3">📚 Estudiantes por edición</p>
+                <p className="text-sm font-semibold mb-3"> Estudiantes por edición</p>
                 {datos.porEdicion.length === 0 ? <p className="text-textMuted text-sm">Sin datos.</p> : (
                   <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                     {datos.porEdicion

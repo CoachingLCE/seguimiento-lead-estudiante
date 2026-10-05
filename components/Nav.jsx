@@ -252,7 +252,7 @@ export default function Nav({ usuario, onLogout }) {
             {puedeVerComo && (
               <select value={vc ? vc.email : ''} onChange={(e) => elegirVerComo(e.target.value)} title="Ver la app como otra persona (solo lectura)"
                 className="hidden md:block bg-surface2 border border-border rounded-lg text-[12px] px-1.5 h-7 text-textSec hover:border-accentTeal max-w-[150px]">
-                <option value="">👁 Ver como…</option>
+                <option value="">Ver como…</option>
                 {personas.map((p) => <option key={p.email} value={p.email}>{p.nombre}</option>)}
               </select>
             )}
@@ -268,13 +268,13 @@ export default function Nav({ usuario, onLogout }) {
           {/* BOTÓN HAMBURGUESA — mobile/tablet */}
           <button onClick={() => setMenuMovil((v) => !v)}
             className="lg:hidden w-8 h-8 flex items-center justify-center rounded-lg bg-surface2 border border-border text-base shrink-0">
-            {menuMovil ? '✕' : '☰'}
+            {menuMovil ? '' : ''}
           </button>
         </div>
 
         {puedeVerComo && vc && (
           <div className="no-print flex items-center gap-3 text-[12px] bg-accentPurple/15 border border-accentPurple/40 text-text rounded-lg px-3 py-1.5 mb-2">
-            <span>👁 Estás viendo la app <b>como {vc.nombre}</b> (solo lectura).</span>
+            <span> Estás viendo la app <b>como {vc.nombre}</b> (solo lectura).</span>
             <button onClick={() => elegirVerComo('')} className="underline ml-auto whitespace-nowrap">Salir del modo vista</button>
           </div>
         )}

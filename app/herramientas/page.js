@@ -57,14 +57,14 @@ export default function HerramientasPage() {
     <div>
       <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
       <div className="max-w-5xl mx-auto px-6 pb-16">
-        <h3 className="text-lg font-bold mb-1">⚡ Accesos rápidos</h3>
+        <h3 className="text-lg font-bold mb-1"> Accesos rápidos</h3>
         <p className="text-textMuted text-xs mb-5">Herramientas que utilizás habitualmente. Se abren en una pestaña nueva.</p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8">
           {ACCESOS_RAPIDOS.map((h) => <TarjetaAcceso key={h.nombre} h={h} />)}
         </div>
 
-        <h3 className="text-sm font-bold mb-1">🔗 Recursos institucionales</h3>
+        <h3 className="text-sm font-bold mb-1"> Recursos institucionales</h3>
         <p className="text-textMuted text-xs mb-4">Accesos a la plataforma y a los materiales de referencia del instituto.</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {RECURSOS_INSTITUCIONALES.map((r) => (
@@ -78,7 +78,7 @@ export default function HerramientasPage() {
                 </span>
                 <div>
                   <p className="text-sm font-semibold text-textMuted">{r.nombre}</p>
-                  <p className="text-[12px] text-textMuted">🔒 Próximamente</p>
+                  <p className="text-[12px] text-textMuted"> Próximamente</p>
                 </div>
               </div>
             )

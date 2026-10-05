@@ -48,12 +48,12 @@ function estadoVencimiento(fechaVence) {
   const diffMs = new Date(fechaVence) - new Date();
   const horas = diffMs / (1000 * 60 * 60);
   if (horas > 0) {
-    if (horas < 24) return { texto: `⏰ Vence hoy — faltan ${Math.ceil(horas)}hs`, urgencia: 'proximo' };
+    if (horas < 24) return { texto: ` Vence hoy — faltan ${Math.ceil(horas)}hs`, urgencia: 'proximo' };
     const dias = Math.ceil(horas / 24);
     return { texto: `Vence en ${dias} día${dias > 1 ? 's' : ''}`, urgencia: 'lejos' };
   }
   const diasVencido = Math.floor(-horas / 24);
-  if (diasVencido <= 0) return { texto: '⏰ Vence hoy', urgencia: 'proximo' };
+  if (diasVencido <= 0) return { texto: ' Vence hoy', urgencia: 'proximo' };
   if (diasVencido <= 2) return { texto: `Hace ${diasVencido} día${diasVencido > 1 ? 's' : ''} que venció`, urgencia: 'reciente' };
   return { texto: `🔴 Hace ${diasVencido} días sin contacto`, urgencia: 'critico' };
 }
@@ -70,10 +70,10 @@ function iniciales(nombre) {
 // Indicadores rápidos sobre un lead+fila: 🔥 caliente, ⭐ alta prioridad, 💰 posible venta, 📞 esperando respuesta
 function indicadores(lead, fila) {
   const lista = [];
-  if (lead.Prioridad === 'Alta') lista.push({ icono: '⭐', titulo: 'Alta prioridad' });
-  if (RESULTADOS_PROGRESO.includes(fila.Resultado)) lista.push({ icono: '💰', titulo: 'Posible venta en curso' });
-  if (fila.Contactado === 'TRUE' && fila.Resultado === 'No contestó') lista.push({ icono: '📞', titulo: 'Esperando respuesta' });
-  if (fila.Resultado === 'Interesado' || RESULTADOS_PROGRESO.includes(fila.Resultado)) lista.push({ icono: '🔥', titulo: 'Lead caliente' });
+  if (lead.Prioridad === 'Alta') lista.push({ icono: '', titulo: 'Alta prioridad' });
+  if (RESULTADOS_PROGRESO.includes(fila.Resultado)) lista.push({ icono: '', titulo: 'Posible venta en curso' });
+  if (fila.Contactado === 'TRUE' && fila.Resultado === 'No contestó') lista.push({ icono: '', titulo: 'Esperando respuesta' });
+  if (fila.Resultado === 'Interesado' || RESULTADOS_PROGRESO.includes(fila.Resultado)) lista.push({ icono: '', titulo: 'Lead caliente' });
   return lista;
 }
 
@@ -269,10 +269,10 @@ export default function SeguimientoPage() {
       body: JSON.stringify({ leadIds, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
     }).then((res) => res.json());
     if (r.error) {
-      mostrarToast(`⚠️ ${r.error}`);
+      mostrarToast(` ${r.error}`);
     } else {
       mostrarToast(
-        `✓ ${r.eliminados} lead(s) eliminado(s)${r.protegidos > 0 ? ` (${r.protegidos} protegido(s) por venta)` : ''}`
+        ` ${r.eliminados} lead(s) eliminado(s)${r.protegidos > 0 ? ` (${r.protegidos} protegido(s) por venta)` : ''}`
       );
     }
     setSeleccionados(new Set());
@@ -488,11 +488,11 @@ export default function SeguimientoPage() {
                 <FiltroPill activo={filtroCurso === 'OTROS'} onClick={() => setFiltroCurso('OTROS')}
                   label="Otros" count={contadoresPorCurso.otros} />
                 <input ref={busquedaRef} value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
-                  placeholder="🔍 Buscar (Ctrl+F): nombre, whatsapp, email, IG, curso, país…"
+                  placeholder=" Buscar (Ctrl+F): nombre, whatsapp, email, IG, curso, país…"
                   className="bg-bg border border-border rounded-lg px-3 py-2 text-sm w-64" />
               </div>
               <button onClick={exportarExcel} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm shrink-0">
-                ⬇ Exportar a Excel
+                 Exportar a Excel
               </button>
             </div>
 
@@ -500,7 +500,7 @@ export default function SeguimientoPage() {
               {[
                 { k: 'sinAsignar', l: 'Sin asignar' }, { k: 'conWhatsapp', l: 'Con WhatsApp' },
                 { k: 'sinWhatsapp', l: 'Sin WhatsApp' }, { k: 'conEmail', l: 'Con Email' },
-                { k: 'altaPrioridad', l: '⭐ Alta prioridad' }, { k: 'hoy', l: '⏰ Vence hoy' }, { k: 'atrasados', l: '🔴 Atrasados' }
+                { k: 'altaPrioridad', l: ' Alta prioridad' }, { k: 'hoy', l: ' Vence hoy' }, { k: 'atrasados', l: '🔴 Atrasados' }
               ].map(({ k, l }) => (
                 <button key={k} onClick={() => toggleFiltroExtra(k)}
                   className={`text-[12px] px-2.5 py-1 rounded-full border transition-colors ${
@@ -570,7 +570,7 @@ export default function SeguimientoPage() {
               filas={lote6} filasTotales={lote6Todas} sinAsignarPorDefecto {...propsComunes}
             />
             <SeccionLote
-              titulo="📅 LOTE PROGRAMADO" subtitulo={`${loteProgramado.length} lead(s) que pidieron ser contactados en una fecha puntual, y esa fecha ya llegó`}
+              titulo=" LOTE PROGRAMADO" subtitulo={`${loteProgramado.length} lead(s) que pidieron ser contactados en una fecha puntual, y esa fecha ya llegó`}
               explicacion={<>Aparece acá cualquier lead (esté en el lote que esté) al que le registraste "contactame el [fecha]" y esa fecha ya se cumplió. No reemplaza su lote normal, es un recordatorio extra.</>}
               filas={loteProgramado} filasTotales={loteProgramadoTodas} sinAsignarPorDefecto colorBorde="border-l-4 border-l-infoText" {...propsComunes}
             />
@@ -600,11 +600,11 @@ export default function SeguimientoPage() {
               {RESULTADOS_CONTACTO.map((r) => <option key={r} value={r}>{r}</option>)}
             </select>
             <button onClick={exportarSeleccionados}
-              className="text-xs px-3 py-1.5 rounded-md bg-surface border border-border">⬇ Exportar seleccionados</button>
+              className="text-xs px-3 py-1.5 rounded-md bg-surface border border-border"> Exportar seleccionados</button>
             {esAdmin && (
               <button onClick={() => setConfirmarEliminarLeads(true)}
                 className="text-xs px-3 py-1.5 rounded-md border border-dangerText/40 text-dangerText hover:bg-dangerBg">
-                🗑 Eliminar seleccionados
+                 Eliminar seleccionados
               </button>
             )}
             <button onClick={() => setSeleccionados(new Set())}
@@ -652,7 +652,7 @@ export default function SeguimientoPage() {
 // Botón de copiar — con tamaño de tap-target real (antes era un emoji suelto sin padding,
 // muy chico para tocar bien en la práctica). Acepta icono/título custom para poder reusarlo
 // como "copiar Instagram/Facebook" cuando el lead no tiene WhatsApp.
-function CopyButton({ valor, icono = '📋', titulo = 'Copiar' }) {
+function CopyButton({ valor, icono = '', titulo = 'Copiar' }) {
   const [copiado, setCopiado] = useState(false);
   function copiar(e) {
     e.preventDefault();
@@ -666,7 +666,7 @@ function CopyButton({ valor, icono = '📋', titulo = 'Copiar' }) {
       className={`inline-flex items-center justify-center w-6 h-6 rounded-md border text-xs transition-colors ${
         copiado ? 'border-successText/50 text-successText' : 'border-border text-textMuted hover:text-accentTeal hover:border-accentTeal'
       }`}>
-      {copiado ? '✓' : icono}
+      {copiado ? '' : icono}
     </button>
   );
 }
@@ -732,7 +732,7 @@ function SeccionSinLote({ sinLote, onVerFicha }) {
     <div className="bg-surface border border-border rounded-2xl p-5">
       <button onClick={() => setAbierta(!abierta)} className="w-full flex items-start justify-between text-left">
         <div>
-          <p className="text-sm font-semibold mb-1">🚫 SIN LOTE</p>
+          <p className="text-sm font-semibold mb-1"> SIN LOTE</p>
           <p className="text-textMuted text-xs">{sinLote.length} lead(s) que ya salieron del seguimiento activo — para saber por qué</p>
         </div>
         <span className="text-textMuted text-sm shrink-0 ml-3">{abierta ? '▲' : '▼'}</span>
@@ -772,7 +772,7 @@ function AccionSugerida({ accion }) {
 
   return (
     <div className="mt-3 bg-gradient-to-r from-accentPurple/15 to-accentMagenta/15 border border-accentPurple/30 rounded-xl px-4 py-3">
-      <p className="text-accentPurpleTxt text-xs font-bold uppercase tracking-wide mb-1">⚡ Acción</p>
+      <p className="text-accentPurpleTxt text-xs font-bold uppercase tracking-wide mb-1"> Acción</p>
       <p className="text-sm font-medium mb-1">{accion.label}</p>
       {accion.script && (
         <div className="mt-2">
@@ -780,7 +780,7 @@ function AccionSugerida({ accion }) {
             {accion.script}
           </p>
           <button onClick={copiar} className="text-accentPurpleTxt text-xs font-semibold mt-1.5">
-            {copiado ? '✓ Copiado' : '📋 Copiar mensaje'}
+            {copiado ? ' Copiado' : ' Copiar mensaje'}
           </button>
         </div>
       )}
@@ -932,7 +932,7 @@ function FilaLote({
               {lead.WhatsApp && (
                 <div className="relative">
                   <button type="button" onClick={() => setMenuWhatsapp(!menuWhatsapp)}
-                    className="w-6 h-6 flex items-center justify-center rounded-md border border-border text-xs" title="WhatsApp">💬</button>
+                    className="w-6 h-6 flex items-center justify-center rounded-md border border-border text-xs" title="WhatsApp"></button>
                   {menuWhatsapp && (
                     <div className="absolute right-0 top-7 z-20 bg-surface2 border border-border rounded-lg p-2 w-48 shadow-xl">
                       <a href={`https://wa.me/${whatsappLimpio}`} target="_blank" rel="noopener noreferrer"
@@ -953,12 +953,12 @@ function FilaLote({
               {/* Sin WhatsApp, el botón que ocupa ese lugar pasa a copiar Instagram/Facebook —
                   un único lugar fijo para "copiar el contacto", tenga o no WhatsApp. */}
               {!lead.WhatsApp && lead.InstagramUsuario && (
-                <CopyButton valor={lead.InstagramUsuario} icono="📷" titulo="Copiar Instagram/Facebook" />
+                <CopyButton valor={lead.InstagramUsuario} icono="" titulo="Copiar Instagram/Facebook" />
               )}
               {lead.EmailEstudiante && (
-                <a href={enlaceGmail(lead.EmailEstudiante)} target="_blank" rel="noopener noreferrer" className="w-6 h-6 flex items-center justify-center rounded-md border border-border text-xs" title="Email">✉️</a>
+                <a href={enlaceGmail(lead.EmailEstudiante)} target="_blank" rel="noopener noreferrer" className="w-6 h-6 flex items-center justify-center rounded-md border border-border text-xs" title="Email"></a>
               )}
-              <a href={`tel:${whatsappLimpio}`} className="w-6 h-6 flex items-center justify-center rounded-md border border-border text-xs" title="Llamar">📞</a>
+              <a href={`tel:${whatsappLimpio}`} className="w-6 h-6 flex items-center justify-center rounded-md border border-border text-xs" title="Llamar"></a>
               {fila.Lote !== 'baja' && (
                 <button onClick={() => onMarcarVenta(lead)} className="text-xs px-3 py-1 rounded bg-accentPurple text-white">Venta</button>
               )}
@@ -967,11 +967,11 @@ function FilaLote({
           </div>
 
           <p className="text-xs text-textMuted mt-0.5 mb-1.5 flex items-center gap-2 flex-wrap">
-            {lead.WhatsApp && <span className="inline-flex items-center gap-1">📱 {lead.WhatsApp} <CopyButton valor={lead.WhatsApp} /></span>}
-            {lead.EmailEstudiante && <span className="inline-flex items-center gap-1">✉️ {lead.EmailEstudiante} <CopyButton valor={lead.EmailEstudiante} /></span>}
-            {lead.InstagramUsuario && <span className="inline-flex items-center gap-1">📷 {lead.InstagramUsuario} <CopyButton valor={lead.InstagramUsuario} /></span>}
+            {lead.WhatsApp && <span className="inline-flex items-center gap-1"> {lead.WhatsApp} <CopyButton valor={lead.WhatsApp} /></span>}
+            {lead.EmailEstudiante && <span className="inline-flex items-center gap-1"> {lead.EmailEstudiante} <CopyButton valor={lead.EmailEstudiante} /></span>}
+            {lead.InstagramUsuario && <span className="inline-flex items-center gap-1"> {lead.InstagramUsuario} <CopyButton valor={lead.InstagramUsuario} /></span>}
             {lead.Pais && (
-              <span className={lead.Pais !== 'Argentina' ? 'font-bold text-text' : ''}>🌎 {lead.Pais}</span>
+              <span className={lead.Pais !== 'Argentina' ? 'font-bold text-text' : ''}> {lead.Pais}</span>
             )}
             {lead.Origen && <span>Origen: {lead.Origen}</span>}
             {lead.CursosAdicionales && <span>· También le interesa: {lead.CursosAdicionales}</span>}
@@ -996,7 +996,7 @@ function FilaLote({
 
           {contactado ? (
             <p className="text-successText text-xs">
-              ✓ {fila.Resultado}
+               {fila.Resultado}
               {fila.Observaciones && <span className="text-textMuted"> · {fila.Observaciones}</span>}
               {fila.ProximaAccion && <span className="text-textMuted"> · Próxima acción: {fila.ProximaAccion}</span>}
             </p>
@@ -1020,14 +1020,14 @@ function FilaLote({
               )}
               {!RESULTADOS_FINALES.includes(resultadoElegido) && (
                 <div className="mb-2">
-                  <label className="text-[12px] text-textMuted block mb-1">📅 ¿Te pidió que lo contactes en una fecha puntual? (opcional)</label>
+                  <label className="text-[12px] text-textMuted block mb-1"> ¿Te pidió que lo contactes en una fecha puntual? (opcional)</label>
                   <input type="date" value={fechaProgramada} onChange={(e) => setFechaProgramada(e.target.value)}
                     className="bg-surface2 border border-border rounded px-2 py-1 text-xs" />
                 </div>
               )}
               <div className="flex gap-2">
                 <button onClick={() => setResultadoElegido(null)} className="text-xs px-3 py-1 rounded bg-surface2 border border-border">Cancelar</button>
-                <button onClick={confirmarResultado} className="text-xs px-3 py-1 rounded bg-accentPurple text-white font-semibold">Guardar ✓</button>
+                <button onClick={confirmarResultado} className="text-xs px-3 py-1 rounded bg-accentPurple text-white font-semibold">Guardar </button>
               </div>
             </div>
           ) : (

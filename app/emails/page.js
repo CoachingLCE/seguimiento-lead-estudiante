@@ -57,7 +57,7 @@ const AUTOMATIZACIONES = [
     tipo: 'Resumen semanal',
     remitente: 'Instituto ILCE',
     cc: '—',
-    asunto: '📩 Resumen semanal de alertas — N sin confirmar',
+    asunto: ' Resumen semanal de alertas — N sin confirmar',
     previsualizar: () => ({
       html: htmlResumenAlertas([
         { nombre: 'Juana Pérez', curso: 'Coaching Educativo', tipo: 'Bienvenida', horasHabiles: 60 },
@@ -71,7 +71,7 @@ const AUTOMATIZACIONES = [
     tipo: 'Resumen semanal de fichas enviadas',
     remitente: 'Instituto ILCE',
     cc: '—',
-    asunto: '📄 Resumen semanal de fichas enviadas — N sin comprar',
+    asunto: ' Resumen semanal de fichas enviadas — N sin comprar',
     previsualizar: () => ({
       html: htmlResumenFichasEnviadas([
         { nombre: 'Juana Pérez', curso: 'Coaching Educativo', pais: 'Argentina', fecha: new Date(Date.now() - 8 * 86400000).toISOString(), enviadaPor: 'Lourdes' },
@@ -91,8 +91,8 @@ function ModalVerMail({ automatizacion, onClose }) {
       <div className="bg-surface2 border border-border rounded-2xl w-full max-w-3xl h-[94vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
         <div className="p-4 sm:p-5 border-b border-border shrink-0">
           <div className="flex items-start justify-between gap-3 mb-2">
-            <p className="text-sm font-bold">✉️ {automatizacion.tipo}</p>
-            <button onClick={onClose} className="text-textMuted hover:text-text text-sm">✕</button>
+            <p className="text-sm font-bold"> {automatizacion.tipo}</p>
+            <button onClick={onClose} className="text-textMuted hover:text-text text-sm"></button>
           </div>
           <div className="text-xs text-textSec flex flex-wrap gap-x-4 gap-y-0.5">
             <p><span className="text-textMuted">De:</span> {automatizacion.remitente}</p>
@@ -180,7 +180,7 @@ export default function EmailsPage() {
         <AccesoDenegado seccion="Emails" />
       ) : (
       <div className="max-w-[1450px] mx-auto px-4 sm:px-6 pb-16">
-        <h3 className="text-lg font-bold mb-1">✉️ Emails</h3>
+        <h3 className="text-lg font-bold mb-1"> Emails</h3>
         <p className="text-textMuted text-xs mb-5">Qué mails automáticos manda el sistema, y el registro real de cada envío.</p>
 
         {/* DOCUMENTACIÓN */}
@@ -225,7 +225,7 @@ export default function EmailsPage() {
         <div className="bg-surface border border-border rounded-2xl p-4 sm:p-5">
           <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
             <p className="text-sm font-semibold">Registro de envíos <span className="text-textMuted font-normal">({emails ? filtrados.length : 0})</span></p>
-            <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="🔍 Buscar…"
+            <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder=" Buscar…"
               className="bg-bg border border-border rounded-lg px-3 py-2 text-sm w-48" />
           </div>
           <div className="flex items-center gap-2 flex-wrap mb-3">
@@ -249,7 +249,7 @@ export default function EmailsPage() {
 
           {errorCarga ? (
             <div className="text-center py-6">
-              <p className="text-dangerText text-sm font-semibold mb-3">⚠️ {errorCarga}</p>
+              <p className="text-dangerText text-sm font-semibold mb-3"> {errorCarga}</p>
               <button onClick={cargar} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">Reintentar</button>
             </div>
           ) : emails === null ? (
@@ -279,7 +279,7 @@ export default function EmailsPage() {
                       <td className="pr-3">{e.asunto}</td>
                       <td>
                         <span className={`text-[12px] px-2 py-0.5 rounded-full whitespace-nowrap ${e.estado === 'Enviado' ? 'bg-successBg text-successText' : 'bg-dangerBg text-dangerText'}`}>
-                          {e.estado === 'Enviado' ? '✓ Enviado' : '✕ Falló'}
+                          {e.estado === 'Enviado' ? ' Enviado' : ' Falló'}
                         </span>
                       </td>
                     </tr>

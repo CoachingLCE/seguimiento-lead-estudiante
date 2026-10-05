@@ -31,7 +31,7 @@ function Contenido() {
       justifyContent: 'center', gap: '16px', fontFamily: '-apple-system, Segoe UI, Arial, sans-serif',
       textAlign: 'center', padding: '24px', background: '#0b0e1a', color: '#eef0f8'
     }}>
-      <p style={{ fontSize: 40 }}>{estado === 'ok' ? '✅' : estado === 'error' ? '⚠️' : '⏳'}</p>
+      <p style={{ fontSize: 40 }}>{estado === 'ok' ? '' : estado === 'error' ? '' : ''}</p>
       {estado === 'cargando' && <p style={{ fontSize: 15, opacity: 0.8 }}>Confirmando…</p>}
       {estado === 'ok' && (
         <>

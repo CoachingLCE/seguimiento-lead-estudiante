@@ -8,14 +8,14 @@ import { useSession } from '../../lib/useSession';
 import { tienePermisoInformesRRSS } from '../../lib/permisos';
 
 const PLATAFORMAS = [
-  { id: 'instagram', label: 'Instagram', color: 'text-accentMagenta', icono: '📷' },
-  { id: 'linkedin', label: 'LinkedIn', color: 'text-infoText', icono: '💼' },
-  { id: 'youtube', label: 'YouTube', color: 'text-dangerText', icono: '▶️' },
-  { id: 'google_business', label: 'Google Business', color: 'text-warningText', icono: '📍' },
-  { id: 'threads', label: 'Threads', color: 'text-text', icono: '🧵' },
-  { id: 'whatsapp_comunidad', label: 'Comunidad WhatsApp', color: 'text-successText', icono: '💬' },
-  { id: 'instagram_comunidad', label: 'Comunidad Instagram', color: 'text-accentPurpleTxt', icono: '👥' },
-  { id: 'blog', label: 'Blog', color: 'text-accentTeal', icono: '📝' }
+  { id: 'instagram', label: 'Instagram', color: 'text-accentMagenta', icono: '' },
+  { id: 'linkedin', label: 'LinkedIn', color: 'text-infoText', icono: '' },
+  { id: 'youtube', label: 'YouTube', color: 'text-dangerText', icono: '' },
+  { id: 'google_business', label: 'Google Business', color: 'text-warningText', icono: '' },
+  { id: 'threads', label: 'Threads', color: 'text-text', icono: '' },
+  { id: 'whatsapp_comunidad', label: 'Comunidad WhatsApp', color: 'text-successText', icono: '' },
+  { id: 'instagram_comunidad', label: 'Comunidad Instagram', color: 'text-accentPurpleTxt', icono: '' },
+  { id: 'blog', label: 'Blog', color: 'text-accentTeal', icono: '' }
 ];
 const TIPOS_PIEZA = ['Reel', 'Carrusel', 'Post', 'Video', 'Artículo', 'Historia'];
 const CAMPOS_METRICA = [
@@ -402,7 +402,7 @@ export default function InformesRRSSPage() {
         body: JSON.stringify({ mes, plataforma: editandoPlataforma, ...formMetrica, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
       });
       setEditandoPlataforma(null);
-      mostrarAviso('success', '✓ Cambios guardados correctamente');
+      mostrarAviso('success', ' Cambios guardados correctamente');
       cargarTodo();
       if (mesesConDatos && !mesesConDatos.includes(mes)) setMesesConDatos((prev) => [...prev, mes].sort().reverse());
     } catch (err2) {
@@ -451,7 +451,7 @@ export default function InformesRRSSPage() {
         await pedir('/api/informes-rrss/piezas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) });
       }
       setMostrarFormPieza(false);
-      mostrarAviso('success', '✓ Pieza guardada correctamente');
+      mostrarAviso('success', ' Pieza guardada correctamente');
       cargarTodo();
     } catch (err2) {
       setErrorFormPieza(err2.message);
@@ -465,11 +465,11 @@ export default function InformesRRSSPage() {
         body: JSON.stringify({ piezaId: p.PiezaID, rowIndex: p._rowIndex, titulo: p.Titulo, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
       });
       setConfirmarBorrarPieza(null);
-      mostrarAviso('success', '✓ Pieza eliminada');
+      mostrarAviso('success', ' Pieza eliminada');
       cargarTodo();
     } catch (err) {
       setConfirmarBorrarPieza(null);
-      mostrarAviso('error', `✕ ${err.message}`);
+      mostrarAviso('error', ` ${err.message}`);
     }
   }
 
@@ -485,7 +485,7 @@ export default function InformesRRSSPage() {
       setNuevoObjetivo('');
       cargarTodo();
     } catch (err) {
-      mostrarAviso('error', `✕ ${err.message}`);
+      mostrarAviso('error', ` ${err.message}`);
     }
     setGuardandoObjetivo(false);
   }
@@ -498,7 +498,7 @@ export default function InformesRRSSPage() {
         body: JSON.stringify({ rowIndex: o._rowIndex, cumplido: cumplidoNuevo, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
       });
     } catch (err) {
-      mostrarAviso('error', `✕ ${err.message}`);
+      mostrarAviso('error', ` ${err.message}`);
       cargarTodo();
     }
   }
@@ -510,7 +510,7 @@ export default function InformesRRSSPage() {
       });
       cargarTodo();
     } catch (err) {
-      mostrarAviso('error', `✕ ${err.message}`);
+      mostrarAviso('error', ` ${err.message}`);
     }
   }
 
@@ -524,7 +524,7 @@ export default function InformesRRSSPage() {
         body: JSON.stringify({ mes, ...formAnalisis, solicitanteEmail: usuario.email, solicitanteNombre: usuario.nombre })
       });
       setEditandoAnalisis(false);
-      mostrarAviso('success', '✓ Cambios guardados correctamente');
+      mostrarAviso('success', ' Cambios guardados correctamente');
       cargarTodo();
     } catch (err) {
       setErrorFormAnalisis(err.message);
@@ -592,11 +592,11 @@ export default function InformesRRSSPage() {
       .sort((a, b) => num(b[campo]) - num(a[campo]))[0] || null;
   }
   const topContenidos = [
-    ['👁 Mayor alcance', topPor('Views'), 'Views'],
-    ['🔥 Mayor engagement', piezasConEngagement.filter((p) => p._engagement !== null).sort((a, b) => b._engagement - a._engagement)[0], '_engagement'],
-    ['🔁 Más compartidos', topPor('Shares'), 'Shares'],
-    ['🔖 Más guardados', topPor('Saves'), 'Saves'],
-    ['🎯 Más leads', topPor('Leads'), 'Leads']
+    [' Mayor alcance', topPor('Views'), 'Views'],
+    [' Mayor engagement', piezasConEngagement.filter((p) => p._engagement !== null).sort((a, b) => b._engagement - a._engagement)[0], '_engagement'],
+    [' Más compartidos', topPor('Shares'), 'Shares'],
+    [' Más guardados', topPor('Saves'), 'Saves'],
+    [' Más leads', topPor('Leads'), 'Leads']
   ].filter(([, pieza]) => pieza);
 
   // ---------- RENDIMIENTO POR TIPO DE CONTENIDO ----------
@@ -717,17 +717,17 @@ export default function InformesRRSSPage() {
 
         {/* HEADER + SELECTOR DE MES */}
         <div className="flex items-center justify-between flex-wrap gap-3 mb-1">
-          <h3 className="text-lg font-bold">📊 Informes RRSS</h3>
+          <h3 className="text-lg font-bold"> Informes RRSS</h3>
           <div className="flex items-center gap-2 flex-wrap">
             <button onClick={() => setVistaAnual((v) => !v)}
               className={`text-sm px-3 py-2 rounded-xl border font-medium ${vistaAnual ? 'bg-accentPurple border-accentPurple text-white' : 'bg-surface border-border text-textSec'}`}>
-              📆 Informe anual {mes.slice(0, 4)}
+               Informe anual {mes.slice(0, 4)}
             </button>
             <button onClick={exportarExcel} className="text-sm px-3 py-2 rounded-xl border border-border bg-surface text-textSec">
-              ⬇ Exportar
+               Exportar
             </button>
             <div className="flex items-center gap-2 bg-surface border border-border rounded-xl px-3 py-2">
-              <span className="text-textMuted text-sm">📅</span>
+              <span className="text-textMuted text-sm"></span>
               <select value={mes} onChange={(e) => setMes(e.target.value)}
                 className="bg-transparent text-sm font-medium focus:outline-none capitalize">
                 {[...new Set([...mesesDisponibles(), ...(mesesConDatos || [])])].sort().reverse()
@@ -742,7 +742,7 @@ export default function InformesRRSSPage() {
           cargandoAnual ? <Skeleton h="h-64" /> : (
           <div className="space-y-4">
             <div className="bg-surface border border-border rounded-2xl p-4 sm:p-5">
-              <p className="text-sm font-semibold mb-3">📆 Informe anual {mes.slice(0, 4)}</p>
+              <p className="text-sm font-semibold mb-3"> Informe anual {mes.slice(0, 4)}</p>
               {anual.porMes.length === 0 ? (
                 <p className="text-textMuted text-sm">Todavía no hay datos cargados este año.</p>
               ) : (
@@ -767,16 +767,16 @@ export default function InformesRRSSPage() {
                   </div>
                   <div className="grid sm:grid-cols-2 gap-3 mb-2">
                     {anual.mejorMes && (
-                      <p className="text-textSec text-xs">🏆 Mejor mes: <b className="text-text">{labelDeMes(anual.mejorMes.mes)}</b> ({fmt(anual.mejorMes.reach)} de alcance)</p>
+                      <p className="text-textSec text-xs"> Mejor mes: <b className="text-text">{labelDeMes(anual.mejorMes.mes)}</b> ({fmt(anual.mejorMes.reach)} de alcance)</p>
                     )}
                     {anual.peorMes && anual.porMes.length > 1 && (
-                      <p className="text-textSec text-xs">📉 Mes más flojo: <b className="text-text">{labelDeMes(anual.peorMes.mes)}</b> ({fmt(anual.peorMes.reach)} de alcance)</p>
+                      <p className="text-textSec text-xs"> Mes más flojo: <b className="text-text">{labelDeMes(anual.peorMes.mes)}</b> ({fmt(anual.peorMes.reach)} de alcance)</p>
                     )}
                     {anual.porPlataforma[0] && (
-                      <p className="text-textSec text-xs">📱 Mejor plataforma: <b className="text-text">{anual.porPlataforma[0].clave}</b></p>
+                      <p className="text-textSec text-xs"> Mejor plataforma: <b className="text-text">{anual.porPlataforma[0].clave}</b></p>
                     )}
                     {anual.mejorTipo && (
-                      <p className="text-textSec text-xs">🎬 Mejor tipo de contenido: <b className="text-text">{anual.mejorTipo.clave}</b> ({anual.mejorTipo.cantidad} piezas)</p>
+                      <p className="text-textSec text-xs"> Mejor tipo de contenido: <b className="text-text">{anual.mejorTipo.clave}</b> ({anual.mejorTipo.cantidad} piezas)</p>
                     )}
                   </div>
                   <div className="mt-4">
@@ -793,7 +793,7 @@ export default function InformesRRSSPage() {
           )
         ) : errorCarga ? (
           <div className="bg-dangerBg border border-dangerText/30 rounded-2xl p-6 text-center">
-            <p className="text-dangerText text-sm font-semibold mb-3">✕ {errorCarga}</p>
+            <p className="text-dangerText text-sm font-semibold mb-3"> {errorCarga}</p>
             <button onClick={cargarTodo} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">Reintentar</button>
           </div>
         ) : cargando ? (
@@ -809,7 +809,7 @@ export default function InformesRRSSPage() {
 
             {/* 1. RESUMEN DEL MES */}
             <div className="bg-surface border border-border rounded-2xl p-4 sm:p-5">
-              <p className="text-sm font-semibold mb-3">📊 Resumen del mes</p>
+              <p className="text-sm font-semibold mb-3"> Resumen del mes</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                 {[
                   ['Seguidores totales', totales.followers, totalesAnterior.followers, false],
@@ -858,7 +858,7 @@ export default function InformesRRSSPage() {
             {/* 1.7 EVOLUCIÓN */}
             <div className="bg-surface border border-border rounded-2xl p-4 sm:p-5">
               <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
-                <p className="text-sm font-semibold">📈 Evolución</p>
+                <p className="text-sm font-semibold"> Evolución</p>
                 <div className="flex items-center gap-2 flex-wrap">
                   <div className="flex items-center gap-1.5 bg-bg border border-border rounded-lg px-2 py-1">
                     <span className="text-xs">{PLATAFORMAS.find((p) => p.id === plataformaEvolucion)?.icono}</span>
@@ -901,7 +901,7 @@ export default function InformesRRSSPage() {
 
             {/* 2. MÉTRICAS POR PLATAFORMA */}
             <div>
-              <p className="text-sm font-semibold mb-3">📱 Métricas por plataforma</p>
+              <p className="text-sm font-semibold mb-3"> Métricas por plataforma</p>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {plataformasConDatos.map((plat) => {
                   const m = metricas.find((x) => x.Plataforma === plat.id);
@@ -910,7 +910,7 @@ export default function InformesRRSSPage() {
                       <div className="flex items-center justify-between mb-2">
                         <p className={`text-sm font-semibold ${plat.color}`}>{plat.icono} {plat.label}</p>
                         <button onClick={() => abrirEdicionMetrica(plat.id)} className="text-xs text-accentTeal font-semibold shrink-0">
-                          {m ? '✏️ Editar' : '+ Cargar'}
+                          {m ? ' Editar' : '+ Cargar'}
                         </button>
                       </div>
                       {!m ? (
@@ -945,7 +945,7 @@ export default function InformesRRSSPage() {
                       </div>
                     ))}
                   </div>
-                  {errorFormMetrica && <p className="text-dangerText text-xs mb-3">✕ {errorFormMetrica}</p>}
+                  {errorFormMetrica && <p className="text-dangerText text-xs mb-3"> {errorFormMetrica}</p>}
                   <div className="flex gap-2 flex-wrap">
                     <button onClick={() => setEditandoPlataforma(null)} className="text-sm px-4 py-2 rounded-lg bg-surface2 border border-border">Cancelar</button>
                     <button onClick={guardarMetrica} disabled={guardandoMetrica}
@@ -960,13 +960,13 @@ export default function InformesRRSSPage() {
             {/* 3. CONTENIDO DESTACADO */}
             <div className="bg-surface border border-border rounded-2xl p-4 sm:p-5">
               <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
-                <p className="text-sm font-semibold">🎬 Contenido destacado</p>
+                <p className="text-sm font-semibold"> Contenido destacado</p>
                 <button onClick={abrirNuevaPieza} className="text-xs px-3 py-1.5 rounded-lg bg-accentPurple text-white font-semibold">+ Agregar</button>
               </div>
 
               {mejorPieza && (
                 <div className="bg-bg border border-warningText/40 rounded-xl p-3 mb-3">
-                  <p className="text-warningText text-xs font-semibold mb-1">🏆 Mejor contenido del mes</p>
+                  <p className="text-warningText text-xs font-semibold mb-1"> Mejor contenido del mes</p>
                   <p className="text-sm font-medium">{mejorPieza.Titulo}</p>
                   <p className="text-textMuted text-[12px]">Engagement: {mejorPieza._engagement.toFixed(1)}%</p>
                 </div>
@@ -1014,7 +1014,7 @@ export default function InformesRRSSPage() {
                   <label className="text-[12px] text-textSec block mb-1">¿Por qué funcionó? (opcional)</label>
                   <textarea rows={2} value={formPieza.notaIA} onChange={(e) => setFormPieza((f) => ({ ...f, notaIA: e.target.value }))}
                     className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm mb-3" />
-                  {errorFormPieza && <p className="text-dangerText text-xs mb-3">✕ {errorFormPieza}</p>}
+                  {errorFormPieza && <p className="text-dangerText text-xs mb-3"> {errorFormPieza}</p>}
                   <div className="flex gap-2 flex-wrap">
                     <button onClick={() => setMostrarFormPieza(false)} className="text-sm px-4 py-2 rounded-lg bg-surface2 border border-border">Cancelar</button>
                     <button onClick={guardarPieza} disabled={guardandoPieza || !formPieza.titulo.trim()}
@@ -1038,18 +1038,18 @@ export default function InformesRRSSPage() {
                           {p._engagement !== null && <span className="text-[12px] px-2 py-0.5 rounded-full bg-accentTeal/20 text-accentTeal font-medium">{p._engagement.toFixed(1)}% eng.</span>}
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          <button onClick={() => abrirEdicionPieza(p)} className="text-xs text-accentTeal">✏️</button>
-                          <button onClick={() => setConfirmarBorrarPieza(p)} className="text-xs text-dangerText">🗑</button>
+                          <button onClick={() => abrirEdicionPieza(p)} className="text-xs text-accentTeal"></button>
+                          <button onClick={() => setConfirmarBorrarPieza(p)} className="text-xs text-dangerText"></button>
                         </div>
                       </div>
                       <p className="text-sm font-medium mb-2">{p.Titulo}</p>
                       <div className="flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-textSec">
-                        {p.Views !== '' && <span>👁 {fmt(p.Views)}</span>}
-                        {p.Likes !== '' && <span>❤️ {fmt(p.Likes)}</span>}
-                        {p.Comments !== '' && <span>💬 {fmt(p.Comments)}</span>}
-                        {p.Saves !== '' && <span>🔖 {fmt(p.Saves)}</span>}
-                        {p.Shares !== '' && <span>🔁 {fmt(p.Shares)}</span>}
-                        {p.Leads && p.Leads !== '' && <span>🎯 {fmt(p.Leads)} leads</span>}
+                        {p.Views !== '' && <span> {fmt(p.Views)}</span>}
+                        {p.Likes !== '' && <span> {fmt(p.Likes)}</span>}
+                        {p.Comments !== '' && <span> {fmt(p.Comments)}</span>}
+                        {p.Saves !== '' && <span> {fmt(p.Saves)}</span>}
+                        {p.Shares !== '' && <span> {fmt(p.Shares)}</span>}
+                        {p.Leads && p.Leads !== '' && <span> {fmt(p.Leads)} leads</span>}
                       </div>
                       {p.NotaIA && <p className="text-textMuted text-[12px] mt-2 italic border-l-2 border-accentPurple pl-2">{p.NotaIA}</p>}
                     </div>
@@ -1061,7 +1061,7 @@ export default function InformesRRSSPage() {
             {/* 3.5 TOP CONTENIDOS DEL MES */}
             {topContenidos.length > 0 && (
               <div className="bg-surface border border-border rounded-2xl p-4 sm:p-5">
-                <p className="text-sm font-semibold mb-3">🏆 Top contenidos del mes</p>
+                <p className="text-sm font-semibold mb-3"> Top contenidos del mes</p>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {topContenidos.map(([label, pieza, campo]) => (
                     <div key={label} className="bg-bg border border-border rounded-xl p-3">
@@ -1079,7 +1079,7 @@ export default function InformesRRSSPage() {
             {/* 3.7 RENDIMIENTO POR TIPO DE CONTENIDO */}
             {rendimientoPorTipo.length > 0 && (
               <div className="bg-surface border border-border rounded-2xl p-4 sm:p-5">
-                <p className="text-sm font-semibold mb-3">🎬 Rendimiento por tipo de contenido</p>
+                <p className="text-sm font-semibold mb-3"> Rendimiento por tipo de contenido</p>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {rendimientoPorTipo.map((t) => (
                     <div key={t.clave} className="bg-bg border border-border rounded-xl p-3">
@@ -1096,7 +1096,7 @@ export default function InformesRRSSPage() {
 
             {/* 4. OBJETIVOS DEL MES */}
             <div className="bg-surface border border-border rounded-2xl p-4 sm:p-5">
-              <p className="text-sm font-semibold mb-1">🎯 Objetivos del mes</p>
+              <p className="text-sm font-semibold mb-1"> Objetivos del mes</p>
               <p className="text-textMuted text-xs mb-3">Ej: aumentar seguidores, mejorar engagement, generar leads, publicar cierta cantidad de contenidos…</p>
               {objetivos.length > 0 && (
                 <div className="space-y-1.5 mb-3">
@@ -1106,7 +1106,7 @@ export default function InformesRRSSPage() {
                         <input type="checkbox" checked={o.Cumplido === 'TRUE'} onChange={() => toggleObjetivo(o)} />
                         <span className={o.Cumplido === 'TRUE' ? 'line-through text-textMuted' : ''}>{o.Texto}</span>
                       </label>
-                      <button onClick={() => borrarObjetivo(o)} className="text-dangerText text-xs shrink-0">✕</button>
+                      <button onClick={() => borrarObjetivo(o)} className="text-dangerText text-xs shrink-0"></button>
                     </div>
                   ))}
                 </div>
@@ -1124,7 +1124,7 @@ export default function InformesRRSSPage() {
             {/* 4.5 ANÁLISIS AUTOMÁTICO */}
             {frasesAnalisisAuto.length > 0 && (
               <div className="bg-surface border border-accentTeal/30 rounded-2xl p-4 sm:p-5">
-                <p className="text-sm font-semibold mb-2">🤖 Resumen automático del mes</p>
+                <p className="text-sm font-semibold mb-2"> Resumen automático del mes</p>
                 <p className="text-textMuted text-[12px] mb-3">Generado solo a partir de los datos cargados — no es un texto genérico.</p>
                 <p className="text-textSec text-sm leading-relaxed">{frasesAnalisisAuto.join(' ')}</p>
               </div>
@@ -1133,9 +1133,9 @@ export default function InformesRRSSPage() {
             {/* 5. ANÁLISIS MENSUAL */}
             <div className="bg-surface border border-border rounded-2xl p-4 sm:p-5">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-semibold">🔍 Análisis del mes</p>
+                <p className="text-sm font-semibold"> Análisis del mes</p>
                 {!editandoAnalisis && (
-                  <button onClick={() => setEditandoAnalisis(true)} className="text-xs text-accentTeal font-semibold">✏️ Editar</button>
+                  <button onClick={() => setEditandoAnalisis(true)} className="text-xs text-accentTeal font-semibold"> Editar</button>
                 )}
               </div>
               {editandoAnalisis ? (
@@ -1152,7 +1152,7 @@ export default function InformesRRSSPage() {
                   <p className="text-textMuted text-[12px] mb-1">¿Qué vamos a hacer el próximo mes?</p>
                   <textarea rows={3} value={formAnalisis.propuestas} onChange={(e) => setFormAnalisis((f) => ({ ...f, propuestas: e.target.value }))}
                     className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm mb-3" />
-                  {errorFormAnalisis && <p className="text-dangerText text-xs mb-3">✕ {errorFormAnalisis}</p>}
+                  {errorFormAnalisis && <p className="text-dangerText text-xs mb-3"> {errorFormAnalisis}</p>}
                   <div className="flex gap-2 flex-wrap">
                     <button onClick={() => setEditandoAnalisis(false)} className="text-sm px-4 py-2 rounded-lg bg-surface2 border border-border">Cancelar</button>
                     <button onClick={guardarAnalisis} disabled={guardandoAnalisis}
@@ -1174,7 +1174,7 @@ export default function InformesRRSSPage() {
 
             {/* 6. COMENTARIOS */}
             <div className="bg-surface border border-border rounded-2xl p-4 sm:p-5">
-              <p className="text-sm font-semibold mb-3">💬 Comentarios</p>
+              <p className="text-sm font-semibold mb-3"> Comentarios</p>
               {comentarios.length === 0 ? (
                 <p className="text-textMuted text-sm mb-3">Sin comentarios todavía.</p>
               ) : (
@@ -1187,7 +1187,7 @@ export default function InformesRRSSPage() {
                   ))}
                 </div>
               )}
-              {errorComentario && <p className="text-dangerText text-xs mb-2">✕ {errorComentario}</p>}
+              {errorComentario && <p className="text-dangerText text-xs mb-2"> {errorComentario}</p>}
               <div className="flex gap-2 flex-col sm:flex-row">
                 <input value={textoComentario} onChange={(e) => setTextoComentario(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && enviarComentario()}

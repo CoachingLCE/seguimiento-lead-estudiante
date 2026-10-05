@@ -64,7 +64,7 @@ export default function FichasEnviadasPage() {
         <AccesoDenegado seccion="Fichas enviadas" />
       ) : (
       <div className="max-w-[1500px] mx-auto px-6 pb-16">
-        <h3 className="text-lg font-bold mb-1">📄 Fichas enviadas</h3>
+        <h3 className="text-lg font-bold mb-1"> Fichas enviadas</h3>
         <p className="text-textMuted text-xs mb-3">
           Todos los leads a los que se les marcó "Ficha enviada" como resultado, con fecha y quién la mandó.
         </p>
@@ -72,20 +72,20 @@ export default function FichasEnviadasPage() {
         {conAlerta.length > 0 && (
           <div className="bg-warningBg border border-warningText/30 rounded-xl px-4 py-2.5 mb-4">
             <p className="text-warningText text-sm font-semibold">
-              ⚠️ {conAlerta.length} ficha{conAlerta.length !== 1 ? 's' : ''} enviada{conAlerta.length !== 1 ? 's' : ''} hace 3 días o más, sin inscribirse todavía
+               {conAlerta.length} ficha{conAlerta.length !== 1 ? 's' : ''} enviada{conAlerta.length !== 1 ? 's' : ''} hace 3 días o más, sin inscribirse todavía
             </p>
           </div>
         )}
 
         <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
-          <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="🔍 Buscar por nombre o curso…"
+          <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder=" Buscar por nombre o curso…"
             className="bg-bg border border-border rounded-lg px-3 py-2 text-sm w-64" />
           <p className="text-textMuted text-xs">{fichasFiltradas.length} de {fichas.length}</p>
         </div>
 
         {errorCarga ? (
           <div className="bg-dangerBg border border-dangerText/30 rounded-2xl p-6 text-center">
-            <p className="text-dangerText text-sm font-semibold mb-3">⚠️ {errorCarga}</p>
+            <p className="text-dangerText text-sm font-semibold mb-3"> {errorCarga}</p>
             <button onClick={cargar} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">Reintentar</button>
           </div>
         ) : cargando ? (

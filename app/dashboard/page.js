@@ -224,7 +224,7 @@ export default function DashboardPage() {
           <>
             {totalMisPendientes > 0 && (
               <div className="bg-surface border border-accentPurple/40 rounded-2xl p-4 mb-4 no-print">
-                <p className="text-sm font-semibold mb-2">👋 Tu resumen del día</p>
+                <p className="text-sm font-semibold mb-2"> Tu resumen del día</p>
                 <div className="flex flex-wrap gap-2">
                   {misPendientesPorLote.map((r) => (
                     <span key={r.lote} className="text-xs px-3 py-1.5 rounded-full bg-warningBg text-warningText font-medium">
@@ -238,7 +238,7 @@ export default function DashboardPage() {
               <button onClick={() => setAtencionColapsada((v) => !v)} className="flex items-center gap-2 text-left">
                 <span className="text-textMuted text-xs">{atencionColapsada ? '▸' : '▾'}</span>
                 <p className="text-sm font-bold flex items-center gap-2">
-                  📌 Necesita tu atención ahora
+                   Necesita tu atención ahora
                   {totalPendientes > 0 && (
                     <span className="text-textMuted text-xs font-normal">· {totalPendientes} acciones pendientes</span>
                   )}
@@ -251,18 +251,18 @@ export default function DashboardPage() {
                 {!atencionColapsada && totalPendientes > 0 && (
                   <button onClick={cerrarAtencionPorHoy} title="Ocultar por hoy — vuelve a aparecer mañana si sigue pendiente"
                     className="text-textMuted hover:text-text text-sm px-2 py-1 rounded-md hover:bg-surface2 no-print">
-                    ✕
+                    
                   </button>
                 )}
                 <button onClick={exportarExcel} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm">
-                  ⬇ Exportar a Excel
+                   Exportar a Excel
                 </button>
               </div>
             </div>
 
             {!atencionColapsada && (totalPendientes === 0 ? (
               <div className="bg-successBg rounded-xl p-4 mb-5 text-successText text-sm">
-                ✓ No hay nada urgente pendiente ahora mismo.
+                 No hay nada urgente pendiente ahora mismo.
               </div>
             ) : (
               <div className="bg-surface border border-dangerText/30 rounded-2xl p-4 mb-5 overflow-x-auto">
@@ -277,14 +277,14 @@ export default function DashboardPage() {
                     {altasDemoradas.map((i) => (
                       <tr key={`alta-${i.ID}`} className="border-b border-border">
                         <td data-label="Prioridad" className="py-1.5 pr-2 whitespace-nowrap"><Pill tono="danger">🔴 Urgente</Pill></td>
-                        <td data-label="Tipo" className="pr-2 whitespace-nowrap"><Pill tono="info">🎓 Estudiante</Pill></td>
+                        <td data-label="Tipo" className="pr-2 whitespace-nowrap"><Pill tono="info"> Estudiante</Pill></td>
                         <td data-label="Quién" className="pr-2 whitespace-nowrap">{i.NombreEstudiante}</td>
                         <td data-label="Motivo" className="pr-2 whitespace-nowrap">Alta demorada</td>
                         <td data-label="Detalle" className="pr-2 whitespace-nowrap">{i.Curso || '—'} · <Pill tono="danger">{horasDesde(i.FechaInscripcion)}hs</Pill></td>
                         <td data-label="Acción" className="flex items-center gap-2 whitespace-nowrap">
                           <button disabled={procesandoId === i.ID} onClick={() => toggleAltaInline(i)}
                             className="text-xs px-3 py-1 rounded-md bg-surface2 border border-border disabled:opacity-60">
-                            {procesandoId === i.ID ? '...' : '✓ Marcar alta'}
+                            {procesandoId === i.ID ? '...' : ' Marcar alta'}
                           </button>
                           <button onClick={() => setFichaLeadId(i.LeadId)} className="text-accentTeal text-xs font-semibold">Ver ficha</button>
                         </td>
@@ -293,7 +293,7 @@ export default function DashboardPage() {
                     {bienvenidasPendientes.map((i) => (
                       <tr key={`bien-${i.ID}`} className="border-b border-border">
                         <td data-label="Prioridad" className="py-1.5 pr-2 whitespace-nowrap"><Pill tono="warning">🟡 Hoy</Pill></td>
-                        <td data-label="Tipo" className="pr-2 whitespace-nowrap"><Pill tono="info">🎓 Estudiante</Pill></td>
+                        <td data-label="Tipo" className="pr-2 whitespace-nowrap"><Pill tono="info"> Estudiante</Pill></td>
                         <td data-label="Quién" className="pr-2 whitespace-nowrap">{i.NombreEstudiante}</td>
                         <td data-label="Motivo" className="pr-2 whitespace-nowrap">Bienvenida sin enviar</td>
                         <td data-label="Detalle" className="pr-2 whitespace-nowrap">{i.EmailEstudiante || 'Falta email del estudiante'}</td>
@@ -309,7 +309,7 @@ export default function DashboardPage() {
                           ) : (
                             <button disabled={procesandoId === i.ID} onClick={() => clickEnviarBienvenidaInline(i)}
                               className="text-xs px-3 py-1 rounded-md bg-surface2 border border-border font-semibold disabled:opacity-60">
-                              {procesandoId === i.ID ? '...' : '✉ Enviar'}
+                              {procesandoId === i.ID ? '...' : ' Enviar'}
                             </button>
                           )}
                           <button onClick={() => setFichaLeadId(i.LeadId)} className="text-accentTeal text-xs font-semibold">Ver ficha</button>
@@ -321,14 +321,14 @@ export default function DashboardPage() {
                       return (
                         <tr key={`seg-${i2}`} className="border-b border-border">
                           <td data-label="Prioridad" className="py-1.5 pr-2 whitespace-nowrap"><Pill tono="warning">🟡 Hoy</Pill></td>
-                          <td data-label="Tipo" className="pr-2 whitespace-nowrap"><Pill tono="warning">📩 Lead</Pill></td>
+                          <td data-label="Tipo" className="pr-2 whitespace-nowrap"><Pill tono="warning"> Lead</Pill></td>
                           <td data-label="Quién" className="pr-2 whitespace-nowrap">{l ? `${l.Nombre} ${l.Apellido}` : s.LeadID}</td>
                           <td data-label="Motivo" className="pr-2 whitespace-nowrap">Lead sin contactar</td>
                           <td data-label="Detalle" className="pr-2 whitespace-nowrap">Lote {s.Lote} · asignado a {s.AsignadoANombre || 'sin asignar'}</td>
                           <td data-label="Acción" className="flex items-center gap-2 whitespace-nowrap">
                             {l?.WhatsApp && (
                               <a href={linkWhatsapp(l.WhatsApp)} target="_blank" rel="noopener noreferrer"
-                                className="w-6 h-6 flex items-center justify-center rounded-md border border-border" title="WhatsApp">💬</a>
+                                className="w-6 h-6 flex items-center justify-center rounded-md border border-border" title="WhatsApp"></a>
                             )}
                             <button onClick={() => setFichaLeadId(s.LeadID)} className="text-accentTeal text-xs font-semibold">Ver ficha</button>
                             <a href="/seguimiento" className="text-textSec text-xs">Ir a Seguimiento</a>
@@ -363,7 +363,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="bg-surface border border-border rounded-2xl p-5 mb-4">
-              <p className="text-sm font-semibold mb-3">💰 Listado de ventas</p>
+              <p className="text-sm font-semibold mb-3"> Listado de ventas</p>
               {ventasRecientes.length === 0 ? (
                 <p className="text-textMuted text-sm">Sin ventas registradas todavía.</p>
               ) : (

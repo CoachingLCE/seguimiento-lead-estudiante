@@ -5,15 +5,15 @@ import { enlaceGmail, numeroDesdeSheet } from '../lib/constants';
 // Mapea el texto de la acción de auditoría a un ícono representativo para el timeline.
 function iconoPara(accion) {
   const a = (accion || '').toLowerCase();
-  if (a.includes('creó un lead')) return '📩';
-  if (a.includes('venta')) return '💰';
-  if (a.includes('alumno creado')) return '🤖';
-  if (a.includes('alta en plataforma') || a.includes('alta')) return '🎓';
-  if (a.includes('bienvenida')) return '👋';
-  if (a.includes('diploma') || a.includes('abon')) return '📄';
-  if (a.includes('contraseñ')) return '🔑';
-  if (a.includes('curso') || a.includes('reasign') || a.includes('asignó')) return '✏️';
-  if (a.includes('resultado') || a.includes('contact')) return '📞';
+  if (a.includes('creó un lead')) return '';
+  if (a.includes('venta')) return '';
+  if (a.includes('alumno creado')) return '';
+  if (a.includes('alta en plataforma') || a.includes('alta')) return '';
+  if (a.includes('bienvenida')) return '';
+  if (a.includes('diploma') || a.includes('abon')) return '';
+  if (a.includes('contraseñ')) return '';
+  if (a.includes('curso') || a.includes('reasign') || a.includes('asignó')) return '';
+  if (a.includes('resultado') || a.includes('contact')) return '';
   return '•';
 }
 
@@ -28,7 +28,7 @@ function CopyButton({ valor }) {
   }
   return (
     <button onClick={copiar} title="Copiar" className="text-textMuted hover:text-accentTeal">
-      {copiado ? '✓' : '📋'}
+      {copiado ? '' : ''}
     </button>
   );
 }
@@ -60,7 +60,7 @@ export default function FichaDrawer({ leadId, usuario, onClose }) {
     <div className="fixed inset-0 z-[70]" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div className="absolute top-0 right-0 h-full w-full max-w-[420px] bg-surface2 border-l border-border overflow-y-auto p-5">
-        <button onClick={onClose} className="absolute top-4 right-4 text-textMuted hover:text-text text-lg">✕</button>
+        <button onClick={onClose} className="absolute top-4 right-4 text-textMuted hover:text-text text-lg"></button>
 
         {cargando ? (
           <p className="text-textSec text-sm">Cargando…</p>
@@ -79,11 +79,11 @@ export default function FichaDrawer({ leadId, usuario, onClose }) {
             <div className="flex items-center gap-2 mb-4">
               {lead.WhatsApp && (
                 <a href={`https://wa.me/${lead.WhatsApp.replace(/[^\d]/g, '')}`} target="_blank" rel="noopener noreferrer"
-                  className="text-xs px-3 py-1.5 rounded-md bg-surface border border-border">💬 WhatsApp</a>
+                  className="text-xs px-3 py-1.5 rounded-md bg-surface border border-border"> WhatsApp</a>
               )}
               {lead.EmailEstudiante && (
                 <a href={enlaceGmail(lead.EmailEstudiante)} target="_blank" rel="noopener noreferrer"
-                  className="text-xs px-3 py-1.5 rounded-md bg-surface border border-border">✉ Email</a>
+                  className="text-xs px-3 py-1.5 rounded-md bg-surface border border-border"> Email</a>
               )}
               <span className={`ml-auto text-[12px] px-2.5 py-1 rounded-full font-semibold ${
                 lead.Estado === 'Comprado' ? 'bg-successBg text-successText' : 'bg-warningBg text-warningText'
@@ -132,10 +132,10 @@ export default function FichaDrawer({ leadId, usuario, onClose }) {
             {datos.inscrito && (
               <div className="bg-surface border border-border rounded-xl p-3 mb-4 text-xs">
                 <p className="font-bold mb-1.5">Estado como estudiante</p>
-                <p className="text-textSec">Alta en plataforma: {datos.inscrito.AltaPlataforma === 'TRUE' ? '✅ Hecha' : '⬜ Pendiente'}</p>
-                <p className="text-textSec">Bienvenida: {datos.inscrito.BienvenidaEnviada === 'TRUE' ? '✓ Enviada' : '⬜ Pendiente'}</p>
+                <p className="text-textSec">Alta en plataforma: {datos.inscrito.AltaPlataforma === 'TRUE' ? ' Hecha' : ' Pendiente'}</p>
+                <p className="text-textSec">Bienvenida: {datos.inscrito.BienvenidaEnviada === 'TRUE' ? ' Enviada' : ' Pendiente'}</p>
                 {datos.inscrito.Docentes && <p className="text-textSec">Docente(s): {datos.inscrito.Docentes}</p>}
-                <p className="text-textSec">Diploma habilitado: {datos.inscrito.AbonoTotalidad === 'TRUE' ? '✅ Sí' : '⬜ No, falta abonar la totalidad'}</p>
+                <p className="text-textSec">Diploma habilitado: {datos.inscrito.AbonoTotalidad === 'TRUE' ? ' Sí' : ' No, falta abonar la totalidad'}</p>
               </div>
             )}
 

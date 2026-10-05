@@ -490,7 +490,7 @@ export default function NuevoLeadPage() {
         <Nav usuario={usuario} onLogout={() => { logout(); router.push('/'); }} />
         <div className="max-w-xl mx-auto px-4 pb-16 pt-10 text-center">
           <div className="bg-surface border border-border rounded-2xl p-10">
-            <p className="text-5xl mb-3">🎉</p>
+            <p className="text-5xl mb-3"></p>
             <h3 className="text-lg font-bold mb-1">
               {resultadoFinal.cantidad} lead{resultadoFinal.cantidad > 1 ? 's' : ''} creado{resultadoFinal.cantidad > 1 ? 's' : ''} correctamente
             </h3>
@@ -525,7 +525,7 @@ export default function NuevoLeadPage() {
 
         {borradorDisponible && (
           <div className="bg-infoBg border border-infoText/30 rounded-xl p-4 mb-4 flex items-center justify-between flex-wrap gap-3">
-            <p className="text-sm text-text">📝 Encontramos una carga sin terminar. ¿Querés recuperarla?</p>
+            <p className="text-sm text-text"> Encontramos una carga sin terminar. ¿Querés recuperarla?</p>
             <div className="flex gap-2">
               <button onClick={recuperarBorrador} className="text-xs px-3 py-1.5 rounded-md bg-accentPurple text-white font-semibold">Recuperar</button>
               <button onClick={descartarBorrador} className="text-xs px-3 py-1.5 rounded-md bg-surface2 border border-border">Descartar</button>
@@ -541,7 +541,7 @@ export default function NuevoLeadPage() {
               <h3 className="text-lg font-bold">Nuevo lead</h3>
               <button type="button" onClick={() => setMostrarPegarLista(true)}
                 className="text-xs px-3 py-1.5 rounded-lg bg-surface2 border border-border text-textSec hover:text-text">
-                📋 Pegar lista completa
+                 Pegar lista completa
               </button>
             </div>
             <p className="text-textMuted text-xs mb-3.5">
@@ -564,7 +564,7 @@ export default function NuevoLeadPage() {
                     <option value={CURSO_OTROS}>{CURSO_OTROS}</option>
                   </select>
                   {curso === CURSO_SIN_DEFINIR && (
-                    <p className="text-textMuted text-[12px] mt-1 flex items-center gap-1"><span>ℹ️</span> Podrás modificar esta información más adelante.</p>
+                    <p className="text-textMuted text-[12px] mt-1 flex items-center gap-1"><span></span> Podrás modificar esta información más adelante.</p>
                   )}
                   {curso === CURSO_OTROS && (
                     <input required value={cursoPersonalizado} onChange={(e) => setCursoPersonalizado(e.target.value)}
@@ -582,7 +582,7 @@ export default function NuevoLeadPage() {
                     <option value={ORIGEN_OTRO}>{ORIGEN_OTRO}</option>
                   </select>
                   {origen === ORIGEN_SIN_DEFINIR && (
-                    <p className="text-textMuted text-[12px] mt-1 flex items-center gap-1"><span>ℹ️</span> Podrás modificar esta información más adelante.</p>
+                    <p className="text-textMuted text-[12px] mt-1 flex items-center gap-1"><span></span> Podrás modificar esta información más adelante.</p>
                   )}
                   {origen === ORIGEN_OTRO && (
                     <input required value={origenPersonalizado} onChange={(e) => setOrigenPersonalizado(e.target.value)}
@@ -635,7 +635,7 @@ export default function NuevoLeadPage() {
                         <span onMouseDown={() => { handleActivoRef.current = true; }}
                           className="text-textMuted cursor-grab select-none" title="Arrastrar para reordenar">⠿</span>
                       )}
-                      <span className="text-[14px]">👤</span>
+                      <span className="text-[14px]"></span>
                       <span className="text-[14px] font-semibold text-text">Contacto {index + 1}</span>
                       <span className={`text-[12px] font-medium ${estilo.texto}`}>
                         {estilo.badge} {estado === 'error' ? motivoError(contacto, p) : estilo.label}
@@ -660,7 +660,7 @@ export default function NuevoLeadPage() {
                       {contactos.length > 1 && (
                         <>
                           <button type="button" onClick={() => duplicarContacto(index)} className="text-textMuted hover:text-accentTeal text-[12px]">⧉ Duplicar</button>
-                          <button type="button" onClick={() => quitarContacto(index)} className="text-textMuted hover:text-warningText text-[12px]">🗑 Eliminar</button>
+                          <button type="button" onClick={() => quitarContacto(index)} className="text-textMuted hover:text-warningText text-[12px]"> Eliminar</button>
                         </>
                       )}
                     </div>
@@ -678,7 +678,7 @@ export default function NuevoLeadPage() {
                         return (
                           <div className="rounded-xl border border-warningText/30 bg-warningText/10 p-3.5 mb-3">
                             <div className="flex items-start gap-2.5">
-                              <span className="text-[16px] leading-none mt-px shrink-0">⚠️</span>
+                              <span className="text-[16px] leading-none mt-px shrink-0"></span>
                               <div className="flex-1 min-w-0">
                                 <p className="text-warningText text-[13.5px] font-semibold leading-tight">Encontramos un contacto existente</p>
                                 <p className="text-textSec text-[12px] mt-0.5">{subtitulo}</p>
@@ -728,7 +728,7 @@ export default function NuevoLeadPage() {
                         if (!bloques) return null;
                         return (
                           <div className="flex items-center justify-between gap-2 bg-infoBg border border-infoText/30 rounded-lg px-3 py-2 mt-2">
-                            <p className="text-infoText text-[12px]">👀 Parece que hay {bloques.length} contactos acá juntos.</p>
+                            <p className="text-infoText text-[12px]"> Parece que hay {bloques.length} contactos acá juntos.</p>
                             <button type="button" onClick={() => separarEnTarjetas(index, bloques)}
                               className="text-[12px] px-2.5 py-1 rounded bg-accentPurple text-white font-semibold whitespace-nowrap">
                               Separar en {bloques.length} tarjetas
@@ -741,13 +741,13 @@ export default function NuevoLeadPage() {
                       {contacto.raw.trim() && (
                         <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 mb-1 text-[12px]">
                           <span className={(p.nombre || contacto.sinNombre) ? 'text-successText' : 'text-textMuted'}>
-                            {p.nombre ? '✓' : contacto.sinNombre ? '✓' : '○'} Nombre{p.nombre ? `: ${p.nombre}` : contacto.sinNombre ? ': (sin nombre)' : ' detectado'}
+                            {p.nombre ? '' : contacto.sinNombre ? '' : '○'} Nombre{p.nombre ? `: ${p.nombre}` : contacto.sinNombre ? ': (sin nombre)' : ' detectado'}
                           </span>
-                          <span className={p.pais ? 'text-successText' : 'text-textMuted'}>{p.pais ? '✓' : '○'} País{p.pais ? `: ${p.pais}` : ''}</span>
-                          <span className={p.whatsapp ? 'text-successText' : 'text-textMuted'}>{p.whatsapp ? '✓' : '○'} WhatsApp{p.whatsapp ? `: ${p.whatsapp}` : ''}</span>
-                          <span className={(p.email || contacto.email) ? 'text-successText' : 'text-textMuted'}>{(p.email || contacto.email) ? '✓' : '○'} Email{p.email ? `: ${p.email}` : ''}</span>
-                          <span className={(p.instagram || contacto.instagram) ? 'text-successText' : 'text-textMuted'}>{(p.instagram || contacto.instagram) ? '✓' : '○'} Instagram/Facebook/WhatsApp (usuario){p.instagram ? `: ${p.instagram}` : ''}</span>
-                          {p.notasExtra && <span className="text-infoText">📝 Notas: {p.notasExtra}</span>}
+                          <span className={p.pais ? 'text-successText' : 'text-textMuted'}>{p.pais ? '' : '○'} País{p.pais ? `: ${p.pais}` : ''}</span>
+                          <span className={p.whatsapp ? 'text-successText' : 'text-textMuted'}>{p.whatsapp ? '' : '○'} WhatsApp{p.whatsapp ? `: ${p.whatsapp}` : ''}</span>
+                          <span className={(p.email || contacto.email) ? 'text-successText' : 'text-textMuted'}>{(p.email || contacto.email) ? '' : '○'} Email{p.email ? `: ${p.email}` : ''}</span>
+                          <span className={(p.instagram || contacto.instagram) ? 'text-successText' : 'text-textMuted'}>{(p.instagram || contacto.instagram) ? '' : '○'} Instagram/Facebook/WhatsApp (usuario){p.instagram ? `: ${p.instagram}` : ''}</span>
+                          {p.notasExtra && <span className="text-infoText"> Notas: {p.notasExtra}</span>}
                         </div>
                       )}
 
@@ -761,7 +761,7 @@ export default function NuevoLeadPage() {
                         if (!sugerido) return null;
                         return (
                           <div className="flex items-center justify-between gap-2 bg-warningBg border border-warningText/30 rounded-lg px-3 py-2 mt-1">
-                            <p className="text-warningText text-[12px]">⚠️ A este WhatsApp le podría faltar el "9" (celulares argentinos lo necesitan).</p>
+                            <p className="text-warningText text-[12px]"> A este WhatsApp le podría faltar el "9" (celulares argentinos lo necesitan).</p>
                             <button type="button"
                               onClick={() => actualizarContacto(index, 'raw', contacto.raw.replace(p.whatsapp, sugerido))}
                               className="text-[12px] px-2.5 py-1 rounded bg-accentPurple text-white font-semibold whitespace-nowrap">
@@ -773,7 +773,7 @@ export default function NuevoLeadPage() {
 
                       {contacto.raw.trim().toLowerCase().includes('prueba') && (
                         <p className="text-infoText text-[12px] mb-2 flex items-center gap-1">
-                          <span>💡</span> "Prueba" en el nombre borra este lead solo a las 48hs — es solo una prueba.
+                          <span></span> "Prueba" en el nombre borra este lead solo a las 48hs — es solo una prueba.
                         </p>
                       )}
 
@@ -795,12 +795,12 @@ export default function NuevoLeadPage() {
                         </div>
                       </div>
 
-                      {errores[index] && <p className="text-dangerText text-[12px] mt-2">⚠️ {errores[index]}</p>}
+                      {errores[index] && <p className="text-dangerText text-[12px] mt-2"> {errores[index]}</p>}
                     </>
                   )}
 
                   {colapsada && (
-                    <p className="text-textSec text-[13px]">{p.nombre || '(sin nombre)'} {p.whatsapp && `· 📱 ${p.whatsapp}`}</p>
+                    <p className="text-textSec text-[13px]">{p.nombre || '(sin nombre)'} {p.whatsapp && `·  ${p.whatsapp}`}</p>
                   )}
                 </div>
               );
@@ -825,7 +825,7 @@ export default function NuevoLeadPage() {
             </div>
 
             <p className="text-textMuted text-[12px] mt-4 flex items-center gap-1">
-              <span>ℹ️</span> Solo el nombre y un medio de contacto son necesarios para crear el lead. El resto de la información puede completarse posteriormente.
+              <span></span> Solo el nombre y un medio de contacto son necesarios para crear el lead. El resto de la información puede completarse posteriormente.
             </p>
           </div>
 
@@ -842,7 +842,7 @@ export default function NuevoLeadPage() {
 
             <div className="text-[13px] space-y-1">
               <p className="font-semibold text-text">{contactos.length} contacto{contactos.length !== 1 ? 's' : ''}</p>
-              {completos > 0 && <p className="text-successText">✅ {completos} completo{completos !== 1 ? 's' : ''}</p>}
+              {completos > 0 && <p className="text-successText"> {completos} completo{completos !== 1 ? 's' : ''}</p>}
               {conError > 0 && <p className="text-dangerText">🔴 {conError} con error</p>}
               {conDuplicado > 0 && <p className="text-warningText">🟠 {conDuplicado} posible{conDuplicado !== 1 ? 's' : ''} duplicado{conDuplicado !== 1 ? 's' : ''}</p>}
             </div>
@@ -885,7 +885,7 @@ export default function NuevoLeadPage() {
       {mostrarPegarLista && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-surface2 border border-border rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <p className="text-sm font-bold mb-1">📋 Pegar lista completa</p>
+            <p className="text-sm font-bold mb-1"> Pegar lista completa</p>
             <p className="text-textMuted text-xs mb-3">
               Pegá varios contactos: separados por una línea en blanco, o directo una fila (con nombre y WhatsApp) por línea. Se crea una tarjeta por cada uno.
             </p>

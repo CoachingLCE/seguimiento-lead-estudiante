@@ -57,7 +57,7 @@ export default function AccesosPage() {
     }).then((res) => res.json());
     setMensaje(
       r.emailEnviado
-        ? `✓ Usuario creado y contraseña enviada a ${nuevoEmail}`
+        ? ` Usuario creado y contraseña enviada a ${nuevoEmail}`
         : `Usuario creado, pero no se pudo enviar el mail a ${nuevoEmail}. Revisá la configuración de GMAIL_SENDER_EMAIL / GMAIL_APP_PASSWORD.`
     );
     setNuevoEmail(''); setNuevoNombre(''); setNuevoPassword(''); setNuevoRoles(['Inscripciones']);
@@ -74,7 +74,7 @@ export default function AccesosPage() {
     }).then((res) => res.json());
     setMensaje(
       r.emailEnviado
-        ? `✓ Contraseña reseteada a "Hola123" y reenviada a ${targetEmail}`
+        ? ` Contraseña reseteada a "Hola123" y reenviada a ${targetEmail}`
         : `Contraseña reseteada, pero no se pudo enviar el mail a ${targetEmail}.`
     );
     setEnviandoA('');
@@ -97,8 +97,8 @@ export default function AccesosPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ solicitanteEmail: usuario.email, targetEmail: email, nuevosRoles: rolesEnEdicion })
     }).then((res) => res.json());
-    if (r.error) setMensaje(`⚠️ ${r.error}`);
-    else setMensaje(`✓ Roles actualizados para ${email}`);
+    if (r.error) setMensaje(` ${r.error}`);
+    else setMensaje(` Roles actualizados para ${email}`);
     setEditandoRoles(null);
     cargarUsuarios();
   }
@@ -110,8 +110,8 @@ export default function AccesosPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ solicitanteEmail: usuario.email, targetEmail: u.Email, activo: !u.Activo })
     }).then((res) => res.json());
-    if (r.error) setMensaje(`⚠️ ${r.error}`);
-    else setMensaje(u.Activo ? `Usuario ${u.Email} desactivado` : `✓ Usuario ${u.Email} reactivado`);
+    if (r.error) setMensaje(` ${r.error}`);
+    else setMensaje(u.Activo ? `Usuario ${u.Email} desactivado` : ` Usuario ${u.Email} reactivado`);
     cargarUsuarios();
   }
 
@@ -123,8 +123,8 @@ export default function AccesosPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ solicitanteEmail: usuario.email, targetEmail: confirmarEliminar.Email })
     }).then((res) => res.json());
-    if (r.error) setMensaje(`⚠️ ${r.error}`);
-    else setMensaje(`✓ Usuario ${confirmarEliminar.Email} eliminado`);
+    if (r.error) setMensaje(` ${r.error}`);
+    else setMensaje(` Usuario ${confirmarEliminar.Email} eliminado`);
     setConfirmarEliminar(null);
     cargarUsuarios();
   }
@@ -161,7 +161,7 @@ export default function AccesosPage() {
       ) : (
       <div className="max-w-5xl mx-auto px-6 pb-16">
         <div className="bg-surface border border-border rounded-2xl p-5 mb-4">
-          <p className="text-sm font-bold mb-3">🔐 Permisos por rol — quién ve qué</p>
+          <p className="text-sm font-bold mb-3"> Permisos por rol — quién ve qué</p>
           <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
@@ -201,9 +201,9 @@ export default function AccesosPage() {
             </tbody>
           </table>
           </div>
-          <p className="text-textMuted text-[12px] mt-3">⚡ Herramientas (accesos rápidos) está disponible para todos los roles, sin restricción.</p>
-          <p className="text-textMuted text-[12px] mt-1">🎓 Académico: hoy en la práctica queda para Diego (Admin), Lourdes y Victoria (Estudiantes), Sofía (Coordinadora académica) y Jennifer (Coordinadora de MKT).</p>
-          <p className="text-textMuted text-[12px] mt-1">📋 Diplomas, Historial de acciones y Accesos son exclusivos de Admin — ningún otro rol los ve, se combine como se combine.</p>
+          <p className="text-textMuted text-[12px] mt-3"> Herramientas (accesos rápidos) está disponible para todos los roles, sin restricción.</p>
+          <p className="text-textMuted text-[12px] mt-1"> Académico: hoy en la práctica queda para Diego (Admin), Lourdes y Victoria (Estudiantes), Sofía (Coordinadora académica) y Jennifer (Coordinadora de MKT).</p>
+          <p className="text-textMuted text-[12px] mt-1"> Diplomas, Historial de acciones y Accesos son exclusivos de Admin — ningún otro rol los ve, se combine como se combine.</p>
         </div>
 
         <div className="bg-surface border border-border rounded-2xl p-6">
@@ -244,7 +244,7 @@ export default function AccesosPage() {
                   ) : (
                     <button onClick={() => empezarEdicionRoles(u)}
                       className="text-xs px-2.5 py-1 rounded-full bg-infoBg text-infoText hover:opacity-80" title="Click para editar roles">
-                      {nombreVisibleRoles((u.Roles || '').split(/[,+]/).map((r) => r.trim()).filter(Boolean))} ✏️
+                      {nombreVisibleRoles((u.Roles || '').split(/[,+]/).map((r) => r.trim()).filter(Boolean))} 
                     </button>
                   )}
 
@@ -279,14 +279,14 @@ export default function AccesosPage() {
 
                   <button onClick={() => setConfirmarEliminar(u)}
                     className="text-xs px-2.5 py-1 rounded-md border border-dangerText/30 text-dangerText hover:bg-dangerBg">
-                    🗑 Eliminar
+                     Eliminar
                   </button>
                 </div>
               ))}
             </div>
           )}
 
-          <p className="text-sm font-semibold mb-1">🧹 Limpiar leads de un creador</p>
+          <p className="text-sm font-semibold mb-1"> Limpiar leads de un creador</p>
           <p className="text-textMuted text-xs mb-3">
             Borra los leads cargados por un email puntual (útil para sacar pruebas). Nunca toca los que ya tengan una venta confirmada.
           </p>
@@ -310,7 +310,7 @@ export default function AccesosPage() {
               {previewLimpieza.aBorrar > 0 && (
                 <button onClick={() => setConfirmarLimpieza(true)}
                   className="mt-2 text-sm px-4 py-2 rounded-lg bg-dangerText text-white font-semibold">
-                  🗑 Eliminar {previewLimpieza.aBorrar} lead(s)
+                   Eliminar {previewLimpieza.aBorrar} lead(s)
                 </button>
               )}
             </div>
@@ -318,7 +318,7 @@ export default function AccesosPage() {
 
           {resultadoLimpieza && (
             <div className="bg-successBg border border-successText/30 rounded-lg p-3 mb-3 text-sm text-successText">
-              ✓ Se eliminaron {resultadoLimpieza.eliminados} lead(s) y {resultadoLimpieza.seguimientoEliminado} fila(s) de seguimiento asociadas.
+               Se eliminaron {resultadoLimpieza.eliminados} lead(s) y {resultadoLimpieza.seguimientoEliminado} fila(s) de seguimiento asociadas.
               {resultadoLimpieza.protegidos > 0 && ` (${resultadoLimpieza.protegidos} quedaron protegidos por tener venta confirmada.)`}
             </div>
           )}

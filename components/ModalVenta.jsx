@@ -151,7 +151,7 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
 
         <label className="flex items-center gap-2 text-xs text-textSec mb-1 cursor-pointer bg-bg border border-border rounded-lg px-3 py-2">
           <input type="checkbox" checked={becado} onChange={(e) => setBecado(e.target.checked)} />
-          🎓 Venta 100% becada (sin costo)
+           Venta 100% becada (sin costo)
         </label>
         <p className="text-textMuted text-[12px] mb-3">
           {becado ? 'Se va a registrar con Monto total = $0, sin cuotas.' : '\u00A0'}
@@ -234,7 +234,7 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
                   <input type="text" inputMode="numeric" value={valor} onChange={(e) => actualizarCuotaVariable(i, limpiarMonto(e.target.value))}
                     className="flex-1 bg-bg border border-border rounded-lg px-3 py-1.5 text-sm" />
                   {cuotasVariables.length > 1 && (
-                    <button type="button" onClick={() => quitarCuotaVariable(i)} className="text-warningText text-xs">✕</button>
+                    <button type="button" onClick={() => quitarCuotaVariable(i)} className="text-warningText text-xs"></button>
                   )}
                 </div>
               ))}
@@ -280,7 +280,7 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
         )}
 
         {error && (
-          <p className="text-dangerText text-xs mb-2 bg-dangerBg rounded-lg px-3 py-2">⚠️ {error}</p>
+          <p className="text-dangerText text-xs mb-2 bg-dangerBg rounded-lg px-3 py-2"> {error}</p>
         )}
 
         <div className="flex gap-2 mt-2">

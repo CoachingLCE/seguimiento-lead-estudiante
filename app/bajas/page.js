@@ -274,7 +274,7 @@ export default function BajasPage() {
     { id: 'proximas90', label: 'Próximas al día 90' },
     { id: 'lote', label: 'En Lote Bajas' },
     { id: 'contactadas', label: 'Contactadas' },
-    { id: 'duplicados', label: `⚠️ Duplicados${totalDuplicados > 0 ? ` (${totalDuplicados})` : ''}` }
+    { id: 'duplicados', label: ` Duplicados${totalDuplicados > 0 ? ` (${totalDuplicados})` : ''}` }
   ];
   const listaFiltrada = listaBajas.filter((b) => {
     if (filtroHistorial === 'recontactar') return b.listaParaReactivacion;
@@ -323,14 +323,14 @@ export default function BajasPage() {
 
           {textoBajasMasivas.trim() && (
             <div className="mb-4 space-y-2">
-              <p className="text-textMuted text-[12px]">👀 Se van a cargar {previewBajas.length} persona{previewBajas.length !== 1 ? 's' : ''}</p>
+              <p className="text-textMuted text-[12px]"> Se van a cargar {previewBajas.length} persona{previewBajas.length !== 1 ? 's' : ''}</p>
               {previewBajas.map((p, i) => (
                 <div key={i} className="bg-bg border border-border rounded-xl p-3 text-[12px] flex flex-wrap gap-x-4 gap-y-1.5">
-                  <span className={p.nombre ? 'text-successText' : 'text-dangerText'}>{p.nombre ? '✓' : '✗'} {p.nombre || 'Nombre (falta)'}</span>
-                  {p.curso && <span className="text-successText">✓ {p.curso}</span>}
-                  {p.email && <span className="text-successText">✓ {p.email}</span>}
-                  {p.whatsapp && <span className="text-successText">✓ {p.whatsapp}</span>}
-                  <span className="text-infoText">📅 {new Date(p.fecha).toLocaleDateString('es-AR')}</span>
+                  <span className={p.nombre ? 'text-successText' : 'text-dangerText'}>{p.nombre ? '' : ''} {p.nombre || 'Nombre (falta)'}</span>
+                  {p.curso && <span className="text-successText"> {p.curso}</span>}
+                  {p.email && <span className="text-successText"> {p.email}</span>}
+                  {p.whatsapp && <span className="text-successText"> {p.whatsapp}</span>}
+                  <span className="text-infoText"> {new Date(p.fecha).toLocaleDateString('es-AR')}</span>
                 </div>
               ))}
             </div>
@@ -351,22 +351,22 @@ export default function BajasPage() {
           {resultadoBajasMasivas && (
             <div className="mt-3 flex flex-col gap-1.5">
               {resultadoBajasMasivas.procesados.length > 0 && (
-                <ChipResultado color="success" icono="✓" texto={`Registradas: ${resultadoBajasMasivas.procesados.join(', ')}`} />
+                <ChipResultado color="success" icono="" texto={`Registradas: ${resultadoBajasMasivas.procesados.join(', ')}`} />
               )}
               {resultadoBajasMasivas.creados?.length > 0 && (
-                <ChipResultado color="info" icono="🆕" texto={`Creadas: ${resultadoBajasMasivas.creados.join(', ')}`} />
+                <ChipResultado color="info" icono="" texto={`Creadas: ${resultadoBajasMasivas.creados.join(', ')}`} />
               )}
               {resultadoBajasMasivas.yaExistentes.length > 0 && (
-                <ChipResultado color="warning" icono="⚠️" texto={`Ya existentes: ${resultadoBajasMasivas.yaExistentes.join(', ')}`} />
+                <ChipResultado color="warning" icono="" texto={`Ya existentes: ${resultadoBajasMasivas.yaExistentes.join(', ')}`} />
               )}
               {resultadoBajasMasivas.ambiguos?.length > 0 && (
-                <ChipResultado color="warning" icono="⚠️" texto={`Ambiguas: ${resultadoBajasMasivas.ambiguos.join(' · ')}`} />
+                <ChipResultado color="warning" icono="" texto={`Ambiguas: ${resultadoBajasMasivas.ambiguos.join(' · ')}`} />
               )}
               {resultadoBajasMasivas.errores?.length > 0 && (
-                <ChipResultado color="danger" icono="🛑" texto={`Errores: ${resultadoBajasMasivas.errores.join(' · ')}`} />
+                <ChipResultado color="danger" icono="" texto={`Errores: ${resultadoBajasMasivas.errores.join(' · ')}`} />
               )}
               {resultadoBajasMasivas.noEncontrados.length > 0 && (
-                <ChipResultado color="danger" icono="✗" texto={`No encontradas: ${resultadoBajasMasivas.noEncontrados.join(', ')}`} />
+                <ChipResultado color="danger" icono="" texto={`No encontradas: ${resultadoBajasMasivas.noEncontrados.join(', ')}`} />
               )}
             </div>
           )}
@@ -400,7 +400,7 @@ export default function BajasPage() {
                   <p className="text-warningText text-xs font-semibold">{seleccionadas.size} seleccionada{seleccionadas.size !== 1 ? 's' : ''}</p>
                   <button onClick={() => eliminarBajas([...seleccionadas])} disabled={eliminando}
                     className="text-xs px-3 py-1.5 rounded-lg bg-dangerText text-white font-semibold disabled:opacity-60">
-                    {eliminando ? 'Eliminando…' : '🗑 Eliminar seleccionadas'}
+                    {eliminando ? 'Eliminando…' : ' Eliminar seleccionadas'}
                   </button>
                 </div>
               )}
@@ -440,7 +440,7 @@ export default function BajasPage() {
                                 })} />
                             </td>
                             <td className="px-2 font-medium whitespace-nowrap">
-                              {esDuplicado(b) && <span title="Hay más de un registro con este nombre y fecha">⚠️ </span>}
+                              {esDuplicado(b) && <span title="Hay más de un registro con este nombre y fecha"> </span>}
                               {b.nombre}
                             </td>
                             <td className="px-2 text-textSec whitespace-nowrap">{b.email || <span className="text-warningText">Sin email</span>}</td>
@@ -455,15 +455,15 @@ export default function BajasPage() {
                                     <input value={edicionTemp} onChange={(e) => setEdicionTemp(e.target.value)} placeholder="Edición"
                                       className="bg-bg border border-border rounded px-1.5 py-1 text-xs w-16" />
                                     <button onClick={() => guardarCurso(b)} disabled={guardandoCurso}
-                                      className="text-successText text-xs font-bold disabled:opacity-50" title="Guardar">✓</button>
-                                    <button onClick={() => setEditandoCursoDe(null)} className="text-textMuted text-xs" title="Cancelar">✕</button>
+                                      className="text-successText text-xs font-bold disabled:opacity-50" title="Guardar"></button>
+                                    <button onClick={() => setEditandoCursoDe(null)} className="text-textMuted text-xs" title="Cancelar"></button>
                                   </div>
                                 </td>
                               </>
                             ) : (
                               <>
                                 <td className="px-2 text-textSec cursor-pointer hover:text-text hover:underline" onClick={() => abrirEdicionCurso(b)} title="Editar curso">
-                                  {b.curso} <span className="text-textMuted text-[12px]">✏️</span>
+                                  {b.curso} <span className="text-textMuted text-[12px]"></span>
                                 </td>
                                 <td className="px-2 text-textSec cursor-pointer hover:text-text hover:underline" onClick={() => abrirEdicionCurso(b)} title="Editar edición">
                                   {b.edicion || '—'}
@@ -475,7 +475,7 @@ export default function BajasPage() {
                             <td className="px-2"><BadgeSeguimiento b={b} /></td>
                             <td className="px-2">
                               <button onClick={() => eliminarBajas([b.leadId])} disabled={eliminando}
-                                className="text-dangerText text-xs disabled:opacity-60">🗑</button>
+                                className="text-dangerText text-xs disabled:opacity-60"></button>
                             </td>
                           </tr>
                         ))}
@@ -495,10 +495,10 @@ export default function BajasPage() {
                                 nuevo.has(b.leadId) ? nuevo.delete(b.leadId) : nuevo.add(b.leadId);
                                 return nuevo;
                               })} />
-                            <p className="text-sm font-medium">{esDuplicado(b) && '⚠️ '}{b.nombre}</p>
+                            <p className="text-sm font-medium">{esDuplicado(b) && ' '}{b.nombre}</p>
                           </div>
                           <button onClick={() => eliminarBajas([b.leadId])} disabled={eliminando}
-                            className="text-dangerText text-xs disabled:opacity-60 shrink-0">🗑</button>
+                            className="text-dangerText text-xs disabled:opacity-60 shrink-0"></button>
                         </div>
                         <p className="text-textSec text-xs mb-1">{b.curso}{b.edicion ? ` · Edición ${b.edicion}` : ''} · {new Date(b.fechaBaja).toLocaleDateString('es-AR')}</p>
                         <p className="text-xs mb-2">{b.email || <span className="text-warningText">Sin email</span>}</p>
@@ -552,7 +552,7 @@ function BadgeReactivacion({ b, enviandoMensajeId, onEnviar }) {
     return (
       <button onClick={() => onEnviar(b)} disabled={enviandoMensajeId === b.leadId}
         className="text-[12px] px-2.5 py-1 rounded-full bg-accentPurple text-white font-semibold disabled:opacity-60 whitespace-nowrap">
-        {enviandoMensajeId === b.leadId ? 'Enviando…' : '📩 Enviar mail'}
+        {enviandoMensajeId === b.leadId ? 'Enviando…' : ' Enviar mail'}
       </button>
     );
   }

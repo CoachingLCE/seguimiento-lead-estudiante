@@ -218,15 +218,15 @@ export default function MensajesFrecuentesPage() {
       ) : (
       <div className="max-w-[900px] mx-auto px-6 pb-16">
         <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
-          <h3 className="text-lg font-bold">💬 Mensajes frecuentes</h3>
+          <h3 className="text-lg font-bold"> Mensajes frecuentes</h3>
           <div className="flex items-center gap-2">
             <button onClick={() => setSoloFavoritos((v) => !v)}
               className={`text-xs px-3 py-2 rounded-lg border ${soloFavoritos ? 'bg-accentPurple/15 border-accentPurple text-accentPurpleTxt' : 'bg-surface2 border-border text-textSec'}`}>
-              {soloFavoritos ? '⭐ Solo favoritos' : '☆ Favoritos'}
+              {soloFavoritos ? ' Solo favoritos' : ' Favoritos'}
             </button>
             <button onClick={() => setVistaCompacta((v) => !v)}
               className="text-xs px-3 py-2 rounded-lg bg-surface2 border border-border text-textSec">
-              {vistaCompacta ? '▤ Vista completa' : '☰ Vista compacta'}
+              {vistaCompacta ? '▤ Vista completa' : ' Vista compacta'}
             </button>
             {puedeEscribir && (
               <button onClick={abrirNuevo} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">
@@ -270,7 +270,7 @@ export default function MensajesFrecuentesPage() {
 
         {errorCarga ? (
           <div className="bg-dangerBg border border-dangerText/30 rounded-2xl p-6 text-center">
-            <p className="text-dangerText text-sm font-semibold mb-3">⚠️ {errorCarga}</p>
+            <p className="text-dangerText text-sm font-semibold mb-3"> {errorCarga}</p>
             <button onClick={cargarMensajes} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">Reintentar</button>
           </div>
         ) : cargando ? (
@@ -284,7 +284,7 @@ export default function MensajesFrecuentesPage() {
           const mensajesOrdenados = [...mensajes].sort((a, b) => (propioFavorito(b) ? 1 : 0) - (propioFavorito(a) ? 1 : 0));
           const mensajesAMostrar = soloFavoritos ? mensajesOrdenados.filter(propioFavorito) : mensajesOrdenados;
           if (mensajesAMostrar.length === 0) {
-            return <p className="text-textMuted text-sm">Todavía no marcaste ningún mensaje como favorito — tocá el ☆ de un mensaje para sumarlo acá.</p>;
+            return <p className="text-textMuted text-sm">Todavía no marcaste ningún mensaje como favorito — tocá el  de un mensaje para sumarlo acá.</p>;
           }
           return (
           <div className="space-y-3">
@@ -311,7 +311,7 @@ export default function MensajesFrecuentesPage() {
                           onClick={(e) => e.stopPropagation()}>⠿</span>
                       )}
                       {vistaCompacta && (
-                        <span className="text-textMuted text-xs shrink-0">{estaExpandido ? '▼' : '▶'}</span>
+                        <span className="text-textMuted text-xs shrink-0">{estaExpandido ? '▼' : ''}</span>
                       )}
                       <p className="text-sm font-semibold truncate">{m.Titulo}</p>
                       {estado === 'nuevo' && <span className="text-[12px] font-semibold px-1.5 py-0.5 rounded-full bg-successBg text-successText shrink-0">Nuevo</span>}
@@ -320,17 +320,17 @@ export default function MensajesFrecuentesPage() {
                     <div className="flex items-center gap-2 shrink-0">
                       <button onClick={() => alternarFavorito(m)} title={esFavorito ? 'Quitar de favoritos' : 'Marcar como favorito'}
                         className={esFavorito ? 'text-base text-yellow-400' : 'text-base text-textMuted hover:text-yellow-400'}>
-                        {esFavorito ? '⭐' : '☆'}
+                        {esFavorito ? '' : ''}
                       </button>
                       <button onClick={() => copiar(m.Mensaje, m._rowIndex)}
                         className="text-xs px-3 py-1.5 rounded-lg bg-accentPurple text-white font-semibold whitespace-nowrap">
-                        {copiadoId === m._rowIndex ? '✓ Copiado' : '📋 Copiar'}
+                        {copiadoId === m._rowIndex ? ' Copiado' : ' Copiar'}
                       </button>
                       {puedeEscribir && (
                         <div className="flex items-center gap-2 pl-2 border-l border-border">
-                          <button onClick={() => duplicar(m)} title="Duplicar" className="text-xs text-textSec hover:text-text font-semibold">📑</button>
-                          <button onClick={() => abrirEdicion(m)} title="Editar" className="text-xs text-accentTeal font-semibold">✏️</button>
-                          <button onClick={() => setConfirmarBorrar(m)} title="Eliminar" className="text-xs text-dangerText font-semibold">🗑</button>
+                          <button onClick={() => duplicar(m)} title="Duplicar" className="text-xs text-textSec hover:text-text font-semibold"></button>
+                          <button onClick={() => abrirEdicion(m)} title="Editar" className="text-xs text-accentTeal font-semibold"></button>
+                          <button onClick={() => setConfirmarBorrar(m)} title="Eliminar" className="text-xs text-dangerText font-semibold"></button>
                         </div>
                       )}
                     </div>

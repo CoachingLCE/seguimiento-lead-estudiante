@@ -22,7 +22,7 @@ export default class ErrorBoundary extends Component {
           minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center',
           justifyContent: 'center', gap: '16px', fontFamily: 'sans-serif', textAlign: 'center', padding: '24px'
         }}>
-          <p style={{ fontSize: '18px', fontWeight: 700 }}>⚠️ Algo salió mal</p>
+          <p style={{ fontSize: '18px', fontWeight: 700 }}> Algo salió mal</p>
           <p style={{ fontSize: '14px', opacity: 0.7, maxWidth: '400px' }}>
             Puede ser una actualización reciente de la app. Recargá la página para solucionarlo.
           </p>
