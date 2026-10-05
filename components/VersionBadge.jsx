@@ -56,7 +56,7 @@ export default function VersionBadge() {
       <button
         onClick={abrir}
         className={
-          'hidden md:block fixed bottom-3 right-4 text-[12px] text-textMuted bg-surface2/80 border border-border rounded-full px-3 py-1 z-40 no-print hover:text-text hover:border-accentTeal transition-colors' +
+          'hidden md:block fixed bottom-3 right-4 text-[12px] text-textMuted bg-surface2 border border-border rounded-full px-3 py-1 z-40 no-print hover:text-text hover:border-accentTeal transition-colors' +
           (hayNovedades ? ' version-badge-novedad' : '')
         }
         title="Ver novedades"

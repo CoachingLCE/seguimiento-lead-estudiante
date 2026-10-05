@@ -16,11 +16,10 @@ export function useToast() {
 
   const toast = (
     <div
-      className={`fixed bottom-5 left-1/2 -translate-x-1/2 z-[80] flex items-center gap-2 bg-surface2 border border-accentTeal rounded-full px-4 py-2 text-xs text-text shadow-lg transition-all duration-200 ${
-        visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
+      className={`fixed top-4 left-1/2 -translate-x-1/2 z-[310] w-[min(92vw,420px)] bg-surface text-text border border-border border-l-4 border-l-successText rounded-xl px-3.5 py-3 text-sm shadow-xl transition-all duration-200 ${
+        visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-3 pointer-events-none'
       }`}
     >
-      <span className="w-1.5 h-1.5 rounded-full bg-successText shrink-0" />
       {mensaje}
     </div>
   );
