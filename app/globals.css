@@ -197,3 +197,10 @@ button,input,select,textarea{font-family:inherit}
    max-h-..): esas se arreglan solas. */
 div.fixed.inset-0 > div[class*="rounded-2xl"]:not([class*="h-full"]):not([class*="h-["]):not(.drawer-in):not(.fixed){max-width:calc(100vw - 24px)}
 div.fixed.inset-0 > div[class*="rounded-2xl"]:not([class*="h-full"]):not([class*="h-["]):not([class*="max-h-"]):not(.drawer-in):not(.fixed){max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain}
+
+/* Novedades: el panel arranca "apagado" y se va "prendiendo" renglón por renglón como si acompañara la lectura (pedido de
+   Diego; igual en todas las apps de ILCE). Cada ítem empieza atenuado y un IntersectionObserver (ver VersionBadge) le agrega
+   .nov-lit apenas entra a la franja de lectura de arriba del cuadro. Una vez iluminado se queda así. */
+.nov-line{opacity:.3;filter:saturate(.3);transition:opacity .55s ease,filter .55s ease}
+.nov-line.nov-lit{opacity:1;filter:none}
+@media (prefers-reduced-motion:reduce){.nov-line{opacity:1;filter:none;transition:none}}
