@@ -11,7 +11,7 @@ import { tienePermisoAuditoria } from '../../lib/permisos';
 // Colores distintos por persona, para reconocerla rápido en la lista sin leer el nombre —
 // el mismo nombre siempre cae en el mismo color (hash simple sobre una paleta fija).
 const PALETA_USUARIOS = [
-  { bg: 'bg-accentPurple/20', text: 'text-accentPurple' },
+  { bg: 'bg-accentPurple/20', text: 'text-accentPurpleTxt' },
   { bg: 'bg-accentTeal/20', text: 'text-accentTeal' },
   { bg: 'bg-successBg', text: 'text-successText' },
   { bg: 'bg-warningBg', text: 'text-warningText' },
@@ -30,7 +30,7 @@ function colorPorUsuario(nombre) {
 // color/ícono de cada fila, así ambos quedan siempre coherentes entre sí.
 const CATEGORIAS_ACCION = [
   { id: 'venta', label: '💰 Venta', icono: '💰 ', clase: 'text-successText font-semibold', test: (a) => a === 'Registró una venta' },
-  { id: 'lead', label: '📩 Lead', icono: '📩 ', clase: 'text-accentPurple font-medium', test: (a) => a === 'Creó un lead' },
+  { id: 'lead', label: '📩 Lead', icono: '📩 ', clase: 'text-accentPurpleTxt font-medium', test: (a) => a === 'Creó un lead' },
   { id: 'grupoWhatsapp', label: '💬 Grupo WhatsApp', icono: '💬 ', clase: 'text-accentTeal font-medium', test: (a) => a.toLowerCase().includes('grupo de whatsapp') || a.toLowerCase().includes('grupo whatsapp') },
   { id: 'mensajeFrecuente', label: '📝 Mensaje frecuente', icono: '📝 ', clase: 'text-accentMagenta font-medium', test: (a) => a.toLowerCase().includes('mensaje frecuente') },
   { id: 'login', label: '🔑 Login', icono: '🔑 ', clase: 'text-infoText font-medium', test: (a) => a === 'Inició sesión' },

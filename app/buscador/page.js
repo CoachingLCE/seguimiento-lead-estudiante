@@ -950,7 +950,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
         <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
             <p className="text-sm font-semibold">
-              Seguimiento comercial{cicloVigenteNro > 1 && <span className="text-accentPurple"> · Ciclo {cicloVigenteNro}</span>}
+              Seguimiento comercial{cicloVigenteNro > 1 && <span className="text-accentPurpleTxt"> · Ciclo {cicloVigenteNro}</span>}
             </p>
             {/* "Nuevo seguimiento comercial" (pedido de Diego): para un lead que ya recorrió todo
                 su camino de seguimiento y volvió a escribir. Abre un ciclo nuevo (Lote 1 en
@@ -967,7 +967,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
                 </div>
               ) : (
                 <button onClick={() => setConfirmarNuevoCiclo(true)}
-                  className="text-xs px-3 py-1.5 rounded-md bg-surface2 border border-border font-semibold text-accentPurple">
+                  className="text-xs px-3 py-1.5 rounded-md bg-surface2 border border-border font-semibold text-accentPurpleTxt">
                   🔄 Nuevo seguimiento comercial
                 </button>
               )

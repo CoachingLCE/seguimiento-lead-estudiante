@@ -15,6 +15,7 @@
   --color-textMuted: 152 161 198;   /* #98a1c6: contraste AA (antes #6b7299, 3,8:1) */
   --color-accentTeal: 34 211 238;
   --color-accentPurple: 122 31 150;   /* #7a1f96: violeta de marca */
+  --color-accentPurpleTxt: 190 120 225;  /* violeta para TEXTO sobre fondo oscuro: 6,4:1 (el violeta de marca como texto da 2,3:1) */
   --color-accentMagenta: 192 38 211;
   --color-successBg: 15 46 34;
   --color-successText: 74 222 128;
@@ -38,6 +39,7 @@
   --color-textMuted: 86 104 119;     /* #566877: contraste AA (antes #94a3b8, 2,6:1) */
   --color-accentTeal: 3 115 139;     /* #03738b: teal de marca (antes #0891b2) */
   --color-accentPurple: 112 22 141;   /* #70168d: violeta de marca (antes #7c3aed) */
+  --color-accentPurpleTxt: 112 22 141;  /* violeta de marca como texto sobre fondo claro: 8,9:1 */
   --color-accentMagenta: 150 25 143;  /* #96198f: magenta de marca (antes #a21caf) */
   --color-successBg: 220 252 231;
   --color-successText: 21 128 61;

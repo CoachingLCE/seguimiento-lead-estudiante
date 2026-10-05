@@ -772,14 +772,14 @@ function AccionSugerida({ accion }) {
 
   return (
     <div className="mt-3 bg-gradient-to-r from-accentPurple/15 to-accentMagenta/15 border border-accentPurple/30 rounded-xl px-4 py-3">
-      <p className="text-accentPurple text-xs font-bold uppercase tracking-wide mb-1">⚡ Acción</p>
+      <p className="text-accentPurpleTxt text-xs font-bold uppercase tracking-wide mb-1">⚡ Acción</p>
       <p className="text-sm font-medium mb-1">{accion.label}</p>
       {accion.script && (
         <div className="mt-2">
           <p className="text-textSec text-[13px] italic bg-bg/50 rounded-lg px-3 py-2 whitespace-pre-line">
             {accion.script}
           </p>
-          <button onClick={copiar} className="text-accentPurple text-xs font-semibold mt-1.5">
+          <button onClick={copiar} className="text-accentPurpleTxt text-xs font-semibold mt-1.5">
             {copiado ? '✓ Copiado' : '📋 Copiar mensaje'}
           </button>
         </div>

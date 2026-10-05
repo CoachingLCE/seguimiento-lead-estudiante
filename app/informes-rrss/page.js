@@ -14,7 +14,7 @@ const PLATAFORMAS = [
   { id: 'google_business', label: 'Google Business', color: 'text-warningText', icono: '📍' },
   { id: 'threads', label: 'Threads', color: 'text-text', icono: '🧵' },
   { id: 'whatsapp_comunidad', label: 'Comunidad WhatsApp', color: 'text-successText', icono: '💬' },
-  { id: 'instagram_comunidad', label: 'Comunidad Instagram', color: 'text-accentPurple', icono: '👥' },
+  { id: 'instagram_comunidad', label: 'Comunidad Instagram', color: 'text-accentPurpleTxt', icono: '👥' },
   { id: 'blog', label: 'Blog', color: 'text-accentTeal', icono: '📝' }
 ];
 const TIPOS_PIEZA = ['Reel', 'Carrusel', 'Post', 'Video', 'Artículo', 'Historia'];

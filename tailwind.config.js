@@ -18,6 +18,7 @@ module.exports = {
         textMuted: conVariable('textMuted'),
         accentTeal: conVariable('accentTeal'),
         accentPurple: conVariable('accentPurple'),
+        accentPurpleTxt: conVariable('accentPurpleTxt'),
         accentMagenta: conVariable('accentMagenta'),
         successBg: conVariable('successBg'),
         successText: conVariable('successText'),

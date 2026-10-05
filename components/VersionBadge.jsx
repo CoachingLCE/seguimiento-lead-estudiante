@@ -80,7 +80,7 @@ export default function VersionBadge() {
                   <ul className="space-y-1">
                     {entrada.cambios.map((c, i) => (
                       <li key={i} className="text-textSec text-xs flex gap-2">
-                        <span className="text-accentPurple">•</span>
+                        <span className="text-accentPurpleTxt">•</span>
                         <span>{c}</span>
                       </li>
                     ))}

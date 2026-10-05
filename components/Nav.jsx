@@ -83,7 +83,7 @@ function Chip({ href, label, pathname, onClick, destacado, deshabilitado }) {
       title={deshabilitado ? 'No tenés acceso a esta sección' : undefined}
       className={`h-8 flex items-center px-3.5 rounded-lg text-[13px] font-medium whitespace-nowrap transition-colors ${
         deshabilitado ? 'text-textMuted opacity-50 hover:opacity-70'
-        : activo ? 'bg-accentPurple/15 text-accentPurple' : destacado ? 'text-text font-semibold hover:bg-surface2' : 'text-textSec hover:text-text hover:bg-surface2'
+        : activo ? 'bg-accentPurple/15 text-accentPurpleTxt' : destacado ? 'text-text font-semibold hover:bg-surface2' : 'text-textSec hover:text-text hover:bg-surface2'
       }`}>
       {label}
     </Link>
@@ -138,7 +138,7 @@ function ItemLateral({ href, label, pathname, deshabilitado }) {
       title={deshabilitado ? 'No tenés acceso a esta sección' : undefined}
       className={`relative flex items-center gap-2.5 h-8 px-3 rounded-lg text-[14px] transition-colors ${
         deshabilitado ? 'text-textMuted opacity-50 hover:opacity-70 font-medium'
-        : activo ? 'bg-accentPurple/15 text-accentPurple font-semibold'
+        : activo ? 'bg-accentPurple/15 text-accentPurpleTxt font-semibold'
         : 'text-textSec hover:text-text hover:bg-surface2 font-medium'
       }`}>
       {activo && <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r bg-accentPurple" />}
@@ -203,7 +203,7 @@ export default function Nav({ usuario, onLogout }) {
       </nav>
       {usuario && (
         <div className="border-t border-border px-4 py-3 flex items-center gap-3">
-          <span aria-hidden="true" className="w-9 h-9 rounded-full bg-accentPurple/15 text-accentPurple font-bold flex items-center justify-center text-[14px] shrink-0">
+          <span aria-hidden="true" className="w-9 h-9 rounded-full bg-accentPurple/15 text-accentPurpleTxt font-bold flex items-center justify-center text-[14px] shrink-0">
             {(usuario.nombre || '?').trim().charAt(0).toUpperCase()}
           </span>
           <div className="min-w-0 flex-1">
@@ -301,7 +301,7 @@ export default function Nav({ usuario, onLogout }) {
                     title={!tieneAccesoARuta(grupo.principal, usuario) ? 'No tenés acceso a esta sección' : undefined}
                     className={`px-3 py-2 rounded-lg text-sm ${
                       !tieneAccesoARuta(grupo.principal, usuario) ? 'text-textMuted opacity-50'
-                      : pathname === grupo.principal ? 'bg-accentPurple/15 text-accentPurple font-semibold' : 'text-textSec hover:bg-surface2'
+                      : pathname === grupo.principal ? 'bg-accentPurple/15 text-accentPurpleTxt font-semibold' : 'text-textSec hover:bg-surface2'
                     }`}>
                     Ver todo
                   </Link>
@@ -311,7 +311,7 @@ export default function Nav({ usuario, onLogout }) {
                     title={!tieneAccesoARuta(it.href, usuario) ? 'No tenés acceso a esta sección' : undefined}
                     className={`px-3 py-2 rounded-lg text-sm ${
                       !tieneAccesoARuta(it.href, usuario) ? 'text-textMuted opacity-50'
-                      : pathname === it.href ? 'bg-accentPurple/15 text-accentPurple font-semibold' : 'text-textSec hover:bg-surface2'
+                      : pathname === it.href ? 'bg-accentPurple/15 text-accentPurpleTxt font-semibold' : 'text-textSec hover:bg-surface2'
                     }`}>
                     {it.label}
                   </Link>

@@ -123,7 +123,7 @@ function BadgeFormato({ formato, modalidad }) {
   const esCurso = ['Sincrónico', 'On demand'].includes(modalidad);
   const texto = esCurso ? formato : modalidad;
   const clases = !esCurso ? 'bg-surface2 text-textMuted'
-    : formato === 'Sincrónico' ? 'bg-accentPurple/20 text-accentPurple'
+    : formato === 'Sincrónico' ? 'bg-accentPurple/20 text-accentPurpleTxt'
     : formato === 'Asincrónico' ? 'bg-accentTeal/20 text-accentTeal'
     : 'bg-accentMagenta/20 text-accentMagenta';
   return <span className={`text-[12px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${clases}`}>{texto}</span>;

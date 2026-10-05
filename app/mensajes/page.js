@@ -221,7 +221,7 @@ export default function MensajesFrecuentesPage() {
           <h3 className="text-lg font-bold">💬 Mensajes frecuentes</h3>
           <div className="flex items-center gap-2">
             <button onClick={() => setSoloFavoritos((v) => !v)}
-              className={`text-xs px-3 py-2 rounded-lg border ${soloFavoritos ? 'bg-accentPurple/15 border-accentPurple text-accentPurple' : 'bg-surface2 border-border text-textSec'}`}>
+              className={`text-xs px-3 py-2 rounded-lg border ${soloFavoritos ? 'bg-accentPurple/15 border-accentPurple text-accentPurpleTxt' : 'bg-surface2 border-border text-textSec'}`}>
               {soloFavoritos ? '⭐ Solo favoritos' : '☆ Favoritos'}
             </button>
             <button onClick={() => setVistaCompacta((v) => !v)}
