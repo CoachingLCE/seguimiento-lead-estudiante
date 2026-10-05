@@ -528,8 +528,8 @@ export default function InscritosPage() {
           ) : inscritosFiltrados.length === 0 ? (
             <p className="text-textMuted text-sm">Ningún estudiante coincide con los filtros.</p>
           ) : (
-            <div className="overflow-x-auto max-h-[1050px] overflow-y-auto">
-              <table className="w-full text-sm min-w-[1200px]">
+            <div className="overflow-x-auto md:max-h-[1050px] md:overflow-y-auto">
+              <table className="w-full text-sm md:min-w-[1200px] tabla-tarjetas tarjetas-etiquetas-largas">
                 <thead className="sticky top-0 bg-surface z-10">
                   <tr className="text-textSec text-left border-b border-border">
                     <th className="py-3 pr-4 cursor-pointer select-none whitespace-nowrap" onClick={() => ordenarPor('FechaInscripcion')}>Fecha de inscripción{flecha('FechaInscripcion')}</th>
@@ -552,10 +552,10 @@ export default function InscritosPage() {
                     return (
                       <React.Fragment key={i.ID}>
                       <tr className="border-b border-border align-top hover:bg-bg/40 transition-colors">
-                        <td className="py-3 pr-4 text-textSec whitespace-nowrap">{new Date(i.FechaInscripcion).toLocaleDateString('es-AR')}</td>
-                        <td className="py-3 pr-4 text-textMuted text-xs whitespace-nowrap">{antiguedad(i.FechaInscripcion)}</td>
-                        <td className="py-3 pr-4 font-medium">{i.NombreEstudiante}</td>
-                        <td className="py-3 pr-4">
+                        <td data-label="Fecha de inscripción" className="py-3 pr-4 text-textSec whitespace-nowrap">{new Date(i.FechaInscripcion).toLocaleDateString('es-AR')}</td>
+                        <td data-label="Estudiante desde" className="py-3 pr-4 text-textMuted text-xs whitespace-nowrap">{antiguedad(i.FechaInscripcion)}</td>
+                        <td data-label="Estudiante" data-titulo className="py-3 pr-4 font-medium">{i.NombreEstudiante}</td>
+                        <td data-label="Curso" className="py-3 pr-4">
                           {esAdmin && editandoCursoId === i.ID ? (
                             <select defaultValue={i.Curso} autoFocus
                               onChange={(e) => editarCurso(i, e.target.value)}
@@ -575,8 +575,8 @@ export default function InscritosPage() {
                             </span>
                           )}
                         </td>
-                        <td className="py-3 pr-4 text-textSec">{normalizarEdicion(i.Edicion) || '—'}</td>
-                        <td className="py-3 pr-4">
+                        <td data-label="Edición" className="py-3 pr-4 text-textSec">{normalizarEdicion(i.Edicion) || '—'}</td>
+                        <td data-label="Bienvenida" className="py-3 pr-4">
                           {i.BienvenidaEnviada === 'TRUE' ? (
                             <>
                               <span>✓</span>
@@ -619,12 +619,12 @@ export default function InscritosPage() {
                             </div>
                           )}
                         </td>
-                        <td className="py-3 pr-4">
+                        <td data-label="Confirmó recepción" className="py-3 pr-4">
                           <button onClick={() => toggleCampoSimple(i, 'ConfirmoRecepcion', 'Confirmó recepción')}>
                             <CheckboxVisual marcado={i.ConfirmoRecepcion === 'TRUE'} />
                           </button>
                         </td>
-                        <td className="py-3 pr-4">
+                        <td data-label="Alta plataforma" className="py-3 pr-4">
                           <button onClick={() => toggleAlta(i)} className="block">
                             <CheckboxVisual marcado={i.AltaPlataforma === 'TRUE'} />
                           </button>
@@ -634,20 +634,20 @@ export default function InscritosPage() {
                             </p>
                           )}
                         </td>
-                        <td className="py-3 pr-4">
+                        <td data-label="Confirmó alta" className="py-3 pr-4">
                           <button onClick={() => toggleCampoSimple(i, 'ConfirmoAlta', 'Confirmó Alta')}>
                             <CheckboxVisual marcado={i.ConfirmoAlta === 'TRUE'} />
                           </button>
                         </td>
-                        <td className="py-3 pr-4">
+                        <td data-label="Grupo WhatsApp" className="py-3 pr-4">
                           <button onClick={() => toggleCampoSimple(i, 'GrupoWhatsApp', 'Grupo WhatsApp')}>
                             <CheckboxVisual marcado={i.GrupoWhatsApp === 'TRUE'} />
                           </button>
                         </td>
-                        <td className="py-3 pr-4">
+                        <td data-label="Estado" className="py-3 pr-4">
                           <EstadoResumen inscrito={i} />
                         </td>
-                        <td className="py-3">
+                        <td data-label="Acciones" className="py-3">
                           <div className="flex items-center gap-2">
                             <button onClick={() => setFichaLeadId(i.LeadId)} className="text-accentTeal text-xs font-semibold whitespace-nowrap">Ver ficha</button>
                             {esAdmin && (

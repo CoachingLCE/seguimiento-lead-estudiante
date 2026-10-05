@@ -134,7 +134,17 @@ select, option { background-color: rgb(var(--color-surface)); color: rgb(var(--c
 @media (max-width:640px) {
   .tabla-tarjetas thead { display: none; }
   .tabla-tarjetas, .tabla-tarjetas tbody { display: block; }
-  .tabla-tarjetas tr { display: block; padding: 10px 12px; margin-bottom: 8px; border: 1px solid rgb(var(--color-border)); border-radius: 12px; background: rgb(var(--color-surface2) / .6); }
+  .tabla-tarjetas tr { display: flex; flex-direction: column; padding: 10px 12px; margin-bottom: 8px; border: 1px solid rgb(var(--color-border)); border-radius: 12px; background: rgb(var(--color-surface2) / .6); }
   .tabla-tarjetas td { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 3px 0 !important; white-space: normal !important; border: 0; }
   .tabla-tarjetas td::before { content: attr(data-label); min-width: 78px; font-size: 12px; font-weight: 600; color: rgb(var(--color-textMuted)); }
+}
+
+@media (max-width:640px) {
+  /* El dato principal de la fila (por ejemplo el nombre del estudiante) va arriba, como título de la tarjeta. */
+  .tabla-tarjetas td[data-titulo] { order: -1; font-size: 15px; font-weight: 700; padding-bottom: 6px !important; }
+  .tabla-tarjetas td[data-titulo]::before { display: none; }
+}
+
+@media (max-width:640px) {
+  .tabla-tarjetas.tarjetas-etiquetas-largas td::before { min-width: 140px; }
 }
