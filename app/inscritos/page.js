@@ -37,12 +37,12 @@ function contarTareasCompletas(i) {
 function EstadoResumen({ inscrito }) {
   const hechas = contarTareasCompletas(inscrito);
   if (hechas === 5) {
-    return <span className="text-xs px-2 py-1 rounded-full bg-successBg text-successText font-medium whitespace-nowrap">🟢 Completo</span>;
+    return <span className="etiqueta bg-successBg text-successText whitespace-nowrap">🟢 Completo</span>;
   }
   if (hechas === 0) {
-    return <span className="text-xs px-2 py-1 rounded-full bg-dangerBg text-dangerText font-medium whitespace-nowrap">🔴 Pendiente</span>;
+    return <span className="etiqueta bg-dangerBg text-dangerText whitespace-nowrap">🔴 Pendiente</span>;
   }
-  return <span className="text-xs px-2 py-1 rounded-full bg-warningBg text-warningText font-medium whitespace-nowrap">🟡 {hechas}/5 tareas</span>;
+  return <span className="etiqueta bg-warningBg text-warningText whitespace-nowrap">🟡 {hechas}/5 tareas</span>;
 }
 
 function antiguedad(fecha) {
@@ -375,7 +375,7 @@ export default function InscritosPage() {
               <p className="text-textMuted text-xs mb-1">Se les envió Bienvenida o Alta en plataforma, pero todavía no confirmaron que lo recibieron. Convendría reforzar con ellos.</p>
               <p className="text-textMuted text-[12px] mb-3 italic">Los días viernes a las 8 AM se manda un mail con este resumen.</p>
               {alertasConfirmacion.length === 0 ? (
-                <p className="text-textMuted text-sm">Sin alertas — todos confirmaron o todavía no pasaron las 48hs hábiles.</p>
+                <p className="vacio">Sin alertas — todos confirmaron o todavía no pasaron las 48hs hábiles.</p>
               ) : (
                 <div className="space-y-2">
                   {alertasConfirmacion.map((i) => {
@@ -421,7 +421,7 @@ export default function InscritosPage() {
               <p className="text-sm font-semibold mb-1"> Bienvenida pendiente — hace 48hs hábiles o más</p>
               <p className="text-textMuted text-xs mb-3">Ingresaron hace 48hs hábiles o más y todavía no se les envió el mail de Bienvenida.</p>
               {alertasBienvenidaPendiente.length === 0 ? (
-                <p className="text-textMuted text-sm">Sin alertas — todos con Bienvenida enviada, o todavía no pasaron las 48hs hábiles.</p>
+                <p className="vacio">Sin alertas — todos con Bienvenida enviada, o todavía no pasaron las 48hs hábiles.</p>
               ) : (
                 <div className="space-y-2">
                   {alertasBienvenidaPendiente.map((i) => (
@@ -524,9 +524,9 @@ export default function InscritosPage() {
           ) : cargando ? (
             <p className="text-textSec text-sm">Cargando…</p>
           ) : inscritos.length === 0 ? (
-            <p className="text-textMuted text-sm">Todavía no hay estudiantes generados.</p>
+            <p className="vacio">Todavía no hay estudiantes generados.</p>
           ) : inscritosFiltrados.length === 0 ? (
-            <p className="text-textMuted text-sm">Ningún estudiante coincide con los filtros.</p>
+            <p className="vacio">Ningún estudiante coincide con los filtros.</p>
           ) : (
             <div className="overflow-x-auto md:max-h-[1050px] md:overflow-y-auto">
               <table className="w-full text-sm md:min-w-[1200px] tabla-tarjetas tarjetas-etiquetas-largas">

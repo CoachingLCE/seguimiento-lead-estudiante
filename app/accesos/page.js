@@ -243,7 +243,7 @@ export default function AccesosPage() {
                     </div>
                   ) : (
                     <button onClick={() => empezarEdicionRoles(u)}
-                      className="text-xs px-2.5 py-1 rounded-full bg-infoBg text-infoText hover:opacity-80" title="Click para editar roles">
+                      className="etiqueta bg-infoBg text-infoText hover:opacity-80" title="Click para editar roles">
                       {nombreVisibleRoles((u.Roles || '').split(/[,+]/).map((r) => r.trim()).filter(Boolean))} 
                     </button>
                   )}
@@ -257,7 +257,7 @@ export default function AccesosPage() {
                       {mostrarPassword[u.Email] ? u.passwordActual : '••••••••'}
                     </button>
                   ) : (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-warningBg text-warningText">
+                    <span className="etiqueta bg-warningBg text-warningText">
                       sin contraseña
                     </span>
                   )}

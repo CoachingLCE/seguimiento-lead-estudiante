@@ -300,7 +300,7 @@ function Ranking({ titulo, items, unidad = 'ventas', onClickItem, activo }) {
   return (
     <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm">
       <p className="text-sm font-semibold mb-3">{titulo}</p>
-      {items.length === 0 ? <p className="text-textMuted text-xs">Sin datos este mes.</p> : (
+      {items.length === 0 ? <p className="vacio vacio-chico">Sin datos este mes.</p> : (
         <div className="space-y-2">
           {items.slice(0, 5).map((it, i) => (
             <button key={it.nombre} onClick={() => onClickItem?.(it.nombre)}
@@ -1587,7 +1587,7 @@ export default function ReportesPage() {
                   {' '}Los contactos solo cuentan desde el 13/08/2026 (cuando se empezó a registrar quién contacta a cada uno de verdad).
                 </p>
                 {datos.actividadPorPersona.length === 0 ? (
-                  <p className="text-textMuted text-sm">Sin actividad registrada este mes.</p>
+                  <p className="vacio">Sin actividad registrada este mes.</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
@@ -1743,7 +1743,7 @@ export default function ReportesPage() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {Object.entries(filtros).filter(([, v]) => v).map(([k, v]) => (
-                      <span key={k} className="text-[12px] px-2.5 py-1 rounded-full bg-infoBg text-infoText flex items-center gap-1.5">
+                      <span key={k} className="etiqueta text-[12px] bg-infoBg text-infoText flex items-center gap-1.5">
                         {k}: {v} <button onClick={() => setFiltro(k, v)} className="font-bold"></button>
                       </span>
                     ))}
@@ -1796,7 +1796,7 @@ export default function ReportesPage() {
                         ))}
                       </tbody>
                     </table>
-                    {comprasFiltradas.length === 0 && <p className="text-textMuted text-sm text-center py-6">Sin resultados con estos filtros.</p>}
+                    {comprasFiltradas.length === 0 && <p className="vacio">Sin resultados con estos filtros.</p>}
                   </div>
                 </div>
               </>

@@ -708,7 +708,7 @@ function ModalReasignar({ onClose, onConfirmar }) {
         <input autoFocus value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
           placeholder="Buscar persona…" className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm mb-3" />
         <div className="space-y-1 max-h-56 overflow-y-auto">
-          {filtradas.length === 0 && <p className="text-textMuted text-xs">Sin resultados.</p>}
+          {filtradas.length === 0 && <p className="vacio vacio-chico">Sin resultados.</p>}
           {filtradas.map((p) => (
             <button key={p.email} onClick={() => onConfirmar(p.email, p.nombre)}
               className="w-full flex items-center gap-2 text-left px-2 py-2 rounded-lg hover:bg-bg text-sm">
@@ -740,7 +740,7 @@ function SeccionSinLote({ sinLote, onVerFicha }) {
       {abierta && (
         <div className="mt-3">
           {sinLote.length === 0 ? (
-            <p className="text-textMuted text-sm">No hay nadie fuera del seguimiento activo con estos filtros.</p>
+            <p className="vacio">No hay nadie fuera del seguimiento activo con estos filtros.</p>
           ) : (
             sinLote.map(({ lead, resultado, fecha, quien }) => (
               <div key={lead.ID} className="flex items-center justify-between gap-3 border-t border-border first:border-t-0 py-2">

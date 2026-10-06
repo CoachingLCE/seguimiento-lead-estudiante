@@ -207,7 +207,7 @@ export default function EmailsPage() {
                       {a.remitente}{a.cc && a.cc !== '—' ? <span className="text-textMuted"> · cc {a.cc}</span> : ''}
                     </td>
                     <td className="pr-4 text-textSec whitespace-nowrap">{a.asunto}</td>
-                    <td><span className="text-[12px] px-2.5 py-1 rounded-full bg-infoBg text-infoText whitespace-nowrap">{a.tipo}</span></td>
+                    <td><span className="etiqueta text-[12px] bg-infoBg text-infoText whitespace-nowrap">{a.tipo}</span></td>
                     <td>
                       <button type="button" onClick={(e) => { e.stopPropagation(); setMailAVer(a); }}
                         className="text-accentTeal text-xs font-semibold whitespace-nowrap">Ver mail →</button>

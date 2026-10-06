@@ -284,7 +284,7 @@ export default function MensajesFrecuentesPage() {
           const mensajesOrdenados = [...mensajes].sort((a, b) => (propioFavorito(b) ? 1 : 0) - (propioFavorito(a) ? 1 : 0));
           const mensajesAMostrar = soloFavoritos ? mensajesOrdenados.filter(propioFavorito) : mensajesOrdenados;
           if (mensajesAMostrar.length === 0) {
-            return <p className="text-textMuted text-sm">Todavía no marcaste ningún mensaje como favorito — tocá el  de un mensaje para sumarlo acá.</p>;
+            return <p className="vacio">Todavía no marcaste ningún mensaje como favorito — tocá el  de un mensaje para sumarlo acá.</p>;
           }
           return (
           <div className="space-y-3">
@@ -314,8 +314,8 @@ export default function MensajesFrecuentesPage() {
                         <span className="text-textMuted text-xs shrink-0">{estaExpandido ? '▼' : ''}</span>
                       )}
                       <p className="text-sm font-semibold truncate">{m.Titulo}</p>
-                      {estado === 'nuevo' && <span className="text-[12px] font-semibold px-1.5 py-0.5 rounded-full bg-successBg text-successText shrink-0">Nuevo</span>}
-                      {estado === 'modificado' && <span className="text-[12px] font-semibold px-1.5 py-0.5 rounded-full bg-infoBg text-infoText shrink-0">Modificado</span>}
+                      {estado === 'nuevo' && <span className="etiqueta text-[12px] bg-successBg text-successText shrink-0">Nuevo</span>}
+                      {estado === 'modificado' && <span className="etiqueta text-[12px] bg-infoBg text-infoText shrink-0">Modificado</span>}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <button onClick={() => alternarFavorito(m)} title={esFavorito ? 'Quitar de favoritos' : 'Marcar como favorito'}

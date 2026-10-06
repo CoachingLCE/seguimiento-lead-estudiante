@@ -204,3 +204,16 @@ div.fixed.inset-0 > div[class*="rounded-2xl"]:not([class*="h-full"]):not([class*
 .nov-line{opacity:.3;filter:saturate(.3);transition:opacity .55s ease,filter .55s ease}
 .nov-line.nov-lit{opacity:1;filter:none}
 @media (prefers-reduced-motion:reduce){.nov-line{opacity:1;filter:none;transition:none}}
+
+/* Estados vacíos (pedido de la auditoría; igual en todas las apps de ILCE): cuando una lista, tabla o filtro no tiene nada
+   para mostrar, un recuadro punteado con un ícono y el texto centrado, en lugar de una línea gris suelta.
+   .vacio-chico es la misma pieza para espacios apretados (paneles laterales, tarjetas chicas). */
+.vacio{display:block;text-align:center;padding:22px 16px;margin:4px 0;border:1px dashed rgb(var(--color-textMuted) / .45);border-radius:12px;color:rgb(var(--color-textMuted));font-size:14px;line-height:1.45}
+.vacio::before{content:'\e0f7';display:block;font-size:24px;line-height:1;margin-bottom:8px;opacity:.6}
+.vacio-chico{padding:12px;font-size:12.5px}
+.vacio-chico::before{font-size:18px;margin-bottom:4px}
+
+/* Etiquetas de estado (pedido de la auditoría; igual en todas las apps de ILCE): una sola forma — píldora de 12 px, peso 600 —
+   para "Activa", "Pendiente", "Alta", etc. Los colores NO van acá: cada etiqueta sigue usando sus tonos semánticos
+   (success / warning / danger / info) como siempre. Lo que antes eran combinaciones sueltas de relleno y grosor es ahora esto. */
+.etiqueta{padding:3px 9px;border-radius:999px;font-size:12px;font-weight:600;line-height:1.4;white-space:nowrap}

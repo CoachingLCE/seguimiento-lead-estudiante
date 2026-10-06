@@ -545,10 +545,10 @@ function ChipResultado({ color, icono, texto }) {
 // Mismos estados y condiciones que antes — la diferencia es que "Listo para enviar" ahora es
 // directamente un botón que dispara la misma acción que antes vivía en "Acciones pendientes".
 function BadgeReactivacion({ b, enviandoMensajeId, onEnviar }) {
-  if (b.confirmoRecepcionBaja) return <span className="text-[12px] px-2 py-0.5 rounded-full bg-successBg text-successText whitespace-nowrap">🟢 Confirmó</span>;
+  if (b.confirmoRecepcionBaja) return <span className="etiqueta text-[12px] bg-successBg text-successText whitespace-nowrap">🟢 Confirmó</span>;
   if (b.mensajeEnviado) return <span className="text-[12px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted whitespace-nowrap">⚪ Enviado</span>;
   if (b.listaParaReactivacion) {
-    if (!b.email) return <span className="text-[12px] px-2 py-0.5 rounded-full bg-warningBg text-warningText whitespace-nowrap">Sin email cargado</span>;
+    if (!b.email) return <span className="etiqueta text-[12px] bg-warningBg text-warningText whitespace-nowrap">Sin email cargado</span>;
     return (
       <button onClick={() => onEnviar(b)} disabled={enviandoMensajeId === b.leadId}
         className="text-[12px] px-2.5 py-1 rounded-full bg-accentPurple text-white font-semibold disabled:opacity-60 whitespace-nowrap">
@@ -561,7 +561,7 @@ function BadgeReactivacion({ b, enviandoMensajeId, onEnviar }) {
 }
 
 function BadgeSeguimiento({ b }) {
-  if (b.contactado) return <span className="text-[12px] px-2 py-0.5 rounded-full bg-infoBg text-infoText whitespace-nowrap">🔵 Contactado</span>;
-  if (b.disponibleAhora) return <span className="text-[12px] px-2 py-0.5 rounded-full bg-warningBg text-warningText whitespace-nowrap">🟠 En Lote Bajas</span>;
+  if (b.contactado) return <span className="etiqueta text-[12px] bg-infoBg text-infoText whitespace-nowrap">🔵 Contactado</span>;
+  if (b.disponibleAhora) return <span className="etiqueta text-[12px] bg-warningBg text-warningText whitespace-nowrap">🟠 En Lote Bajas</span>;
   return <span className="text-[12px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted whitespace-nowrap">Faltan {b.diasFaltantes} días</span>;
 }

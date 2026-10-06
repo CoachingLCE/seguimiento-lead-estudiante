@@ -65,7 +65,7 @@ export default function FichaDrawer({ leadId, usuario, onClose }) {
         {cargando ? (
           <p className="text-textSec text-sm">Cargando…</p>
         ) : !lead ? (
-          <p className="text-textSec text-sm">No se encontró información para este lead.</p>
+          <p className="vacio">No se encontró información para este lead.</p>
         ) : (
           <>
             <h3 className="text-base font-bold pr-6">{lead.Nombre} {lead.Apellido}</h3>
@@ -103,7 +103,7 @@ export default function FichaDrawer({ leadId, usuario, onClose }) {
 
             <p className="text-xs font-bold mb-3">Historial académico completo</p>
             {eventos.length === 0 ? (
-              <p className="text-textMuted text-xs mb-4">Todavía no hay eventos registrados para este lead.</p>
+              <p className="vacio vacio-chico mb-4">Todavía no hay eventos registrados para este lead.</p>
             ) : (
               <div className="relative pl-6 mb-4">
                 <div className="absolute left-[11px] top-1 bottom-1 w-px bg-border" />
@@ -118,7 +118,7 @@ export default function FichaDrawer({ leadId, usuario, onClose }) {
                     <p className="text-xs font-semibold flex items-center gap-1.5">
                       {ev.accion}
                       {ev.automatico && (
-                        <span className="text-[12px] font-bold px-1.5 py-0.5 rounded-full bg-infoBg text-infoText uppercase tracking-wide">
+                        <span className="etiqueta text-[12px] bg-infoBg text-infoText uppercase tracking-wide">
                           Automático
                         </span>
                       )}

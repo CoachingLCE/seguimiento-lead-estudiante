@@ -115,7 +115,7 @@ export default function ResumenEstudiantesPage() {
             <div className="grid md:grid-cols-2 gap-4 mb-4">
               <div className="bg-surface border border-border rounded-2xl p-5">
                 <p className="text-sm font-semibold mb-3"> Estudiantes por curso</p>
-                {porCursoFiltrado.length === 0 ? <p className="text-textMuted text-sm">Sin datos.</p> : (
+                {porCursoFiltrado.length === 0 ? <p className="vacio">Sin datos.</p> : (
                   <div className="space-y-2">
                     {porCursoFiltrado.map((c) => (
                       <div key={c.curso} className="flex items-center justify-between text-sm">
@@ -132,7 +132,7 @@ export default function ResumenEstudiantesPage() {
 
               <div className="bg-surface border border-border rounded-2xl p-5">
                 <p className="text-sm font-semibold mb-3"> Estudiantes por edición</p>
-                {datos.porEdicion.length === 0 ? <p className="text-textMuted text-sm">Sin datos.</p> : (
+                {datos.porEdicion.length === 0 ? <p className="vacio">Sin datos.</p> : (
                   <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                     {datos.porEdicion
                       .filter((e) => !filtroCurso || e.edicion.startsWith(filtroCurso))

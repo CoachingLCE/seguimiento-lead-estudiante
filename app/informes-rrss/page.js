@@ -146,7 +146,7 @@ function GraficoEvolucion({ etiquetas, puntos, color = '#8C52FF', alto = 90 }) {
   const padY = 14;
   const validos = puntos.filter((p) => p !== null && p !== undefined);
   if (validos.length === 0) {
-    return <div className="h-[90px] flex items-center justify-center text-textMuted text-xs">Sin datos para graficar</div>;
+    return <div className="vacio vacio-chico">Sin datos para graficar</div>;
   }
   const max = Math.max(...validos, 1);
   const min = Math.min(...validos, 0);
@@ -744,7 +744,7 @@ export default function InformesRRSSPage() {
             <div className="bg-surface border border-border rounded-2xl p-4 sm:p-5">
               <p className="text-sm font-semibold mb-3"> Informe anual {mes.slice(0, 4)}</p>
               {anual.porMes.length === 0 ? (
-                <p className="text-textMuted text-sm">Todavía no hay datos cargados este año.</p>
+                <p className="vacio">Todavía no hay datos cargados este año.</p>
               ) : (
                 <>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
@@ -914,7 +914,7 @@ export default function InformesRRSSPage() {
                         </button>
                       </div>
                       {!m ? (
-                        <p className="text-textMuted text-xs">Sin datos este mes.</p>
+                        <p className="vacio vacio-chico">Sin datos este mes.</p>
                       ) : (
                         <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
                           <p className="text-textSec">Seguidores: <b className="text-text">{fmt(m.Followers)}</b></p>
@@ -1162,7 +1162,7 @@ export default function InformesRRSSPage() {
                   </div>
                 </>
               ) : !analisis ? (
-                <p className="text-textMuted text-sm">Todavía no hay análisis cargado para este mes.</p>
+                <p className="vacio">Todavía no hay análisis cargado para este mes.</p>
               ) : (
                 <div className="space-y-3 text-sm">
                   {analisis.resumen && <div><p className="text-textMuted text-[12px] uppercase mb-1">Resumen</p><p className="text-textSec whitespace-pre-wrap">{analisis.resumen}</p></div>}

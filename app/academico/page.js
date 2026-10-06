@@ -437,7 +437,7 @@ export default function AcademicoPage() {
         ) : cargando ? (
           <p className="text-textSec text-sm">Cargando…</p>
         ) : !cursoActual ? (
-          <p className="text-textMuted text-sm">Todavía no hay ningún curso cargado — usá "+ Cargar estudiantes" para arrancar.</p>
+          <p className="vacio">Todavía no hay ningún curso cargado — usá "+ Cargar estudiantes" para arrancar.</p>
         ) : (
           <>
             {cursoActual !== TODOS && (
@@ -515,7 +515,7 @@ export default function AcademicoPage() {
               </div>
 
               {resumenOrdenado.length === 0 ? (
-                <p className="text-textMuted text-sm">Sin datos para este filtro.</p>
+                <p className="vacio">Sin datos para este filtro.</p>
               ) : (
                 <div className="overflow-x-auto max-h-[480px] overflow-y-auto relative">
                   <datalist id="lista-formadores">

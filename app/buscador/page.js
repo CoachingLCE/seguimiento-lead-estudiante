@@ -338,7 +338,7 @@ function BuscadorContent() {
             <div>
               <p className="text-xs font-semibold text-textSec mb-2"> Últimos alumnos vistos</p>
               {vistosRecientes.length === 0 ? (
-                <p className="text-textMuted text-xs">Todavía no viste ninguna ficha.</p>
+                <p className="vacio vacio-chico">Todavía no viste ninguna ficha.</p>
               ) : (
                 <div className="grid md:grid-cols-2 gap-2">
                   {vistosRecientes.map((v) => (
@@ -1197,7 +1197,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
           </button>
 
           {notas.length === 0 ? (
-            <p className="text-textMuted text-sm">Todavía no hay notas.</p>
+            <p className="vacio">Todavía no hay notas.</p>
           ) : (
             <div className="space-y-3 border-t border-border pt-3">
               {notas.map((n, i) => (

@@ -720,7 +720,7 @@ export default function ProductosValoresPage() {
                         <BadgeFormato formato={p.formato} modalidad={p.modalidad} />
                         {p.esVariante && <span className="text-[12px] px-2 py-0.5 rounded-full bg-surface2 text-textMuted">Variante</span>}
                         {necesitaRevision(p) && (
-                          <span className="text-[12px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide bg-dangerBg text-dangerText" title="Hace más de 30 días que no se actualiza (o ya pasó la fecha de revisión indicada)">
+                          <span className="etiqueta text-[12px] uppercase tracking-wide bg-dangerBg text-dangerText" title="Hace más de 30 días que no se actualiza (o ya pasó la fecha de revisión indicada)">
                              Revisar valor
                           </span>
                         )}
@@ -808,7 +808,7 @@ export default function ProductosValoresPage() {
                                               return (
                                                 <span key={clave} className="inline-flex items-center gap-1">
                                                   <a href={m.link} target="_blank" rel="noopener noreferrer"
-                                                    className="text-[12px] px-2 py-0.5 rounded-full bg-infoBg text-infoText font-semibold whitespace-nowrap">
+                                                    className="etiqueta text-[12px] bg-infoBg text-infoText whitespace-nowrap">
                                                     {MEDIOS_CONOCIDOS.find(([k]) => k === clave)?.[1] || clave}
                                                   </a>
                                                   <button onClick={() => copiarLink(m.link, idUnico)} title="Copiar link"
@@ -844,7 +844,7 @@ export default function ProductosValoresPage() {
                               return (
                                 <span key={clave} className="inline-flex items-center gap-1">
                                   <a href={m.link} target="_blank" rel="noopener noreferrer"
-                                    className="text-[12px] px-2.5 py-1 rounded-full bg-infoBg text-infoText font-semibold whitespace-nowrap">
+                                    className="etiqueta text-[12px] bg-infoBg text-infoText whitespace-nowrap">
                                     {MEDIOS_CONOCIDOS.find(([k]) => k === clave)?.[1] || clave}{m.valor ? ` (USD ${m.valor})` : ''}
                                   </a>
                                   <button onClick={() => copiarLink(m.link, idUnico)} title="Copiar link"

@@ -91,7 +91,7 @@ export default function FichasEnviadasPage() {
         ) : cargando ? (
           <p className="text-textSec text-sm">Cargando…</p>
         ) : fichasFiltradas.length === 0 ? (
-          <p className="text-textMuted text-sm">Sin resultados.</p>
+          <p className="vacio">Sin resultados.</p>
         ) : (
           <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm">
             <div className="overflow-x-auto max-h-[750px] overflow-y-auto">

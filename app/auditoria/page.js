@@ -193,7 +193,7 @@ export default function AuditoriaPage() {
           ) : cargando ? (
             <p className="text-textSec text-sm">Cargando…</p>
           ) : registrosFiltrados.length === 0 ? (
-            <p className="text-textMuted text-sm">Sin registros para este filtro.</p>
+            <p className="vacio">Sin registros para este filtro.</p>
           ) : (
             <div className="overflow-x-auto">
             <table className="w-full text-sm table-fixed">
