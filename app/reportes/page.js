@@ -740,7 +740,7 @@ function SeccionObjetivos({ datos, mes, usuario }) {
               <div className="flex gap-2">
                 {objetivos && <button onClick={() => setEditando(false)} className="text-sm px-4 py-2 rounded-lg bg-surface2 border border-border">Cancelar</button>}
                 <button onClick={guardar} disabled={guardando}
-                  className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-60">
+                  className="boton boton-solido bg-accentPurple text-white disabled:opacity-60">
                   {guardando ? 'Guardando…' : 'Guardar objetivos'}
                 </button>
               </div>
@@ -857,9 +857,9 @@ function SeccionEscalaInscripciones({ usuario }) {
 
       {editando && (
         <div className="flex items-center gap-2 mt-4">
-          <button onClick={agregarFila} className="text-xs px-3 py-1.5 rounded-lg bg-surface2 border border-border">+ Agregar escalón</button>
+          <button onClick={agregarFila} className="boton boton-chico bg-surface2 border border-border">+ Agregar escalón</button>
           <button onClick={() => setEditando(false)} className="text-xs px-3 py-1.5 rounded-lg bg-surface2 border border-border">Cancelar</button>
-          <button onClick={guardar} disabled={guardando} className="text-xs px-3 py-1.5 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-60">
+          <button onClick={guardar} disabled={guardando} className="boton boton-chico boton-solido bg-accentPurple text-white disabled:opacity-60">
             {guardando ? 'Guardando…' : 'Guardar escala'}
           </button>
         </div>
@@ -1122,7 +1122,7 @@ export default function ReportesPage() {
                   <div className="bg-surface border border-border rounded-2xl p-4">
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <p className="text-xs font-semibold text-textSec"> Diagnóstico: montos inválidos ("$NaN")</p>
-                      <button onClick={verMontosRotos} className="text-xs px-3 py-1.5 rounded-lg bg-surface2 border border-border">Buscar</button>
+                      <button onClick={verMontosRotos} className="boton boton-chico bg-surface2 border border-border">Buscar</button>
                     </div>
                     {montosRotos && (
                       montosRotos.length === 0 ? (
@@ -1139,7 +1139,7 @@ export default function ReportesPage() {
                           ))}
                           {montosRotos.some((m) => m.seRecuperaSolo) && (
                             <button onClick={corregirMontos} disabled={corrigiendo}
-                              className="text-xs px-3 py-1.5 rounded-lg bg-accentPurple text-white font-semibold mt-2 disabled:opacity-60">
+                              className="boton boton-chico boton-solido bg-accentPurple text-white mt-2 disabled:opacity-60">
                               {corrigiendo ? 'Corrigiendo…' : `Corregir los ${montosRotos.filter((m) => m.seRecuperaSolo).length} que se pueden recalcular`}
                             </button>
                           )}
@@ -1714,9 +1714,9 @@ export default function ReportesPage() {
             {tab === 'compras' && (
               <>
                 <div className="flex justify-end gap-2">
-                  <button onClick={exportarExcel} className="text-sm px-3 py-2 rounded-lg bg-surface2 border border-border"> Excel</button>
-                  <button onClick={exportarCSV} className="text-sm px-3 py-2 rounded-lg bg-surface2 border border-border"> CSV</button>
-                  <button onClick={exportarPDF} className="text-sm px-3 py-2 rounded-lg bg-surface2 border border-border"> PDF</button>
+                  <button onClick={exportarExcel} className="boton bg-surface2 border border-border"> Excel</button>
+                  <button onClick={exportarCSV} className="boton bg-surface2 border border-border"> CSV</button>
+                  <button onClick={exportarPDF} className="boton bg-surface2 border border-border"> PDF</button>
                 </div>
 
                 {/* FILTROS EXTENDIDOS */}

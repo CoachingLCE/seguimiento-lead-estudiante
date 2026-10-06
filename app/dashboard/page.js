@@ -254,7 +254,7 @@ export default function DashboardPage() {
                     
                   </button>
                 )}
-                <button onClick={exportarExcel} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm">
+                <button onClick={exportarExcel} className="boton bg-surface2 border border-border">
                    Exportar a Excel
                 </button>
               </div>

@@ -86,7 +86,7 @@ export default function FichasEnviadasPage() {
         {errorCarga ? (
           <div className="bg-dangerBg border border-dangerText/30 rounded-2xl p-6 text-center">
             <p className="text-dangerText text-sm font-semibold mb-3"> {errorCarga}</p>
-            <button onClick={cargar} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">Reintentar</button>
+            <button onClick={cargar} className="boton boton-solido bg-accentPurple text-white">Reintentar</button>
           </div>
         ) : cargando ? (
           <p className="text-textSec text-sm">Cargando…</p>

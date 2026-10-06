@@ -229,7 +229,7 @@ export default function MensajesFrecuentesPage() {
               {vistaCompacta ? '▤ Vista completa' : ' Vista compacta'}
             </button>
             {puedeEscribir && (
-              <button onClick={abrirNuevo} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">
+              <button onClick={abrirNuevo} className="boton boton-solido bg-accentPurple text-white">
                 + Nuevo mensaje
               </button>
             )}
@@ -261,7 +261,7 @@ export default function MensajesFrecuentesPage() {
             <div className="flex gap-2">
               <button onClick={() => setMostrarForm(false)} className="text-sm px-4 py-2 rounded-lg bg-surface2 border border-border">Cancelar</button>
               <button onClick={guardar} disabled={guardando || !tituloForm.trim() || !mensajeForm.trim()}
-                className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-50">
+                className="boton boton-solido bg-accentPurple text-white disabled:opacity-50">
                 {guardando ? 'Guardando…' : 'Guardar'}
               </button>
             </div>
@@ -271,7 +271,7 @@ export default function MensajesFrecuentesPage() {
         {errorCarga ? (
           <div className="bg-dangerBg border border-dangerText/30 rounded-2xl p-6 text-center">
             <p className="text-dangerText text-sm font-semibold mb-3"> {errorCarga}</p>
-            <button onClick={cargarMensajes} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">Reintentar</button>
+            <button onClick={cargarMensajes} className="boton boton-solido bg-accentPurple text-white">Reintentar</button>
           </div>
         ) : cargando ? (
           <p className="text-textSec text-sm">Cargando…</p>

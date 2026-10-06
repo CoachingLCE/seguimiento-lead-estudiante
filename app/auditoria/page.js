@@ -152,7 +152,7 @@ export default function AuditoriaPage() {
               placeholder=" Nombre, acción, email o WhatsApp…"
               className="bg-bg border border-border rounded-lg px-3 py-2 text-sm w-64" />
           </div>
-          <button onClick={exportarExcel} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm">
+          <button onClick={exportarExcel} className="boton bg-surface2 border border-border">
              Exportar a Excel
           </button>
           <button onClick={() => window.print()} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm">
@@ -186,7 +186,7 @@ export default function AuditoriaPage() {
           {errorCarga ? (
             <div className="bg-dangerBg border border-dangerText/30 rounded-2xl p-6 text-center">
               <p className="text-dangerText text-sm font-semibold mb-3"> {errorCarga}</p>
-              <button onClick={cargarRegistros} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">
+              <button onClick={cargarRegistros} className="boton boton-solido bg-accentPurple text-white">
                 Reintentar
               </button>
             </div>

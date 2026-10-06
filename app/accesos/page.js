@@ -295,7 +295,7 @@ export default function AccesosPage() {
               placeholder="email@delcreador.com"
               className="flex-1 bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
             <button onClick={verPreviewLimpieza} disabled={!creadorLimpieza.trim() || cargandoLimpieza}
-              className="text-sm px-4 py-2 rounded-lg bg-surface2 border border-border disabled:opacity-50">
+              className="boton bg-surface2 border border-border disabled:opacity-50">
               {cargandoLimpieza ? 'Buscando…' : 'Ver cuántos hay'}
             </button>
           </div>

@@ -794,7 +794,7 @@ export default function InformesRRSSPage() {
         ) : errorCarga ? (
           <div className="bg-dangerBg border border-dangerText/30 rounded-2xl p-6 text-center">
             <p className="text-dangerText text-sm font-semibold mb-3"> {errorCarga}</p>
-            <button onClick={cargarTodo} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">Reintentar</button>
+            <button onClick={cargarTodo} className="boton boton-solido bg-accentPurple text-white">Reintentar</button>
           </div>
         ) : cargando ? (
           <div className="space-y-4">
@@ -949,7 +949,7 @@ export default function InformesRRSSPage() {
                   <div className="flex gap-2 flex-wrap">
                     <button onClick={() => setEditandoPlataforma(null)} className="text-sm px-4 py-2 rounded-lg bg-surface2 border border-border">Cancelar</button>
                     <button onClick={guardarMetrica} disabled={guardandoMetrica}
-                      className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-60">
+                      className="boton boton-solido bg-accentPurple text-white disabled:opacity-60">
                       {guardandoMetrica ? 'Guardando…' : 'Guardar'}
                     </button>
                   </div>
@@ -961,7 +961,7 @@ export default function InformesRRSSPage() {
             <div className="bg-surface border border-border rounded-2xl p-4 sm:p-5">
               <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
                 <p className="text-sm font-semibold"> Contenido destacado</p>
-                <button onClick={abrirNuevaPieza} className="text-xs px-3 py-1.5 rounded-lg bg-accentPurple text-white font-semibold">+ Agregar</button>
+                <button onClick={abrirNuevaPieza} className="boton boton-chico boton-solido bg-accentPurple text-white">+ Agregar</button>
               </div>
 
               {mejorPieza && (
@@ -1018,7 +1018,7 @@ export default function InformesRRSSPage() {
                   <div className="flex gap-2 flex-wrap">
                     <button onClick={() => setMostrarFormPieza(false)} className="text-sm px-4 py-2 rounded-lg bg-surface2 border border-border">Cancelar</button>
                     <button onClick={guardarPieza} disabled={guardandoPieza || !formPieza.titulo.trim()}
-                      className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-50">
+                      className="boton boton-solido bg-accentPurple text-white disabled:opacity-50">
                       {guardandoPieza ? 'Guardando…' : 'Guardar'}
                     </button>
                   </div>
@@ -1117,7 +1117,7 @@ export default function InformesRRSSPage() {
                   placeholder="Ej: Aumentar seguidores de Instagram a 40.000"
                   className="flex-1 bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
                 <button onClick={agregarObjetivo} disabled={guardandoObjetivo || !nuevoObjetivo.trim()}
-                  className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-50">+ Agregar</button>
+                  className="boton boton-solido bg-accentPurple text-white disabled:opacity-50">+ Agregar</button>
               </div>
             </div>
 
@@ -1156,7 +1156,7 @@ export default function InformesRRSSPage() {
                   <div className="flex gap-2 flex-wrap">
                     <button onClick={() => setEditandoAnalisis(false)} className="text-sm px-4 py-2 rounded-lg bg-surface2 border border-border">Cancelar</button>
                     <button onClick={guardarAnalisis} disabled={guardandoAnalisis}
-                      className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-60">
+                      className="boton boton-solido bg-accentPurple text-white disabled:opacity-60">
                       {guardandoAnalisis ? 'Guardando…' : 'Guardar'}
                     </button>
                   </div>
@@ -1193,7 +1193,7 @@ export default function InformesRRSSPage() {
                   onKeyDown={(e) => e.key === 'Enter' && enviarComentario()}
                   placeholder="Escribir un comentario…" className="flex-1 bg-bg border border-border rounded-lg px-3 py-2 text-sm" />
                 <button onClick={enviarComentario} disabled={enviandoComentario || !textoComentario.trim()}
-                  className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-50 shrink-0">
+                  className="boton boton-solido bg-accentPurple text-white disabled:opacity-50 shrink-0">
                   {enviandoComentario ? 'Enviando…' : 'Enviar'}
                 </button>
               </div>

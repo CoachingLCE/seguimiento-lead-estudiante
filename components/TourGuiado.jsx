@@ -161,7 +161,7 @@ export default function TourGuiado() {
           <div className="bg-surface2 border border-border rounded-2xl p-4 w-80 max-w-[calc(100vw-40px)] shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-sm font-semibold mb-1">Te mostramos cómo funciona ILCE Gestión</h3>
             <p className="text-xs text-textSec mb-3">Vamos a recorrer juntos las secciones principales.</p>
-            <button className="w-full bg-gradient-to-r from-accentPurple to-accentMagenta text-white rounded-lg px-3 py-2 text-sm font-semibold mb-3" onClick={iniciarCompleto}>
+            <button className="boton boton-solido w-full bg-gradient-to-r from-accentPurple to-accentMagenta text-white mb-3" onClick={iniciarCompleto}>
               Comenzar recorrido
             </button>
             {tareas.length > 0 && (
@@ -169,7 +169,7 @@ export default function TourGuiado() {
             <p className="text-[12px] text-textMuted mb-1.5 font-semibold">O elegí una tarea puntual:</p>
             <div className="flex flex-col gap-1">
               {tareas.map((t) => (
-                <button key={t.id} className="text-left text-xs text-textSec hover:text-text bg-bg border border-border rounded-lg px-2.5 py-1.5" onClick={() => iniciarTarea(t)}>
+                <button key={t.id} className="boton boton-chico text-left text-textSec hover:text-text bg-bg border border-border" onClick={() => iniciarTarea(t)}>
                   {t.label}
                 </button>
               ))}
@@ -238,9 +238,9 @@ function TourOverlay({ paso, idx, total, rect, buscando, modoTarea, onSiguiente,
           <button className="text-xs text-textMuted" onClick={onSalir}>Salir</button>
           <div className="flex gap-1.5">
             {idx > 0 && !modoTarea && (
-              <button className="bg-transparent text-textSec border border-border rounded-lg px-2.5 py-1.5 text-xs" onClick={onAnterior}> Atrás</button>
+              <button className="boton boton-chico bg-transparent text-textSec border border-border" onClick={onAnterior}> Atrás</button>
             )}
-            <button className="bg-gradient-to-r from-accentPurple to-accentMagenta text-white rounded-lg px-3 py-1.5 text-xs font-semibold" onClick={onSiguiente}>
+            <button className="boton boton-chico boton-solido bg-gradient-to-r from-accentPurple to-accentMagenta text-white" onClick={onSiguiente}>
               {esFinal || modoTarea ? 'Listo' : 'Siguiente →'}
             </button>
           </div>

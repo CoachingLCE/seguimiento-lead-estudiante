@@ -114,9 +114,9 @@ function TarjetaResultado({ r, q, router }) {
       )}
       <div className="flex items-center gap-2 flex-wrap mt-2">
         <Link href={`/buscador?leadId=${r.id}`}
-          className="text-xs px-2.5 py-1 rounded-md bg-accentPurple text-white font-semibold">Ver ficha</Link>
+          className="boton boton-chico boton-solido bg-accentPurple text-white">Ver ficha</Link>
         <Link href={`/buscador?leadId=${r.id}&editar=1`}
-          className="text-xs px-2.5 py-1 rounded-md bg-surface2 border border-border">Editar</Link>
+          className="boton boton-chico bg-surface2 border border-border">Editar</Link>
         <button onClick={() => router.push('/seguimiento')}
           className="text-xs px-2.5 py-1 rounded-md bg-surface2 border border-border">Ir al seguimiento</button>
       </div>
@@ -695,13 +695,13 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
           <div className="flex items-center gap-2 flex-wrap">
             {lead.WhatsApp && (
               <a href={`https://wa.me/${whatsappLimpio}`} target="_blank" rel="noopener noreferrer"
-                className="text-xs px-3 py-1.5 rounded-lg bg-surface2 border border-border"> WhatsApp</a>
+                className="boton boton-chico bg-surface2 border border-border"> WhatsApp</a>
             )}
             {lead.EmailEstudiante && (
-              <a href={enlaceGmail(lead.EmailEstudiante)} target="_blank" rel="noopener noreferrer" className="text-xs px-3 py-1.5 rounded-lg bg-surface2 border border-border"> Email</a>
+              <a href={enlaceGmail(lead.EmailEstudiante)} target="_blank" rel="noopener noreferrer" className="boton boton-chico bg-surface2 border border-border"> Email</a>
             )}
             {lead.WhatsApp && (
-              <a href={`tel:${whatsappLimpio}`} className="text-xs px-3 py-1.5 rounded-lg bg-surface2 border border-border"> Llamar</a>
+              <a href={`tel:${whatsappLimpio}`} className="boton boton-chico bg-surface2 border border-border"> Llamar</a>
             )}
             {lead.Estado !== 'Comprado' && (
               <button onClick={() => setMostrarModalVenta(true)} className="text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-accentPurple to-accentMagenta text-white font-semibold"> Marcar venta</button>
@@ -799,7 +799,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
             </div>
             <div className="flex items-center gap-3 mt-4">
               <button onClick={guardarEdicion} disabled={guardandoEdicion}
-                className="bg-gradient-to-r from-accentPurple to-accentMagenta text-white rounded-lg px-4 py-1.5 text-sm font-semibold disabled:opacity-60">
+                className="boton boton-solido bg-gradient-to-r from-accentPurple to-accentMagenta text-white disabled:opacity-60">
                 {guardandoEdicion ? 'Guardando…' : 'Guardar cambios'}
               </button>
               <button onClick={cancelarEdicion} className="text-textMuted text-sm">Cancelar</button>
@@ -1123,7 +1123,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
               </p>
               <div className="flex items-center gap-3 mt-3">
                 <button onClick={guardarEdicionVenta} disabled={guardandoVenta}
-                  className="bg-gradient-to-r from-accentPurple to-accentMagenta text-white rounded-lg px-4 py-1.5 text-sm font-semibold disabled:opacity-60">
+                  className="boton boton-solido bg-gradient-to-r from-accentPurple to-accentMagenta text-white disabled:opacity-60">
                   {guardandoVenta ? 'Guardando…' : 'Guardar cambios'}
                 </button>
                 <button onClick={cancelarEdicionVenta} className="text-textMuted text-sm">Cancelar</button>
@@ -1174,7 +1174,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
                   <div className="flex gap-2">
                     <button onClick={() => setMostrarFormBaja(false)} className="text-xs px-3 py-1 rounded bg-surface2 border border-border">Cancelar</button>
                     <button onClick={registrarBaja} disabled={guardandoBaja}
-                      className="text-xs px-3 py-1 rounded bg-dangerText text-white font-semibold disabled:opacity-60">
+                      className="boton boton-chico boton-solido bg-dangerText text-white disabled:opacity-60">
                       {guardandoBaja ? 'Guardando…' : 'Confirmar baja'}
                     </button>
                   </div>
@@ -1192,7 +1192,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
             placeholder="Escribí una nota nueva. Ej: Prefiere contacto por WhatsApp."
             className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm mb-2" />
           <button onClick={guardarNota} disabled={guardandoNota || !notaNueva.trim()}
-            className="bg-gradient-to-r from-accentPurple to-accentMagenta text-white rounded-lg px-4 py-1.5 text-sm font-semibold disabled:opacity-60 mb-4">
+            className="boton boton-solido bg-gradient-to-r from-accentPurple to-accentMagenta text-white disabled:opacity-60 mb-4">
             {guardandoNota ? 'Guardando…' : '+ Agregar nota'}
           </button>
 

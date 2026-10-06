@@ -395,7 +395,7 @@ export default function AcademicoPage() {
           )}
           {estudiantesFiltrados.length > 0 && (
             <>
-            <button onClick={exportarExcel} className="text-sm px-4 py-2 rounded-lg bg-surface2 border border-border"> Excel</button>
+            <button onClick={exportarExcel} className="boton bg-surface2 border border-border"> Excel</button>
             <button onClick={exportarCSV} title="El CSV se importa perfecto en Google Sheets (Archivo > Importar)"
               className="text-sm px-4 py-2 rounded-lg bg-surface2 border border-border"> CSV (para Sheets)</button>
             </>
@@ -423,7 +423,7 @@ export default function AcademicoPage() {
               <p className="text-textMuted text-xs mb-2"> Se van a cargar {previewCarga.length} estudiante(s).</p>
             )}
             <button onClick={confirmarCarga} disabled={cargandoImport || previewCarga.length === 0 || ((!cursoActual || cursoActual === TODOS) && !nuevoCursoTexto.trim())}
-              className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-50">
+              className="boton boton-solido bg-accentPurple text-white disabled:opacity-50">
               {cargandoImport ? 'Cargando…' : `Confirmar carga de ${previewCarga.length}`}
             </button>
           </div>
@@ -432,7 +432,7 @@ export default function AcademicoPage() {
         {errorCarga ? (
           <div className="bg-dangerBg border border-dangerText/30 rounded-2xl p-6 text-center">
             <p className="text-dangerText text-sm font-semibold mb-3"> {errorCarga}</p>
-            <button onClick={cargarTodo} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">Reintentar</button>
+            <button onClick={cargarTodo} className="boton boton-solido bg-accentPurple text-white">Reintentar</button>
           </div>
         ) : cargando ? (
           <p className="text-textSec text-sm">Cargando…</p>
@@ -625,7 +625,7 @@ export default function AcademicoPage() {
                     {edicionesUnicas.map((ed) => <option key={ed} value={ed}>Edición {ed}</option>)}
                   </select>
                   {puedeEditar && seleccionadas.size > 0 && (
-                    <button onClick={eliminarSeleccionados} className="text-xs px-2.5 py-1.5 rounded bg-dangerText text-white font-semibold">
+                    <button onClick={eliminarSeleccionados} className="boton boton-chico boton-solido bg-dangerText text-white">
                        Eliminar ({seleccionadas.size})
                     </button>
                   )}

@@ -467,7 +467,7 @@ export default function InscritosPage() {
             </select>
             <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
               placeholder=" Buscar…" className="bg-bg border border-border rounded-lg px-3 py-2 text-sm w-40" />
-            <button onClick={exportarExcel} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm">
+            <button onClick={exportarExcel} className="boton bg-surface2 border border-border">
                Exportar a Excel
             </button>
           </div>
@@ -517,7 +517,7 @@ export default function InscritosPage() {
           {errorCarga ? (
             <div className="bg-dangerBg border border-dangerText/30 rounded-2xl p-6 text-center">
               <p className="text-dangerText text-sm font-semibold mb-3"> {errorCarga}</p>
-              <button onClick={cargarInscritos} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">
+              <button onClick={cargarInscritos} className="boton boton-solido bg-accentPurple text-white">
                 Reintentar
               </button>
             </div>

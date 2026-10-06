@@ -250,7 +250,7 @@ export default function EmailsPage() {
           {errorCarga ? (
             <div className="text-center py-6">
               <p className="text-dangerText text-sm font-semibold mb-3"> {errorCarga}</p>
-              <button onClick={cargar} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">Reintentar</button>
+              <button onClick={cargar} className="boton boton-solido bg-accentPurple text-white">Reintentar</button>
             </div>
           ) : emails === null ? (
             <p className="text-textSec text-sm">Cargando…</p>

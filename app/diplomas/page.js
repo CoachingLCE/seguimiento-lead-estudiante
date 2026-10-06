@@ -78,7 +78,7 @@ export default function DiplomasPage() {
           <div className="flex flex-wrap items-center gap-2 max-w-full">
             <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
               placeholder=" Buscar…" className="bg-bg border border-border rounded-lg px-3 py-2 text-sm w-44" />
-            <button onClick={exportarExcel} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm">
+            <button onClick={exportarExcel} className="boton bg-surface2 border border-border">
                Exportar a Excel
             </button>
           </div>

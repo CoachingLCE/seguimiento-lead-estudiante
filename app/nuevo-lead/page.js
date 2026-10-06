@@ -527,8 +527,8 @@ export default function NuevoLeadPage() {
           <div className="bg-infoBg border border-infoText/30 rounded-xl p-4 mb-4 flex items-center justify-between flex-wrap gap-3">
             <p className="text-sm text-text"> Encontramos una carga sin terminar. ¿Querés recuperarla?</p>
             <div className="flex gap-2">
-              <button onClick={recuperarBorrador} className="text-xs px-3 py-1.5 rounded-md bg-accentPurple text-white font-semibold">Recuperar</button>
-              <button onClick={descartarBorrador} className="text-xs px-3 py-1.5 rounded-md bg-surface2 border border-border">Descartar</button>
+              <button onClick={recuperarBorrador} className="boton boton-chico boton-solido bg-accentPurple text-white">Recuperar</button>
+              <button onClick={descartarBorrador} className="boton boton-chico bg-surface2 border border-border">Descartar</button>
             </div>
           </div>
         )}

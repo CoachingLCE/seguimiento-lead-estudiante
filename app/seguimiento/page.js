@@ -491,7 +491,7 @@ export default function SeguimientoPage() {
                   placeholder=" Buscar (Ctrl+F): nombre, whatsapp, email, IG, curso, país…"
                   className="bg-bg border border-border rounded-lg px-3 py-2 text-sm w-64" />
               </div>
-              <button onClick={exportarExcel} className="bg-surface2 border border-border rounded-lg px-4 py-2 text-sm shrink-0">
+              <button onClick={exportarExcel} className="boton bg-surface2 border border-border shrink-0">
                  Exportar a Excel
               </button>
             </div>
@@ -600,7 +600,7 @@ export default function SeguimientoPage() {
               {RESULTADOS_CONTACTO.map((r) => <option key={r} value={r}>{r}</option>)}
             </select>
             <button onClick={exportarSeleccionados}
-              className="text-xs px-3 py-1.5 rounded-md bg-surface border border-border"> Exportar seleccionados</button>
+              className="boton boton-chico bg-surface border border-border"> Exportar seleccionados</button>
             {esAdmin && (
               <button onClick={() => setConfirmarEliminarLeads(true)}
                 className="text-xs px-3 py-1.5 rounded-md border border-dangerText/40 text-dangerText hover:bg-dangerBg">
@@ -1027,7 +1027,7 @@ function FilaLote({
               )}
               <div className="flex gap-2">
                 <button onClick={() => setResultadoElegido(null)} className="text-xs px-3 py-1 rounded bg-surface2 border border-border">Cancelar</button>
-                <button onClick={confirmarResultado} className="text-xs px-3 py-1 rounded bg-accentPurple text-white font-semibold">Guardar </button>
+                <button onClick={confirmarResultado} className="boton boton-chico boton-solido bg-accentPurple text-white">Guardar </button>
               </div>
             </div>
           ) : (

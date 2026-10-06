@@ -221,7 +221,7 @@ export default function ModalVenta({ lead, onClose, onConfirm, usuarioActual }) 
                   className="w-full bg-bg border border-border rounded-lg px-2 py-1.5 text-sm" />
               </div>
               <button type="button" onClick={agregarRangoCuotas}
-                className="text-xs px-3 py-1.5 rounded-lg bg-accentTeal/20 text-accentTeal font-semibold whitespace-nowrap">
+                className="boton boton-chico bg-accentTeal/20 text-accentTeal whitespace-nowrap">
                 + Agregar rango
               </button>
             </div>

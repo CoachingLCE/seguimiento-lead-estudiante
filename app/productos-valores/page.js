@@ -492,7 +492,7 @@ export default function ProductosValoresPage() {
                 className={`text-sm px-4 py-2 rounded-lg font-semibold ${modoSeleccion ? 'bg-dangerText text-white' : 'bg-surface2 border border-border text-textSec'}`}>
                 {modoSeleccion ? 'Cancelar selección' : ' Seleccionar varios'}
               </button>
-              <button onClick={abrirNuevo} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">+ Nuevo producto</button>
+              <button onClick={abrirNuevo} className="boton boton-solido bg-accentPurple text-white">+ Nuevo producto</button>
             </div>
           )}
         </div>
@@ -539,7 +539,7 @@ export default function ProductosValoresPage() {
                   className="w-24 bg-bg border border-border rounded-lg px-2 py-1.5 text-sm" autoFocus />
                 <span className="text-xs text-textSec">por USD</span>
                 <button onClick={() => setEditandoTC(false)} className="text-xs px-2.5 py-1.5 rounded-lg bg-surface2 border border-border">Cancelar</button>
-                <button onClick={guardarTC} disabled={guardando} className="text-xs px-2.5 py-1.5 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-60">
+                <button onClick={guardarTC} disabled={guardando} className="boton boton-chico boton-solido bg-accentPurple text-white disabled:opacity-60">
                   {guardando ? 'Guardando…' : 'Guardar'}
                 </button>
               </div>
@@ -583,7 +583,7 @@ export default function ProductosValoresPage() {
               <button onClick={agregarNivelNuevo} className="text-xs text-accentTeal font-semibold mb-3">+ Agregar beneficio nuevo</button>
               <div className="flex gap-2">
                 <button onClick={() => setEditandoConfig(false)} className="text-xs px-3 py-1.5 rounded-lg bg-surface2 border border-border">Cancelar</button>
-                <button onClick={guardarConfig} disabled={guardando} className="text-xs px-3 py-1.5 rounded-lg bg-accentPurple text-white font-semibold disabled:opacity-60">
+                <button onClick={guardarConfig} disabled={guardando} className="boton boton-chico boton-solido bg-accentPurple text-white disabled:opacity-60">
                   {guardando ? 'Guardando…' : 'Guardar'}
                 </button>
               </div>
@@ -662,7 +662,7 @@ export default function ProductosValoresPage() {
         {errorCarga ? (
           <div className="bg-dangerBg border border-dangerText/30 rounded-2xl p-6 text-center">
             <p className="text-dangerText text-sm font-semibold mb-3"> {errorCarga}</p>
-            <button onClick={cargar} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold">Reintentar</button>
+            <button onClick={cargar} className="boton boton-solido bg-accentPurple text-white">Reintentar</button>
           </div>
         ) : productos === null ? (
           <p className="text-textSec text-sm">Cargando…</p>
@@ -1020,7 +1020,7 @@ export default function ProductosValoresPage() {
             {errorForm && <p className="text-dangerText text-xs mb-3"> {errorForm}</p>}
             <div className="flex gap-2">
               <button onClick={() => setEditando(null)} className="text-sm px-4 py-2 rounded-lg bg-surface border border-border flex-1">Cancelar</button>
-              <button onClick={guardar} disabled={guardando} className="text-sm px-4 py-2 rounded-lg bg-accentPurple text-white font-semibold flex-1 disabled:opacity-60">
+              <button onClick={guardar} disabled={guardando} className="boton boton-solido bg-accentPurple text-white flex-1 disabled:opacity-60">
                 {guardando ? 'Guardando…' : 'Guardar'}
               </button>
             </div>
@@ -1049,7 +1049,7 @@ export default function ProductosValoresPage() {
             <div className="flex gap-2">
               <button onClick={() => setConfirmarQuitarDescuentos(false)} className="text-xs px-3 py-2 rounded-lg bg-surface border border-border flex-1">Cancelar</button>
               <button onClick={quitarDescuentosDeSeleccionados} disabled={quitandoDescuentos}
-                className="text-xs px-3 py-2 rounded-lg bg-dangerText text-white font-semibold flex-1 disabled:opacity-60">
+                className="boton boton-chico boton-solido bg-dangerText text-white flex-1 disabled:opacity-60">
                 {quitandoDescuentos ? 'Quitando…' : 'Sí, quitar'}
               </button>
             </div>
@@ -1072,7 +1072,7 @@ export default function ProductosValoresPage() {
             <div className="flex gap-2">
               <button onClick={() => setConfirmarAplicarNivel(null)} className="text-xs px-3 py-2 rounded-lg bg-surface border border-border flex-1">Cancelar</button>
               <button onClick={aplicarNivelATodos} disabled={aplicandoNivel}
-                className="text-xs px-3 py-2 rounded-lg bg-accentPurple text-white font-semibold flex-1 disabled:opacity-60">
+                className="boton boton-chico boton-solido bg-accentPurple text-white flex-1 disabled:opacity-60">
                 {aplicandoNivel ? 'Agregando…' : 'Sí, agregar'}
               </button>
             </div>

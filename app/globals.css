@@ -217,3 +217,11 @@ div.fixed.inset-0 > div[class*="rounded-2xl"]:not([class*="h-full"]):not([class*
    para "Activa", "Pendiente", "Alta", etc. Los colores NO van acá: cada etiqueta sigue usando sus tonos semánticos
    (success / warning / danger / info) como siempre. Lo que antes eran combinaciones sueltas de relleno y grosor es ahora esto. */
 .etiqueta{padding:3px 9px;border-radius:999px;font-size:12px;font-weight:600;line-height:1.4;white-space:nowrap}
+
+/* Botones (pedido de la auditoría; igual en todas las apps de ILCE): una sola forma por tamaño, con el grosor de letra decidido
+   por rol y no al azar — rellenos (violeta, rojo) en 600, secundarios en 500. Los COLORES no van acá: cada botón sigue usando los
+   suyos. .boton = tamaño normal; .boton-chico = el chico (se usa junto con .boton); .boton-solido = botón relleno. */
+.boton{padding:8px 16px;border-radius:8px;font-size:14px;line-height:20px;font-weight:500}
+.boton-chico{padding:6px 12px;font-size:12px;line-height:16px}
+/* Borde transparente: el secundario lleva un borde de 1 px y sin esto el relleno quedaba 2 px más bajo cuando van lado a lado. */
+.boton-solido{font-weight:600;border:1px solid transparent}

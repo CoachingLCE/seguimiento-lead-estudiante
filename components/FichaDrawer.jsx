@@ -79,11 +79,11 @@ export default function FichaDrawer({ leadId, usuario, onClose }) {
             <div className="flex items-center gap-2 mb-4">
               {lead.WhatsApp && (
                 <a href={`https://wa.me/${lead.WhatsApp.replace(/[^\d]/g, '')}`} target="_blank" rel="noopener noreferrer"
-                  className="text-xs px-3 py-1.5 rounded-md bg-surface border border-border"> WhatsApp</a>
+                  className="boton boton-chico bg-surface border border-border"> WhatsApp</a>
               )}
               {lead.EmailEstudiante && (
                 <a href={enlaceGmail(lead.EmailEstudiante)} target="_blank" rel="noopener noreferrer"
-                  className="text-xs px-3 py-1.5 rounded-md bg-surface border border-border"> Email</a>
+                  className="boton boton-chico bg-surface border border-border"> Email</a>
               )}
               <span className={`ml-auto text-[12px] px-2.5 py-1 rounded-full font-semibold ${
                 lead.Estado === 'Comprado' ? 'bg-successBg text-successText' : 'bg-warningBg text-warningText'
