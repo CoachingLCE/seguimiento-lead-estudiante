@@ -8,6 +8,14 @@ import EscCierraModales from '../components/EscCierraModales';
 import { DialogosProvider } from '../components/Dialogos';
 
 export const metadata = {
+  icons: {
+    icon: [
+      { url: '/favicon.ico?v=2', sizes: 'any' },
+      { url: '/icon-32.png?v=2', sizes: '32x32', type: 'image/png' },
+      { url: '/icon-192.png?v=2', sizes: '192x192', type: 'image/png' }
+    ],
+    apple: '/apple-touch-icon.png?v=2'
+  },
   title: 'ILCE Gestión',
   description: 'App interna de Ventas & Marketing para el Instituto ILCE'
 };
