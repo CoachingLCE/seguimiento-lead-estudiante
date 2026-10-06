@@ -8,6 +8,8 @@ import EscCierraModales from '../components/EscCierraModales';
 import { DialogosProvider } from '../components/Dialogos';
 
 export const metadata = {
+  // Dominio de producción: hace que la imagen y el enlace de la vista previa sean absolutos (WhatsApp/Slack/Telegram lo exigen).
+  metadataBase: new URL('https://seguimiento-lead-estudiante.vercel.app'),
   icons: {
     icon: [
       { url: '/favicon.ico?v=2', sizes: 'any' },
@@ -17,7 +19,22 @@ export const metadata = {
     apple: '/apple-touch-icon.png?v=2'
   },
   title: 'ILCE Gestión',
-  description: 'App interna de Ventas & Marketing para el Instituto ILCE'
+  description: 'App interna de Ventas & Marketing para el Instituto ILCE',
+  openGraph: {
+    type: 'website',
+    locale: 'es_AR',
+    siteName: 'Instituto ILCE',
+    title: 'ILCE Gestión',
+    description: 'App interna de Ventas & Marketing para el Instituto ILCE',
+    url: '/',
+    images: [{ url: '/og-image.png?v=1', width: 1200, height: 630, alt: 'ILCE Gestión — Instituto ILCE' }]
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'ILCE Gestión',
+    description: 'App interna de Ventas & Marketing para el Instituto ILCE',
+    images: ['/og-image.png?v=1']
+  }
 };
 
 export default function RootLayout({ children }) {
