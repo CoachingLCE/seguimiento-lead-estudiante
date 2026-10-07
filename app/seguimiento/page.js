@@ -9,7 +9,7 @@ import ModalVenta from '../../components/ModalVenta';
 import { useToast } from '../../components/Toast';
 import { useSession } from '../../lib/useSession';
 import { RESULTADOS_CONTACTO, RESULTADOS_FINALES, RESULTADOS_PROGRESO, ACCIONES_POR_LOTE, enlaceGmail } from '../../lib/constants';
-import { filasVigentes } from '../../lib/seguimientoCiclos';
+import { filasVigentes, filasSuperadas } from '../../lib/seguimientoCiclos';
 
 const EMAILS_ASIGNABLES = [
   { email: 'jesabel.reigada@institutoilce.com', nombre: 'Jesabel Reigada' },
@@ -55,7 +55,7 @@ function estadoVencimiento(fechaVence) {
   const diasVencido = Math.floor(-horas / 24);
   if (diasVencido <= 0) return { texto: ' Vence hoy', urgencia: 'proximo' };
   if (diasVencido <= 2) return { texto: `Hace ${diasVencido} día${diasVencido > 1 ? 's' : ''} que venció`, urgencia: 'reciente' };
-  return { texto: `🔴 Hace ${diasVencido} días sin contacto`, urgencia: 'critico' };
+  return { texto: `🔴 Venció hace ${diasVencido} días`, urgencia: 'critico' };
 }
 
 const COLORES_AVATAR = ['bg-accentPurple', 'bg-accentTeal', 'bg-accentMagenta', 'bg-successText', 'bg-warningText', 'bg-infoText'];
@@ -344,6 +344,9 @@ export default function SeguimientoPage() {
   // un seguimiento viejo que terminó resuelto y después se le inició un "Nuevo seguimiento
   // comercial", las filas del ciclo viejo no deben seguir contando acá. Ver lib/seguimientoCiclos.js.
   const seguimientoActivo = filasVigentes(seguimiento);
+  // Lote único: un lead pendiente en un lote anterior al que ya le toca (o ya se contactó) no se muestra como trabajo
+  // en ese lote anterior, ni con otro lote suyo programado a futuro. Ver filasSuperadas en lib/seguimientoCiclos.js.
+  const superadas = filasSuperadas(seguimientoActivo, new Date());
 
   const leadsResueltos = new Set(
     seguimientoActivo.filter((s) => RESULTADOS_FINALES.includes(s.Resultado)).map((s) => s.LeadID)
@@ -396,19 +399,19 @@ export default function SeguimientoPage() {
   const lote0 = lote0Todas.filter(noContactada);
   const lote1Todas = seguimientoActivo.filter((s) => s.Lote === '1' && vencido(s) && filaValida(s) && sinProgramar(s));
   const lote1 = lote1Todas.filter(noContactada);
-  const lote2Todas = seguimientoActivo.filter((s) => s.Lote === '2' && vencido(s) && filaValida(s) && sinProgramar(s));
+  const lote2Todas = seguimientoActivo.filter((s) => s.Lote === '2' && vencido(s) && filaValida(s) && sinProgramar(s) && !superadas.has(s));
   const lote2 = lote2Todas.filter(noContactada);
-  const lote3Todas = seguimientoActivo.filter((s) => s.Lote === '3' && vencido(s) && filaValida(s) && sinProgramar(s));
+  const lote3Todas = seguimientoActivo.filter((s) => s.Lote === '3' && vencido(s) && filaValida(s) && sinProgramar(s) && !superadas.has(s));
   const lote3 = lote3Todas.filter(noContactada);
-  const lote4Todas = seguimientoActivo.filter((s) => s.Lote === '4' && vencido(s) && filaValida(s) && sinProgramar(s));
+  const lote4Todas = seguimientoActivo.filter((s) => s.Lote === '4' && vencido(s) && filaValida(s) && sinProgramar(s) && !superadas.has(s));
   const lote4 = lote4Todas.filter(noContactada);
-  const lote5Todas = seguimientoActivo.filter((s) => s.Lote === '5' && vencido(s) && filaValida(s) && sinProgramar(s));
+  const lote5Todas = seguimientoActivo.filter((s) => s.Lote === '5' && vencido(s) && filaValida(s) && sinProgramar(s) && !superadas.has(s));
   const lote5 = lote5Todas.filter(noContactada);
-  const lote6Todas = seguimientoActivo.filter((s) => s.Lote === '6' && vencido(s) && filaValida(s) && sinProgramar(s));
+  const lote6Todas = seguimientoActivo.filter((s) => s.Lote === '6' && vencido(s) && filaValida(s) && sinProgramar(s) && !superadas.has(s));
   const lote6 = lote6Todas.filter(noContactada);
 
   const seAgreganManiana = (numeroLote) =>
-    seguimientoActivo.filter((s) => s.Lote === numeroLote && !vencido(s) && venceManiana(s) && filaValida(s) && noContactada(s)).length;
+    seguimientoActivo.filter((s) => s.Lote === numeroLote && !vencido(s) && venceManiana(s) && filaValida(s) && noContactada(s) && !superadas.has(s)).length;
   const lote1Maniana = seAgreganManiana('1');
   const lote2Maniana = seAgreganManiana('2');
   const lote3Maniana = seAgreganManiana('3');

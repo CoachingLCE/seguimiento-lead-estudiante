@@ -10,7 +10,7 @@ import { useToast } from '../../components/Toast';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoEstudiantes } from '../../lib/permisos';
 import { RESULTADOS_FINALES, numeroDesdeSheet } from '../../lib/constants';
-import { filasVigentes } from '../../lib/seguimientoCiclos';
+import { filasVigentes, filasSuperadas } from '../../lib/seguimientoCiclos';
 
 const HORAS_ALTA_DEMORADA = 24;
 
@@ -87,10 +87,11 @@ export default function DashboardPage() {
   // el usuario actual en cada lote — solo tiene sentido para quien hace contactos de verdad
   // (Lucila, Alex, Macarena); Diego y Jennifer no tienen asignaciones de lote.
   const ahoraParaResumen = new Date();
+  const superadasResumen = filasSuperadas(seguimientoActivo, ahoraParaResumen); // lote único: ver lib/seguimientoCiclos.js
   const misPendientesPorLote = Array.from({ length: 7 }, (_, lote) => {
     const pendientes = seguimientoActivo.filter((s) =>
       s.Lote === String(lote) && s.AsignadoAEmail === usuario?.email &&
-      s.Contactado !== 'TRUE' && !s.FechaProgramada && new Date(s.FechaVence) <= ahoraParaResumen
+      s.Contactado !== 'TRUE' && !s.FechaProgramada && new Date(s.FechaVence) <= ahoraParaResumen && !superadasResumen.has(s)
     );
     return { lote, cantidad: pendientes.length };
   }).filter((r) => r.cantidad > 0);
@@ -116,6 +117,7 @@ export default function DashboardPage() {
   const pendientesHoy = seguimientoActivo.filter((s) => {
     if (s.Contactado === 'TRUE') return false;
     if (new Date(s.FechaVence) > new Date()) return false;
+    if (superadasResumen.has(s)) return false; // lote único: ver lib/seguimientoCiclos.js
     const l = leads.find((x) => x.ID === s.LeadID);
     if (!l || l.Estado === 'Comprado') return false;
     if (leadsResueltos.has(s.LeadID)) return false;

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { readSheet } from '../../../lib/sheets';
 import { findUsuario, tienePermisoReportes } from '../../../lib/auth';
 import { CURSOS, EQUIPO_VENTAS, RESULTADOS_FINALES } from '../../../lib/constants';
+import { filasSuperadas } from '../../../lib/seguimientoCiclos';
 
 // Generaliza "mes anterior" a "n meses para atrás" — pedido de Diego (02/10/2026): sumar una
 // comparación con hace 2 meses, además de (no en reemplazo de) la de un mes atrás que ya existía.
@@ -422,12 +423,15 @@ export async function GET(request) {
   const NOMBRE_LOTE = { '1': 'Lote 1', '2': 'Lote 2', '3': 'Lote 3', '4': 'Lote 4', '5': 'Lote 5', '6': 'Lote 6', baja: 'Reactivación de bajas' };
   const LOTES_A_MEDIR = ['1', '2', '3', '4', '5', '6', 'baja'];
 
+  // Lote único: un lote pendiente superado por uno posterior (o pospuesto por una fecha programada) no cuenta como
+  // atrasado — es el mismo criterio que usa la pantalla Seguimiento. Ver lib/seguimientoCiclos.js.
+  const superadasLotes = filasSuperadas(seguimiento, ahoraParaProgramados);
   const actividadPorLote = LOTES_A_MEDIR.map((lote) => {
     const toquesDelMes = seguimiento.filter((s) =>
       s.Lote === lote && s.Contactado === 'TRUE' && (s.FechaContacto || '').slice(0, 7) === mes
     ).length;
     const pendientes = seguimiento.filter((s) =>
-      s.Lote === lote && s.Contactado !== 'TRUE' && !s.FechaProgramada && new Date(s.FechaVence) <= ahoraParaProgramados
+      s.Lote === lote && s.Contactado !== 'TRUE' && !s.FechaProgramada && new Date(s.FechaVence) <= ahoraParaProgramados && !superadasLotes.has(s)
     );
     const diasPromedio = pendientes.length
       ? pendientes.reduce((acc, s) => acc + (ahoraParaProgramados - new Date(s.FechaVence)) / 86400000, 0) / pendientes.length
@@ -443,7 +447,7 @@ export async function GET(request) {
   // Es sobre el estado ACTUAL de todo el pipeline — no se acota al mes del reporte.
   const retrasoPorLote = LOTES_A_MEDIR.map((lote) => {
     const pendientes = seguimiento.filter((s) =>
-      s.Lote === lote && s.Contactado !== 'TRUE' && !s.FechaProgramada && new Date(s.FechaVence) <= ahoraParaProgramados
+      s.Lote === lote && s.Contactado !== 'TRUE' && !s.FechaProgramada && new Date(s.FechaVence) <= ahoraParaProgramados && !superadasLotes.has(s)
     );
     const diasPromedio = pendientes.length
       ? pendientes.reduce((acc, s) => acc + (ahoraParaProgramados - new Date(s.FechaVence)) / 86400000, 0) / pendientes.length

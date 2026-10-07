@@ -9,7 +9,7 @@ import CheckboxVisual from '../../components/CheckboxVisual';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoBuscador, tienePermisoEditarLead, tienePermisoEditarVenta, tienePermisoEditarContactoEstudiante } from '../../lib/permisos';
 import { ORIGENES, ORIGEN_OTRO, CURSOS, CURSO_OTROS, CURSO_SIN_DEFINIR, PAISES, RESULTADOS_CONTACTO, enlaceGmail, numeroDesdeSheet } from '../../lib/constants';
-import { filasVigentes, cicloDe } from '../../lib/seguimientoCiclos';
+import { filasVigentes, cicloDe, filasSuperadas } from '../../lib/seguimientoCiclos';
 
 const SEP_NOTAS = '\n@@\n';
 
@@ -404,6 +404,11 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
   // VIGENTE (el que se opera normalmente, con sus botones de acción) de los ciclos viejos, que se
   // muestran como historial de solo lectura más abajo. Ver lib/seguimientoCiclos.js.
   const seguimientoVigente = filasVigentes(seguimiento);
+  // Lote único: lotes pendientes que ya no corresponden (ver filasSuperadas en lib/seguimientoCiclos.js).
+  const superadasFicha = filasSuperadas(seguimientoVigente, new Date());
+  // Los lotes se muestran en orden (1, 2, 3…): el Lote 2 se crea después que el 3, 4 y 5, y quedaba al final.
+  const numLote = (s) => (/^[0-9]+$/.test(String(s.Lote)) ? Number(s.Lote) : 99);
+  const seguimientoVigenteOrdenado = [...seguimientoVigente].sort((a, b) => numLote(a) - numLote(b));
   const seguimientoHistorico = seguimiento.filter((s) => s.Lote !== 'baja' && !seguimientoVigente.includes(s));
   const cicloVigenteNro = seguimientoVigente.find((s) => s.Lote !== 'baja') ? cicloDe(seguimientoVigente.find((s) => s.Lote !== 'baja')) : 1;
   const [iniciandoCiclo, setIniciandoCiclo] = useState(false);
@@ -987,18 +992,20 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
             );
           })()}
           {seguimientoVigente.length === 0 ? <p className="text-textMuted text-sm">Sin seguimiento comercial.</p> : (
-            seguimientoVigente.map((s) => (
+            seguimientoVigenteOrdenado.map((s) => { const sup = superadasFicha.get(s); return (
               <div key={s.Lote} className="flex items-center justify-between gap-3 mb-1.5 flex-wrap">
                 <p className="text-sm text-textSec">
                   Lote {s.Lote}: {s.Contactado === 'TRUE'
                     ? `${s.Resultado} (${tiempoRelativo(s.FechaContacto)}) — responsable: ${s.AsignadoANombre || 'No asignado'}`
+                    : sup && sup.tipo === 'superado' ? `Superado por el Lote ${sup.porLote} — ya no se muestra en Seguimiento`
+                    : sup ? `En espera — el Lote ${sup.porLote} está programado para el ${new Date(sup.fecha).toLocaleDateString('es-AR')}`
                     : `Pendiente — asignado a: ${s.AsignadoANombre || 'No asignado'}`}
                   {s.FechaProgramada && (
                     <span className="text-infoText"> ·  Programado para el {new Date(s.FechaProgramada).toLocaleDateString('es-AR')}</span>
                   )}
                 </p>
                 <div className="flex items-center gap-2 shrink-0">
-                  {s.Contactado !== 'TRUE' && (
+                  {s.Contactado !== 'TRUE' && !sup && (
                     <>
                     <button onClick={() => registrarResultadoRapido(s.Lote, 'Ficha enviada')}
                       disabled={registrandoResultadoLote === s.Lote}
@@ -1013,7 +1020,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
                     </select>
                     </>
                   )}
-                  {s.Contactado !== 'TRUE' && (
+                  {s.Contactado !== 'TRUE' && !sup && (
                     programandoLote === s.Lote ? (
                       <>
                         <input type="date" value={fechaAProgramar} onChange={(e) => setFechaAProgramar(e.target.value)}
@@ -1034,7 +1041,7 @@ function Ficha({ ficha, usuario, onActualizar, autoEditar }) {
                   )}
                 </div>
               </div>
-            ))
+            ); })
           )}
           <p className="text-textMuted text-[12px] mt-2">
             "Deshacer" vuelve ese lote a pendiente — útil si se registró un resultado por error (ej: "Pago recibido" sin que corresponda). El lead vuelve a aparecer en Seguimiento.
