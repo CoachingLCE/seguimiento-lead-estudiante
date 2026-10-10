@@ -42,15 +42,14 @@ const PASOS = [
   { id: 'buscador', ruta: '/buscador', selector: 'a[href="/buscador"]', requiere: 'buscador', titulo: 'Buscador', texto: 'Buscá a cualquier lead o estudiante por nombre, WhatsApp o email y entrá directo a su ficha.' },
   { id: 'fin', ruta: null, selector: null, titulo: '¡Listo!', texto: 'Eso es lo principal. Podés volver a abrir esta ayuda cuando quieras, desde el botón “ Necesito ayuda”.' },
   // ---- Pasos que solo se muestran dentro de una tarea (no en el recorrido completo) ----
-  // "excepto: 'admin'" = solo se muestra a quien NO es Admin; "requiere: 'admin'" = solo a los Admin.
-  { id: 'el-no-admin', soloTarea: true, ruta: null, selector: null, excepto: 'admin', titulo: 'Eliminar un lead: lo hace un Admin', texto: 'Solo las personas con rol Admin pueden eliminar leads, por eso la opción no te aparece. Si hay un lead cargado por error o duplicado, pedile a un Admin que lo elimine. Si el lead simplemente ya no sigue, no hace falta eliminarlo: se puede registrar su baja (Buscador → abrís el lead, si tu rol lo permite; o Reportes → Bajas).' },
+  // "requiere: 'admin'" = solo se muestra a los Admin. ("excepto: 'admin'" = solo a quien NO es Admin; hoy no se usa.)
   { id: 'el-1', soloTarea: true, ruta: null, selector: null, requiere: 'admin', titulo: 'Eliminar un lead, uno por uno', texto: 'Entrá al Buscador, buscá al lead y abrí su ficha: ahí está el botón "Eliminar". Te pide confirmar. Se borra el lead y todo su historial de seguimiento, y no se puede deshacer.' },
   { id: 'el-2', soloTarea: true, ruta: null, selector: null, requiere: 'admin', titulo: 'Eliminar varios a la vez', texto: 'En Seguimiento, tildá los leads que quieras y apretá "Eliminar seleccionados". Te pide confirmar: se eliminan los leads junto con su seguimiento.' },
   { id: 'el-3', soloTarea: true, ruta: null, selector: null, requiere: 'admin', titulo: 'Leads que ya compraron', texto: 'Un lead con venta confirmada está protegido y no se elimina con el botón común. Un Admin puede forzarlo desde el Buscador con "Eliminar igual (tiene venta)". Pensalo bien: no se puede deshacer.' }
 ];
 
 const TAREAS = [
-  { id: 't-eliminar-lead', secuencia: ['el-no-admin', 'el-1', 'el-2', 'el-3'], label: '¿Cómo elimino un lead?', palabras: ['borrar', 'quitar', 'sacar', 'duplicado', 'cargado por error', 'eliminar lead'] },
+  { id: 't-eliminar-lead', requiere: 'admin', secuencia: ['el-1', 'el-2', 'el-3'], label: '¿Cómo elimino un lead?', palabras: ['borrar', 'quitar', 'sacar', 'duplicado', 'cargado por error', 'eliminar lead'] },
   { id: 't-lead', pasoInicial: 'nuevo-lead', requiere: 'leads', label: '¿Cómo cargo un lead nuevo?', palabras: ['agregar', 'crear', 'nuevo', 'alta'] },
   { id: 't-rep', pasoInicial: 'reportes', requiere: 'reportes', label: '¿Dónde veo los reportes?' },
   { id: 't-dip', pasoInicial: 'diplomas', requiere: 'diplomas', label: '¿Dónde están los diplomas?' },

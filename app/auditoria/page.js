@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
@@ -62,6 +62,7 @@ export default function AuditoriaPage() {
   const [cargandoMas, setCargandoMas] = useState(false);
   const [usuariosLista, setUsuariosLista] = useState([]);
   const modoTodo = !!(filtroUsuario || desde || hasta || busqueda.trim() || filtroCategoria);
+  const cargaRef = useRef(0); // si se piden dos cargas seguidas (escribir y borrar rápido), solo vale la última: la lenta no pisa a la nueva
 
   const puedeVer = tienePermisoAuditoria(usuario);
 
@@ -72,6 +73,7 @@ export default function AuditoriaPage() {
   }, [usuario, filtroUsuario, desde, hasta, modoTodo]);
 
   async function cargarRegistros() {
+    const mia = ++cargaRef.current;
     setCargando(true);
     setErrorCarga('');
     const params = new URLSearchParams({ solicitanteEmail: usuario.email });
@@ -85,6 +87,7 @@ export default function AuditoriaPage() {
         fetch(`/api/leads?solicitanteEmail=${encodeURIComponent(usuario.email)}`)
       ]);
       const r = await res.json();
+      if (mia !== cargaRef.current) return;
       if (!res.ok || r.error) {
         setErrorCarga(r.error || 'No se pudo cargar el historial.');
         setRegistros([]);
@@ -99,20 +102,23 @@ export default function AuditoriaPage() {
       (rLeads.leads || []).forEach((l) => { mapa[l.ID] = { Email: l.EmailEstudiante, WhatsApp: l.WhatsApp }; });
       setLeadsPorId(mapa);
     } catch (err) {
+      if (mia !== cargaRef.current) return;
       setErrorCarga('No se pudo conectar con el servidor. Probá de nuevo.');
       setRegistros([]);
     }
-    setCargando(false);
+    if (mia === cargaRef.current) setCargando(false);
   }
 
   async function verMas() {
     const sig = siguienteMes(meses, mesesCargados);
     if (!sig || cargandoMas) return;
+    const mia = cargaRef.current;
     setCargandoMas(true);
     try {
       const params = new URLSearchParams({ solicitanteEmail: usuario.email, mes: sig.mes });
       const res = await fetch(`/api/auditoria?${params.toString()}`);
       const r = await res.json();
+      if (mia !== cargaRef.current) { setCargandoMas(false); return; } // mientras tanto cambió el filtro: este mes ya no corresponde
       if (res.ok && !r.error) {
         setRegistros((prev) => [...prev, ...(r.registros || [])]);
         setMesesCargados((prev) => [...prev, sig.mes]);
