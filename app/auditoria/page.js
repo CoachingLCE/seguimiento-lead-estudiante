@@ -7,6 +7,7 @@ import Nav from '../../components/Nav';
 import AccesoDenegado from '../../components/AccesoDenegado';
 import { useSession } from '../../lib/useSession';
 import { tienePermisoAuditoria } from '../../lib/permisos';
+import { etiquetaMes, siguienteMes } from '../../lib/historialMeses';
 
 // Colores distintos por persona, para reconocerla rápido en la lista sin leer el nombre —
 // el mismo nombre siempre cae en el mismo color (hash simple sobre una paleta fija).
@@ -55,6 +56,12 @@ export default function AuditoriaPage() {
   const [busqueda, setBusqueda] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('');
   const [leadsPorId, setLeadsPorId] = useState({});
+  // Historial mes a mes: se carga el mes actual y "Ver más" abre el anterior. Con filtros o una búsqueda se mira TODO (de cualquier mes).
+  const [meses, setMeses] = useState([]);                 // [{ mes: '2026-10', n: 120 }] meses con movimientos
+  const [mesesCargados, setMesesCargados] = useState([]);
+  const [cargandoMas, setCargandoMas] = useState(false);
+  const [usuariosLista, setUsuariosLista] = useState([]);
+  const modoTodo = !!(filtroUsuario || desde || hasta || busqueda.trim() || filtroCategoria);
 
   const puedeVer = tienePermisoAuditoria(usuario);
 
@@ -62,7 +69,7 @@ export default function AuditoriaPage() {
     if (!usuario) return;
     if (!puedeVer) return; // ya no redirige — la pantalla en sí muestra el mensaje de acceso
     cargarRegistros();
-  }, [usuario, filtroUsuario, desde, hasta]);
+  }, [usuario, filtroUsuario, desde, hasta, modoTodo]);
 
   async function cargarRegistros() {
     setCargando(true);
@@ -71,6 +78,7 @@ export default function AuditoriaPage() {
     if (filtroUsuario) params.set('usuario', filtroUsuario);
     if (desde) params.set('desde', desde);
     if (hasta) params.set('hasta', hasta);
+    if (modoTodo) params.set('todo', '1');
     try {
       const [res, resLeads] = await Promise.all([
         fetch(`/api/auditoria?${params.toString()}`),
@@ -82,6 +90,9 @@ export default function AuditoriaPage() {
         setRegistros([]);
       } else {
         setRegistros(r.registros || []);
+        setMeses(r.meses || []);
+        setMesesCargados(r.mes ? [r.mes] : []);
+        setUsuariosLista(r.usuarios || []);
       }
       const rLeads = await resLeads.json();
       const mapa = {};
@@ -92,6 +103,22 @@ export default function AuditoriaPage() {
       setRegistros([]);
     }
     setCargando(false);
+  }
+
+  async function verMas() {
+    const sig = siguienteMes(meses, mesesCargados);
+    if (!sig || cargandoMas) return;
+    setCargandoMas(true);
+    try {
+      const params = new URLSearchParams({ solicitanteEmail: usuario.email, mes: sig.mes });
+      const res = await fetch(`/api/auditoria?${params.toString()}`);
+      const r = await res.json();
+      if (res.ok && !r.error) {
+        setRegistros((prev) => [...prev, ...(r.registros || [])]);
+        setMesesCargados((prev) => [...prev, sig.mes]);
+      } else setErrorCarga(r.error || 'No se pudo cargar el mes anterior.');
+    } catch { setErrorCarga('No se pudo conectar con el servidor. Probá de nuevo.'); }
+    setCargandoMas(false);
   }
 
   function exportarExcel() {
@@ -111,7 +138,7 @@ export default function AuditoriaPage() {
 
   if (!usuario) return null;
 
-  const usuariosUnicos = [...new Set(registros.map((r) => r.UsuarioNombre))].sort();
+  const usuariosUnicos = usuariosLista.length ? usuariosLista : [...new Set(registros.map((r) => r.UsuarioNombre))].sort();
   const registrosFiltrados = registros.filter((r) => {
     if (filtroCategoria && categoriaAccion(r.Accion)?.id !== filtroCategoria) return false;
     if (!busqueda.trim()) return true;
@@ -244,6 +271,25 @@ export default function AuditoriaPage() {
             </table>
             </div>
           )}
+          {!errorCarga && !cargando && (() => {
+            const sig = modoTodo ? null : siguienteMes(meses, mesesCargados);
+            return (
+              <div className="flex flex-col items-center gap-2 mt-5 no-print" aria-live="polite">
+                {modoTodo ? (
+                  <p className="text-xs text-textMuted">Mostrando todos los meses, porque hay un filtro o una búsqueda activa.</p>
+                ) : (
+                  <>
+                    <p className="text-xs text-textMuted">Mostrando {mesesCargados.length ? [...mesesCargados].sort().reverse().map(etiquetaMes).join(', ') : 'el historial'}.</p>
+                    {sig ? (
+                      <button onClick={verMas} disabled={cargandoMas} className="boton bg-surface2 border border-border disabled:opacity-60">
+                        {cargandoMas ? 'Cargando…' : `Ver más · ${etiquetaMes(sig.mes)} (${sig.n})`}
+                      </button>
+                    ) : meses.length > 0 && <p className="text-xs text-textMuted">No hay movimientos más antiguos.</p>}
+                  </>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </div>
       )}
