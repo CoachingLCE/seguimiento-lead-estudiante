@@ -95,7 +95,7 @@ export default function FichasEnviadasPage() {
         ) : (
           <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm">
             <div className="overflow-x-auto max-h-[750px] overflow-y-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm tabla tabla-tarjetas">
                 <thead className="sticky top-0 bg-surface z-10">
                   <tr className="text-textSec text-left border-b border-border">
                     <th className="py-2 pr-4 whitespace-nowrap">Lead</th>
@@ -112,17 +112,17 @@ export default function FichasEnviadasPage() {
                     const dias = diasSinInscribirse(f.fecha);
                     return (
                       <tr key={`${f.leadId}-${i}`} className="border-b border-border">
-                        <td className="py-2 pr-4 whitespace-nowrap">{f.nombre}</td>
-                        <td className="pr-4 text-textSec whitespace-nowrap">{f.curso || '—'}</td>
-                        <td className="pr-4 text-textSec whitespace-nowrap">{f.pais || '—'}</td>
-                        <td className="pr-4 text-textSec whitespace-nowrap">Lote {f.lote}</td>
-                        <td className="pr-4 whitespace-nowrap">{new Date(f.fecha).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
-                        <td className="pr-4 whitespace-nowrap">
+                        <td data-label="Lead" data-titulo className="py-2 pr-4 whitespace-nowrap">{f.nombre}</td>
+                        <td data-label="Curso" className="pr-4 text-textSec whitespace-nowrap">{f.curso || '—'}</td>
+                        <td data-label="País" className="pr-4 text-textSec whitespace-nowrap">{f.pais || '—'}</td>
+                        <td data-label="Lote" className="pr-4 text-textSec whitespace-nowrap">Lote {f.lote}</td>
+                        <td data-label="Fecha de envío" className="pr-4 whitespace-nowrap">{new Date(f.fecha).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+                        <td data-label="Sin inscribirse" className="pr-4 whitespace-nowrap">
                           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${colorAlerta(dias)}`}>
                             {dias <= 0 ? 'Hoy' : `${dias} día${dias !== 1 ? 's' : ''}`}
                           </span>
                         </td>
-                        <td className="whitespace-nowrap">{f.enviadaPor || '—'}</td>
+                        <td data-label="Enviada por" className="whitespace-nowrap">{f.enviadaPor || '—'}</td>
                       </tr>
                     );
                   })}

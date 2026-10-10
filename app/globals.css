@@ -225,3 +225,15 @@ div.fixed.inset-0 > div[class*="rounded-2xl"]:not([class*="h-full"]):not([class*
 .boton-chico{padding:6px 12px;font-size:12px;line-height:16px}
 /* Borde transparente: el secundario lleva un borde de 1 px y sin esto el relleno quedaba 2 px más bajo cuando van lado a lado. */
 .boton-solido{font-weight:600;border:1px solid transparent}
+
+/* Tablas (Lote 3 de la auditoría; mismo aspecto en todas las apps de ILCE). Se activa con la clase "tabla" en un <table>: encabezado en
+   mayúsculas chicas con color atenuado, relleno parejo, separadores finos y resaltado al pasar el mouse. Solo en pantallas de más de
+   640 px: en celular las tarjetas las resuelve .tabla-tarjetas (data-label en cada <td>, y data-titulo en el dato principal). */
+@media (min-width:641px) {
+  table.tabla{border-collapse:separate;border-spacing:0}
+  table.tabla thead th{background:rgb(var(--color-surface2));color:rgb(var(--color-textMuted));font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;text-align:left;padding:10px 14px;border-bottom:1px solid rgb(var(--color-border));white-space:nowrap}
+  table.tabla tbody td{padding:11px 14px;line-height:1.4;border-bottom:1px solid rgb(var(--color-border));vertical-align:middle}
+  table.tabla tbody tr:last-child td{border-bottom:0}
+  table.tabla .num{text-align:right;font-variant-numeric:tabular-nums}
+}
+@media (min-width:641px) and (hover:hover) { table.tabla tbody tr:hover td{background:rgb(var(--color-textMuted) / .07)} }

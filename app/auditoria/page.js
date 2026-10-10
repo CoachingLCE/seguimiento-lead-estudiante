@@ -196,7 +196,7 @@ export default function AuditoriaPage() {
             <p className="vacio">Sin registros para este filtro.</p>
           ) : (
             <div className="overflow-x-auto">
-            <table className="w-full text-sm table-fixed">
+            <table className="w-full text-sm table-fixed tabla tabla-tarjetas">
               <colgroup>
                 <col className="w-[150px]" />
                 <col className="w-[160px]" />
@@ -214,16 +214,16 @@ export default function AuditoriaPage() {
                   const lead = r.LeadIdRelacionado ? leadsPorId[r.LeadIdRelacionado] : null;
                   return (
                     <tr key={i} className="border-b border-border">
-                      <td className="py-2 whitespace-nowrap">{new Date(r.Fecha).toLocaleString('es-AR', { hour12: false })}</td>
-                      <td className="whitespace-nowrap">
+                      <td data-label="Fecha" className="py-2 whitespace-nowrap">{new Date(r.Fecha).toLocaleString('es-AR', { hour12: false })}</td>
+                      <td data-label="Usuario" className="whitespace-nowrap">
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${colorPorUsuario(r.UsuarioNombre).bg} ${colorPorUsuario(r.UsuarioNombre).text}`}>
                           {r.UsuarioNombre}
                         </span>
                       </td>
-                      <td className={`whitespace-nowrap overflow-hidden text-ellipsis ${cat?.clase || ''}`}>
+                      <td data-label="Acción" data-titulo className={`whitespace-nowrap overflow-hidden text-ellipsis ${cat?.clase || ''}`}>
                         {cat?.icono}{r.Accion}
                       </td>
-                      <td className="leading-snug">
+                      <td data-label="Detalle" className="leading-snug">
                         {r.LeadIdRelacionado ? (
                           <Link href={`/buscador?leadId=${r.LeadIdRelacionado}`} className="hover:text-accentTeal hover:underline">
                             {r.Detalle}

@@ -150,7 +150,7 @@ export default function ResumenEstudiantesPage() {
             <div className="bg-surface border border-border rounded-2xl p-5">
               <p className="text-sm font-semibold mb-3">Actividad por usuario</p>
               <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm tabla tabla-tarjetas">
                 <thead>
                   <tr className="text-textSec text-left border-b border-border">
                     <th className="py-2">Usuario</th><th>Altas realizadas</th><th>Bienvenidas enviadas</th>
@@ -159,9 +159,9 @@ export default function ResumenEstudiantesPage() {
                 <tbody>
                   {Object.entries(datos.porUsuario).map(([nombre, stats]) => (
                     <tr key={nombre} className="border-b border-border">
-                      <td className="py-2">{nombre}</td>
-                      <td>{stats.altas}</td>
-                      <td>{stats.bienvenidas}</td>
+                      <td data-label="Usuario" data-titulo className="py-2">{nombre}</td>
+                      <td data-label="Altas realizadas">{stats.altas}</td>
+                      <td data-label="Bienvenidas enviadas">{stats.bienvenidas}</td>
                     </tr>
                   ))}
                 </tbody>

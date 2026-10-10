@@ -88,7 +88,7 @@ export default function DiplomasPage() {
             <p className="text-textSec text-sm">Cargando…</p>
           ) : (
             <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm tabla tabla-tarjetas">
               <thead>
                 <tr className="text-textSec text-left border-b border-border">
                   <th className="py-2">Estudiante</th><th>Curso</th><th>Edición</th><th>Abonó la totalidad</th><th></th>
@@ -99,15 +99,15 @@ export default function DiplomasPage() {
                   .filter((i) => !busqueda.trim() || (i.NombreEstudiante || '').toLowerCase().includes(busqueda.trim().toLowerCase()))
                   .map((i) => (
                   <tr key={i.ID} className="border-b border-border">
-                    <td className="py-2">{i.NombreEstudiante}</td>
-                    <td>{i.Curso || '—'}</td>
-                    <td>{i.Edicion || '—'}</td>
-                    <td>
+                    <td data-label="Estudiante" data-titulo className="py-2">{i.NombreEstudiante}</td>
+                    <td data-label="Curso">{i.Curso || '—'}</td>
+                    <td data-label="Edición">{i.Edicion || '—'}</td>
+                    <td data-label="Abonó la totalidad">
                       <button onClick={() => toggleDiploma(i)}>
                         <CheckboxVisual marcado={i.AbonoTotalidad === 'TRUE'} />
                       </button>
                     </td>
-                    <td>
+                    <td data-label="">
                       <button onClick={() => setFichaLeadId(i.LeadId)} className="text-accentTeal text-xs font-semibold">Ver ficha</button>
                     </td>
                   </tr>

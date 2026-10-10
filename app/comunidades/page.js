@@ -66,7 +66,7 @@ export default function ComunidadesPage() {
                   <p className="text-textMuted text-sm">Sin ventas registradas todavía.</p>
                 ) : (
                   <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm tabla tabla-tarjetas">
                       <thead className="sticky top-0 bg-surface z-10">
                         <tr className="text-textSec text-left border-b border-border">
                           <th className="py-2 pr-3 whitespace-nowrap">Estudiante</th>
@@ -79,17 +79,17 @@ export default function ComunidadesPage() {
                       <tbody>
                         {ventas.map((l) => (
                           <tr key={l.ID} className="border-b border-border">
-                            <td className="py-2 pr-3 whitespace-nowrap">
+                            <td data-label="Estudiante" data-titulo className="py-2 pr-3 whitespace-nowrap">
                               <Link href={`/buscador?leadId=${l.ID}`} className="hover:text-accentTeal hover:underline">
                                 {l.Nombre} {l.Apellido}
                               </Link>
                             </td>
-                            <td className="pr-3 text-textSec whitespace-nowrap">{l.Edicion || '—'}</td>
-                            <td className="pr-3 text-textSec whitespace-nowrap">{l.VendidoPorNombre || '—'}</td>
-                            <td className="pr-3 font-semibold text-successText whitespace-nowrap">
+                            <td data-label="Edición" className="pr-3 text-textSec whitespace-nowrap">{l.Edicion || '—'}</td>
+                            <td data-label="Vendedor" className="pr-3 text-textSec whitespace-nowrap">{l.VendidoPorNombre || '—'}</td>
+                            <td data-label="Monto" className="pr-3 font-semibold text-successText whitespace-nowrap">
                               ${numeroDesdeSheet(l.MontoTotal).toLocaleString('es-AR')}
                             </td>
-                            <td className="whitespace-nowrap">
+                            <td data-label="Fecha" className="whitespace-nowrap">
                               {l.FechaVenta ? new Date(l.FechaVenta).toLocaleDateString('es-AR') : '—'}
                             </td>
                           </tr>

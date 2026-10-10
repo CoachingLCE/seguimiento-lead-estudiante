@@ -163,7 +163,7 @@ export default function AccesosPage() {
         <div className="bg-surface border border-border rounded-2xl p-5 mb-4">
           <p className="text-sm font-bold mb-3"> Permisos por rol — quién ve qué</p>
           <div className="overflow-x-auto">
-          <table className="w-full text-xs">
+          <table className="w-full text-xs tabla tabla-tarjetas">
             <thead>
               <tr className="text-textMuted text-left border-b border-border">
                 <th className="py-1.5 pr-3">Rol</th><th className="pr-3">Accede a</th>
@@ -171,32 +171,32 @@ export default function AccesosPage() {
             </thead>
             <tbody className="text-textSec">
               <tr className="border-b border-border">
-                <td className="py-1.5 pr-3 font-semibold text-text">Admin</td>
-                <td className="pr-3">Todo el sistema, sin excepción (incluye Diplomas, Historial de acciones y Accesos, que son exclusivos de Admin)</td>
+                <td data-label="Rol" data-titulo className="py-1.5 pr-3 font-semibold text-text">Admin</td>
+                <td data-label="Accede a" className="pr-3">Todo el sistema, sin excepción (incluye Diplomas, Historial de acciones y Accesos, que son exclusivos de Admin)</td>
               </tr>
               <tr className="border-b border-border">
-                <td className="py-1.5 pr-3 font-semibold text-text">Coordinador <span className="text-textMuted font-normal">("Coordinadora de inscripciones" — ej. Macarena)</span></td>
-                <td className="pr-3">Nuevo lead, Dashboard, Seguimiento (reasigna), Reportes, Resumen diario, Estudiantes, Bajas, Buscador, editar ficha completa y datos de venta — no ve Resumen Estudiantes, Diplomas, Académico, Historial de acciones ni Accesos</td>
+                <td data-label="Rol" data-titulo className="py-1.5 pr-3 font-semibold text-text">Coordinador <span className="text-textMuted font-normal">("Coordinadora de inscripciones" — ej. Macarena)</span></td>
+                <td data-label="Accede a" className="pr-3">Nuevo lead, Dashboard, Seguimiento (reasigna), Reportes, Resumen diario, Estudiantes, Bajas, Buscador, editar ficha completa y datos de venta — no ve Resumen Estudiantes, Diplomas, Académico, Historial de acciones ni Accesos</td>
               </tr>
               <tr className="border-b border-border">
-                <td className="py-1.5 pr-3 font-semibold text-text">Coordinador + Academico <span className="text-textMuted font-normal">("Coordinadora de MKT" — ej. Jennifer)</span></td>
-                <td className="pr-3">Todo lo de Coordinador, más Académico</td>
+                <td data-label="Rol" data-titulo className="py-1.5 pr-3 font-semibold text-text">Coordinador + Academico <span className="text-textMuted font-normal">("Coordinadora de MKT" — ej. Jennifer)</span></td>
+                <td data-label="Accede a" className="pr-3">Todo lo de Coordinador, más Académico</td>
               </tr>
               <tr className="border-b border-border">
-                <td className="py-1.5 pr-3 font-semibold text-text">Inscripciones</td>
-                <td className="pr-3">Nuevo lead, Dashboard, Seguimiento (marca ventas), Buscador, editar ficha completa — no ve Reportes, Resumen diario, Estudiantes, Bajas, Académico ni datos de venta ya confirmada</td>
+                <td data-label="Rol" data-titulo className="py-1.5 pr-3 font-semibold text-text">Inscripciones</td>
+                <td data-label="Accede a" className="pr-3">Nuevo lead, Dashboard, Seguimiento (marca ventas), Buscador, editar ficha completa — no ve Reportes, Resumen diario, Estudiantes, Bajas, Académico ni datos de venta ya confirmada</td>
               </tr>
               <tr className="border-b border-border">
-                <td className="py-1.5 pr-3 font-semibold text-text">Estudiantes <span className="text-textMuted font-normal">(Lourdes, Victoria)</span></td>
-                <td className="pr-3">Nuevo lead (para crear), pantalla Estudiantes (altas, bienvenidas, confirmaciones), Académico, Buscador, editar Nombre/Email/WhatsApp de sus alumnos — no ve Dashboard, Seguimiento, Reportes, Resumen diario, Resumen Estudiantes, Bajas ni Diplomas</td>
+                <td data-label="Rol" data-titulo className="py-1.5 pr-3 font-semibold text-text">Estudiantes <span className="text-textMuted font-normal">(Lourdes, Victoria)</span></td>
+                <td data-label="Accede a" className="pr-3">Nuevo lead (para crear), pantalla Estudiantes (altas, bienvenidas, confirmaciones), Académico, Buscador, editar Nombre/Email/WhatsApp de sus alumnos — no ve Dashboard, Seguimiento, Reportes, Resumen diario, Resumen Estudiantes, Bajas ni Diplomas</td>
               </tr>
               <tr className="border-b border-border">
-                <td className="py-1.5 pr-3 font-semibold text-text">CoordinadorEstudiantes <span className="text-textMuted font-normal">("Coordinadora académica" — Sofía)</span></td>
-                <td className="pr-3">Estudiantes, Resumen de Estudiantes, Académico, Buscador, botón exclusivo para omitir Bienvenida/confirmación — nada del circuito comercial (Nuevo lead, Dashboard, Seguimiento, Reportes, Bajas)</td>
+                <td data-label="Rol" data-titulo className="py-1.5 pr-3 font-semibold text-text">CoordinadorEstudiantes <span className="text-textMuted font-normal">("Coordinadora académica" — Sofía)</span></td>
+                <td data-label="Accede a" className="pr-3">Estudiantes, Resumen de Estudiantes, Académico, Buscador, botón exclusivo para omitir Bienvenida/confirmación — nada del circuito comercial (Nuevo lead, Dashboard, Seguimiento, Reportes, Bajas)</td>
               </tr>
               <tr>
-                <td className="py-1.5 pr-3 font-semibold text-text">Academico <span className="text-textMuted font-normal">(solo, sin combinar)</span></td>
-                <td className="pr-3">Únicamente Académico — no suma ningún otro permiso por sí solo, se usa para sumarlo a otro rol (ej: a Coordinador, para Jennifer)</td>
+                <td data-label="Rol" data-titulo className="py-1.5 pr-3 font-semibold text-text">Academico <span className="text-textMuted font-normal">(solo, sin combinar)</span></td>
+                <td data-label="Accede a" className="pr-3">Únicamente Académico — no suma ningún otro permiso por sí solo, se usa para sumarlo a otro rol (ej: a Coordinador, para Jennifer)</td>
               </tr>
             </tbody>
           </table>
