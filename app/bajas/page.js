@@ -151,6 +151,12 @@ export default function BajasPage() {
   const [filtroHistorial, setFiltroHistorial] = useState('todas');
   const [filtroCurso, setFiltroCurso] = useState('');
 
+  // Eliminar una baja ahora pide confirmación (antes el ícono rojo borraba al instante, sin cuadro y sin nombre accesible). Los tres
+  // puntos de borrado (botón "Eliminar seleccionadas", ícono de la tabla e ícono de las tarjetas del celular) pasan por acá.
+  const [confirmarBajas, setConfirmarBajas] = useState(null); // leadIds esperando confirmación, o null
+  function pedirEliminarBajas(ids) { if (ids && ids.length) setConfirmarBajas(ids); }
+  async function confirmarEliminarBajas() { const ids = confirmarBajas; await eliminarBajas(ids); setConfirmarBajas(null); }
+
   async function eliminarBajas(leadIds) {
     setEliminando(true);
     await fetch('/api/seguimiento/baja-masiva', {
@@ -398,7 +404,7 @@ export default function BajasPage() {
               {seleccionadas.size > 0 && (
                 <div className="flex items-center justify-between bg-warningBg border border-warningText/30 rounded-xl px-4 py-2.5 mb-3">
                   <p className="text-warningText text-xs font-semibold">{seleccionadas.size} seleccionada{seleccionadas.size !== 1 ? 's' : ''}</p>
-                  <button onClick={() => eliminarBajas([...seleccionadas])} disabled={eliminando}
+                  <button onClick={() => pedirEliminarBajas([...seleccionadas])} disabled={eliminando}
                     className="text-xs px-3 py-1.5 rounded-lg bg-dangerText text-white font-semibold disabled:opacity-60">
                     {eliminando ? 'Eliminando…' : ' Eliminar seleccionadas'}
                   </button>
@@ -418,7 +424,7 @@ export default function BajasPage() {
                       <thead className="sticky top-0 bg-surface z-10">
                         <tr className="text-textSec text-left border-b border-border">
                           <th className="py-2.5 px-3 w-6">
-                            <input type="checkbox"
+                            <input type="checkbox" aria-label="Seleccionar todas las bajas"
                               checked={listaFiltrada.length > 0 && listaFiltrada.every((b) => seleccionadas.has(b.leadId))}
                               onChange={(e) => setSeleccionadas(e.target.checked ? new Set(listaFiltrada.map((b) => b.leadId)) : new Set())} />
                           </th>
@@ -432,7 +438,7 @@ export default function BajasPage() {
                         {listaFiltrada.map((b) => (
                           <tr key={b.leadId} className={`border-b border-border last:border-b-0 hover:bg-bg/40 ${esDuplicado(b) ? 'bg-warningBg/40' : ''}`}>
                             <td className="py-2 px-3">
-                              <input type="checkbox" checked={seleccionadas.has(b.leadId)}
+                              <input type="checkbox" aria-label={`Seleccionar a ${b.nombre}`} checked={seleccionadas.has(b.leadId)}
                                 onChange={() => setSeleccionadas((prev) => {
                                   const nuevo = new Set(prev);
                                   nuevo.has(b.leadId) ? nuevo.delete(b.leadId) : nuevo.add(b.leadId);
@@ -474,7 +480,7 @@ export default function BajasPage() {
                             <td className="px-2"><BadgeReactivacion b={b} enviandoMensajeId={enviandoMensajeId} onEnviar={enviarMensaje1} /></td>
                             <td className="px-2"><BadgeSeguimiento b={b} /></td>
                             <td className="px-2">
-                              <button onClick={() => eliminarBajas([b.leadId])} disabled={eliminando}
+                              <button onClick={() => pedirEliminarBajas([b.leadId])} disabled={eliminando} title="Eliminar baja" aria-label={`Eliminar la baja de ${b.nombre}`}
                                 className="text-dangerText text-xs disabled:opacity-60"></button>
                             </td>
                           </tr>
@@ -489,7 +495,7 @@ export default function BajasPage() {
                       <div key={b.leadId} className={`border rounded-xl p-3 ${esDuplicado(b) ? 'bg-warningBg/40 border-warningText/40' : 'bg-bg border-border'}`}>
                         <div className="flex items-start justify-between gap-2 mb-1.5">
                           <div className="flex items-center gap-2">
-                            <input type="checkbox" checked={seleccionadas.has(b.leadId)}
+                            <input type="checkbox" aria-label={`Seleccionar a ${b.nombre}`} checked={seleccionadas.has(b.leadId)}
                               onChange={() => setSeleccionadas((prev) => {
                                 const nuevo = new Set(prev);
                                 nuevo.has(b.leadId) ? nuevo.delete(b.leadId) : nuevo.add(b.leadId);
@@ -497,7 +503,7 @@ export default function BajasPage() {
                               })} />
                             <p className="text-sm font-medium">{esDuplicado(b) && ' '}{b.nombre}</p>
                           </div>
-                          <button onClick={() => eliminarBajas([b.leadId])} disabled={eliminando}
+                          <button onClick={() => pedirEliminarBajas([b.leadId])} disabled={eliminando} title="Eliminar baja" aria-label={`Eliminar la baja de ${b.nombre}`}
                             className="text-dangerText text-xs disabled:opacity-60 shrink-0"></button>
                         </div>
                         <p className="text-textSec text-xs mb-1">{b.curso}{b.edicion ? ` · Edición ${b.edicion}` : ''} · {new Date(b.fechaBaja).toLocaleDateString('es-AR')}</p>
@@ -515,6 +521,26 @@ export default function BajasPage() {
         </div>
       </div>
       )}
+
+      {confirmarBajas && (() => {
+        const nombres = confirmarBajas.map((id) => ((listaBajas || []).find((x) => x.leadId === id) || {}).nombre || 'Sin nombre');
+        return (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => { if (!eliminando) setConfirmarBajas(null); }}>
+            <div className="bg-surface2 border border-border rounded-2xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+              <p className="text-sm font-bold mb-2">{confirmarBajas.length === 1 ? '¿Eliminar esta baja registrada?' : `¿Eliminar ${confirmarBajas.length} bajas registradas?`}</p>
+              <ul className="text-sm mb-3 list-disc pl-5">
+                {nombres.slice(0, 5).map((n, i) => <li key={i}>{n}</li>)}
+                {nombres.length > 5 && <li>y {nombres.length - 5} más</li>}
+              </ul>
+              <p className="text-textSec text-sm mb-5">Se quita el registro de la baja del Seguimiento. El lead no se borra y la acción queda anotada en el historial de acciones. No se puede deshacer desde acá.</p>
+              <div className="flex gap-3">
+                <button onClick={() => setConfirmarBajas(null)} disabled={eliminando} className="boton flex-1 bg-surface border border-border">Cancelar</button>
+                <button onClick={confirmarEliminarBajas} disabled={eliminando} className="boton boton-solido flex-1 bg-dangerText text-white disabled:opacity-60">{eliminando ? 'Eliminando…' : 'Eliminar'}</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

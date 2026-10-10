@@ -529,7 +529,7 @@ export default function InscritosPage() {
             <p className="vacio">Ningún estudiante coincide con los filtros.</p>
           ) : (
             <div className="overflow-x-auto md:max-h-[1050px] md:overflow-y-auto">
-              <table className="w-full text-sm md:min-w-[1200px] tabla-tarjetas tarjetas-etiquetas-largas">
+              <table className="w-full text-sm md:min-w-[1200px] tabla tabla-tarjetas tarjetas-etiquetas-largas">
                 <thead className="sticky top-0 bg-surface z-10">
                   <tr className="text-textSec text-left border-b border-border">
                     <th className="py-3 pr-4 cursor-pointer select-none whitespace-nowrap" onClick={() => ordenarPor('FechaInscripcion')}>Fecha de inscripción{flecha('FechaInscripcion')}</th>
@@ -651,7 +651,7 @@ export default function InscritosPage() {
                           <div className="flex items-center gap-2">
                             <button onClick={() => setFichaLeadId(i.LeadId)} className="text-accentTeal text-xs font-semibold whitespace-nowrap">Ver ficha</button>
                             {esAdmin && (
-                              <button onClick={() => setConfirmarEliminar(i)} className="text-xs text-dangerText font-semibold"></button>
+                              <button onClick={() => setConfirmarEliminar(i)} title="Eliminar estudiante" aria-label={`Eliminar a ${i.NombreEstudiante}`} className="text-xs text-dangerText font-semibold"></button>
                             )}
                           </div>
                         </td>
