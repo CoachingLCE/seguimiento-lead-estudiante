@@ -45,15 +45,27 @@ const PASOS = [
   // "requiere: 'admin'" = solo se muestra a los Admin. ("excepto: 'admin'" = solo a quien NO es Admin; hoy no se usa.)
   { id: 'el-1', soloTarea: true, ruta: null, selector: null, requiere: 'admin', titulo: 'Eliminar un lead, uno por uno', texto: 'Entrá al Buscador, buscá al lead y abrí su ficha: ahí está el botón "Eliminar". Te pide confirmar. Se borra el lead y todo su historial de seguimiento, y no se puede deshacer.' },
   { id: 'el-2', soloTarea: true, ruta: null, selector: null, requiere: 'admin', titulo: 'Eliminar varios a la vez', texto: 'En Seguimiento, tildá los leads que quieras y apretá "Eliminar seleccionados". Te pide confirmar: se eliminan los leads junto con su seguimiento.' },
-  { id: 'el-3', soloTarea: true, ruta: null, selector: null, requiere: 'admin', titulo: 'Leads que ya compraron', texto: 'Un lead con venta confirmada está protegido y no se elimina con el botón común. Un Admin puede forzarlo desde el Buscador con "Eliminar igual (tiene venta)". Pensalo bien: no se puede deshacer.' }
+  { id: 'el-3', soloTarea: true, ruta: null, selector: null, requiere: 'admin', titulo: 'Leads que ya compraron', texto: 'Un lead con venta confirmada está protegido y no se elimina con el botón común. Un Admin puede forzarlo desde el Buscador con "Eliminar igual (tiene venta)". Pensalo bien: no se puede deshacer.' },
+  // ---- Registrar un contacto (Seguimiento: Admin, Coordinador e Inscripciones) ----
+  { id: 'ct-1', soloTarea: true, ruta: null, selector: null, requiere: 'operativo', titulo: 'Registrar un contacto', texto: 'Entrá a Seguimiento. En la tarjeta de cada lead tocá el resultado de lo que pasó (por ejemplo "No contestó", "Va a pensarlo" o "Interesado"); si no lo ves a la vista, usá "Otro resultado…".' },
+  { id: 'ct-2', soloTarea: true, ruta: null, selector: null, requiere: 'operativo', titulo: 'Completá y guardá', texto: 'Se abre un recuadro: podés escribir observaciones, elegir una próxima acción sugerida y, si el lead pidió que lo contactes en una fecha puntual, cargarla (esa fecha se ofrece en los resultados que no son finales). Apretá "Guardar" para registrarlo.' },
+  { id: 'ct-3', soloTarea: true, ruta: null, selector: null, requiere: 'operativo', titulo: 'Varios leads a la vez', texto: 'Tildá la casilla de varios leads: abajo aparece una barra con "Marcar contacto…" para aplicar el mismo resultado a todos los seleccionados.' },
+  // ---- Editar un lead (Admin, Coordinador, Inscripciones y Estudiantes) ----
+  { id: 'ed-1', soloTarea: true, ruta: null, selector: null, requiere: 'editarLeads', titulo: 'Abrir la ficha del lead', texto: 'Buscalo en el Buscador (por nombre, WhatsApp o email) y abrí su ficha. También podés entrar con el botón "Ficha" de su tarjeta en Seguimiento.' },
+  { id: 'ed-2', soloTarea: true, ruta: null, selector: null, requiere: 'editarLeads', titulo: 'Editar y guardar', texto: 'En la ficha, si tu rol lo permite, aparece el botón "Editar". Admin, Coordinador e Inscripciones pueden editar cualquier lead; el rol Estudiantes, solo los que cargó él mismo y mientras no se los hayan reasignado. Al terminar apretá "Guardar cambios". Si el lead ya compró y tu rol es Estudiantes, el botón es "Editar contacto" y permite corregir solo los datos de contacto.' },
+  // ---- Cargar bajas (Admin y Coordinador) ----
+  { id: 'bj-1', soloTarea: true, ruta: null, selector: null, requiere: 'bajas', titulo: 'Cargar bajas', texto: 'En el recuadro "Cargar bajas", pegá un bloque por persona (separados por una línea en blanco) con Nombre, Curso, Email, WhatsApp, Fecha y Motivo; por ejemplo "Nombre: María Roldán", "Curso: Coaching de Equipos", "Fecha: 12/08/2026". Mientras pegás te muestra cuántas personas va a cargar.' },
+  { id: 'bj-2', soloTarea: true, ruta: null, selector: null, requiere: 'bajas', titulo: 'Registrar la baja', texto: 'Revisá la vista previa y apretá "Registrar … baja(s)". Solo Admin y Coordinador pueden cargar bajas. Si alguna se cargó por error, se puede eliminar desde la misma lista: te pide confirmar antes.' }
 ];
 
 const TAREAS = [
   { id: 't-eliminar-lead', requiere: 'admin', secuencia: ['el-1', 'el-2', 'el-3'], label: '¿Cómo elimino un lead?', palabras: ['borrar', 'quitar', 'sacar', 'duplicado', 'cargado por error', 'eliminar lead'] },
+  { id: 't-contacto', requiere: 'operativo', secuencia: ['ct-1', 'ct-2', 'ct-3'], label: '¿Cómo registro que contacté a un lead?', palabras: ['llame', 'escribi', 'whatsapp', 'no contesto', 'resultado', 'seguimiento', 'marcar contacto', 'interesado', 'va a pensarlo'] },
+  { id: 't-editar-lead', requiere: 'editarLeads', secuencia: ['ed-1', 'ed-2'], label: '¿Cómo edito los datos de un lead?', palabras: ['modificar', 'cambiar', 'corregir', 'actualizar', 'telefono', 'email', 'nombre', 'datos del lead'] },
   { id: 't-lead', pasoInicial: 'nuevo-lead', requiere: 'leads', label: '¿Cómo cargo un lead nuevo?', palabras: ['agregar', 'crear', 'nuevo', 'alta'] },
   { id: 't-rep', pasoInicial: 'reportes', requiere: 'reportes', label: '¿Dónde veo los reportes?' },
   { id: 't-dip', pasoInicial: 'diplomas', requiere: 'diplomas', label: '¿Dónde están los diplomas?' },
-  { id: 't-baja', pasoInicial: 'bajas', requiere: 'bajas', label: '¿Dónde registro una baja?', palabras: ['dar de baja', 'abandono', 'dejo de cursar'] },
+  { id: 't-baja', secuencia: ['bajas', 'bj-1', 'bj-2'], requiere: 'bajas', label: '¿Dónde registro una baja?', palabras: ['dar de baja', 'abandono', 'dejo de cursar', 'cargar bajas', 'registrar baja'] },
   { id: 't-buscador', pasoInicial: 'buscador', requiere: 'buscador', label: '¿Cómo busco a un estudiante?', palabras: ['encontrar', 'ubicar', 'lead'] }
 ];
 
@@ -84,7 +96,9 @@ export default function TourGuiado() {
     mensajesVer: () => tienePermisoMensajesVer(usuario),
     emails: () => tienePermisoEmails(usuario),
     buscador: () => tienePermisoBuscador(usuario),
-    admin: () => !!(usuario && usuario.roles && usuario.roles.includes('Admin'))
+    admin: () => !!(usuario && usuario.roles && usuario.roles.includes('Admin')),
+    // Quién puede editar leads (ver lib/permisos.js: tienePermisoEditarLead): Admin, Coordinador e Inscripciones; Estudiantes solo los que cargó.
+    editarLeads: () => !!(usuario && usuario.roles && usuario.roles.some((r) => ['Admin', 'Coordinador', 'Inscripciones', 'Estudiantes'].includes(r)))
   }), [usuario]);
   const permitido = useCallback((p) => (!p.requiere || (CHEQUEOS[p.requiere]?.() ?? true)) && (!p.excepto || !(CHEQUEOS[p.excepto]?.() ?? false)), [CHEQUEOS]);
   // `pasosTodos` incluye los pasos que solo viven dentro de una tarea; el recorrido completo no los usa.
